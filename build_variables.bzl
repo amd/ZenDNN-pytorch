@@ -934,6 +934,7 @@ libtorch_python_core_sources = [
     "torch/csrc/utils/tensor_numpy.cpp",
     "torch/csrc/utils/tensor_types.cpp",
     "torch/csrc/utils/disable_torch_function.cpp",
+    "torch/csrc/utils/verbose.cpp",
 ] + lazy_tensor_core_python_sources
 
 libtorch_python_distributed_core_sources = [
