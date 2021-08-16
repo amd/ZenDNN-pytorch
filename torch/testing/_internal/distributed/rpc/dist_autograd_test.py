@@ -78,12 +78,18 @@ def create_tensor():
     return torch.ones((3, 3), requires_grad=True)
 
 
-def build_sparse_tensor(coalesce=False, requires_grad=True, dtype=torch.float32):
+def build_sparse_tensor(coalesce=False, requires_grad=True, dtype=torch.float32, device=None):
     i = [[0, 1, 1], [2, 0, 2]]
     v = [3.2, 4.1, 5.3]
-    tensor = torch.sparse_coo_tensor(i, v, (3, 3), requires_grad=requires_grad, dtype=dtype)
+    tensor = torch.sparse_coo_tensor(i, v, (3, 3), requires_grad=requires_grad, dtype=dtype, device=device)
     if coalesce:
         tensor = tensor.coalesce()
+    return tensor
+
+def build_sparse_one_gradient(dtype=torch.float32):
+    i = [[0, 1, 1], [2, 0, 2]]
+    v = [1, 1, 1]
+    tensor = torch.sparse_coo_tensor(i, v, (3, 3), dtype=dtype)
     return tensor
 
 
@@ -2484,15 +2490,19 @@ class DistAutogradTest(CommonDistAutogradTest):
 
 
 class CudaDistAutogradTest(CommonDistAutogradTest):
-    @skip_if_lt_x_gpu(1)
-    @dist_init
-    def test_gpu_simple(self):
-        t1 = torch.rand(3, 3, requires_grad=True, device="cuda:0")
-        t2 = torch.rand(3, 3, requires_grad=True, device="cuda:0")
-        (t1 + t2).sum().backward()
+
+    def _gpu_simple(self, t1, t2, sparse):
+        if sparse:
+            torch.sparse.sum(t1 + t2).backward()
+        else:
+            (t1 + t2).sum().backward()
         with dist_autograd.context() as context_id:
             t3 = t1 + t2
-            dist_autograd.backward(context_id, [t3.sum()])
+            if sparse:
+                loss = torch.sparse.sum(t3)
+            else:
+                loss = t3.sum()
+            dist_autograd.backward(context_id, [loss])
             grads = dist_autograd.get_gradients(context_id)
             self.assertEqual(2, len(grads))
             self.assertEqual(t1.grad, grads[t1])
@@ -2500,9 +2510,24 @@ class CudaDistAutogradTest(CommonDistAutogradTest):
 
     @skip_if_lt_x_gpu(1)
     @dist_init
-    def test_gpu_to_cpu_continuation(self):
-        t1 = torch.rand(3, 3, requires_grad=True, device="cuda:0")
-        t2 = torch.rand(3, 3, requires_grad=True)
+    def test_gpu_simple(self):
+        self._gpu_simple(
+            torch.rand(3, 3, requires_grad=True, device="cuda:0"),
+            torch.rand(3, 3, requires_grad=True, device="cuda:0"),
+            False
+        )
+
+    @skip_if_lt_x_gpu(1)
+    @dist_init
+    def test_gpu_simple_sparse(self):
+        self._gpu_simple(
+            build_sparse_tensor(requires_grad=True, device="cuda:0"),
+            build_sparse_tensor(requires_grad=True, device="cuda:0"),
+            True
+        )
+
+
+    def _gpu_to_cpu_continuation(self, t1, t2, sparse):
         # Run a few iterations.
         for i in range(3):
             t1.grad = None
@@ -2517,16 +2542,34 @@ class CudaDistAutogradTest(CommonDistAutogradTest):
                     t6 = t5.cuda(0) + t4
                     t7 = self._exec_func(exec_mode, torch.add, t6.cpu(), t5)
                     # Autograd graph consists of CPU -> GPU -> CPU execution.
+                    if sparse:
+                        loss = torch.sparse.sum(t7)
+                    else:
+                        loss = t7.sum()
                     ret = self._verify_backwards(
-                        exec_mode, [t7.sum()], context_id, local_grads, t1, t2
+                        exec_mode, [loss], context_id, local_grads, t1, t2
                     )
                     local_grads = ret if ret else local_grads
 
     @skip_if_lt_x_gpu(1)
     @dist_init
-    def test_gpu_to_cpu_continuation_gpu_root(self):
-        t1 = torch.rand(3, 3, requires_grad=True, device="cuda:0")
-        t2 = torch.rand(3, 3, requires_grad=True)
+    def test_gpu_to_cpu_continuation(self):
+        self._gpu_to_cpu_continuation(
+            torch.rand(3, 3, requires_grad=True, device="cuda:0"),
+            torch.rand(3, 3, requires_grad=True),
+            False
+        )
+
+    @skip_if_lt_x_gpu(1)
+    @dist_init
+    def test_gpu_to_cpu_continuation_sparse(self):
+        self._gpu_to_cpu_continuation(
+            build_sparse_tensor(requires_grad=True, device="cuda:0"),
+            build_sparse_tensor(requires_grad=True),
+            True
+        )
+
+    def _gpu_to_cpu_continuation_gpu_root(self, t1, t2, sparse):
         # Run a few iterations.
         for i in range(3):
             t1.grad = None
@@ -2540,10 +2583,32 @@ class CudaDistAutogradTest(CommonDistAutogradTest):
                     t5 = self._exec_func(exec_mode, torch.add, t4.cpu(), t2)
                     t6 = t5.cuda(0) + t4
                     # Autograd graph consists of CPU -> GPU -> CPU execution.
+                    if sparse:
+                        loss = torch.sparse.sum(t6)
+                    else:
+                        loss = t6.sum()
                     ret = self._verify_backwards(
-                        exec_mode, [t6.sum()], context_id, local_grads, t1, t2
+                        exec_mode, [loss], context_id, local_grads, t1, t2
                     )
                     local_grads = ret if ret else local_grads
+
+    @skip_if_lt_x_gpu(1)
+    @dist_init
+    def test_gpu_to_cpu_continuation_gpu_root(self):
+        self._gpu_to_cpu_continuation_gpu_root(
+            torch.rand(3, 3, requires_grad=True, device="cuda:0"),
+            torch.rand(3, 3, requires_grad=True),
+            False
+        )
+
+    @skip_if_lt_x_gpu(1)
+    @dist_init
+    def test_gpu_to_cpu_continuation_gpu_root_sparse(self):
+        self._gpu_to_cpu_continuation_gpu_root(
+            build_sparse_tensor(requires_grad=True, device="cuda:0"),
+            build_sparse_tensor(requires_grad=True),
+            True
+        )
 
 
 class FaultyAgentDistAutogradTest(RpcAgentTestFixture):
@@ -2606,14 +2671,11 @@ class WrapperModule(nn.Module):
 
 class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
 
-    @skip_if_lt_x_gpu(4)
-    def test_device_maps_backward_pass(self):
+    def _device_maps_backward_pass(self, t1, t2, sparse):
         options = self.rpc_backend_options
         dst = worker_name((self.rank + 1) % self.world_size)
-
         # The reverse of this device mapping should be used for the backward pass.
         options.set_device_map(dst, {self.rank: (self.rank + 1) % self.world_size})
-
         rpc.init_rpc(
             name=worker_name(self.rank),
             backend=self.rpc_backend,
@@ -2621,19 +2683,39 @@ class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
             world_size=self.world_size,
             rpc_backend_options=options,
         )
-
-        t1 = torch.rand(10, device=self.rank, requires_grad=True)
-        t2 = torch.rand(10, device=self.rank, requires_grad=True)
         with dist_autograd.context() as context_id:
             res = rpc.rpc_sync(dst, torch.add, args=(t1, t2))
-            dist_autograd.backward(context_id, [res.sum()])
+            if sparse:
+                loss = torch.sparse.sum(res)
+            else:
+                loss = res.sum()
+            dist_autograd.backward(context_id, [loss])
             grads = dist_autograd.get_gradients(context_id)
-            self.assertEqual(torch.ones(10), grads[t1])
-            self.assertEqual(torch.ones(10), grads[t2])
+            if sparse:
+                self.assertEqual(build_sparse_one_gradient(), grads[t1])
+                self.assertEqual(build_sparse_one_gradient(), grads[t2])
+            else:
+                self.assertEqual(torch.ones(10), grads[t1])
+                self.assertEqual(torch.ones(10), grads[t2])
             self.assertEqual(t1.device, grads[t1].device)
             self.assertEqual(t2.device, grads[t2].device)
-
         rpc.shutdown()
+
+    @skip_if_lt_x_gpu(4)
+    def test_device_maps_backward_pass(self):
+        self._device_maps_backward_pass(
+            torch.rand(10, requires_grad=True, device=self.rank),
+            torch.ones(10, requires_grad=True, device=self.rank),
+            False
+        )
+
+    @skip_if_lt_x_gpu(4)
+    def test_device_maps_backward_pass_sparse(self):
+        self._device_maps_backward_pass(
+            build_sparse_tensor(requires_grad=True, device=self.rank),
+            build_sparse_tensor(requires_grad=True, device=self.rank),
+            True
+        )
 
     class MyRemoteCompute(torch.nn.Module):
         def __init__(self):
@@ -2651,15 +2733,11 @@ class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
         def forward(self, input):
             return self.next_stage.rpc_sync().forward(input)
 
-    @skip_if_lt_x_gpu(4)
-    def test_dist_autograd_sync_streams(self):
-
+    def _dist_autograd_sync_streams(self, sparse):
         options = self.rpc_backend_options
         dst = worker_name((self.rank + 1) % self.world_size)
-
         # The reverse of this device mapping should be used for the backward pass.
         options.set_device_map(dst, {self.rank: (self.rank + 1) % self.world_size})
-
         rpc.init_rpc(
             name=worker_name(self.rank),
             backend=self.rpc_backend,
@@ -2667,35 +2745,46 @@ class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
             world_size=self.world_size,
             rpc_backend_options=options,
         )
-
         remote_compute = rpc.remote(dst, TensorPipeCudaDistAutogradTest.MyRemoteCompute)
         local_compute = TensorPipeCudaDistAutogradTest.MyLocalCompute(remote_compute)
         for _ in range(10):
-            input = torch.rand([1000, 10000], device=self.rank, requires_grad=True)
+            if sparse:
+                input = build_sparse_tensor(requires_grad=True, device=self.rank)
+            else:
+                input = torch.rand([1000, 10000], device=self.rank, requires_grad=True)
             # Run local autograd
             result = input * 2.0
             r = random.random()
-            loss = result.sum() * r
+            if sparse:
+                loss = torch.sparse.sum(result) * r
+            else:
+                loss = result.sum() * r
             loss.backward()
-
             # Run distributed autograd
             with dist_autograd.context() as context_id:
                 result = local_compute(input)
-                loss = result.sum() * r
+                if sparse:
+                    loss = torch.sparse.sum(result) * r
+                else:
+                    loss = result.sum() * r
                 dist_autograd.backward(context_id, [loss])
-
                 # Compare grads.
                 grads = dist_autograd.get_gradients(context_id)
                 self.assertEqual(input.grad, grads[input])
-
         rpc.shutdown()
 
     @skip_if_lt_x_gpu(4)
-    def test_gradients_synchronizations(self):
+    def test_dist_autograd_sync_streams(self):
+        self._dist_autograd_sync_streams(False)
+
+    @skip_if_lt_x_gpu(4)
+    def test_dist_autograd_sync_streams_sparse(self):
+        self._dist_autograd_sync_streams(True)
+
+    def _gradients_synchronizations(self, x, sparse):
         options = self.rpc_backend_options
         for peer_rank in range(self.world_size):
             options.set_device_map(worker_name(peer_rank), {self.rank: peer_rank})
-
         rpc.init_rpc(
             name=worker_name(self.rank),
             backend=self.rpc_backend,
@@ -2703,10 +2792,13 @@ class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
             world_size=self.world_size,
             rpc_backend_options=options,
         )
-
         if self.rank == 0:
             # this is master
-            layers = [nn.Linear(2000, 2000) for _ in range(self.world_size - 1)]
+            if sparse:
+                linear_size = 3
+            else:
+                linear_size = 2000
+            layers = [nn.Linear(linear_size, linear_size) for _ in range(self.world_size - 1)]
             local_layers = [l.to(0) for l in layers]
             remote_layers = []
             for rank in range(1, self.world_size):
@@ -2715,26 +2807,34 @@ class TensorPipeCudaDistAutogradTest(RpcAgentTestFixture):
                     WrapperModule,
                     args=(layers[rank - 1], rank)
                 ))
-
-            x = torch.randn(5000, 2000).to(0)
+            x = x.to(0)
             # local iteration
             local_model = nn.Sequential(*local_layers)
             local_model(x).sum().backward()
-
             # remote iteration
             with dist_autograd.context() as context_id:
                 for remote_layer in remote_layers:
                     x = remote_layer.rpc_sync().forward(x)
-
                 dist_autograd.backward(context_id, [x.sum()])
-
                 futs = []
                 for remote_layer in remote_layers:
                     futs.append(remote_layer.rpc_async().gradients(context_id))
-
                 for i in range(len(futs)):
                     local_gradients = [p.grad for p in local_layers[i].parameters()]
                     for g1, g2 in zip(futs[i].wait(), local_gradients):
                         self.assertEqual(g1, g2)
-
         rpc.shutdown()
+
+    @skip_if_lt_x_gpu(4)
+    def test_gradients_synchronizations(self):
+        self._gradients_synchronizations(
+            torch.randn(5000, 2000),
+            False
+        )
+
+    @skip_if_lt_x_gpu(4)
+    def test_gradients_synchronizations_sparse(self):
+        self._gradients_synchronizations(
+            build_sparse_tensor(requires_grad=False),
+            True
+        )
