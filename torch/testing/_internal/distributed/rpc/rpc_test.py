@@ -4460,7 +4460,7 @@ class RpcTest(RpcAgentTestFixture):
 
         dist.barrier()
 
-    class VanillaPs:
+    class MyParameterServer:
         def __init__(self, trainers):
             self.lock = Lock()
             self.trainers = trainers
@@ -4490,11 +4490,11 @@ class RpcTest(RpcAgentTestFixture):
         fut = rref.rpc_async().average(*[rref, tensor])
         return fut.wait()
 
-    def _vanilla_ps(self, tensor):
+    def _my_parameter_server(self, tensor):
         # create rref on self
         rref_self = rpc.remote(
             worker_name(self.rank),
-            self.VanillaPs,
+            self.MyParameterServer,
             args=(self.world_size - 1,))
         if tensor.is_sparse:
             expected_value = build_sparse_tensor().to_dense().double()
@@ -4519,12 +4519,12 @@ class RpcTest(RpcAgentTestFixture):
             self.assertTrue(torch.equal(expected_value, result))
 
     @dist_init
-    def test_vanilla_ps(self):
-        self._vanilla_ps(torch.ones(3, 3))
+    def test_my_parameter_server(self):
+        self._my_parameter_server(torch.ones(3, 3))
 
     @dist_init
-    def test_vanilla_ps_sparse(self):
-        self._vanilla_ps(build_sparse_tensor())
+    def test_my_parameter_server_sparse(self):
+        self._my_parameter_server(build_sparse_tensor())
 
 class CudaRpcTest(RpcAgentTestFixture):
 
