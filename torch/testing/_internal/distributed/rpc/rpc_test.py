@@ -4486,8 +4486,15 @@ class RpcTest(RpcAgentTestFixture):
                         fut.set_result(result)
             return fut
 
-    def _trainer_func(self, rref, tensor):
-        fut = rref.rpc_async().average(*[rref, tensor])
+    def _trainer_func(self, rref, tensor, sparse=False):
+        local_embedding = torch.nn.EmbeddingBag(
+            10000, 
+            10000, 
+            mode="sum", 
+            sparse=sparse
+        )
+        gradients = local_embedding(tensor)
+        fut = rref.rpc_async().average(*[rref, gradients])
         return fut.wait()
 
     def _my_parameter_server(self, tensor):
