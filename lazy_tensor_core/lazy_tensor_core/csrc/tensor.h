@@ -860,7 +860,7 @@ class LazyTensor {
 
   static LazyTensor neg(const LazyTensor& input);
 
-  static LazyTensor nll_loss(const LazyTensor& input, const LazyTensor& target,
+  static std::tuple<LazyTensor, LazyTensor> nll_loss(const LazyTensor& input, const LazyTensor& target,
                              const LazyTensor& weight,
                              lazy_tensors::int64 reduction, int ignore_index);
 

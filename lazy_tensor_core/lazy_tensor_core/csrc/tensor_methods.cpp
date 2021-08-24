@@ -1967,14 +1967,19 @@ LazyTensor LazyTensor::neg(const LazyTensor& input) {
   return input.CreateFrom(ir::ops::Neg(input.GetIrValue()));
 }
 
-LazyTensor LazyTensor::nll_loss(const LazyTensor& input,
+std::tuple<LazyTensor, LazyTensor> LazyTensor::nll_loss(const LazyTensor& input,
                                 const LazyTensor& target,
                                 const LazyTensor& weight,
                                 lazy_tensors::int64 reduction,
                                 int ignore_index) {
-  return input.CreateFrom(ir::MakeNode<ir::ops::NllLoss>(
+
+  auto node = ir::MakeNode<ir::ops::NllLoss>(
       input.GetIrValue(), target.GetIrValue(), GetOptionalIrValue(weight),
-      GetReductionMode(reduction), ignore_index));
+      GetReductionMode(reduction), ignore_index);
+  LazyTensor output = input.CreateFrom(ir::Value(node, 0));
+  LazyTensor total_weight = input.CreateFrom(ir::Value(node, 1));
+  return std::make_tuple(std::move(output), std::move(total_weight));
+
 }
 
 LazyTensor LazyTensor::nll_loss2d(const LazyTensor& input,

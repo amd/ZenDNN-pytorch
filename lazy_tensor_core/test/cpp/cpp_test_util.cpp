@@ -251,6 +251,7 @@ void TestBackward(
 
   torch::Tensor output = testfn(input_vars);
   torch::Tensor xoutput = testfn(xinput_vars);
+  std::cout<<"AllClose forward "<<std::endl;
   AllClose(output, xoutput, rtol, atol);
 
   std::vector<torch::Tensor> outs = {output};
@@ -278,6 +279,7 @@ void TestBackward(
     for (size_t i = 0; i < outs.size(); ++i) {
       ASSERT_EQ(outs[i].defined(), xouts[i].defined());
       if (outs[i].defined()) {
+        std::cout<<"AllClose backward "<<std::endl;
         AllClose(outs[i], xouts[i], rtol, atol);
       }
     }

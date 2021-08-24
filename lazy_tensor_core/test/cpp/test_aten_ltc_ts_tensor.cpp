@@ -9274,8 +9274,8 @@ TEST_F(AtenLtcTsTensorTest, TestNllLossBackward) {
   int classes = 2;
   // TODO(asuhan): Fix the torch::kDouble case.
   for (auto dtype : {torch::kFloat}) {
-    for (int ignore_index : {-1, 0, 1, 5}) {
-      for (bool def_weight : {false, true}) {
+    for (int ignore_index : {-1}) {
+      for (bool def_weight : {false}) {
         torch::Tensor input = torch::rand(
             {batch, classes}, torch::TensorOptions(dtype).requires_grad(true));
         torch::Tensor target =
@@ -9286,8 +9286,7 @@ TEST_F(AtenLtcTsTensorTest, TestNllLossBackward) {
           weight = torch::rand({classes}, torch::TensorOptions(dtype));
         }
         for (torch::Reduction::Reduction reduction :
-             {torch::Reduction::Mean, torch::Reduction::Sum,
-              torch::Reduction::None}) {
+             {torch::Reduction::Mean}) {
           auto testfn =
               [&](const std::vector<torch::Tensor>& inputs) -> torch::Tensor {
             return torch::nll_loss(
@@ -9295,10 +9294,16 @@ TEST_F(AtenLtcTsTensorTest, TestNllLossBackward) {
                 /*weight=*/inputs[2],
                 /*reduction=*/reduction, /*ignore_index=*/ignore_index);
           };
-          ForEachDevice([&](const torch::Device& device) {
-            TestBackward({input, target, weight}, device, testfn, /*rtol=*/1e-5,
-                         /*atol=*/1e-8);
-          });
+          if (true) { // reduction == torch::Reduction::Mean) {
+            ForEachDevice([&](const torch::Device& device) {
+              std::cout << "ignore_index " << ignore_index << ", def_weight " << def_weight
+                        << ", reduction " << reduction << std::endl;
+                        
+              TestBackward({input, target, weight}, device, testfn, /*rtol=*/1e-5,
+                          /*atol=*/1e-8);
+            });
+
+          }
         }
       }
     }

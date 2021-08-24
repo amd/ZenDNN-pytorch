@@ -121,9 +121,9 @@ class TSNodeLowering : public NodeLowering {
       case at::aten::native_batch_norm_backward: {
         return InferBatchNormBackward(node);
       }
-      case at::aten::nll_loss: {
+      case at::aten::nll_loss_forward: {
         return InferNllLoss(ir::NodeCast<ir::ops::NllLoss>(
-              node, ir::OpKind(at::aten::nll_loss)));
+              node, ir::OpKind(at::aten::nll_loss_forward)));
       }
       case at::aten::permute: {
         auto permute =
@@ -288,9 +288,9 @@ class TSNodeLowering : public NodeLowering {
       return LowerLogSoftmaxBackward(ir::NodeCast<ir::ops::TSLogSoftmaxBackward>(
           node, ir::OpKind(at::aten::_log_softmax_backward_data)));
     }
-    if (node->op().op == at::aten::nll_loss) {
+    if (node->op().op == at::aten::nll_loss_forward) {
       return LowerNllLoss(
-          ir::NodeCast<ir::ops::NllLoss>(node, ir::OpKind(at::aten::nll_loss)));
+          ir::NodeCast<ir::ops::NllLoss>(node, ir::OpKind(at::aten::nll_loss_forward)));
     }
     if (node->op().op == at::aten::permute) {
       return LowerPermute(
@@ -608,6 +608,7 @@ class TSNodeLowering : public NodeLowering {
   }
 
   lazy_tensors::int64 GetReduction(ReductionMode reductionMode) {
+    std::cout << "GetReduction " << (int64_t)reductionMode << std::endl;
     switch (reductionMode) {
       case ReductionMode::kMean:
         return at::Reduction::Mean;
@@ -625,6 +626,7 @@ class TSNodeLowering : public NodeLowering {
     static constexpr size_t kWeightedOperandSize = 5;
 
     auto& operands = node->operands();
+    std::cout<< "NllLossBackward: operands.size() " << operands.size() << std::endl;
     LTC_CHECK_GT(operands.size(), kWeightOperandsOffset);
 
     std::vector<torch::jit::NamedValue> arguments;
@@ -775,6 +777,7 @@ class TSNodeLowering : public NodeLowering {
     static constexpr size_t kWeightOperandsOffset = 2;
 
     auto& operands = node->operands();
+
     LTC_CHECK_GE(operands.size(), kWeightOperandsOffset);
 
     std::vector<torch::jit::NamedValue> arguments;
@@ -791,8 +794,9 @@ class TSNodeLowering : public NodeLowering {
 
     arguments.emplace_back(GetReduction(node->reduction()));
     arguments.emplace_back(node->ignore_index());
-
-    return LowerBuiltin(node, arguments);
+    auto ops = LowerBuiltin(node, arguments);
+    LTC_CHECK_EQ(ops.size(), 2);
+    return ops;
   }
 
   TSOpVector LowerPermute(const ir::ops::Permute* node) {

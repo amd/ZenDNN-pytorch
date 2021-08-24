@@ -236,7 +236,7 @@ static void nll_loss_out_frame(
     std::accumulate(std::begin(weight_partial_sums),
                     std::end(weight_partial_sums),
                     scalar_t{0});
-
+  std::cout <<"CPU-NLLLoss total_weight_val accumu: " << (double)total_weight_val << std::endl;
   scalar_t output_val = std::accumulate(std::begin(loss_partial_sums),
                                         std::end(loss_partial_sums),
                                         scalar_t{0});
@@ -302,7 +302,7 @@ static void nll_loss_backward_out_frame(
 
   auto weight_contiguous = optional_contiguous(weight);
   const scalar_t* weight_data = optional_data<scalar_t>(weight_contiguous);
-
+  std::cout <<"CPU-NLLLossBackward total_weight_val passed in: " << total_weight << std::endl;
   if (reduction == Reduction::None && n_dims == 2) {
     const auto batch_size = input.size(0);
     auto grad_input_acc = grad_input.accessor<scalar_t, 2>();

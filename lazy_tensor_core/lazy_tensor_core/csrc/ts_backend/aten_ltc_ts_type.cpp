@@ -784,14 +784,14 @@ LazyNativeFunctions::nll_loss_forward(const at::Tensor& self,
 
   auto selfTensor = bridge::GetLtcTensor(self);
   auto& device = selfTensor.GetDevice();
-  auto totalWeight = LazyTensor::full({}, 1, device, selfTensor.dtype());
-
-  return std::make_tuple(
-      bridge::AtenFromLtcTensor(LazyTensor::nll_loss(
+  // auto totalWeight = LazyTensor::full({}, 1, device, selfTensor.dtype());
+  auto lazy_outputs = LazyTensor::nll_loss(
           selfTensor, bridge::GetLtcTensor(target),
           bridge::GetOrCreateLtcTensor(weight, device),
-          reduction, ignore_index)),
-      bridge::AtenFromLtcTensor(totalWeight));
+          reduction, ignore_index);
+  return std::make_tuple(
+      bridge::AtenFromLtcTensor(std::get<0>(lazy_outputs)),
+      bridge::AtenFromLtcTensor(std::get<1>(lazy_outputs)));
 }
 
 // We need to explicitly override max pooling operators and just call the
