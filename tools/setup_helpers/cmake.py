@@ -243,7 +243,6 @@ class CMake:
             var: var for var in
             ('BLAS',
              'BUILDING_WITH_TORCH_LIBS',
-             'CUDA_HOST_COMPILER',
              'CUDA_NVCC_EXECUTABLE',
              'CUDA_SEPARABLE_COMPILATION',
              'CUDNN_LIBRARY',
@@ -267,6 +266,11 @@ class CMake:
              'OPENSSL_ROOT_DIR')
         })
 
+        # Aliases which are lower priority than their canonical option
+        low_priority_options = {
+            'CUDA_HOST_COMPILER': 'CMAKE_CUDA_HOST_COMPILER',
+        }
+
         for var, val in my_env.items():
             # We currently pass over all environment variables that start with "BUILD_", "USE_", and "CMAKE_". This is
             # because we currently have no reliable way to get the list of all build options we have specified in
@@ -276,6 +280,10 @@ class CMake:
             true_var = additional_options.get(var)
             if true_var is not None:
                 build_options[true_var] = val
+            elif var in low_priority_options:
+                key = low_priority_options[var]
+                if key not in build_options:
+                    build_options[key] = val
             elif var.startswith(('BUILD_', 'USE_', 'CMAKE_')) or var.endswith(('EXITCODE', 'EXITCODE__TRYRUN_OUTPUT')):
                 build_options[var] = val
 
