@@ -297,7 +297,10 @@ static inline void checkAllSameDim(TensorList tensors, int64_t dim) {
 }
 
 static inline std::tuple<Tensor,Tensor> _linalg_broadcast_batch_dims(const Tensor& arg1, const Tensor& arg2, const char* name) {
-  linearSolveCheckInputs(arg1, arg2, name);
+  // If there's no name we assume we don't want to check the errors
+  if (name != nullptr) {
+    linearSolveCheckInputs(arg1, arg2, name);
+  }
 
   // broadcast the batch dimensions of arg1 and arg2.
   IntArrayRef arg1_batch_sizes(arg1.sizes().data(), arg1.ndimension() - 2);
@@ -310,8 +313,8 @@ static inline std::tuple<Tensor,Tensor> _linalg_broadcast_batch_dims(const Tenso
   std::vector<int64_t> arg2_expand_size({expand_batch_portion});
   arg2_expand_size.insert(arg2_expand_size.end(), { arg2.size(-2), arg2.size(-1) });
 
-  Tensor arg1_broadcasted  = arg1.expand(arg1_expand_size);
-  Tensor arg2_broadcasted = arg2.expand(arg2_expand_size);
+  auto arg1_broadcasted  = arg1_expand_size == arg1.sizes() ? arg1 : arg1.expand(arg1_expand_size);
+  auto arg2_broadcasted  = arg2_expand_size == arg2.sizes() ? arg2 : arg2.expand(arg2_expand_size);
   return std::make_tuple(arg1_broadcasted, arg2_broadcasted);
 }
 
