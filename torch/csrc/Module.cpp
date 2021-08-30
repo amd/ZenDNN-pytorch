@@ -58,6 +58,7 @@
 #include <torch/csrc/onnx/init.h>
 #include <torch/csrc/utils/init.h>
 #include <torch/csrc/utils/crash_handler.h>
+#include <torch/csrc/utils/python_trace.h>
 #include <torch/csrc/api/include/torch/python/init.h>
 
 #ifdef USE_DISTRIBUTED
@@ -1011,6 +1012,8 @@ Call this whenever a new thread is created in order to propagate values from
       #endif
     }
   );
+
+  torch::profiler::impl::register_trace(py_module);
 
   py::class_<WeakTensorRef>(py_module, "_WeakTensorRef")
     .def(py::init([](py::object tensor) {
