@@ -145,8 +145,10 @@ Node::Node(OpKind op, OpList operands, lazy_tensors::Shape shape,
   metadata_.scope = GetCurrentScope();
   metadata_.frame_info = GetFrameInfo();
   for (auto& operand : operands) {
-    AddOperand(operand.node, operand.index);
-    hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
+    if (operand.has_value()){
+      AddOperand(operand.value().node, operand.value().index);
+    }
+    hash_ = lazy_tensors::util::HashCombine(hash_, lazy_tensors::util::Hash(operand));
   }
 }
 
@@ -183,7 +185,8 @@ Node::Node(OpKind op, lazy_tensors::Shape shape, size_t num_outputs,
 
 Node::~Node() {
   for (size_t i = 0; i < operands_as_outputs_.size(); ++i) {
-    operands_[i]->RemoveUse(Use(this, i, operands_as_outputs_[i].index));
+    if(operands_as_outputs_[i].has_value())
+    operands_[i]->RemoveUse(Use(this, i, operands_as_outputs_[i].value().index));
   }
 }
 

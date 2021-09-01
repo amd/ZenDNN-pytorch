@@ -66,12 +66,17 @@ std::vector<Value> Util::Clone(
     if (clone_map.count(node) > 0) {
       continue;
     }
-    std::vector<Value> inputs;
+    std::vector<c10::optional<Value>> inputs;
     for (auto& output : node->operands()) {
-      auto it = clone_map.find(output.node);
+      if (output.has_value()){
+      auto it = clone_map.find(output.value().node);
       LTC_CHECK(it != clone_map.end())
           << "Bad post-order: " << node->ToString();
-      inputs.emplace_back(it->second, output.index);
+        inputs.emplace_back(it->second, output.value().index);
+      } else {
+        inputs.emplace_back(c10::nullopt);
+      }
+
     }
     clone_map[node] = node->Clone(inputs);
   }

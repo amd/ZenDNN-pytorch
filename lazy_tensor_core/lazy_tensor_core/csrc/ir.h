@@ -156,7 +156,8 @@ inline std::ostream& operator<<(std::ostream& stream, const OpKind& op) {
   return stream;
 }
 
-using OpList = lazy_tensors::Span<const Value>;
+// using OpList = lazy_tensors::Span<const Value>;
+using OpList = std::vector<c10::optional<const Value>>;
 
 // A node in the graph. Nodes for operations which requires extra data to be
 // stored for lowering, should inherit from this class and add operation
@@ -202,9 +203,14 @@ class Node {
   // multi-output node, output_index must be zero.
   const lazy_tensors::Shape& shape(size_t output_index) const;
 
-  const std::vector<Output>& operands() const { return operands_as_outputs_; }
+  const std::vector<c10::optional<Output>>& operands() const { return operands_as_outputs_; }
 
-  const Output& operand(size_t i) const { return operands_as_outputs_.at(i); }
+  // TODO if I don't give up on refactoring clone today, i'll have to come back and 
+  // update this so it grabs the 'ith' non-null value so it behaves as before
+  const Output& operand(size_t i) const { 
+    LTC_CHECK(false) << "TODO";
+    return operands_as_outputs_.at(i); 
+  }
 
   const std::set<Use>& uses() const { return uses_; }
 
@@ -255,7 +261,7 @@ class Node {
   std::vector<NodePtr> operands_;
   // Outputs do not hold references on the nodes, and neither do the uses, since
   // otherwise we get into circular reference counting.
-  std::vector<Output> operands_as_outputs_;
+  std::vector<c10::optional<Output>> operands_as_outputs_;
   // We use a set for uses, as we want deterministic use sequencing.
   std::set<Use> uses_;
   // The hash value of this node.
