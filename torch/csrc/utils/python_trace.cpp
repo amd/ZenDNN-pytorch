@@ -1,6 +1,7 @@
 #include <torch/csrc/utils/python_trace.h>
 
 #include <atomic>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -8,149 +9,205 @@
 
 #include <Python.h>
 #include <frameobject.h>
-#include <pybind11/stl.h>
 
 #include <ATen/record_function.h>
-
+#include <torch/csrc/utils/pybind.h>
 
 namespace torch {
 namespace profiler {
 namespace impl {
 
+namespace {
+int64_t now() {
+  using namespace std::chrono;
+  return time_point_cast<nanoseconds>(system_clock::now())
+      .time_since_epoch()
+      .count();
+}
+} // namespace
 
-// Simplified metadata to record inputs and outputs. This is a simplified
-// version of IValue, and is here because we don't (yet) want to deal with
-// the full complexity of IValue.
-enum Tag {
-    kTensor,
-    kInt,
-    kOther,
-};
-
-
-struct Element {
-    Element(const c10::IValue& i, bool is_input) : is_input_(is_input) {
-        if (i.isTensor()) {
-            tag_ = Tag::kTensor;
-            id_ = i.hash().toInt();
-        } else if (i.isInt()) {
-            tag_ = Tag::kInt;
-            id_ = i.toInt();
-        } else {
-            tag_ = Tag::kOther;
-            id_ = (other_id_counter_++);
-        }
-    }
-
-    bool is_input_;
-    Tag tag_;
-    size_t id_;
-
-    // Anything that is not a known type we simply keep an id.
-    static std::atomic<size_t> other_id_counter_;
-};
-
-std::atomic<size_t> Element::other_id_counter_{0};
-
-
-struct ObserverEvent {
-    std::string name;
-    std::vector<Element> elements;
-};
-
-
+// ----------------------------------------------------------------------------
+// -- Python interpreter state ------------------------------------------------
+// ----------------------------------------------------------------------------
 struct PyEvent {
-    int event;
-    PyCodeObject* f_code; 
+  PyEvent(int event, PyCodeObject* f_code)
+      : event_(event), time_ns_(now()), f_code_(f_code) {}
+
+  int event_;
+  int64_t time_ns_;
+  PyCodeObject* f_code_;
 };
 
-
-c10::optional<at::CallbackHandle> handle_;
-std::vector<ObserverEvent> observer_events_;
 std::vector<PyEvent> py_events_;
 
-
-static std::unique_ptr<at::ObserverContext> onFunctionEnter(const at::RecordFunction& fn) {
-    return nullptr;
+int py_profile_fn(
+    PyObject* obj,
+    PyFrameObject* frame,
+    int event,
+    PyObject* arg) {
+  py_events_.emplace_back(event, frame->f_code);
+  return 0;
 }
 
+// ----------------------------------------------------------------------------
+// -- Pytorch op dispatch state -----------------------------------------------
+// ----------------------------------------------------------------------------
+struct TensorMetadata {
+  int64_t hash_;
+};
 
-static void onFunctionExit(const at::RecordFunction& fn, at::ObserverContext* ctx_ptr) {
-    ObserverEvent e;
-    e.name = fn.name().str();
+struct IntMetadata {
+  int64_t value_;
+};
 
-    for (auto& i : fn.inputs()) {
-        e.elements.emplace_back(i, /*is_input=*/true);
+std::atomic<int64_t> other_id_counter_{0};
+struct OtherMetadata {
+  OtherMetadata() : id_(other_id_counter_++) {}
+  int64_t id_;
+};
+
+using Metadata = c10::variant<TensorMetadata, IntMetadata, OtherMetadata>;
+
+Metadata to_metadata(const c10::IValue& i) {
+  if (i.isTensor()) {
+    return TensorMetadata{/*hash_=*/i.hash().toInt()};
+  } else if (i.isInt()) {
+    return IntMetadata{/*value_=*/i.toInt()};
+  }
+
+  return OtherMetadata();
+}
+
+struct TraceObserverContext : public at::ObserverContext {
+  TraceObserverContext()
+      : py_events_size_(py_events_.size()), enter_ns_(now()) {}
+  size_t py_events_size_;
+  int64_t enter_ns_;
+};
+
+struct ObserverEvent {
+  ObserverEvent(
+      const char* name,
+      const std::vector<c10::IValue>& in,
+      const std::vector<c10::IValue>& out,
+      const TraceObserverContext* ctx)
+      : name_(name),
+        py_events_size_(ctx->py_events_size_),
+        enter_ns_(ctx->enter_ns_),
+        exit_ns_(now()) {
+    for (const auto& i : in) {
+      inputs_.push_back(to_metadata(i));
     }
-    for (auto& i : fn.outputs()) {
-        e.elements.emplace_back(i, /*is_input=*/false);
+    for (const auto& o : out) {
+      outputs_.push_back(to_metadata(o));
     }
+  }
 
-    observer_events_.push_back(e);
+  std::string name_;
+  std::vector<Metadata> inputs_;
+  std::vector<Metadata> outputs_;
+  size_t py_events_size_;
+  int64_t enter_ns_;
+  int64_t exit_ns_;
+};
+
+std::vector<ObserverEvent> observer_events_;
+
+std::unique_ptr<at::ObserverContext> onFunctionEnter(
+    const at::RecordFunction& fn) {
+  return std::make_unique<TraceObserverContext>();
 }
 
-int py_profile_fn(PyObject *obj, PyFrameObject *frame, int event, PyObject *arg) {
-    PyEvent e {
-        event,
-        frame->f_code
-    };
-    py_events_.push_back(e);
-    return 0;
+void onFunctionExit(
+    const at::RecordFunction& fn,
+    at::ObserverContext* ctx_ptr) {
+  auto* trace_ctx_ptr = static_cast<TraceObserverContext*>(ctx_ptr);
+  TORCH_INTERNAL_ASSERT(trace_ctx_ptr != nullptr);
+
+  ObserverEvent e{fn.name().str(), fn.inputs(), fn.outputs(), trace_ctx_ptr};
+  observer_events_.push_back(e);
 }
+
+c10::optional<at::CallbackHandle> handle_;
 
 void enable_py_tracing() {
-    TORCH_CHECK(!handle_.has_value(), "enable_py_tracing() was called, but tracing is already enabled.");
-    auto callback = at::RecordFunctionCallback(onFunctionEnter, onFunctionExit)
-        .needsInputs(true)
-        .needsOutputs(true);
-    handle_ = at::addGlobalCallback(callback);
-    PyEval_SetProfile(py_profile_fn, NULL);
+  TORCH_CHECK(
+      !handle_.has_value(),
+      "enable_py_tracing() was called, but tracing is already enabled.");
+  auto callback = at::RecordFunctionCallback(onFunctionEnter, onFunctionExit)
+                      .needsInputs(true)
+                      .needsOutputs(true);
+  handle_ = at::addGlobalCallback(callback);
+  PyEval_SetProfile(py_profile_fn, NULL);
 }
 
-std::tuple<std::vector<ObserverEvent>, std::vector<PyEvent>> disable_py_tracing() {
-    TORCH_CHECK(handle_.has_value(), "disable_py_tracing() was called, but tracing is not active.");
-    at::removeCallback(handle_.value());
-    handle_.reset();
-    PyEval_SetProfile(NULL, NULL);
-    std::vector<ObserverEvent> observer_out(observer_events_);
-    observer_events_.clear();
+std::tuple<std::vector<ObserverEvent>, std::vector<PyEvent>>
+disable_py_tracing() {
+  TORCH_CHECK(
+      handle_.has_value(),
+      "disable_py_tracing() was called, but tracing is not active.");
+  at::removeCallback(handle_.value());
+  handle_.reset();
+  PyEval_SetProfile(NULL, NULL);
+  std::vector<ObserverEvent> observer_out(observer_events_);
+  observer_events_.clear();
 
-    std::vector<PyEvent> py_out(py_events_);
-    py_events_.clear();
+  std::vector<PyEvent> py_out(py_events_);
+  py_events_.clear();
 
-    return {observer_out, py_out};
+  return {observer_out, py_out};
 }
 
 void register_trace(py::module& py_module) {
-    py::module trace_module = py_module.def_submodule("_trace");
+  py::module trace_module = py_module.def_submodule("_trace");
 
-    py::enum_<Tag>(trace_module, "Tag")
-        .value("kTensor", Tag::kTensor)
-        .value("kInt", Tag::kInt)
-        .value("kOther", Tag::kOther);
+  // TODO: see about actually retaining the pyobject in some circumstances.
+  py::class_<PyEvent>(trace_module, "PyEvent")
+      .def_property_readonly(
+          "event", [](const PyEvent& self) { return self.event_; })
+      .def_property_readonly(
+          "time", [](const PyEvent& self) { return self.time_ns_; })
+      .def_property_readonly("f_code_id", [](const PyEvent& self) {
+        // NOTE: 
+        //  This isn't safe, because f_code could have been collected 
+        //  since the profile was collected. However for an initial hack we
+        //  just YOLO cast, and we'll deal with safety later.
+        return py::cast<py::object>((PyObject*)(self.f_code_));
+      });
 
-    py::class_<Element>(trace_module, "Element")
-        .def_property_readonly("is_input", [](const Element& self) { return self.is_input_; })
-        .def_property_readonly("tag", [](const Element& self) { return self.tag_; })
-        .def_property_readonly("id", [](const Element& self) { return self.id_; });
+  py::class_<TensorMetadata>(trace_module, "TensorMetadata")
+      .def_property_readonly(
+          "hash", [](const TensorMetadata& self) { return self.hash_; });
 
-    py::class_<ObserverEvent>(trace_module, "ObserverEvent")
-        .def_property_readonly("name", [](const ObserverEvent& self) { return self.name; })
-        .def_property_readonly("elements", [](const ObserverEvent& self) { return self.elements; });
+  py::class_<IntMetadata>(trace_module, "IntMetadata")
+      .def_property_readonly(
+          "value", [](const IntMetadata& self) { return self.value_; });
 
-    py::class_<PyEvent>(trace_module, "PyEvent")
-        .def_property_readonly("event", [](const PyEvent& self) { return self.event; })
-        .def_property_readonly("f_code_id", [](const PyEvent& self) { return (size_t)(self.f_code); });
+  py::class_<OtherMetadata>(trace_module, "OtherMetadata")
+      .def_property_readonly(
+          "id", [](const OtherMetadata& self) { return self.id_; });
 
-    trace_module.def(
-        "_enter_module_trace",
-        &enable_py_tracing
-    );
+  py::class_<ObserverEvent>(trace_module, "ObserverEvent")
+      .def_property_readonly(
+          "name", [](const ObserverEvent& self) { return self.name_; })
+      .def_property_readonly(
+          "inputs", [](const ObserverEvent& self) { return self.inputs_; })
+      .def_property_readonly(
+          "outputs", [](const ObserverEvent& self) { return self.outputs_; })
+      .def_property_readonly(
+          "py_events_size",
+          [](const ObserverEvent& self) { return self.py_events_size_; })
+      .def_property_readonly(
+          "enter_time",
+          [](const ObserverEvent& self) { return self.enter_ns_; })
+      .def_property_readonly(
+          "exit_time", [](const ObserverEvent& self) { return self.exit_ns_; });
 
-    trace_module.def(
-        "_exit_module_trace",
-        &disable_py_tracing
-    );
+  trace_module.def("_enter_module_trace", &enable_py_tracing);
+
+  trace_module.def("_exit_module_trace", &disable_py_tracing);
 }
 
-}}}  // torch::profiler::impl
+} // namespace impl
+} // namespace profiler
+} // namespace torch
