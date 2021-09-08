@@ -398,6 +398,9 @@ void CppCodeGen::call_raw(const std::vector<void*>& args) {
   // and call the library here.
   os() << "int main() {}" << std::endl;
 }
+void CppCodeGen::call_fast(void* const* args, size_t output_num_elements) {
+  TORCH_INTERNAL_ASSERT(false, "CppCodeGen: Cannot call cpp code");
+}
 
 RegisterCodeGen<CppCodeGen> cpp_codegen_reg("cpp_codegen");
 

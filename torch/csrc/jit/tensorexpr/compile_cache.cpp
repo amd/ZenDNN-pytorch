@@ -218,9 +218,9 @@ struct SpecializationKey {
 };
 #pragma pack(pop)
 
-class CompileResultBase : public KernelScopedObject {
+class CompileResultBase {
  public:
-  ~CompileResultBase() override = default;
+  virtual ~CompileResultBase() = default;
   virtual void set_code(const py::object& cg) = 0;
   virtual void set_shape_from(
       const std::vector<std::pair<int, int>>& indices) = 0;
@@ -422,7 +422,7 @@ class alignas(64) CompileCache3 {
     std::vector<CompileCacheBackwards> backwards_functions_;
     std::vector<py::object> objects_; // for ref counting
   };
-  typedef std::map<SpecializationKeys, CompileResultImpl*, CmpLess> Cache;
+  typedef std::map<SpecializationKeys, std::unique_ptr<CompileResultImpl>, CmpLess> Cache;
 
   void check_dispatch_keys(const SpecializationKeys& key) {
     at::DispatchKeySet ks;
@@ -449,17 +449,16 @@ class alignas(64) CompileCache3 {
     throw std::runtime_error(ss.str());
   }
 
-  CompileResultImpl* compile(const SpecializationKeys& key, at::Tensor* args) {
+  std::unique_ptr<CompileResultImpl> compile(const SpecializationKeys& key, at::Tensor* args) {
     // handle a cache miss by creating a new specialized implementation
     check_dispatch_keys(key);
-    KernelScope scope(&arena_);
-    auto cr = new CompileResultImpl();
+    auto cr = std::make_unique<CompileResultImpl>();
     std::vector<py::object> spec;
     spec.reserve(Counts::num_keys);
     for (int i = 0; i < Counts::num_keys; ++i) {
       spec.emplace_back(key[i].to_python(args[i], i >= Counts::num_in));
     }
-    compile_fn_(spec, CompileResultProxy(cr));
+    compile_fn_(spec, CompileResultProxy(cr.get()));
     cr->error_checks();
     return cr;
   }
@@ -469,11 +468,10 @@ class alignas(64) CompileCache3 {
       at::Tensor* args) {
     auto item = cache_.find(key); // protected by GIL
     if (C10_LIKELY(item != cache_.end())) {
-      return item->second;
+      return item->second.get();
     } else { // cache miss
-      auto cr = compile(key, args);
-      cache_.emplace(std::make_pair(key, cr));
-      return cr;
+      auto iter = cache_.emplace(key, compile(key, args)).first;
+      return iter->second.get();
     }
   }
 
@@ -535,7 +533,6 @@ class alignas(64) CompileCache3 {
 
  public:
   Cache cache_;
-  KernelArena arena_;
   py::object compile_fn_;
 };
 
