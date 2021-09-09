@@ -714,6 +714,11 @@ void initTensorExprBindings(PyObject* module) {
           [](TensorExprKernel& self) { return self.getCodeGenStmt(); },
           py::return_value_policy::reference)
       .def(
+          "recompile_with_randomized_loopnest",
+          [](TensorExprKernel& self) {
+            self.recompileWithRandomizedLoopNest();
+          })
+      .def(
           "get_code_text",
           [](TensorExprKernel& self, const std::string& attr = "") {
             return self.getCodeText(attr);

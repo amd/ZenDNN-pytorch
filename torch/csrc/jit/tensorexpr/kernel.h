@@ -6,6 +6,8 @@
 #include <torch/csrc/jit/tensorexpr/analysis.h>
 #include <torch/csrc/jit/tensorexpr/codegen.h>
 #include <torch/csrc/jit/tensorexpr/tensor.h>
+#include <torch/csrc/jit/passes/utils/subgraph_utils.h>
+#include <torch/csrc/jit/tensorexpr/loopnest.h>
 
 namespace torch {
 namespace jit {
@@ -170,6 +172,8 @@ class TORCH_API TensorExprKernel {
     return bufferArgs_;
   }
 
+  void recompileWithRandomizedLoopNest();
+
  private:
   enum BackendType {
     kUninitialized,
@@ -214,7 +218,7 @@ class TORCH_API TensorExprKernel {
 
   void bindConstant(const torch::jit::Value* v);
 
-  StmtPtr transformLoops(BackendType backendType, StmtPtr st);
+  StmtPtr transformLoops(BackendType backendType, torch::jit::tensorexpr::LoopNest st);
 
   std::string getCodeGenName(BackendType backendType);
 
@@ -263,6 +267,7 @@ class TORCH_API TensorExprKernel {
   };
 
   int64_t nInputs_ = 0;
+  StmtPtr block_ptr_;
   std::vector<CodeGen::BufferArg> bufferArgs_;
   std::vector<std::vector<int64_t>> tensorOutputSizes_;
   std::vector<std::vector<int64_t>> tensorOutputStrides_;

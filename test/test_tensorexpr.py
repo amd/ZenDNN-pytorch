@@ -54,12 +54,18 @@ class TestTensorExprFuser(BaseTestClass):
             return aaa
 
         traced = torch.jit.trace(easy, (torch.rand(1024), torch.rand(1024)))
-
         a = torch.rand(1024)
         b = torch.rand(1024)
         x = warmup_and_run_forward(traced, a, b)
         self.assertLastGraphAllFused()
         np.testing.assert_allclose(a.numpy() + b.numpy(), x.numpy())
+        
+        kernel = torch._C._te.TensorExprKernel(traced.graph)
+        print(kernel.run((a, b)))
+        print(kernel.recompile_with_randomized_loopnest())
+        print(kernel.run((a, b)))
+        assert False, kernel
+
 
     def test_three_arg(self):
         def easy(x, y, z):

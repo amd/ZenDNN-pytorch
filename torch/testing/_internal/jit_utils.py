@@ -510,6 +510,7 @@ class JitTestCase(JitCommonTestCase):
                     python_outputs = python_fn(*inputs)
                 self.assertEqual(python_outputs, script_outputs, atol=atol, rtol=rtol)
                 self.assertEqual(script_outputs, opt_script_outputs, atol=atol, rtol=rtol)
+                print("Animesh")
                 return scripted_fn
 
     def checkTrace(self, func, reference_tensors, input_tensors=None,

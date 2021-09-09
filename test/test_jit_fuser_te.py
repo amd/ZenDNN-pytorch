@@ -195,6 +195,14 @@ class TestTEFuser(JitTestCase):
             scripted = self.checkScript(func, (a,))
             self.assertLastGraphAllFused()
 
+            traced = torch.jit.trace(func, a)
+            kernel = torch._C._te.TensorExprKernel(traced.graph)
+            ref = kernel.run((a,))
+            kernel.recompile_with_randomized_loopnest()
+            res = kernel.run((a,))
+            import numpy as np
+            np.testing.assert_allclose(ref.numpy(), res.numpy())
+
     def test_unsqueeze_size_calculation(self):
         for device in self.devices:
             def foo(b, d):
@@ -1768,9 +1776,9 @@ class TestTEFuser(JitTestCase):
         def eager(input, weight, bias):
             return torch.conv2d(input, weight, bias, stride=1, padding=1, groups=72)
 
-        input = torch.rand((1, 72, 56, 56), dtype=torch.float)
-        weight = torch.rand((72, 1, 3, 3), dtype=torch.float)
-        bias = torch.rand((72), dtype=torch.float)
+        input = torch.rand((1, 72, 56, 56), dtype=torch.float, device='cpu')
+        weight = torch.rand((72, 1, 3, 3), dtype=torch.float, device='cpu')
+        bias = torch.rand((72), dtype=torch.float, device='cpu')
 
         script = self.checkScript(eager, (input, weight, bias))
         self.assertAllFused(script.graph_for(input, weight, bias))

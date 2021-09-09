@@ -1,5 +1,6 @@
 #include <c10/util/variant.h>
 #include <torch/csrc/jit/tensorexpr/kernel.h>
+#include <ctime>
 
 #include <ATen/ExpandUtils.h>
 #include <ATen/Parallel.h>
@@ -117,6 +118,15 @@ bool fallbackEnforced() {
     return true;
   }
   return false;
+}
+
+int64_t randomTransformsRequested() {
+  static const char* enable_c_str =
+      std::getenv("PYTORCH_TENSOREXPR_RANDOM_TRANSFORM_SEED");
+  if (!enable_c_str) {
+    return 0;
+  }
+  return std::stoi(std::string(enable_c_str));
 }
 
 bool dontUseLLVMFlag() {
@@ -2643,10 +2653,9 @@ static void parallelizeOuterLoops(LoopNest& l, Bufs&& bufs) {
   }
 }
 
-StmtPtr TensorExprKernel::transformLoops(BackendType backendType, StmtPtr st) {
-  torch::jit::tensorexpr::LoopNest l(st, bufOutputs_);
+StmtPtr TensorExprKernel::transformLoops(BackendType backendType, torch::jit::tensorexpr::LoopNest l) {
+  // torch::jit::tensorexpr::LoopNest l(st, bufOutputs_);
   GRAPH_DEBUG("Original Stmt:\n", std::to_string(l.root_stmt()), "\n");
-
   bool hasReduction = NodeFinder<ReduceOp>::find(l.root_stmt()).size() != 0;
 
   // For Block codegen we create a map of tensor dims before
@@ -3203,7 +3212,9 @@ void TensorExprKernel::compile() {
   }
 
   BackendType backendType = inferBackendTypeFromDevice(device_);
-  StmtPtr stmt = transformLoops(backendType, block);
+  block_ptr_ = block;
+  torch::jit::tensorexpr::LoopNest l(block, bufOutputs_);
+  StmtPtr stmt = transformLoops(backendType, l);
 
   for (auto c : constants_) {
     bufferArgs_.emplace_back(BufHandle(c.buf));
@@ -3297,6 +3308,29 @@ std::vector<CodeGen::CallArg> TensorExprKernel::prepareRunArgs(
 
 StmtPtr TensorExprKernel::getCodeGenStmt() {
   return codegen_->stmt();
+}
+
+void TensorExprKernel::recompileWithRandomizedLoopNest() {
+  BackendType backendType = inferBackendTypeFromDevice(device_);
+  torch::jit::tensorexpr::LoopNest l(block_ptr_, bufOutputs_);
+  int64_t random_tr_seed = randomTransformsRequested();
+  if (random_tr_seed) {
+    if (random_tr_seed == -1)
+      random_tr_seed = std::time(nullptr);
+    l.randomTransform(random_tr_seed);
+    GRAPH_DEBUG(
+        "After random transform:\n", std::to_string(l.root_stmt()), "\n");
+  }
+
+  StmtPtr stmt = transformLoops(backendType, l);
+
+  // Generate code.
+  codegen_ = CreateCodeGen(
+      getCodeGenName(backendType),
+      stmt,
+      bufferArgs_,
+      device_,
+      SubgraphUtils::generateNameForGraph(graph_));
 }
 
 void TensorExprKernel::runKernel(Stack& stack) {
