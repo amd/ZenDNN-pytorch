@@ -11,6 +11,9 @@ class Language(enum.Enum):
     CPP = 1
 
 
+LANGUAGE_STR_LITERALS = Literal["py", "python", "c++", "cpp"]
+
+
 @dataclasses.dataclass(init=False, repr=False, eq=True, frozen=True)
 class WorkSpec:
     """Container to specifty execution parameters. (except globals)"""
@@ -19,7 +22,7 @@ class WorkSpec:
     teardown: str
     global_setup: str
     num_threads: int
-    language: typing.Union[Language, Literal["py", "python", "c++", "cpp"]]
+    language: Language
 
     def __init__(
         self,
@@ -28,7 +31,7 @@ class WorkSpec:
         teardown: str,
         global_setup: str,
         num_threads: int,
-        language: typing.Union[Language, str]
+        language: typing.Union[Language, LANGUAGE_STR_LITERALS]
     ) -> None:
         # timeit.Timer allows a callable, however due to the use of
         # subprocesses in some code paths we must be less permissive.

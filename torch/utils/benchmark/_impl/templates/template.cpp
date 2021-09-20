@@ -58,10 +58,11 @@ float measure_wall_time(int n_iter, int n_warmup_iter, bool cuda_sync) {
 
 void collect_callgrind(int n_iter, int n_warmup_iter) {
     // NB:
-    //  There is no `pybind11::gil_scoped_release`, because Callgrind is
-    //  process level instrumentation and we don't want Python to context
-    //  switch and perturb the measurement. (And we don't expect concurrent
-    //  measurements.)
+    //  We need `pybind11::gil_scoped_release` not because we want to measure
+    //  in parallel, but rather because Autograd requires that the GIL is not
+    //  held. (Since in any other context holding the GIL during backward is a
+    //  pessimization.)
+    pybind11::gil_scoped_release no_gil;
 
     // SETUP_TEMPLATE_LOCATION
 

@@ -23,12 +23,14 @@ class CallgrindTask(task_base.TaskBase):
     def worker(self) -> callgrind_worker.CallgrindWorker:
         return self._worker
 
-    def collect(self, n_iter: int) -> None:
+    def collect(self, n_iter: int) -> str:
         self._collect(
             n_iter=n_iter,
             n_warmup_iter=min(n_iter, 10),
             num_threads=self._work_spec.num_threads,
         )
+
+        return self.worker.out_files[-1]
 
     @task_base.run_in_worker(scoped=True)
     @staticmethod

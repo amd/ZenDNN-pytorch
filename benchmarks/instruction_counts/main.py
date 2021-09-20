@@ -12,19 +12,19 @@ from typing import List
 from applications import ci
 from core.expand import materialize
 from definitions.standard import BENCHMARKS
-from execution.runner import Runner
-from execution.work import WorkOrder
+from execution.runner import Runner, WorkOrder
 
 
 def main(argv: List[str]) -> None:
     work_orders = tuple(
-        WorkOrder(label, autolabels, timer_args, timeout=600, retries=2)
-        for label, autolabels, timer_args in materialize(BENCHMARKS)
+        WorkOrder(label, autolabels, work_spec, source_cmd=None, prior_run_worker_ids=[])
+        for label, autolabels, work_spec in materialize(BENCHMARKS)
     )
 
-    results = Runner(work_orders).run()
-    for work_order in work_orders:
-        print(work_order.label, work_order.autolabels, work_order.timer_args.num_threads, results[work_order].instructions)
+    Runner(work_orders).run()
+    # results = Runner(work_orders).run()
+    # for work_order in work_orders:
+    #     print(work_order.label, work_order.autolabels, work_order.timer_args.num_threads, results[work_order].instructions)
 
 
 if __name__ == "__main__":

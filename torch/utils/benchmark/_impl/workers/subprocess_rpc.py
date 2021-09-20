@@ -23,8 +23,7 @@ import typing
 
 
 # Shared static values / namespace between worker and parent
-BOOTSTRAP_IMPORT_SUCCESS = b"BOOTSTRAP_IMPORT_SUCCESS"
-BOOTSTRAP_INPUT_LOOP_SUCCESS = b"BOOTSTRAP_INPUT_LOOP_SUCCESS"
+BOOTSTRAP_SUCCESS = b"BOOTSTRAP_SUCCESS"
 WORKER_IMPL_NAMESPACE = "__worker_impl_namespace"
 
 # Constants for passing to and from pipes
@@ -218,11 +217,11 @@ class Pipe:
 
     def _read(self, size: int) -> bytes:
         """Handle the low level details of reading from the PIPE."""
-        if self.read_fd is None:
+        if self.read_handle is None:
             raise IOError("Cannot read from PIPE, we do not have the read handle")
 
         with _TimeoutPIPE.maybe_timeout_read(self):
-            raw_msg = os.read(self.read_fd, len(_CHECK) + size)
+            raw_msg = os.read(self.read_handle, len(_CHECK) + size)
 
         check_bytes, msg = raw_msg[:len(_CHECK)], raw_msg[len(_CHECK):]
         if check_bytes == _TIMEOUT:
@@ -489,10 +488,22 @@ def _run_block(
 def run_loop(
     *,
     input_handle: int,
-    output_pipe: Pipe,
+    output_handle: int,
     load_handle: int,
+    sys_path: typing.List[str],
+    torch_path: str,
 ) -> None:
     input_pipe = Pipe(read_handle=input_handle)
+    output_pipe = Pipe(write_handle=output_handle)
+
+    # The parent gets priority, but a subclass could set PYTHONPATH so we have
+    # to respect extra paths.
+    sys_path.extend([i for i in sys.path if i not in sys_path])
+    sys.path = sys_path
+
+    import torch
+    if torch.__file__ != torch_path:
+        raise OSError(f"Failed to import correct PyTorch: `{torch.__file__}` vs. `{torch_path}`")
 
     # In general, we want a clean separation between user code and framework
     # code. However, certain methods in SubprocessWorker (store and load)
@@ -507,7 +518,7 @@ def run_loop(
         }
     }
 
-    output_pipe.write(BOOTSTRAP_INPUT_LOOP_SUCCESS)
+    output_pipe.write(BOOTSTRAP_SUCCESS)
     while True:
         _run_block(
             input_pipe=input_pipe,

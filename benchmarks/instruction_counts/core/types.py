@@ -1,7 +1,7 @@
 """Type annotations for various benchmark objects."""
 from typing import Any, Dict, Optional, Tuple, Union
 
-from core.api import AutoLabels, TimerArgs, GroupedBenchmark
+from core.api import AutoLabels, WorkSpec, GroupedBenchmark
 
 
 # =============================================================================
@@ -14,7 +14,7 @@ The end state for representing a benchmark is:
       Tuple[
           Tuple[str, ...],      # Primary key
           core.api.AutoLabels,  # Secondary key
-          core.api.TimerArgs,   # Value
+          core.api.WorkSpec,    # Value
       ],
       ...
   ]
@@ -23,8 +23,8 @@ The end state for representing a benchmark is:
 For example:
   ```
   [
-      (("pointwise", "add"), AutoLabels(..., Language.PYTHON), TimerArgs(...)),
-      (("pointwise", "add"), AutoLabels(..., Language.CPP), TimerArgs(...)),
+      (("pointwise", "add"), AutoLabels(..., Language.PYTHON), WorkSpec(...)),
+      (("pointwise", "add"), AutoLabels(..., Language.CPP), WorkSpec(...)),
       ...
   ]
   ```
@@ -53,8 +53,8 @@ TL;DR
     flat dictionary and everything will work. For example:
     ```
     {
-        "case 0": TimerArgs(...),
-        "case 1": TimerArgs(...),
+        "case 0": WorkSpec(...),
+        "case 1": WorkSpec(...),
         "case 2": GroupedStmts(...),
         ...
     }
@@ -72,14 +72,14 @@ _Label = Union[Label, Optional[str]]
 # So while the correct type definition would be:
 #   _Value = Union[
 #       # Base case:
-#       Union[TimerArgs, GroupedBenchmark],
+#       Union[WorkSpec, GroupedBenchmark],
 #
 #       # Recursive case:
 #       Dict[Label, "_Value"],
 #   ]
 # we instead have to use Any and rely on runtime asserts when flattening.
 _Value = Union[
-    Union[TimerArgs, GroupedBenchmark],
+    Union[WorkSpec, GroupedBenchmark],
     Dict[_Label, Any],
 ]
 
@@ -88,7 +88,7 @@ Definition = Dict[_Label, _Value]
 # We initially have to parse (flatten) to an intermediate state in order to
 # build TorchScript models since multiple entries will share the same model
 # artifact.
-FlatIntermediateDefinition = Dict[Label, Union[TimerArgs, GroupedBenchmark]]
+FlatIntermediateDefinition = Dict[Label, Union[WorkSpec, GroupedBenchmark]]
 
 # Final parsed schema.
-FlatDefinition = Tuple[Tuple[Label, AutoLabels, TimerArgs], ...]
+FlatDefinition = Tuple[Tuple[Label, AutoLabels, WorkSpec], ...]

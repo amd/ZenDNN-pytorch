@@ -1,258 +1,480 @@
-"""Run benchmarks while handling parallelism, isolation, and fault tolerance."""
-import math
-import multiprocessing
-import subprocess
+import collections
+import dataclasses
+# import math
+import multiprocessing.dummy
+import os
+import random
+import shutil
+import sys
+import tempfile
 import textwrap
 import threading
 import time
-from typing import Dict, List, Optional, Set, Tuple, Union
+import traceback
+import typing
 
-from execution.work import PYTHON_CMD, SHELL, InProgress, WorkOrder
-from worker.main import WorkerFailure, WorkerOutput
+from torch.utils.benchmark._impl import common
+from torch.utils.benchmark._impl.tasks.callgrind import CallgrindTask
+from torch.utils.benchmark._impl.workers import callgrind_worker
+from torch.utils.benchmark._impl.workers.subprocess_environment import EnvironmentSpec
 
-
-CPU_COUNT: int = multiprocessing.cpu_count()
-
-
-class WorkerFailed(Exception):
-    """Raised in the main process when a worker failure is detected."""
-    def __init__(self, cmd: str, wrapped_trace: Optional[str] = None) -> None:
-        self.cmd: str = cmd
-        self.wrapped_trace: Optional[str] = wrapped_trace
-        super().__init__()
+from core.api import AutoLabels, Language, WorkSpec
+from core.types import Label
 
 
-class CorePool:
-    """Allocator style helper class to assign individual tasks to a core range.
+CALLGRIND_N_ITER = 25
 
-    Pinning tasks to separate cores (or core ranges if `num_threads` > 1)
-    serves two purposes. First, it prevents the machine from being overloaded,
-    which can result in OOMs or Callgrind crashes. Second, it helps reduce
-    noise in the wall times, which are collected as a secondary metric. For
-    multi-threaded workloads, adjacency is important. Often pairs of cores
-    share silicon (e.g. cache), while far away cores may lie on separate NUMA
-    nodes. For this reason, CorePool will only allocate contiguous core ranges.
-    This falls short of full architecture awareness, and instead tries to find
-    a balance between rigor and engineering complexity.
-    """
-    def __init__(self, min_core_id: int, max_core_id: int) -> None:
-        assert min_core_id >= 0
-        assert max_core_id >= min_core_id
-        assert max_core_id < CPU_COUNT
 
-        self._min_core_id: int = min_core_id
-        self._max_core_id: int = max_core_id
-        self._num_cores = max_core_id - min_core_id + 1
-        print(f"Core pool created: cores {self._min_core_id}-{self._max_core_id}")
+#   The first few times we run a benchmark in Python the results vary slightly
+# as the interpreter "burns in". (e.g. various caches are populated.)
+# Unfortunately the "stable" instruction count varies from process to process.
+#   In order to minimize noise from this interpreter jitter, we require that
+# the first five measurements for a particular benchmark are performed in
+# different processes. After that, if there is still noise the subsequent
+# replicates are free to schedule on whatever worker is available. (As we're
+# unlikely to get a pristine result at that point.) For C++ we require two
+# separate processes just to check determinism. This is enforced by
+# `WorkUnit.excluded_workers`.
+MIN_INDEPENDENT_PROCS = {
+    Language.PYTHON: 7,
+    Language.CPP: 1,
+}
 
-        self._available: List[bool] = [
-            True for _ in range(min_core_id, min_core_id + self._num_cores)]
+IN_PROCESS_REPEATS = {
+    Language.PYTHON: 1,
+    Language.CPP: 9,
+}
 
-        self._reservations: Dict[str, Tuple[int, ...]] = {}
+PY_FOLLOW_UP_SIZE = 4
+PY_MAX_RUNS = MIN_INDEPENDENT_PROCS[Language.PYTHON] + PY_FOLLOW_UP_SIZE * 4
+
+
+class SourceToEnv:
+
+    _lock = threading.Lock()
+    _map: typing.Dict[str, EnvironmentSpec] = {}
+
+    @classmethod
+    def get(cls, source_cmd: typing.Optional[str] = None) -> EnvironmentSpec:
+        if source_cmd is None:
+            return EnvironmentSpec.default()
+
+        with cls._lock:
+            if source_cmd not in cls._map:
+                cls._map[source_cmd] = EnvironmentSpec.from_source_cmd(source_cmd=source_cmd)
+
+            return cls._map[source_cmd]
+
+
+class PinnedCallgrindWorker(callgrind_worker.CallgrindWorker):
+
+    _gomp_warned: bool = False
+
+    def __init__(
+        self,
+        source_cmd: typing.Optional[str],
+        affinity: typing.Tuple[int, ...],
+        **kwargs: typing.Any,
+    ) -> None:
+        self._source_cmd = source_cmd
+        self._affinity = affinity
+        self._affinity_str = ",".join([str(i) for i in self._affinity])
+
+        super().__init__(env_spec=SourceToEnv.get(source_cmd), **kwargs)
+
+        # Allow us to enforce exclusive ownership.
+        self.owned: bool = False
+
+        # We free workers on an LRU basis.
+        self.last_used = time.time()
+
+    @property
+    def args(self) -> typing.List[str]:
+        return ["taskset", "--cpu-list", self._affinity_str] + super().args
+
+    @property
+    def source_cmd(self) -> typing.Optional[str]:
+        return self._source_cmd
+
+    @property
+    def environ(self) -> typing.Dict[str, str]:
+        environ = super().environ
+        if environ.get("GOMP_CPU_AFFINITY", "") in environ and not self._gomp_warned:
+            self._gomp_warned = True
+
+            print(textwrap.dedent(f"""
+                ============================================================
+                == WARNING: GOMP_CPU_AFFINITY set ==========================
+                ============================================================
+
+                GOMP_CPU_AFFINITY={environ['GOMP_CPU_AFFINITY']}
+
+                This config interacts very strangely with Callgrind, and
+                causes I/O with os.pipe to serialize on a single core and
+                prevents any meaningful scaling of the benchmark runner. It
+                is STRONGLY advised that this flag be unset before running
+                the suite.
+            """).strip())
+
+        environ.update({
+            # Mitigate https://github.com/pytorch/pytorch/issues/37377
+            "MKL_THREADING_LAYER": "GNU",
+        })
+        return environ
+
+
+class BorrowedWorker:
+
+    def __init__(
+        self,
+        worker: PinnedCallgrindWorker,
+        is_new_worker: bool,
+        num_threads: int,
+        release_fn: typing.Callable[[PinnedCallgrindWorker, int], None],
+    ) -> None:
+        worker.owned, valid_worker = True, not worker.owned
+        assert valid_worker, f"{worker} is already owned"
+        self._worker: typing.Optional[PinnedCallgrindWorker] = worker
+        self.is_new_worker = is_new_worker
+        self._num_threads = num_threads
+        self._release_fn = release_fn
+
+    @property
+    def worker(self) -> PinnedCallgrindWorker:
+        worker = self._worker
+        assert worker is not None
+        return worker
+
+    @property
+    def num_threads(self) -> int:
+        return self._num_threads
+
+    def release(self) -> None:
+        worker = self._worker
+        if worker is None:
+            return
+
+        self._release_fn(worker, self.num_threads)
+        self._worker = None
+
+    def __del__(self) -> None:
+        # Release in dtor to ensure we can't leak workers.
+        self.release()
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkOrder:
+    label: Label
+    autolabels: AutoLabels
+    work_spec: WorkSpec
+    source_cmd: typing.Optional[str]
+
+    # NB: This field cannot be reassigned due to `frozen=True`, but the list may
+    #     be mutated. This is deliberate. See `excluded_workers` for details.
+    prior_run_worker_ids: typing.List[int]  # TODO: handle in __post_init__
+
+    def begin(self, worker: PinnedCallgrindWorker) -> None:
+        self.prior_run_worker_ids.append(id(worker))
+
+    @property
+    def excluded_workers(self) -> typing.Set[int]:
+        # See the note above `MIN_INDEPENDENT_PROCS` for details.
+        if len(self.prior_run_worker_ids) >= MIN_INDEPENDENT_PROCS[self.work_spec.language]:
+            return set()
+        return set(self.prior_run_worker_ids)
+
+    def __hash__(self) -> int:
+        return hash(id(self))
+
+
+class WorkerPool:
+
+    def __init__(
+        self,
+        affinity: typing.Optional[typing.List[int]] = None,
+    ) -> None:
+        self._affinity = tuple(affinity or os.sched_getaffinity(os.getpid()))
+
+        # Our goal is to reuse workers to save on startup time. As a result, we
+        # maintain a pool which is larger than the capacity that can be
+        # simultaneously scheduled.
+        self._max_scheduled_threads = len(self._affinity)
+        self._currently_scheduled_threads = 0
+        self._max_capacity = 2 * len(self._affinity)
+
+        self._lock = threading.RLock()
+        self._available_workers: typing.List[PinnedCallgrindWorker] = []
+        self._outstanding_workers: int = 0
+
+    def get(self, work_order: WorkOrder) -> typing.Optional[BorrowedWorker]:
+        num_threads = work_order.work_spec.num_threads
+        delete_queue: typing.List[PinnedCallgrindWorker] = []
+        with self._lock:
+            # Check if execution would put us over our concurrency limit.
+            if num_threads + self._currently_scheduled_threads > self._max_scheduled_threads:
+                return None
+
+            self._currently_scheduled_threads += num_threads
+            self._outstanding_workers += 1
+
+            # Check if we can reuse a worker.
+            excluded_worker_ids = work_order.excluded_workers
+            worker_candidates = [
+                w for w in self._available_workers
+                if w.source_cmd == work_order.source_cmd
+                and id(w) not in excluded_worker_ids
+            ]
+
+            # We found a worker that we can reuse.
+            if worker_candidates:
+                worker = random.choice(worker_candidates)
+                self._available_workers = [
+                    w for w in self._available_workers if w is not worker]
+                return BorrowedWorker(
+                    worker=worker,
+                    is_new_worker=False,
+                    num_threads=num_threads,
+                    release_fn=self.release_fn,
+                )
+
+            while len(self._available_workers) >= self._max_capacity:
+                worker_to_replace = min(self._available_workers, key=self.lru_key)
+                self._available_workers = [
+                    w for w in self._available_workers if w is not worker_to_replace]
+                assert not worker_to_replace.owned
+                delete_queue.append(worker_to_replace)
+
+        for w in delete_queue:
+            print(f"Deleting: {w}")
+            del w
+
+        # Worker creation is fairly expensive (>30 seconds) and we've already
+        # declared the thread and worker count increases above, so there's no
+        # need to hold the lock while we create our worker.
+        worker = PinnedCallgrindWorker(
+            source_cmd=work_order.source_cmd,
+            affinity=self._affinity,
+        )
+        return BorrowedWorker(
+            worker=worker,
+            is_new_worker=True,
+            num_threads=num_threads,
+            release_fn=self.release_fn,
+        )
+
+    def release_fn(self, worker: PinnedCallgrindWorker, num_threads: int) -> None:
+        with self._lock:
+            worker.owned = False
+            worker.last_used = time.time()
+            self._available_workers.append(worker)
+            self._currently_scheduled_threads -= num_threads
+            assert self._currently_scheduled_threads >= 0
+
+    @staticmethod
+    def lru_key(w: PinnedCallgrindWorker) -> float:
+        return w.last_used
+
+
+class RunnerSchedule:
+
+    def __init__(self, work_orders: typing.Tuple[WorkOrder, ...]) -> None:
+        self._iter_called = False
+        self._work_orders = work_orders
+        self._worker_pool = WorkerPool()
         self._lock = threading.Lock()
 
-    def reserve(self, n: int) -> Optional[str]:
-        """Simple first-fit policy.
+        self._dir = tempfile.mkdtemp()
+        self._out_index = 0
 
-        If successful, return a string for `taskset`. Otherwise, return None.
-        """
+        self._num_in_progress = {work_order: 0 for work_order in work_orders}
+        self._finished: typing.Dict[WorkOrder, typing.List[int]] = {work_order: [] for work_order in work_orders}
+        self._finished_verbose: typing.Dict[WorkOrder, typing.List[common.FunctionCounts]] = {
+            work_order: [] for work_order in work_orders}
+
+        self._queue: typing.Deque[WorkOrder] = collections.deque()
+        for i in range(max(MIN_INDEPENDENT_PROCS.values())):
+            for work_order in work_orders:
+                if i < MIN_INDEPENDENT_PROCS[work_order.work_spec.language]:
+                    self._enque(work_order)
+
+    def __del__(self) -> None:
+        shutil.rmtree(self._dir, ignore_errors=True)
+
+    def __iter__(self) -> "RunnerSchedule":
+        assert not self._iter_called, "RunnerSchedule is not reusable"
+        self._iter_called = True
+        return self
+
+    def __next__(self) -> WorkOrder:
+        try:
+            return self._queue.popleft()
+        except IndexError:
+            pass
+
+        raise StopIteration
+
+        # while True:
+        #     no_more_repeats = []
+        #     for work_order, num_in_progress in self._num_in_progress.items():
+        #         if num_in_progress:
+        #             continue
+
+        #         if work_order.work_spec.language == Language.CPP:
+        #             no_more_repeats.append(work_order)
+        #             continue
+
+        #         stmt_repr = work_order.work_spec.stmt.replace("\n", "\\n")[:100]
+
+        #         if len(self._finished[work_order]) >= PY_MAX_RUNS:
+        #             no_more_repeats.append(work_order)
+        #             print(f"Giving up: {stmt_repr}")
+        #             continue
+
+        #         finished = sorted(self._finished[work_order])
+        #         k = math.ceil(len(finished) / 2) - 2
+        #         mid_finished = finished[k:-k]
+        #         assert len(mid_finished) in (3, 4)
+
+        #         print(mid_finished, stmt_repr)
+        #         if len(set(mid_finished)) == 1:
+        #             # We have converged.
+        #             no_more_repeats.append(work_order)
+        #             print(f"Finished: {stmt_repr}")
+        #         else:
+        #             for _ in range(PY_FOLLOW_UP_SIZE):
+        #                 self._enque(work_order)
+
+        #     for work_order in no_more_repeats:
+        #         self._num_in_progress.pop(work_order)
+
+        #     if not self._num_in_progress:
+        #         raise StopIteration
+
+        #     try:
+        #         return self._queue.popleft()
+        #     except IndexError:
+        #         time.sleep(1)
+
+    def _enque(self, work_order: WorkOrder) -> None:
+        self._queue.append(work_order)
+        self._num_in_progress[work_order] += 1
+
+    def map_fn(self, work_order: WorkOrder) -> None:
+        try:
+            return self._map_fn(work_order)
+
+        except Exception as e:
+            # Threading will swallow exceptions, so we have to catch and
+            # manually print instead.
+            with self._lock:
+                print("\n")
+                traceback.print_exception(
+                    etype=type(e),
+                    value=e,
+                    tb=sys.exc_info()[2],
+                )
+                print()
+            raise
+
+        finally:
+            self._num_in_progress[work_order] -= 1
+
+    def _map_fn(self, work_order: WorkOrder) -> None:
+        while True:
+            borrowed_worker = self._worker_pool.get(work_order)
+            if borrowed_worker is not None:
+                break
+            time.sleep(0.5)
+
+        start_time = time.time()
+        work_order.begin(borrowed_worker.worker)
+        task = CallgrindTask(
+            work_spec=work_order.work_spec,
+            worker=borrowed_worker.worker,
+        )
+
+        begin_collect_time = time.time()
+        raw_out_files = []
+        for _ in range(IN_PROCESS_REPEATS[work_order.work_spec.language]):
+            raw_out_files.append(task.collect(n_iter=CALLGRIND_N_ITER))
+
+        out_files = []
         with self._lock:
-            for lower_index in range(self._num_cores - n + 1):
-                indices = tuple(range(lower_index, lower_index + n))
-                if all(self._available[i] for i in indices):
-                    for i in indices:
-                        self._available[i] = False
+            for raw_out_file in raw_out_files:
+                dest = os.path.join(self._dir, f"callgrind.out.{self._out_index}")
+                self._out_index += 1
+                shutil.move(raw_out_file, dest)
+                out_files.append(dest)
 
-                    lower_core = indices[0] + self._min_core_id
-                    upper_core = indices[-1] + self._min_core_id
-                    key = f"{lower_core}-{upper_core}" if n > 1 else f"{lower_core}"
-                    self._reservations[key] = indices
-                    return key
-        return None
+        borrowed_worker.release()
 
-    def release(self, key: str) -> None:
-        with self._lock:
-            for i in self._reservations[key]:
-                self._available[i] = True
-            self._reservations.pop(key)
+        begin_annotate_time = time.time()
+        for out_file in out_files:
+            counts = callgrind_worker.CallgrindWorker.annotate(fpath=out_file, inclusive=False)
+            os.remove(out_file)
+            total = int(counts.denoise().sum() // CALLGRIND_N_ITER)
+
+            with self._lock:
+                self._finished[work_order].append(total)
+                self._finished_verbose[work_order].append(counts)
+        done_time = time.time()
+
+        stmt_repr = work_order.work_spec.stmt.replace("\n", "\\n")[:60]
+        print(
+            f"{begin_collect_time - start_time:6.2f}    "
+            f"{begin_annotate_time - begin_collect_time:6.2f}    "
+            f"{done_time - begin_annotate_time:6.2f}    "
+            f"{work_order.work_spec.language:>3} "
+            f"{repr(sorted(self._finished[work_order])):<20} "
+            f"{stmt_repr}"
+        )
 
 
 class Runner:
     def __init__(
         self,
-        work_items: Tuple[WorkOrder, ...],
-        core_pool: Optional[CorePool] = None,
-        cadence: float = 1.0,
+        work_orders: typing.Tuple[WorkOrder, ...],
     ) -> None:
-        self._work_items: Tuple[WorkOrder, ...] = work_items
-        self._core_pool: CorePool = core_pool or CorePool(0, CPU_COUNT - 4)
-        self._cadence: float = cadence
+        # Reduce scale for testing.
+        work_orders = tuple([w for w in work_orders if w.work_spec.language == Language.CPP])
+        work_orders = tuple([w for w in work_orders if "backward" not in w.work_spec.stmt])
 
-        # Working state.
-        self._work_queue: List[WorkOrder] = list(work_items)
-        self._active_jobs: List[InProgress] = []
-        self._results: Dict[WorkOrder, WorkerOutput] = {}
+        self._work_orders = work_orders
 
-        # Debug information for ETA and error messages.
-        self._start_time: float = -1
-        self._durations: Dict[WorkOrder, float] = {}
-        self._currently_processed: Optional[WorkOrder] = None
+    def run(self) -> None:
+        start_time = time.time()
+        schedule = RunnerSchedule(self._work_orders)
+        num_workers = len(schedule._worker_pool._affinity)
+        with multiprocessing.dummy.Pool(num_workers) as pool:
+            for _ in pool.imap(schedule.map_fn, schedule, 1):
+                pass
 
-        if len(work_items) != len(set(work_items)):
-            raise ValueError('Duplicate work items.')
+        # for i, work_order in enumerate(schedule):
+        #     schedule.map_fn(work_order)
+        #     print(i)
 
-    def run(self) -> Dict[WorkOrder, WorkerOutput]:
-        try:
-            return self._run()
+        end_time = time.time()
+        print(f"Time: {end_time - start_time:.1f} sec")
 
-        except KeyboardInterrupt:
-            print("\n\nKeyboardInterrupt (ctrl-c) detected. Shutting down children.")
-            self._force_shutdown(verbose=False)
-            raise
+        # import pdb
+        # pdb.set_trace()
 
-        except subprocess.TimeoutExpired:
-            print("\n\nJob timed out. Shutting down children.")
-            self._force_shutdown(verbose=True)
-            raise
+        # for work_order, counts in schedule._finished_verbose.items():
+        #     counts = [count.as_standardized().denoise() for count in counts]
+        #     n_by_fn = {}
+        #     for count in counts:
+        #         for n, fn in count:
+        #             _ = n_by_fn.setdefault(fn, [])
+        #             n_by_fn[fn].append(int(n // CALLGRIND_N_ITER))
 
-        except WorkerFailed as e:
-            print('Shutting down all outstanding jobs before re-raising.')
-            self._force_shutdown(verbose=True)
-            print(f"Cmd: {e.cmd}")
-            if e.wrapped_trace:
-                print(e.wrapped_trace)
-            else:
-                print('Unknown failure. (Worker did not report exception contents.)')
-            raise
-
-        except BaseException:
-            print("\n\nUnknown exception. Shutting down jobs before re-raising.")
-            self._force_shutdown(verbose=True)
-            raise
-
-    def _run(self) -> Dict[WorkOrder, WorkerOutput]:
-        self._start_time = time.time()
-        self._canary_import()
-        while self._work_queue or self._active_jobs:
-            t0 = time.time()
-            self._update_active_jobs()
-            self._enqueue_new_jobs()
-            self._print_progress()
-            time.sleep(max(self._cadence - (time.time() - t0), 0.0))
-        print(f"\nTotal time: {time.time() - self._start_time:.0f} seconds")
-        return self._results.copy()
-
-    def _update_active_jobs(self) -> None:
-        active_jobs: List[InProgress] = []
-        for job in self._active_jobs:
-            self._currently_processed = job.work_order
-            if not job.check_finished():
-                active_jobs.append(job)
-                continue
-
-            result: Union[WorkerOutput, WorkerFailure] = job.result
-            if isinstance(result, WorkerOutput):
-                self._results[job.work_order] = result
-                assert job.cpu_list is not None
-                self._core_pool.release(job.cpu_list)
-                self._durations[job.work_order] = job.duration
-
-            else:
-                assert isinstance(result, WorkerFailure)
-                raise WorkerFailed(cmd=job.proc.cmd, wrapped_trace=result.failure_trace)
-        self._currently_processed = None
-        self._active_jobs.clear()
-        self._active_jobs.extend(active_jobs)
-
-    def _enqueue_new_jobs(self) -> None:
-        work_queue: List[WorkOrder] = []
-        for i, work_order in enumerate(self._work_queue):
-            self._currently_processed = work_order
-            cpu_list = self._core_pool.reserve(work_order.timer_args.num_threads)
-
-            if cpu_list is None:
-                work_queue.append(work_order)
-            else:
-                self._active_jobs.append(InProgress(work_order, cpu_list))
-
-                # Stagger creation. This helps with contention.
-                time.sleep(0.5)
-        self._currently_processed = None
-        self._work_queue.clear()
-        self._work_queue.extend(work_queue)
-
-    def _print_progress(self) -> None:
-        fraction = f"{len(self._results)} / {len(self._work_items)}"
-        elapsed = f"{time.time() - self._start_time:.0f} seconds"
-        if len(self._results) < 5:
-            eta = "Unknown"
-        else:
-            remaining = len(self._work_items) - len(self._results)
-            iters_remaining = math.ceil(remaining / self._core_pool._num_cores)
-            mean_time = sum(self._durations.values()) / len(self._durations)
-            eta_minutes = math.ceil(iters_remaining * mean_time / 60)
-            eta = f"~{eta_minutes:.0f} minute{'s' if eta_minutes > 1 else ''}"
-        print(f"\r{fraction} ({elapsed}), ETA: {eta}", end="")
-
-    def _force_shutdown(self, verbose: bool = False) -> None:
-        """Try to interrupt jobs, and kill if need be.
-        We would prefer to softly terminate jobs so that they have a chance to
-        clean up before shutting down.
-        """
-        for job in self._active_jobs:
-            job.proc.interrupt()
-
-        if verbose and self._currently_processed is not None:
-            print(textwrap.dedent(f"""
-                Failed when processing the following Job:
-                  Label:      {self._currently_processed.label}
-                  AutoLabels: {self._currently_processed.autolabels}
-                  Source cmd: {self._currently_processed.source_cmd}
-            """).strip() + "\n")
-
-        if self._active_jobs:
-            time.sleep(0.5)
-
-        remaining_jobs = [j for j in self._active_jobs if j.proc.poll() is None]
-        if remaining_jobs:
-            print(
-                f'SIGINT sent to {len(self._active_jobs)} jobs, '
-                f'{len(remaining_jobs)} have not yet exited.\n'
-                'Entering short cleanup loop, after which stragglers will '
-                'be forcibly terminated.'
-            )
-
-            for _ in range(5):
-                time.sleep(2.0)
-                remaining_jobs = [j for j in remaining_jobs if j.proc.poll() is None]
-                if remaining_jobs:
-                    print(f'{len(remaining_jobs)} still remain.')
-                else:
-                    print('All remaining jobs have gracefully terminated.')
-                    return
-
-            print(f'{len(remaining_jobs)} jobs refused to exit. Forcibly terminating.')
-            for j in remaining_jobs:
-                j.proc.terminate()
-
-    def _canary_import(self) -> None:
-        """Make sure we can import torch before launching a slew of workers."""
-        source_cmds: Set[str] = set()
-        for w in self._work_items:
-            if w.source_cmd is not None:
-                source_cmds.add(f"{w.source_cmd} && ")
-
-        for source_cmd in (source_cmds or {""}):
-            cmd = f'{source_cmd}{PYTHON_CMD} -c "import torch"'
-            proc = subprocess.run(
-                cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                encoding="utf-8",
-                executable=SHELL,
-            )
-
-            if proc.returncode:
-                raise ImportError(
-                    f'Failed to import torch in subprocess: {cmd}\n{proc.stdout}')
+        #     finished = sorted(schedule._finished[work_order])
+        #     k = math.ceil(len(finished) / 2) - 4
+        #     print(work_order.work_spec.stmt, finished[k:-k] or finished)
+        #     for fn, n_list in n_by_fn.items():
+        #         if len(n_list) > 11:
+        #             k = math.ceil(len(n_list) / 2) - 4
+        #             n_list = n_list[k:-k]
+        #         if len(set(n_list)) == 1:
+        #             continue
+        #         print(fn, sorted(n_list))
+        #     print()

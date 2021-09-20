@@ -8,18 +8,12 @@ import itertools as it
 import os
 import re
 import textwrap
-from typing import cast, List, Optional, Tuple, TYPE_CHECKING
+from typing import cast, List, Optional, Tuple
 import uuid
 
 import torch
 
-if TYPE_CHECKING:
-    # See the note in api.py for why this is necessary.
-    from torch.utils.benchmark.utils.timer import Language
-else:
-    from torch.utils.benchmark import Language
-
-from core.api import AutogradMode, AutoLabels, GroupedBenchmark, RuntimeMode, TimerArgs
+from core.api import AutogradMode, AutoLabels, GroupedBenchmark, Language, RuntimeMode, WorkSpec
 from core.types import FlatDefinition, FlatIntermediateDefinition, Label
 from core.utils import get_temp_dir
 
@@ -193,14 +187,14 @@ def materialize(benchmarks: FlatIntermediateDefinition) -> FlatDefinition:
     """Convert a heterogeneous benchmark into an executable state.
 
     This entails generation of TorchScript model artifacts, splitting
-    GroupedBenchmarks into multiple TimerArgs, and tagging the results with
+    GroupedBenchmarks into multiple WorkSpecs, and tagging the results with
     AutoLabels.
     """
-    results: List[Tuple[Label, AutoLabels, TimerArgs]] = []
+    results: List[Tuple[Label, AutoLabels, WorkSpec]] = []
 
     for label, args in benchmarks.items():
-        if isinstance(args, TimerArgs):
-            # User provided an explicit TimerArgs, so no processing is necessary.
+        if isinstance(args, WorkSpec):
+            # User provided an explicit WorkSpec, so no processing is necessary.
             auto_labels = AutoLabels(
                 RuntimeMode.EXPLICIT,
                 AutogradMode.EXPLICIT,
@@ -247,14 +241,15 @@ def materialize(benchmarks: FlatIntermediateDefinition) -> FlatDefinition:
                     """)
 
                 autolabels = AutoLabels(runtime, autograd, language)
-                timer_args = TimerArgs(
+                work_spec = WorkSpec(
                     stmt=stmt,
                     setup=setup,
+                    teardown="",
                     global_setup=global_setup,
                     num_threads=num_threads,
                     language=language,
                 )
 
-                results.append((label, autolabels, timer_args))
+                results.append((label, autolabels, work_spec))
 
     return tuple(results)

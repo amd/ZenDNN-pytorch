@@ -4,24 +4,12 @@ import enum
 import itertools as it
 import re
 import textwrap
-from typing import Dict, List, Optional, Set, Tuple, Union, TYPE_CHECKING
+from typing import Dict, List, Optional, Set, Tuple, Union
 
-from worker.main import WorkerTimerArgs
+from torch.utils.benchmark._impl import specification
 
-if TYPE_CHECKING:
-    # Benchmark utils are only partially strict compliant, so MyPy won't follow
-    # imports using the public namespace. (Due to an exclusion rule in
-    # mypy-strict.ini)
-    from torch.utils.benchmark.utils.timer import Language
-else:
-    from torch.utils.benchmark import Language
-
-
-# Note:
-#   WorkerTimerArgs is defined in worker.main so that the worker does not
-#   depend on any files, including core.api. We mirror it with a public symbol
-#   `TimerArgs` for API consistency.
-TimerArgs = WorkerTimerArgs
+Language = specification.Language
+WorkSpec = specification.WorkSpec
 
 
 class RuntimeMode(enum.Enum):
@@ -38,7 +26,7 @@ class AutogradMode(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class AutoLabels:
-    """Labels for a TimerArgs instance which are inferred during unpacking."""
+    """Labels for a WorkSpec instance which are inferred during unpacking."""
     runtime: RuntimeMode
     autograd: AutogradMode
     language: Language

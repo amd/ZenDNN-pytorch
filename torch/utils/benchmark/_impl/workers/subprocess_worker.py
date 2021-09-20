@@ -7,12 +7,12 @@ import pathlib
 import shutil
 import signal
 import subprocess
-import sys
 import tempfile
 import textwrap
 import typing
 
 from torch.utils.benchmark._impl.workers import base
+from torch.utils.benchmark._impl.workers import subprocess_environment
 from torch.utils.benchmark._impl.workers import subprocess_rpc
 
 
@@ -46,11 +46,17 @@ class SubprocessWorker(base.WorkerBase):
     """
 
     _working_dir: str
-    _alive: bool = False
     _bootstrap_timeout: int = 10  # seconds
 
-    def __init__(self, timeout: typing.Optional[float] = None) -> None:
+    def __init__(
+        self,
+        timeout: typing.Optional[float] = None,
+        env_spec: typing.Optional[subprocess_environment.EnvironmentSpec] = None,
+    ) -> None:
         super().__init__()
+        self._alive: bool = False
+        self._worker_bootstrap_finished: bool = False
+        self._env_spec = env_spec or subprocess_environment.EnvironmentSpec.default()
 
         # Log inputs and outputs for debugging.
         self._command_log = os.path.join(self.working_dir, "commands.log")
@@ -113,12 +119,11 @@ class SubprocessWorker(base.WorkerBase):
             encoding=subprocess_rpc.ENCODING,
             bufsize=1,
             cwd=os.getcwd(),
+            env=self.environ,
             **popen_kwargs,
         )
 
-        self._worker_bootstrap_finished: bool = False
         self._bootstrap_worker()
-        self._alive = True
 
     @property
     def working_dir(self) -> str:
@@ -131,7 +136,12 @@ class SubprocessWorker(base.WorkerBase):
 
     @property
     def args(self) -> typing.List[str]:
-        return [sys.executable, "-i", "-u"]
+        return [self._env_spec.py_executable, "-i", "-u"]
+
+    @property
+    def environ(self) -> typing.Optional[typing.Dict[str, str]]:
+        environ = self._env_spec.environ
+        return None if environ is None else environ.copy()
 
     def run(self, snippet: str) -> None:
         self._run(snippet)
@@ -177,24 +187,29 @@ class SubprocessWorker(base.WorkerBase):
         bootstrap_command = textwrap.dedent(f"""
             try:
                 import marshal
+                import os
                 import sys
-                sys_path_old = list(sys.path)
-                sys.path = marshal.loads(
-                    bytes.fromhex({repr(marshal.dumps(sys.path).hex())})
-                )
-                # The parent gets priority, but a subclass could set PYTHONPATH
-                # so we have to respect extra paths.
-                sys.path.extend([i for i in sys_path_old if i and i not in sys.path])
-                from components._impl.workers import subprocess_rpc
-                output_pipe = subprocess_rpc.Pipe(
-                    write_handle={self._output_pipe.write_handle})
-                output_pipe.write(subprocess_rpc.BOOTSTRAP_IMPORT_SUCCESS)
+                # Conventions are tightly coupled between `subprocess_worker`
+                # and `subprocess_rpc`, so it's not enough to import a
+                # `subprocess_rpc` module; it needs to be the same one that is
+                # imported by this file.
+                workers_dir = {repr(os.path.dirname(os.path.abspath(__file__)))}
+                sys.path = [workers_dir] + sys.path
+                import subprocess_rpc
+                sys.path = sys.path[1:]
+                assert subprocess_rpc.__file__ == os.path.join(workers_dir, "subprocess_rpc.py")
                 subprocess_rpc.run_loop(
                     input_handle={self._input_pipe.read_handle},
-                    output_pipe=output_pipe,
+                    output_handle={self._output_pipe.write_handle},
                     load_handle={self._load_pipe.write_handle},
+                    sys_path=marshal.loads(
+                        bytes.fromhex({repr(marshal.dumps(list(self._env_spec.sys_path)).hex())})
+                    ),
+                    torch_path={repr(self._env_spec.torch_path)},
                 )
-            except:
+            except BaseException:
+                import traceback
+                traceback.print_last()
                 sys.exit(1)
         """).strip()
 
@@ -223,10 +238,7 @@ class SubprocessWorker(base.WorkerBase):
                     timeout=self._bootstrap_timeout,
                 )
                 result = bootstrap_pipe.read()
-                assert result == subprocess_rpc.BOOTSTRAP_IMPORT_SUCCESS, result
-
-                result = bootstrap_pipe.read()
-                assert result == subprocess_rpc.BOOTSTRAP_INPUT_LOOP_SUCCESS, result
+                assert result == subprocess_rpc.BOOTSTRAP_SUCCESS, result
 
                 self._worker_bootstrap_finished = True
                 assert self._proc.poll() is None
@@ -239,6 +251,9 @@ class SubprocessWorker(base.WorkerBase):
                     f"    stdout:\n{textwrap.indent(stdout, ' ' * 8)}\n\n"
                     f"    stderr:\n{textwrap.indent(stderr, ' ' * 8)}"
                 )
+
+        assert self._proc.poll() is None
+        self._alive = True
 
     def _log_cmd(self, snippet: str) -> None:
         with open(self._command_log, "at", encoding="utf-8") as f:
@@ -298,7 +313,27 @@ class SubprocessWorker(base.WorkerBase):
             # We failed in the constructor, so there's nothing to clean up.
             return
 
-        self._input_pipe.write(subprocess_rpc.HARD_EXIT)
+        if not self.alive:
+            return
+
+        try:
+            self._input_pipe.write(subprocess_rpc.HARD_EXIT)
+
+        except OSError:
+            #   During program shutdown the file descriptors backing pipes may
+            # be released before we've had a chance to clean up. In that case
+            # trying to write to `self._input_pipe` will fail as the write_fd
+            # is no longer a valid descriptor.
+            #   In that case it's not particularly important that we go out of
+            # our way to clean up the subprocess (since it is spawned with
+            # `shell=False`). However it doesn't cost us anything to kick it on
+            # the way out.
+            try:
+                self._proc.terminate()
+            except PermissionError:
+                pass
+            return
+
         try:
             self._proc.wait(timeout=1)
 

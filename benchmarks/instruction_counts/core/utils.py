@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 from torch.utils.benchmark import _make_temp_dir
 
-from core.api import GroupedBenchmark, TimerArgs
+from core.api import GroupedBenchmark, WorkSpec
 from core.types import Definition, FlatIntermediateDefinition, Label
 
 
@@ -35,7 +35,7 @@ def _flatten(
             key_suffix = (k,)
 
         key: Label = key_prefix + key_suffix
-        if isinstance(value, (TimerArgs, GroupedBenchmark)):
+        if isinstance(value, (WorkSpec, GroupedBenchmark)):
             assert key not in result, f"duplicate key: {key}"
             result[key] = value
         else:
@@ -52,7 +52,7 @@ def flatten(schema: Definition) -> FlatIntermediateDefinition:
     for k, v in result.items():
         assert isinstance(k, tuple)
         assert all(isinstance(ki, str) for ki in k)
-        assert isinstance(v, (TimerArgs, GroupedBenchmark))
+        assert isinstance(v, (WorkSpec, GroupedBenchmark))
     return result
 
 
