@@ -5,10 +5,10 @@ import json
 import time
 from typing import Dict, List, Union
 
+from core.api import WorkSpec
 from core.expand import materialize
 from definitions.standard import BENCHMARKS
-from execution.runner import Runner
-from execution.work import WorkOrder
+from execution.runner import Runner, WorkOrder
 
 
 REPEATS = 5
@@ -36,8 +36,8 @@ def main(argv: List[str]) -> None:
         benchmarks = benchmarks[:10]
 
     work_orders = tuple(
-        WorkOrder(label, autolabels, timer_args, timeout=TIMEOUT, retries=RETRIES)
-        for label, autolabels, timer_args in benchmarks * REPEATS
+        WorkOrder(label, autolabels, work_spec, timeout=TIMEOUT, retries=RETRIES)
+        for label, autolabels, work_spec in benchmarks * REPEATS
     )
 
     keys = tuple({str(work_order): None for work_order in work_orders}.keys())
