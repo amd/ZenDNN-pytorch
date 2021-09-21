@@ -51,8 +51,9 @@ lazy_tensors::hash_t ComputeNodeKey(
         key, lazy_tensors::util::ShapeHash(
                  GetParameterShape(operands[i], *input_shapes[i])));
   }
+  auto shape = AtenToLazyShapeHelper(*node);
   key = lazy_tensors::util::HashCombine(
-      key, lazy_tensors::util::ShapeHash(node->shape()));
+      key, lazy_tensors::util::ShapeHash(shape));
   return lazy_tensors::util::HashCombine(key, node->node_hash());
 }
 

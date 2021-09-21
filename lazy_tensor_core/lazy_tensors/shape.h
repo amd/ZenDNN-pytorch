@@ -30,7 +30,9 @@ class Shape {
   Shape(lazy_tensors::Span<const Shape> element_shapes)
       : element_type_(PrimitiveType::TUPLE),
         element_shapes_(element_shapes.begin(), element_shapes.end()) {}
-
+  Shape(std::vector<Shape> element_shapes)
+      : element_type_(PrimitiveType::TUPLE),
+        element_shapes_(element_shapes.begin(), element_shapes.end()) {}
   Shape(const client::ShapeData& shape_data)
       : element_type_(shape_data.element_type()),
         dimensions_(shape_data.dimensions()),

@@ -59,13 +59,6 @@ std::string GetCurrentScope() {
   return scope;
 }
 
-ShapeCache* GetShapeCache() {
-  static lazy_tensors::int64 shape_cache_size =
-      lazy_tensors::sys_util::GetEnvInt("LTC_IR_SHAPE_CACHE_SIZE", 4096);
-  static ShapeCache* cache = new ShapeCache(shape_cache_size);
-  return cache;
-}
-
 void EmitShortFrameInfo(std::ostream& stream,
                         const std::vector<SourceLocation>& frames) {
   if (!frames.empty()) {
@@ -105,11 +98,11 @@ size_t Output::Hasher::operator()(const Output& output) const {
       reinterpret_cast<std::ptrdiff_t>(output.node), output.index);
 }
 
-const lazy_tensors::Shape& Output::shape() const {
+const lazy_tensors::Shape Output::shape() const {
   return lazy_tensors::Shape(node->aten_type(), node->aten_shape(index));
 }
 
-const lazy_tensors::Shape& Output::node_shape() const {
+const lazy_tensors::Shape Output::node_shape() const {
   return lazy_tensors::Shape(node->aten_type(), node->aten_shape());
 }
 lazy_tensors::hash_t Output::hash() const {
@@ -122,10 +115,10 @@ std::string Output::ToString() const {
   return ss.str();
 }
 
-const lazy_tensors::Shape& Value::shape() const {
+const lazy_tensors::Shape Value::shape() const {
   return lazy_tensors::Shape(node->aten_type(), node->aten_shape(index));
 }
-const lazy_tensors::Shape& Value::node_shape() const {
+const lazy_tensors::Shape Value::node_shape() const {
   return lazy_tensors::Shape(node->aten_type(), node->aten_shape());
 }
 lazy_tensors::hash_t Value::hash() const {
@@ -173,26 +166,6 @@ Node::Node(OpKind op, OpList operands,
     hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
   }
 }
-// Node::Node(OpKind op, OpList operands,
-//            const std::function<lazy_tensors::Shape()>& shape_fn,
-//            size_t num_outputs, lazy_tensors::hash_t hash_seed)
-//     : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
-//            hash_seed) {
-//   // Forward the constructor to the one above (with empty shape), so we have
-//   the
-//   // full hash information, then fetch/compute the real shape.
-//   shape_ = GetOpShape(shape_fn);
-// }
-
-// Node::Node(OpKind op, OpList operands, size_t num_outputs,
-//            lazy_tensors::hash_t hash_seed)
-//     : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
-//            hash_seed) {}
-
-// void Node::SetShapeDeferred(
-//     const std::function<lazy_tensors::Shape()>& shape_fn) {
-//   shape_ = GetOpShape(shape_fn);
-// }
 
 Node::Node(OpKind op, std::vector<int64_t> aten_shape,
            c10::ScalarType aten_type, size_t num_outputs,
@@ -206,7 +179,15 @@ Node::Node(OpKind op, std::vector<int64_t> aten_shape,
   metadata_.scope = GetCurrentScope();
   metadata_.frame_info = GetFrameInfo();
 }
-
+Node::Node(OpKind op, size_t num_outputs, lazy_tensors::hash_t hash_seed)
+    : op_(std::move(op)),
+      num_outputs_(num_outputs),
+      // TODO(whc) trying to adapt Node base to TsNode that takes ::Shape 
+      // and (ab)uses SetShapeDeferred to convet it into aten shape.
+      // what should be done for the hash in these cases?
+      // what is done for other nodes that have deferred shape setting?
+      node_hash_(lazy_tensors::util::HashCombine(op_.hash(), hash_seed)),
+      hash_(node_hash_) {}
 Node::~Node() {
   for (size_t i = 0; i < operands_as_outputs_.size(); ++i) {
     operands_[i]->RemoveUse(Use(this, i, operands_as_outputs_[i].index));

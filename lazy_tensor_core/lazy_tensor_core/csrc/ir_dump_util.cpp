@@ -129,7 +129,8 @@ std::string GenerateDotNodeLabel(
     const std::unordered_map<const Node*, size_t>& roots_ids) {
   static const size_t kMaxValueSize = 64;
   std::stringstream ss;
-  ss << node->op() << "\\n" << node->shape();
+  auto shape = AtenToLazyShapeHelper(*node);
+  ss << node->op() << "\\n" << shape;
   for (auto& tag : GetNodeTags(node)) {
     ss << "\\n" << tag.name << "=";
     if (tag.value.size() < kMaxValueSize) {
@@ -155,7 +156,8 @@ std::string GenerateDotNodeSpec(
 
 std::string GenerateTextNodeSpec(const Node* node, const NodeIdMap& id_map) {
   std::stringstream ss;
-  ss << node->shape() << " " << node->op() << "(";
+  auto shape = AtenToLazyShapeHelper(*node);
+  ss << shape << " " << node->op() << "(";
   size_t count = 0;
   for (auto& output : node->operands()) {
     if (count > 0) {

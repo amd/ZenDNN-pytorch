@@ -76,8 +76,8 @@ struct Output {
   // a multi-output node, the shape returned by this API will not be the full
   // tuple shape, but only the shape at index referred by this value.
   // To retrieve the full tuple shape in that case, use the node_shape() API.
-  const lazy_tensors::Shape& shape() const;
-  const lazy_tensors::Shape& node_shape() const;
+  const lazy_tensors::Shape shape() const;
+  const lazy_tensors::Shape node_shape() const;
 
   lazy_tensors::hash_t hash() const;
 
@@ -113,8 +113,8 @@ struct Value {
   // multi-output node, the shape returned by this API will not be the full
   // tuple shape, but only the shape at index referred by this value.
   // To retrieve the full tuple shape in that case, use the node_shape() API.
-  const lazy_tensors::Shape& shape() const;
-  const lazy_tensors::Shape& node_shape() const;
+  const lazy_tensors::Shape shape() const;
+  const lazy_tensors::Shape node_shape() const;
 
   lazy_tensors::hash_t hash() const;
 
@@ -157,6 +157,7 @@ inline std::ostream& operator<<(std::ostream& stream, const OpKind& op) {
 }
 
 using OpList = lazy_tensors::Span<const Value>;
+using AtenShape = std::vector<int64_t>;
 
 // A node in the graph. Nodes for operations which requires extra data to be
 // stored for lowering, should inherit from this class and add operation
@@ -165,10 +166,7 @@ using OpList = lazy_tensors::Span<const Value>;
 // field, or a tensor value might create a new NodeTensor with computation
 // client data handle in it.
 class Node {
-  using AtenShape = std::vector<int64_t>;
-
  public:
-   
   // Creates a new node with the given op name. The op is a unique identifier
   // for the operation. The num_outputs tells how many outputs a given operation
   // generates.
@@ -185,8 +183,8 @@ class Node {
   //      size_t num_outputs = 1, lazy_tensors::hash_t hash_seed = 0x5a2d296e9);
 
   // // The shape is set later.
-  // Node(OpKind op, OpList operands, size_t num_outputs = 1,
-  //      lazy_tensors::hash_t hash_seed = 0x5a2d296e9);
+  Node(OpKind op, OpList operands, size_t num_outputs = 1,
+       lazy_tensors::hash_t hash_seed = 0x5a2d296e9);
 
   // void SetShapeDeferred(const std::function<lazy_tensors::Shape()>&
   // shape_fn);
@@ -194,7 +192,7 @@ class Node {
   // Contructor used to create leaf nodes.
   Node(OpKind op, std::vector<int64_t> aten_shape, c10::ScalarType aten_type,
        size_t num_outputs, lazy_tensors::hash_t hash_seed);
-
+  Node(OpKind op, size_t num_outputs, lazy_tensors::hash_t hash_seed);
   virtual ~Node();
 
   const OpKind& op() const { return op_; }
@@ -210,7 +208,21 @@ class Node {
   // const lazy_tensors::Shape& shape(size_t output_index) const;
   const AtenShape& aten_shape(size_t output_index) const;
   const std::vector<int64_t>& aten_shape() const { return aten_shape_; }
+  const std::vector<AtenShape>& multi_out_aten_shape() const {
+    return multi_out_aten_shape_;
+  }
   const c10::ScalarType& aten_type() const { return aten_type_; }
+
+  void set_aten_shape(const AtenShape& aten_shape) { aten_shape_ = aten_shape; }
+
+  void set_aten_dtype(const c10::ScalarType& aten_type) {
+    aten_type_ = aten_type;
+  }
+
+  void set_aten_multi_out_shape(
+      const std::vector<AtenShape>& multi_out_aten_shape) {
+    multi_out_aten_shape_ = multi_out_aten_shape;
+  }
 
   const std::vector<Output>& operands() const { return operands_as_outputs_; }
 
@@ -264,7 +276,8 @@ class Node {
   // TODO(whc) use new names now to aid refactoring, but may want to rename to
   // 'shape', 'dtype' later
   AtenShape aten_shape_;
-  // TODO(whc) combine or keep separate (the multi-out field?) taken from XLA::shape
+  // TODO(whc) combine or keep separate (the multi-out field?) taken from
+  // XLA::shape
   std::vector<AtenShape> multi_out_aten_shape_;
   c10::ScalarType aten_type_;
   // A node holds a real reference to its operands.
@@ -284,6 +297,22 @@ class Node {
   // from UserMetaData.
   std::shared_ptr<UserMetaData> user_metadata_;
 };
+
+// TODO(whc) this is a helper to use during refactoring.  Ultimately
+// things using Node base shouldn't be expecting lazy_tensors::Shape
+lazy_tensors::Shape AtenToLazyShapeHelper(const Node& node) {
+  if (node.num_outputs() >= 1) {
+    return lazy_tensors::Shape(node.aten_type(), node.aten_shape());
+  } else {
+    std::vector<lazy_tensors::Shape> tuple_shapes;
+    tuple_shapes.reserve(node.multi_out_aten_shape().size());
+    for (size_t i = 0; i < node.multi_out_aten_shape().size(); i++) {
+      tuple_shapes.emplace_back(lazy_tensors::Shape(
+          node.aten_type(), node.multi_out_aten_shape().at(i)));
+    }
+    return lazy_tensors::Shape(tuple_shapes);
+  }
+}
 
 // RAII data structure to be used a stack variable to enter a new IR scope. IR
 // scope names will appear in the IR and will help identifying the source of the
