@@ -2028,8 +2028,6 @@ works_list = [
     'remainder.autodiffed',
     'reshape',
     'round',
-    'rsub',
-    'rsub.rsub_tensor',
     'rsqrt',
     'sigmoid',
     'sign',
