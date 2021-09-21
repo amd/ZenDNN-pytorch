@@ -5,6 +5,7 @@
 #include <ATen/TensorMeta.h>
 #include <ATen/TensorUtils.h>
 #include <ATen/native/cpu/utils.h>
+#include <ATen/native/Resize.h>
 #include <c10/util/SmallBuffer.h>
 
 #include <c10/core/TensorOptions.h>
@@ -147,6 +148,7 @@ static void nll_loss_out_frame(
 
   if (reduction == Reduction::None && n_dims == 2) {
     const auto batch_size = input.size(0);
+    at::native::resize_output(output, {batch_size});
 
     auto input_acc = input.accessor<scalar_t, 2>();
     auto target_acc = target.accessor<target_t, 1>();
@@ -176,6 +178,22 @@ static void nll_loss_out_frame(
     return;
   }
 
+  // produce scalar outputs for the reduction case
+  at::native::resize_output(output, {});
+
+  if (target.numel() == 0) {
+    // Here target (and input) have zero elements
+    // Mean reduction on empty tensors produces NaN. See the discussion in
+    // https://github.com/pytorch/pytorch/pull/64572#issuecomment-926504162
+    if (reduction == Reduction::Mean) {
+      output.fill_(std::numeric_limits<double>::quiet_NaN());
+    } else {
+      output.zero_();
+    }
+    total_weight.zero_();
+    return;
+  }
+
   auto input_contiguous = input.contiguous();
   auto target_contiguous = target.contiguous();
 
@@ -183,7 +201,6 @@ static void nll_loss_out_frame(
   const target_t* target_data = target_contiguous.data_ptr<target_t>();
 
   const int64_t ndim = input.dim();
-  TORCH_CHECK(ndim <= 2);
   const int64_t batch_size = ndim == 1 ? 1 : input.size(0);
 
   constexpr int64_t cascade_sum_num_levels = 8;
@@ -244,9 +261,9 @@ static void nll_loss_out_frame(
                                         std::end(loss_partial_sums),
                                         scalar_t{0});
 
-  if (reduction == Reduction::Mean &&
-      (total_weight_val != 0 || input.numel() == 0)) {
-    // allow NaN result for total_weight_val == 0 case, see #15870
+  // Mean reduction with all ignored. See the discussion in
+  // https://github.com/pytorch/pytorch/pull/64572#issuecomment-926504162
+  if (reduction == Reduction::Mean && num_ignored != batch_size) {
     output_val /= total_weight_val;
   }
 
@@ -329,9 +346,6 @@ static void nll_loss_backward_out_frame(
   }
 
   const scalar_t total_weight_value = *total_weight.data_ptr<scalar_t>();
-  if (total_weight_value <= 0) {
-    return;
-  }
 
   const scalar_t grad_output_value = *grad_output.data_ptr<scalar_t>();
 
@@ -674,7 +688,7 @@ Tensor nll_loss_nd(
     } else {
       target_ = target_.view({n, 0, 0});
     }
-    if (!(reduction == Reduction::None)) {
+    if (reduction != Reduction::None) {
       ret = at::nll_loss2d(input_, target_, weight, reduction, ignore_index);
     } else {
       auto out =
