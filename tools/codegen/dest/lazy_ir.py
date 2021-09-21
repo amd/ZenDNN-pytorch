@@ -39,6 +39,7 @@ def node_ctor_inputs(func: LazyIrSchema) -> str:
 @dataclass(frozen=True)
 class LazyIR:
     backend_index: BackendIndex
+    node_base: str
 
     @method_with_native_function
     def __call__(self, f: Union[NativeFunctionsGroup, NativeFunction]) -> List[str]:
@@ -87,12 +88,13 @@ class LazyIR:
 
         return [f"""\
 {clone_handcoded_decl}
-class {schema.node_name} : public Node {{
+class {schema.node_name} : public {self.node_base} {{
  public:
   {schema.node_name}({node_ctor_args}, at::ScalarType out_dtype, std::vector<int64_t> out_shape)
-      : Node(ir::OpKind(at::aten::{func.name.name}),
+      : {self.node_base}(ir::OpKind(at::aten::{func.name.name}),
               {{{base_ctor_value_args}}},
-              /*shape=*/lazy_tensors::Shape(out_dtype, out_shape),
+              /*aten_shape*/out_shape,
+              /*aten_type*/out_dtype,
               /*num_outputs=*/{len(func.returns)},
               lazy_tensors::util::MHash({scalar_hashes})),
         out_dtype_(out_dtype),
@@ -114,6 +116,7 @@ class {schema.node_name} : public Node {{
       {clone_impl}
   }}
 
+  // TODO(whc) delete these as they are moved to node base
   c10::ScalarType out_dtype_;
   std::vector<int64_t> out_shape_;
   {scalar_decls}

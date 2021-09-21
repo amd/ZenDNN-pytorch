@@ -105,10 +105,13 @@ size_t Output::Hasher::operator()(const Output& output) const {
       reinterpret_cast<std::ptrdiff_t>(output.node), output.index);
 }
 
-const lazy_tensors::Shape& Output::shape() const { return node->shape(index); }
+const lazy_tensors::Shape& Output::shape() const {
+  return lazy_tensors::Shape(node->aten_type(), node->aten_shape(index));
+}
 
-const lazy_tensors::Shape& Output::node_shape() const { return node->shape(); }
-
+const lazy_tensors::Shape& Output::node_shape() const {
+  return lazy_tensors::Shape(node->aten_type(), node->aten_shape());
+}
 lazy_tensors::hash_t Output::hash() const {
   return lazy_tensors::util::HashCombine(node->hash(), index);
 }
@@ -119,10 +122,12 @@ std::string Output::ToString() const {
   return ss.str();
 }
 
-const lazy_tensors::Shape& Value::shape() const { return node->shape(index); }
-
-const lazy_tensors::Shape& Value::node_shape() const { return node->shape(); }
-
+const lazy_tensors::Shape& Value::shape() const {
+  return lazy_tensors::Shape(node->aten_type(), node->aten_shape(index));
+}
+const lazy_tensors::Shape& Value::node_shape() const {
+  return lazy_tensors::Shape(node->aten_type(), node->aten_shape());
+}
 lazy_tensors::hash_t Value::hash() const {
   return lazy_tensors::util::HashCombine(node->hash(), index);
 }
@@ -135,11 +140,13 @@ lazy_tensors::hash_t OpKind::hash() const {
   return lazy_tensors::util::StringHash(op.toQualString());
 }
 
-Node::Node(OpKind op, OpList operands, lazy_tensors::Shape shape,
-           size_t num_outputs, lazy_tensors::hash_t hash_seed)
+Node::Node(OpKind op, OpList operands, std::vector<int64_t> aten_shape,
+           c10::ScalarType aten_type, size_t num_outputs,
+           lazy_tensors::hash_t hash_seed)
     : op_(std::move(op)),
       num_outputs_(num_outputs),
-      shape_(std::move(shape)),
+      aten_shape_(std::move(aten_shape)),
+      aten_type_(std::move(aten_type)),
       node_hash_(lazy_tensors::util::HashCombine(op_.hash(), hash_seed)),
       hash_(node_hash_) {
   metadata_.scope = GetCurrentScope();
@@ -149,33 +156,52 @@ Node::Node(OpKind op, OpList operands, lazy_tensors::Shape shape,
     hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
   }
 }
-
 Node::Node(OpKind op, OpList operands,
-           const std::function<lazy_tensors::Shape()>& shape_fn,
-           size_t num_outputs, lazy_tensors::hash_t hash_seed)
-    : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
-           hash_seed) {
-  // Forward the constructor to the one above (with empty shape), so we have the
-  // full hash information, then fetch/compute the real shape.
-  shape_ = GetOpShape(shape_fn);
-}
-
-Node::Node(OpKind op, OpList operands, size_t num_outputs,
-           lazy_tensors::hash_t hash_seed)
-    : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
-           hash_seed) {}
-
-void Node::SetShapeDeferred(
-    const std::function<lazy_tensors::Shape()>& shape_fn) {
-  shape_ = GetOpShape(shape_fn);
-}
-
-Node::Node(OpKind op, lazy_tensors::Shape shape, size_t num_outputs,
+           std::vector<AtenShape> multi_out_aten_shape,
+           c10::ScalarType aten_type, size_t num_outputs,
            lazy_tensors::hash_t hash_seed)
     : op_(std::move(op)),
       num_outputs_(num_outputs),
-      shape_(std::move(shape)),
-      node_hash_(GetOpHash(op_, shape_, hash_seed)),
+      multi_out_aten_shape_(std::move(multi_out_aten_shape)),
+      aten_type_(std::move(aten_type)),
+      node_hash_(lazy_tensors::util::HashCombine(op_.hash(), hash_seed)),
+      hash_(node_hash_) {
+  metadata_.scope = GetCurrentScope();
+  metadata_.frame_info = GetFrameInfo();
+  for (auto& operand : operands) {
+    AddOperand(operand.node, operand.index);
+    hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
+  }
+}
+// Node::Node(OpKind op, OpList operands,
+//            const std::function<lazy_tensors::Shape()>& shape_fn,
+//            size_t num_outputs, lazy_tensors::hash_t hash_seed)
+//     : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
+//            hash_seed) {
+//   // Forward the constructor to the one above (with empty shape), so we have
+//   the
+//   // full hash information, then fetch/compute the real shape.
+//   shape_ = GetOpShape(shape_fn);
+// }
+
+// Node::Node(OpKind op, OpList operands, size_t num_outputs,
+//            lazy_tensors::hash_t hash_seed)
+//     : Node(std::move(op), operands, lazy_tensors::Shape(), num_outputs,
+//            hash_seed) {}
+
+// void Node::SetShapeDeferred(
+//     const std::function<lazy_tensors::Shape()>& shape_fn) {
+//   shape_ = GetOpShape(shape_fn);
+// }
+
+Node::Node(OpKind op, std::vector<int64_t> aten_shape,
+           c10::ScalarType aten_type, size_t num_outputs,
+           lazy_tensors::hash_t hash_seed)
+    : op_(std::move(op)),
+      num_outputs_(num_outputs),
+      aten_shape_(std::move(aten_shape)),
+      aten_type_(std::move(aten_type)),
+      node_hash_(GetOpHash(op_, aten_shape_, aten_type_, hash_seed)),
       hash_(node_hash_) {
   metadata_.scope = GetCurrentScope();
   metadata_.frame_info = GetFrameInfo();
@@ -187,12 +213,12 @@ Node::~Node() {
   }
 }
 
-const lazy_tensors::Shape& Node::shape(size_t output_index) const {
-  if (shape_.IsTuple()) {
-    return shape_.tuple_shapes(output_index);
+const std::vector<int64_t>& Node::aten_shape(size_t output_index) const {
+  if (num_outputs_ > 1) {
+    return multi_out_aten_shape_.at(output_index);
   }
   LTC_CHECK_EQ(output_index, 0);
-  return shape_;
+  return aten_shape_;
 }
 
 void Node::AddOperand(NodePtr node, size_t index) {
@@ -222,7 +248,9 @@ void Node::ReplaceAllUsesWith(NodePtr node, size_t index) {
 
 std::string Node::ToString() const {
   std::stringstream ss;
-  ss << shape() << " " << op();
+  // TODO(whc) refactor away from lazy_tensors::Shape
+  auto shape = lazy_tensors::Shape(aten_type_, aten_shape_);
+  ss << shape << " " << op();
   if (num_outputs() > 1) {
     ss << ", num_outputs=" << num_outputs();
   }
@@ -237,29 +265,31 @@ NodePtr Node::Clone(OpList operands) const {
   LTC_ERROR() << "Cloning not implemented for node: " << *this;
 }
 
-lazy_tensors::hash_t Node::GetOpHash(OpKind op,
-                                     const lazy_tensors::Shape& shape,
+lazy_tensors::hash_t Node::GetOpHash(OpKind op, std::vector<int64_t> aten_shape,
+                                     c10::ScalarType aten_type,
                                      lazy_tensors::hash_t hash_seed) {
   if (lazy_tensors::Shape::IsDynamicMode()) {
     lazy_tensors::hash_t h = lazy_tensors::util::HashCombine(
-        op.hash(), lazy_tensors::util::Hash(shape.rank()));
+        op.hash(), lazy_tensors::util::Hash(aten_shape.size()));
     return lazy_tensors::util::HashCombine(h, hash_seed);
   }
+  // TODO(whc) refactor away from lazy_tensors::Shape
+  auto lazy_shape = lazy_tensors::Shape(aten_type, aten_shape);
   lazy_tensors::hash_t h = lazy_tensors::util::HashCombine(
-      op.hash(), lazy_tensors::util::Hash(shape.ToString()));
+      op.hash(), lazy_tensors::util::Hash(lazy_shape.ToString()));
   return lazy_tensors::util::HashCombine(h, hash_seed);
 }
 
-lazy_tensors::Shape Node::GetOpShape(
-    const std::function<lazy_tensors::Shape()>& shape_fn) const {
-  ShapeCache* shape_cache = GetShapeCache();
-  auto shape = shape_cache->Get(hash());
-  if (shape == nullptr) {
-    shape = shape_cache->Add(hash(),
-                             std::make_shared<lazy_tensors::Shape>(shape_fn()));
-  }
-  return *shape;
-}
+// lazy_tensors::Shape Node::GetOpShape(
+//     const std::function<lazy_tensors::Shape()>& shape_fn) const {
+//   ShapeCache* shape_cache = GetShapeCache();
+//   auto shape = shape_cache->Get(hash());
+//   if (shape == nullptr) {
+//     shape = shape_cache->Add(hash(),
+//                              std::make_shared<lazy_tensors::Shape>(shape_fn()));
+//   }
+//   return *shape;
+// }
 
 std::vector<SourceLocation> Node::GetFrameInfo() {
   // At the time of writing, retrieving Python frames costs from 1us up to 20us.
