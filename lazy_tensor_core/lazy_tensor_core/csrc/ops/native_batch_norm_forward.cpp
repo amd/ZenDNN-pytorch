@@ -14,7 +14,7 @@ NativeBatchNormForward::NativeBatchNormForward(const Value& input,
                                                const Value& running_mean,
                                                const Value& running_var,
                                                bool training, double eps)
-    : Node(ir::OpKind(at::aten::native_batch_norm),
+    : TsNode(ir::OpKind(at::aten::native_batch_norm),
            {input, weight, bias, running_mean, running_var},
            /*num_outputs=*/4, lazy_tensors::util::MHash(training, eps)),
       training_(training),

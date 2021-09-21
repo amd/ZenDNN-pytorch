@@ -30,7 +30,7 @@ AvgPoolNdBackward::AvgPoolNdBackward(
     std::vector<lazy_tensors::int64> stride,
     std::vector<lazy_tensors::int64> padding, bool ceil_mode,
     bool count_include_pad)
-    : Node(OpKind(AvgNdBackwardSymbol(spatial_dim_count)), {grad_output, input},
+    : TsNode(OpKind(AvgNdBackwardSymbol(spatial_dim_count)), {grad_output, input},
            /*num_outputs=*/1,
            lazy_tensors::util::MHash(spatial_dim_count, kernel_size, stride,
                                      padding, ceil_mode, count_include_pad)),

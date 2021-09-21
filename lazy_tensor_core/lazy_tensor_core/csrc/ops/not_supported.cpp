@@ -9,7 +9,7 @@ namespace ir {
 namespace ops {
 
 NotSupported::NotSupported(std::string description, lazy_tensors::Shape shape)
-    : Node(ltc_not_supported, std::move(shape), /*num_outputs=*/1,
+    : TsNode(ltc_not_supported, std::move(shape), /*num_outputs=*/1,
            lazy_tensors::util::MHash(description)),
       description_(std::move(description)) {}
 

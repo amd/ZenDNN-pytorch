@@ -9,7 +9,7 @@ namespace ops {
 LeakyReluBackward::LeakyReluBackward(const Value& grad_output,
                                      const Value& input, double negative_slope,
                                      bool self_is_result)
-    : Node(ir::OpKind(at::aten::leaky_relu_backward), {grad_output, input},
+    : TsNode(ir::OpKind(at::aten::leaky_relu_backward), {grad_output, input},
            input.shape(),
            /*num_outputs=*/1, lazy_tensors::util::MHash(negative_slope)),
       negative_slope_(negative_slope),

@@ -8,7 +8,7 @@ namespace ir {
 namespace ops {
 
 SymEig::SymEig(const Value& input, bool eigenvectors, bool lower)
-    : Node(ir::OpKind(at::aten::symeig), {input},
+    : TsNode(ir::OpKind(at::aten::symeig), {input},
            /*num_outputs=*/2, lazy_tensors::util::MHash(eigenvectors, lower)),
       eigenvectors_(eigenvectors),
       lower_(lower) {

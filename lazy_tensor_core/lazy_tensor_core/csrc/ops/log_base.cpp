@@ -7,7 +7,7 @@ namespace ir {
 namespace ops {
 
 LogBase::LogBase(const Value& input, ir::OpKind kind, double base)
-    : Node(kind, {input}, input.shape(),
+    : TsNode(kind, {input}, input.shape(),
            /*num_outputs=*/1, lazy_tensors::util::MHash(base)),
       base_(base) {}
 

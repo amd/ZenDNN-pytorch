@@ -3,14 +3,14 @@
 #include <c10/core/ScalarType.h>
 #include <c10/util/Optional.h>
 
-#include "lazy_tensor_core/csrc/ir.h"
+#include "lazy_tensor_core/csrc/ts_backend/TsNode.h"
 
 namespace torch_lazy_tensors {
 namespace ir {
 namespace ops {
 
 // IR node for log(softmax) operation.
-class LogSoftmax : public Node {
+class LogSoftmax : public TsNode {
  public:
   LogSoftmax(const Value& input, lazy_tensors::int64 dim,
              c10::optional<at::ScalarType> dtype);

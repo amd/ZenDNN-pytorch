@@ -29,7 +29,7 @@ MaxPoolNdBackward::MaxPoolNdBackward(
     std::vector<lazy_tensors::int64> kernel_size,
     std::vector<lazy_tensors::int64> stride,
     std::vector<lazy_tensors::int64> padding, bool ceil_mode)
-    : Node(ir::OpKind(MaxPoolNdBackwardSymbol(spatial_dim_count)),
+    : TsNode(ir::OpKind(MaxPoolNdBackwardSymbol(spatial_dim_count)),
            {grad_output, input},
            /*num_outputs=*/1,
            lazy_tensors::util::MHash(spatial_dim_count, kernel_size, stride,

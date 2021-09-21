@@ -25,7 +25,7 @@ c10::Symbol MaxUnpoolNdSymbol(lazy_tensors::int64 spatial_dim_count) {
 
 MaxUnpoolNd::MaxUnpoolNd(const Value& input, const Value& indices,
                          std::vector<lazy_tensors::int64> output_size)
-    : Node(ir::OpKind(MaxUnpoolNdSymbol(output_size.size())), {input, indices},
+    : TsNode(ir::OpKind(MaxUnpoolNdSymbol(output_size.size())), {input, indices},
            /*num_outputs=*/1, lazy_tensors::util::MHash(output_size)),
       output_size_(std::move(output_size)) {
   SetShapeDeferred(

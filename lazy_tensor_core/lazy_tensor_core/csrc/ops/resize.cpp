@@ -17,7 +17,7 @@ lazy_tensors::Shape NodeOutputShape(
 }  // namespace
 
 Resize::Resize(const Value& input, std::vector<lazy_tensors::int64> size)
-    : Node(ir::OpKind(at::aten::resize), {input},
+    : TsNode(ir::OpKind(at::aten::resize), {input},
            [&]() { return NodeOutputShape(input, size); },
            /*num_outputs=*/1, lazy_tensors::util::MHash(size)),
       size_(std::move(size)) {}

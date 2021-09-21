@@ -22,7 +22,7 @@ lazy_tensors::Shape NodeOutputShape(
 
 LogSoftmax::LogSoftmax(const Value& input, lazy_tensors::int64 dim,
                        c10::optional<at::ScalarType> dtype)
-    : Node(ir::OpKind(at::aten::log_softmax), {input},
+    : TsNode(ir::OpKind(at::aten::log_softmax), {input},
            [&]() { return NodeOutputShape(input, dtype); },
            /*num_outputs=*/1,
            lazy_tensors::util::MHash(dim, OptionalOr<int>(dtype, -1))),

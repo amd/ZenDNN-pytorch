@@ -9,7 +9,7 @@ namespace ops {
 
 SoftmaxBackward::SoftmaxBackward(const Value& grad_output, const Value& output,
                                  lazy_tensors::int64 dim)
-    : Node(ir::OpKind(at::aten::_softmax_backward_data), {grad_output, output},
+    : TsNode(ir::OpKind(at::aten::_softmax_backward_data), {grad_output, output},
            grad_output.shape(),
            /*num_outputs=*/1, lazy_tensors::util::MHash(dim)),
       dim_(dim) {}

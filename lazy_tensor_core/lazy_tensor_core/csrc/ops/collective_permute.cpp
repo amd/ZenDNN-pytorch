@@ -14,7 +14,7 @@ CollectivePermute::CollectivePermute(
     const Value& input, const Value& token,
     std::vector<std::pair<lazy_tensors::int64, lazy_tensors::int64>>
         source_target_pairs)
-    : Node(ltc_collective_permute, {input, token},
+    : TsNode(ltc_collective_permute, {input, token},
            /*num_outputs=*/2, lazy_tensors::util::MHash(source_target_pairs)),
       source_target_pairs_(std::move(source_target_pairs)) {
   SetShapeDeferred(

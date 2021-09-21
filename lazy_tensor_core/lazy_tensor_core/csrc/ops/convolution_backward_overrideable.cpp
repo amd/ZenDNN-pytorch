@@ -15,7 +15,7 @@ ConvolutionBackwardOverrideable::ConvolutionBackwardOverrideable(
     std::vector<lazy_tensors::int64> padding,
     std::vector<lazy_tensors::int64> dilation, bool transposed,
     std::vector<lazy_tensors::int64> output_padding, lazy_tensors::int64 groups)
-    : Node(ir::OpKind(at::aten::convolution_backward_overrideable),
+    : TsNode(ir::OpKind(at::aten::convolution_backward_overrideable),
            {grad_output, input, weight},
            /*num_outputs=*/3,
            lazy_tensors::util::MHash(stride, padding, dilation, transposed,

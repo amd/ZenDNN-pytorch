@@ -11,7 +11,7 @@ namespace ops {
 IndexAlongDim::IndexAlongDim(OpKind op, const ir::Value& buffer,
                              const ir::Value& index, const ir::Value& value,
                              lazy_tensors::int64 dim)
-    : Node(op, {buffer, index, value},
+    : TsNode(op, {buffer, index, value},
            /*num_outputs=*/1, lazy_tensors::util::MHash(dim)),
       dim_(dim) {
   SetShapeDeferred(

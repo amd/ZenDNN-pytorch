@@ -7,7 +7,7 @@ namespace ir {
 namespace ops {
 
 LeakyRelu::LeakyRelu(const Value& input, double negative_slope)
-    : Node(ir::OpKind(at::aten::leaky_relu), {input}, input.shape(),
+    : TsNode(ir::OpKind(at::aten::leaky_relu), {input}, input.shape(),
            /*num_outputs=*/1, lazy_tensors::util::MHash(negative_slope)),
       negative_slope_(negative_slope) {}
 

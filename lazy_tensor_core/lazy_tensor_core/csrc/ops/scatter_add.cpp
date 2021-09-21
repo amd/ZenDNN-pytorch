@@ -8,7 +8,7 @@ namespace ops {
 
 ScatterAdd::ScatterAdd(const Value& input, const Value& index, const Value& src,
                        lazy_tensors::int64 dim)
-    : Node(ir::OpKind(at::aten::scatter_add), {input, index, src},
+    : TsNode(ir::OpKind(at::aten::scatter_add), {input, index, src},
            input.shape(),
            /*num_outputs=*/1, lazy_tensors::util::MHash(dim)),
       dim_(dim) {}
