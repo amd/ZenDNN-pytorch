@@ -149,6 +149,7 @@ Node::Node(OpKind op, OpList operands, std::vector<int64_t> aten_shape,
     hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
   }
 }
+
 Node::Node(OpKind op, OpList operands,
            std::vector<AtenShape> multi_out_aten_shape,
            c10::ScalarType aten_type, size_t num_outputs,
@@ -157,6 +158,21 @@ Node::Node(OpKind op, OpList operands,
       num_outputs_(num_outputs),
       multi_out_aten_shape_(std::move(multi_out_aten_shape)),
       aten_type_(std::move(aten_type)),
+      // TODO(whc) missing hash contributition for multi shape
+      node_hash_(lazy_tensors::util::HashCombine(op_.hash(), hash_seed)),
+      hash_(node_hash_) {
+  metadata_.scope = GetCurrentScope();
+  metadata_.frame_info = GetFrameInfo();
+  for (auto& operand : operands) {
+    AddOperand(operand.node, operand.index);
+    hash_ = lazy_tensors::util::HashCombine(hash_, operand.hash());
+  }
+}
+
+Node::Node(OpKind op, OpList operands, size_t num_outputs,
+           lazy_tensors::hash_t hash_seed)
+    : op_(std::move(op)),
+      num_outputs_(num_outputs),
       node_hash_(lazy_tensors::util::HashCombine(op_.hash(), hash_seed)),
       hash_(node_hash_) {
   metadata_.scope = GetCurrentScope();
@@ -182,7 +198,7 @@ Node::Node(OpKind op, std::vector<int64_t> aten_shape,
 Node::Node(OpKind op, size_t num_outputs, lazy_tensors::hash_t hash_seed)
     : op_(std::move(op)),
       num_outputs_(num_outputs),
-      // TODO(whc) trying to adapt Node base to TsNode that takes ::Shape 
+      // TODO(whc) trying to adapt Node base to TsNode that takes ::Shape
       // and (ab)uses SetShapeDeferred to convet it into aten shape.
       // what should be done for the hash in these cases?
       // what is done for other nodes that have deferred shape setting?
@@ -242,10 +258,6 @@ std::string Node::ToString() const {
   return ss.str();
 }
 
-NodePtr Node::Clone(OpList operands) const {
-  LTC_ERROR() << "Cloning not implemented for node: " << *this;
-}
-
 lazy_tensors::hash_t Node::GetOpHash(OpKind op, std::vector<int64_t> aten_shape,
                                      c10::ScalarType aten_type,
                                      lazy_tensors::hash_t hash_seed) {
@@ -273,9 +285,10 @@ lazy_tensors::hash_t Node::GetOpHash(OpKind op, std::vector<int64_t> aten_shape,
 // }
 
 std::vector<SourceLocation> Node::GetFrameInfo() {
-  // At the time of writing, retrieving Python frames costs from 1us up to 20us.
-  // This per IR Node. Since it is not unreasonable to have a many hundreds of
-  // IR Node, this can be a multi-millisecond cost, which is not negligible.
+  // At the time of writing, retrieving Python frames costs from 1us up to
+  // 20us. This per IR Node. Since it is not unreasonable to have a many
+  // hundreds of IR Node, this can be a multi-millisecond cost, which is not
+  // negligible.
   static bool wants_frames =
       lazy_tensors::sys_util::GetEnvBool("LTC_IR_DEBUG", false);
   return wants_frames ? GetPythonFrames() : std::vector<SourceLocation>();
@@ -286,6 +299,20 @@ ScopePusher::ScopePusher(const std::string& name) { PushScope(name); }
 ScopePusher::~ScopePusher() { PopScope(); }
 
 void ScopePusher::ResetScopes() { ResetScopeContext(); }
+
+lazy_tensors::Shape AtenToLazyShapeHelper(const Node& node) {
+  if (node.num_outputs() >= 1) {
+    return lazy_tensors::Shape(node.aten_type(), node.aten_shape());
+  } else {
+    std::vector<lazy_tensors::Shape> tuple_shapes;
+    tuple_shapes.reserve(node.multi_out_aten_shape().size());
+    for (size_t i = 0; i < node.multi_out_aten_shape().size(); i++) {
+      tuple_shapes.emplace_back(lazy_tensors::Shape(
+          node.aten_type(), node.multi_out_aten_shape().at(i)));
+    }
+    return lazy_tensors::Shape(tuple_shapes);
+  }
+}
 
 }  // namespace ir
 }  // namespace torch_lazy_tensors

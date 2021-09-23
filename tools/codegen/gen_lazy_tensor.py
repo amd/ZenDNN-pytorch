@@ -137,7 +137,8 @@ def run(source_yaml: str, output_dir: str, dry_run: bool, impl_path: Optional[st
                 lambda f: dest.gen_lazy_nativefunc_definition(
                     f,
                     backend_indices[backend_dispatch_key],
-                    class_method_name=f'{backend_dispatch_key}NativeFunctions'),
+                    class_method_name=f'{backend_dispatch_key}NativeFunctions',
+                    node_base=node_base),
                 grouped_native_functions
             )),
         })
@@ -173,8 +174,8 @@ def run(source_yaml: str, output_dir: str, dry_run: bool, impl_path: Optional[st
                 "lazy_tensor_core/csrc/ir.h",
                 "lazy_tensors/types.h",
                 "lazy_tensor_core/csrc/compiler/node_lowering.h",
-                node_base_hdr if node_base_hdr is not None else ""
-            ]],
+                node_base_hdr if node_base_hdr is not None else None
+            ] if path is not None],
             'external_backend_headers': f'#include "{output_dir}/{backend_key}NativeFunctions.h"',
             'namespaced_headers': '',
             'DispatchKey': backend_dispatch_key,

@@ -142,7 +142,7 @@ def lazy_tensor_decls(value_types: List[NamedCType]) -> str:
 
 
 def gen_lazy_nativefunc_definition(f: NativeFunction, backend_index: BackendIndex,
-                                   class_method_name: str) -> List[str]:
+                                   class_method_name: str, node_base: str) -> List[str]:
     sig = kernel_signature(f, backend_index)
 
     # Lazy IR stuff

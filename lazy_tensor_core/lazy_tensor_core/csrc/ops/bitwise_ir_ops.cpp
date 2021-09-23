@@ -10,8 +10,7 @@ namespace ops {
 
 Value BitwiseOp(const OpKind& kind, const Value& node1, const Value& node2) {
   NodePtr node = GenericOp(kind, {node1, node2});
-  node->SetShapeDeferred(
-      [&]() { return compiler::NodeLowering::Get()->Infer(node.get()); });
+  TsNodeSetShapeDeferred(node);
   return node;
 }
 

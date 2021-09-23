@@ -12,10 +12,10 @@ using ShapeCache =
 class TsNode;
 using TsNodePtr = std::shared_ptr<TsNode>;
 
-template <typename T, typename... Args>
-TsNodePtr MakeTsNode(Args&&... args) {
-  return std::make_shared<T>(std::forward<Args>(args)...);
-}
+// template <typename T, typename... Args>
+// TsNodePtr MakeTsNode(Args&&... args) {
+//   return std::make_shared<T>(std::forward<Args>(args)...);
+// }
 
 class TsNode : public Node {
  public:
@@ -45,21 +45,25 @@ class TsNode : public Node {
   // Contructor used to create leaf nodes.
   // For handwritten ops that supply lazy_tensors::Shape, provide a BC path
   TsNode(OpKind op, lazy_tensors::Shape shape, size_t num_outputs,
-     lazy_tensors::hash_t hash_seed);
+         lazy_tensors::hash_t hash_seed);
 
   virtual ~TsNode();
 
   // Retrieves the full shape of the IR Node. Note that if this is a
   // multi-output node, the returned shape will be a tuple.
-  const lazy_tensors::Shape& shape() const;
+  const lazy_tensors::Shape shape() const;
 
   // Retrieves the shape of the output at a given index. If the node is not a
   // multi-output node, output_index must be zero.
-  const lazy_tensors::Shape& shape(size_t output_index) const;
+  const lazy_tensors::Shape shape(size_t output_index) const;
 
   lazy_tensors::Shape GetOpShape(
       const std::function<lazy_tensors::Shape()>& shape_fn) const;
+
+  virtual NodePtr Clone(OpList operands) const override;
 };
+
+void TsNodeSetShapeDeferred(NodePtr node);
 
 }  // namespace ir
 }  // namespace torch_lazy_tensors

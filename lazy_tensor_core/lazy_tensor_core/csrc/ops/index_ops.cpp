@@ -153,8 +153,7 @@ ir::NodePtr IndexFillOp(const ir::Value& buffer, lazy_tensors::int64 dim,
   ir::Value index_rank1 = EnsureRank1(index);
   ir::NodePtr node = ir::MakeNode<ir::ops::IndexAlongDim>(
       ir::OpKind(at::aten::index_fill), buffer, index_rank1, value, dim);
-  node->SetShapeDeferred(
-      [&]() { return compiler::NodeLowering::Get()->Infer(node.get()); });
+  TsNodeSetShapeDeferred(node);
   return node;
 }
 
@@ -163,8 +162,7 @@ ir::NodePtr IndexAddOp(const ir::Value& buffer, lazy_tensors::int64 dim,
   ir::Value index_rank1 = EnsureRank1(index);
   ir::NodePtr node = ir::MakeNode<ir::ops::IndexAlongDim>(
       ir::OpKind(at::aten::index_add), buffer, index_rank1, source, dim);
-  node->SetShapeDeferred(
-      [&]() { return compiler::NodeLowering::Get()->Infer(node.get()); });
+  TsNodeSetShapeDeferred(node);
   return node;
 }
 
@@ -173,8 +171,7 @@ ir::NodePtr IndexCopyOp(const ir::Value& buffer, lazy_tensors::int64 dim,
   ir::Value index_rank1 = EnsureRank1(index);
   ir::NodePtr node = ir::MakeNode<ir::ops::IndexAlongDim>(
       ir::OpKind(at::aten::index_copy), buffer, index_rank1, source, dim);
-  node->SetShapeDeferred(
-      [&]() { return compiler::NodeLowering::Get()->Infer(node.get()); });
+  TsNodeSetShapeDeferred(node);
   return node;
 }
 
@@ -201,8 +198,8 @@ CanonicalIndexInfo GetCanonicalIndexInfo(
 }
 
 ir::Value EnsureRank1(const ir::Value& index) {
-  LTC_CHECK_LE(index->shape().rank(), 1);
-  return index->shape().rank() == 0
+  LTC_CHECK_LE(index->aten_shape().size(), 1);
+  return index->aten_shape().size() == 0
              ? ir::MakeNode<ir::ops::Expand>(
                    index, std::vector<lazy_tensors::int64>{1},
                    /*is_scalar_expand=*/false)

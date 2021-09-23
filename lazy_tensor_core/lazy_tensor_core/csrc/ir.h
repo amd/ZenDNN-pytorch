@@ -21,8 +21,9 @@ namespace torch_lazy_tensors {
 namespace ir {
 
 class Node;
-
 using NodePtr = std::shared_ptr<Node>;
+class TsNode;
+using TsNodePtr = std::shared_ptr<TsNode>;
 
 // The base class for user defined metadata which is possible to attach to IR
 // nodes.
@@ -107,7 +108,11 @@ using OutputMap = std::unordered_map<Output, T, Output::Hasher>;
 // Represents an input/operand for a Node object.
 struct Value {
   Value() = default;
-  Value(NodePtr node, size_t index = 0) : node(std::move(node)), index(index) {}
+  Value(NodePtr node, size_t index = 0) : node(std::move(node)), index(index){};
+  
+  // i'm trying to keep Value in base IR file but its getting polluted by derived class
+  // defined this Value ctor in ts_backend.. totally hacky
+  Value(TsNodePtr tsnode, size_t index = 0);
 
   // Retrieves the shape of this value. If the IR Node generating the value is a
   // multi-output node, the shape returned by this API will not be the full
@@ -250,7 +255,8 @@ class Node {
 
   virtual std::string ToString() const;
 
-  virtual NodePtr Clone(OpList operands) const;
+  virtual NodePtr Clone(OpList operands) const = 0;
+
 
  private:
   // Adds node's index output number as operand.
@@ -300,19 +306,7 @@ class Node {
 
 // TODO(whc) this is a helper to use during refactoring.  Ultimately
 // things using Node base shouldn't be expecting lazy_tensors::Shape
-lazy_tensors::Shape AtenToLazyShapeHelper(const Node& node) {
-  if (node.num_outputs() >= 1) {
-    return lazy_tensors::Shape(node.aten_type(), node.aten_shape());
-  } else {
-    std::vector<lazy_tensors::Shape> tuple_shapes;
-    tuple_shapes.reserve(node.multi_out_aten_shape().size());
-    for (size_t i = 0; i < node.multi_out_aten_shape().size(); i++) {
-      tuple_shapes.emplace_back(lazy_tensors::Shape(
-          node.aten_type(), node.multi_out_aten_shape().at(i)));
-    }
-    return lazy_tensors::Shape(tuple_shapes);
-  }
-}
+lazy_tensors::Shape AtenToLazyShapeHelper(const Node& node); 
 
 // RAII data structure to be used a stack variable to enter a new IR scope. IR
 // scope names will appear in the IR and will help identifying the source of the

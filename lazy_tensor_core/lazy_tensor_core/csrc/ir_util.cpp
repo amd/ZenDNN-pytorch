@@ -1,5 +1,5 @@
 #include "lazy_tensor_core/csrc/ir_util.h"
-
+#include "lazy_tensor_core/csrc/ts_backend/TsNode.h"
 #include "lazy_tensors/computation_client/debug_macros.h"
 
 namespace torch_lazy_tensors {
@@ -73,7 +73,12 @@ std::vector<Value> Util::Clone(
           << "Bad post-order: " << node->ToString();
       inputs.emplace_back(it->second, output.index);
     }
-    clone_map[node] = node->Clone(inputs);
+    if (auto tsnode = dynamic_cast<const TsNode*>(node)){
+      clone_map[node] = tsnode->Clone(inputs);
+    } else {
+      throw std::runtime_error("TODO(whc) clean up Clone for Node/TsNode");
+    }
+
   }
 
   std::vector<Value> cloned;
