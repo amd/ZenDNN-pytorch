@@ -273,12 +273,9 @@ class TORCH_API Tensor {
 
   std::string toString() const;
 
-  IntArrayRef sizes() const {
-    return impl_->sizes();
-  }
-  IntArrayRef strides() const {
-    return impl_->strides();
-  }
+  IntArrayRef sizes() const;
+  IntArrayRef strides() const;
+
   // See impl::get_opt_names in ATen/NamedTensor.h for docs.
   c10::optional<DimnameList> opt_names() const {
     return impl::get_opt_names(unsafeGetTensorImpl());

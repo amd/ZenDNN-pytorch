@@ -18,11 +18,31 @@ from torch.testing._internal.jit_metaprogramming_utils import create_script_fn, 
     check_alias_annotation
 from torch.testing._internal.jit_utils import disable_autodiff_subgraph_inlining
 import torch.testing._internal.opinfo_helper as opinfo_helper
+import contextlib
 
 # variant testing is only done with torch.float and torch.cfloat to avoid
 #   excessive test times and maximize signal to noise ratio
 _variant_ops = partial(ops, dtypes=OpDTypes.supported,
                        allowed_dtypes=(torch.float, torch.cfloat))
+
+@contextlib.contextmanager
+def set_error_on_sizes_strides():
+    # Code to acquire resource, e.g.:
+    torch._C._set_error_on_sizes_strides(True)
+    try:
+        yield
+    finally:
+        torch._C._set_error_on_sizes_strides(False)
+
+def diff_arg(arg):
+    if isinstance(arg, (list, tuple)):
+        if all([a.requires_grad for a in arg]):
+            return True
+        if all([not a.requires_grad for a in arg]):
+            return False
+        raise RuntimeError("NYI: The test runner can't handle this")
+    return isinstance(arg, torch.Tensor) and arg.requires_grad
+
 
 # Get names of all the operators which have ref in their entry in OpInfo (testing infra)
 #   except for Unary Ufuncs (separately implemented in test/test_unary_ufuncs.py)
@@ -200,6 +220,45 @@ class TestCommon(TestCase):
         sample_inputs = op.sample_inputs(device, dtype)
         for sample_input in sample_inputs:
             self.compare_with_reference(op, op.ref, sample_input)
+
+    @ops(op_db, allowed_dtypes=(torch.float32,))
+    def test_composite_context(self, device, dtype, op):
+        # requires_grad = True so we also capture the things autogrd saves
+        sample_inputs = op.sample_inputs(device, dtype, requires_grad=True)
+        for sample in sample_inputs:
+            with set_error_on_sizes_strides():
+                op(sample.input, *sample.args, **sample.kwargs)
+
+    @ops(op_db, allowed_dtypes=(torch.float32,))
+    def test_grad_composite_context(self, device, dtype, op):
+        sample_inputs = op.sample_inputs(device, dtype)
+        for sample in sample_inputs:
+            with set_error_on_sizes_strides():
+                op(sample.input, *sample.args, **sample.kwargs)
+        if not op.supports_autograd:
+            self.skipTest("Skipped! Autograd not supported.")
+            return
+
+        samples = op.sample_inputs(device, dtype, requires_grad=True)
+
+        for sample in samples:
+            args = [sample.input] + list(sample.args)
+            kwargs = sample.kwargs
+
+            diff_argnums = tuple(i for i, arg in enumerate(args) if diff_arg(arg))
+            assert len(diff_argnums) > 0
+            diff_args = tuple(args[i] for i in diff_argnums)
+
+            result = op(*args, **kwargs)
+            if sample.output_process_fn_grad is not None:
+                result = sample.output_process_fn_grad(result)
+
+            # Reduce into single value for grad
+            if isinstance(result, torch.Tensor):
+                return result.sum()
+            result = sum([res.sum() for res in result])
+            with set_error_on_sizes_strides():
+                result.backward()
 
     # Validates ops implement the correct out= behavior
     # See https://github.com/pytorch/pytorch/wiki/Developer-FAQ#how-does-out-work-in-pytorch

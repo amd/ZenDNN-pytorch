@@ -1,8 +1,10 @@
 #include <ATen/core/Tensor.h>
 #include <ATen/core/Formatting.h>
 #include <ATen/core/VariableHooksInterface.h>
+#include <ATen/Context.h>
 
 #include <iostream>
+#include <execinfo.h>
 
 namespace at {
 
@@ -117,6 +119,31 @@ void Tensor::remove_hook(unsigned pos) const {
 
 unsigned Tensor::_register_hook(std::function<Tensor(const Tensor&)> hook) const {
   return impl::GetVariableHooks()->_register_hook(*this, std::move(hook));
+}
+
+static bool in_primitive_op() {
+  auto key_set = c10::impl::tls_local_dispatch_key_set();
+  return key_set.excluded_.has(c10::DispatchKey::AutogradCPU);
+}
+
+void dump_stack() {
+  constexpr int n = 20;
+  void* backtrace_buffer[n];
+  int num = backtrace(backtrace_buffer, n);
+  backtrace_symbols_fd(backtrace_buffer, num, fileno(stdout));
+}
+
+IntArrayRef Tensor::sizes() const {
+  if (globalContext().shouldErrorOnSizesStrides() && !in_primitive_op()) {
+    TORCH_CHECK(false, "sizes()");
+  }
+  return impl_->sizes();
+}
+IntArrayRef Tensor::strides() const {
+  if (globalContext().shouldErrorOnSizesStrides() && !in_primitive_op()) {
+    TORCH_CHECK(false, "strides()");
+  }
+  return impl_->strides();
 }
 
 } // namespace at

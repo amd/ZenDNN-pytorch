@@ -262,6 +262,13 @@ void Context::setDisplayVmapFallbackWarnings(bool enabled) {
   display_vmap_fallback_warnings_ = enabled;
 }
 
+void Context::setErrorOnSizesStrides(bool enabled) {
+  error_on_sizes_strides_ = enabled;
+}
+bool Context::shouldErrorOnSizesStrides() const {
+  return error_on_sizes_strides_;
+}
+
 void Context::setDefaultMobileCPUAllocator() {
   TORCH_CHECK(prev_allocator_ptr_ == nullptr,
       "Already within the scope of another non-default cpu allocator."

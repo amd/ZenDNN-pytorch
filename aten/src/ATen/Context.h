@@ -215,6 +215,9 @@ class TORCH_API Context {
   void setDisplayVmapFallbackWarnings(bool enabled);
   bool areVmapFallbackWarningsEnabled() const;
 
+  void setErrorOnSizesStrides(bool enabled);
+  bool shouldErrorOnSizesStrides() const;
+
   void setDefaultMobileCPUAllocator();
   void unsetDefaultMobileCPUAllocator();
 
@@ -245,6 +248,7 @@ class TORCH_API Context {
   bool release_original_weights = false;
   #endif
   bool display_vmap_fallback_warnings_ = false;
+  bool error_on_sizes_strides_ = false;
   c10::optional<at::QEngine> quantized_engine = c10::nullopt;
   std::unique_ptr<THCState, void(*)(THCState*)> thc_state;
   std::unique_ptr<THHState, void(*)(THHState*)> thh_state;
