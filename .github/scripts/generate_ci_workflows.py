@@ -39,6 +39,7 @@ CPU_RUNNERS = {
     LINUX_CPU_TEST_RUNNER,
 }
 
+LABEL_CI_ALL = "ci/all"  # so people can opt into having all CI run for both CircleCI and GHA
 LABEL_CIFLOW_ALL = "ciflow/all"
 LABEL_CIFLOW_BAZEL = "ciflow/bazel"
 LABEL_CIFLOW_CPU = "ciflow/cpu"
@@ -94,6 +95,7 @@ class CIFlowConfig:
             self.reset_root_job()
             return
         self.labels.add(LABEL_CIFLOW_ALL)
+        self.labels.add(LABEL_CI_ALL)
         self.gen_root_job_condition()
 
 
