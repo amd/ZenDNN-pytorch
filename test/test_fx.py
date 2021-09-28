@@ -3157,6 +3157,10 @@ class TestOperatorSignatures(JitTestCase):
                            'igammac',
                            'linalg.multi_dot',
                            'lu',
+                           'T',   # Implemented with a lambda
+                           'H',   # Implemented with a lambda
+                           'mT',  # Implemented with a lambda
+                           'mH',  # Implemented with a lambda
                            'norm',
                            'polygamma',
                            'special.polygamma',
