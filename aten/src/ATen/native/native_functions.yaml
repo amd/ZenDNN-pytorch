@@ -2708,8 +2708,14 @@
 
 - func: matmul(Tensor self, Tensor other) -> Tensor
   variants: function, method
+  device_check: NoCheck   # Composite
+  dispatch:
+    CompositeExplicitAutograd: matmul
 
 - func: matmul.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
+  device_check: NoCheck   # Composite
+  dispatch:
+    CompositeExplicitAutograd: matmul_out
 
 - func: matrix_rank.tol(Tensor self, float tol, bool symmetric=False) -> Tensor
 
