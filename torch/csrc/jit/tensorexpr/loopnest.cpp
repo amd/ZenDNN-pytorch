@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "jit/passes/dead_code_elimination.h"
 
 namespace torch {
 namespace jit {
@@ -895,40 +896,40 @@ StmtPtr computeInlineImpl(
   }
 
   // This is a hack and we should instead not throw exceptions in compute-inline
-  bool failed = false;
-  try {
-    auto t = Stmt::clone(root_stmt_);
-    StorePtr relevant_store{nullptr};
-    auto stores = NodeFinder<Store>::find(t);
-    for (auto s : stores) {
-      if (s->buf() == b) {
-        auto reductions = NodeFinder<ReduceOp>::find(s);
-        if (!reductions.empty()) {
-          // Cannot inline a reduction computation
-          return false;
-        }
-        if (relevant_store != nullptr) {
-          // Cannot inline Buf with multiple Tensors
-          return false;
-        }
-        relevant_store = s;
-      }
-    }
-    TORCH_INTERNAL_ASSERT(
-        relevant_store,
-        buildErrorMessage(
-            "Cannot find a relevant store to inline a buf in the fuser."));
+  // bool failed = false;
+  // try {
+  //   auto t = Stmt::clone(root_stmt_);
+  //   StorePtr relevant_store{nullptr};
+  //   auto stores = NodeFinder<Store>::find(t);
+  //   for (auto s : stores) {
+  //     if (s->buf() == b) {
+  //       auto reductions = NodeFinder<ReduceOp>::find(s);
+  //       if (!reductions.empty()) {
+  //         // Cannot inline a reduction computation
+  //         return false;
+  //       }
+  //       if (relevant_store != nullptr) {
+  //         // Cannot inline Buf with multiple Tensors
+  //         return false;
+  //       }
+  //       relevant_store = s;
+  //     }
+  //   }
+  //   TORCH_INTERNAL_ASSERT(
+  //       relevant_store,
+  //       buildErrorMessage(
+  //           "Cannot find a relevant store to inline a buf in the fuser."));
 
-    GRAPH_DEBUG("ComputeInline: Def: ", std::to_string(relevant_store));
-    FunctionInliner inliner(relevant_store, output_bufs_);
-    t = t->accept_mutator(&inliner);
-  } catch (...) {
-    failed = true;
-  }
+  //   GRAPH_DEBUG("ComputeInline: Def: ", std::to_string(relevant_store));
+  //   FunctionInliner inliner(relevant_store, output_bufs_);
+  //   t = t->accept_mutator(&inliner);
+  // } catch (...) {
+  //   failed = true;
+  // }
 
-  if (failed) {
-    return false;
-  }
+  // if (failed) {
+  //   return false;
+  // }
 
   // Find producers.
   StorePtr relevant_store{nullptr};
@@ -3458,30 +3459,94 @@ bool LoopNest::rfactor(
   return true;
 }
 
+namespace randomization_helper {
 std::vector<std::vector<ForPtr>> GetAllPerfectlyNestedLoopNests(
     std::vector<ForPtr> loops) {
   // Find the first set of loops that can be reordered
   std::vector<std::vector<ForPtr>> all_nested_loops;
   std::vector<ForPtr> nested_loops;
   nested_loops.push_back(loops[0]);
-  for (int i = 1; i < loops.size(); i++) {
-    if (nested_loops.back()->body()->front() == loops[i]) {
-      nested_loops.push_back(loops[i]);
+  for (size_t i = 1; i < loops.size(); i++) {
+    auto last_loop = nested_loops.back();
+    auto next_loop = loops[i];
+    if (last_loop->body()->nstmts() == 1 &&
+        last_loop->body()->front() == next_loop) {
+      nested_loops.push_back(next_loop);
     } else {
       if (nested_loops.size() > 1) {
         all_nested_loops.push_back(nested_loops);
       }
       nested_loops.clear();
-      nested_loops.push_back(loops[i]);
+      nested_loops.push_back(next_loop);
     }
   }
   return all_nested_loops;
 }
 
+template <typename T>
+std::tuple<std::vector<T>, std::vector<int>> select_n_randomly(
+    std::vector<T>& objects,
+    int n) {
+  std::vector<int> indices(objects.size());
+  std::iota(indices.begin(), indices.end(), 0);
+  std::random_shuffle(indices.begin(), indices.end());
+
+  std::vector<T> selected_objects;
+  std::vector<int> selected_indices;
+  for (int i = 0; i < n; i++) {
+    int index = indices[i];
+    selected_indices.push_back(index);
+    selected_objects.push_back(objects[index]);
+  }
+  return std::make_tuple(selected_objects, selected_indices);
+}
+
+int find_factor(ForPtr loop) {
+  // Find valid factors
+  ExprPtr loop_stop = loop->stop();
+  auto loop_imm = intValue(loop_stop);
+  if (loop_imm) {
+    int loop_bound = *loop_imm;
+    int factor = rand() % (loop_bound - 1) + 1;
+    return factor;
+  }
+  return -1;
+}
+
+void printHistory(int index, std::string message) {
+  message = "Random Transform Sequence - Transformations[" +
+      std::to_string(index) + "] = " + message;
+  GRAPH_DEBUG(message);
+}
+
+template <typename T>
+std::string join(std::vector<T> indices, char sep = ',') {
+  std::string s = "";
+  for (auto index : indices) {
+    s += std::to_string(index) + sep;
+  }
+  return s;
+}
+
+std::string join(std::vector<std::string> indices, char sep = ',') {
+  std::string s = "";
+  for (auto index : indices) {
+    s += index + sep;
+  }
+  return s;
+}
+template <typename T>
+std::string indexOf(std::vector<T> objects, T object) {
+  return std::to_string(std::distance(
+      objects.begin(), std::find(objects.begin(), objects.end(), object)));
+}
+
+} // namespace randomization_helper
+
 void LoopNest::randomTransform(int64_t seed) {
   std::srand(seed);
-  int n_transforms = std::rand() % 30;
-  std::string history = "";
+  int n_transforms = std::rand() % 20;
+  std::string message = "";
   // clang-format off
   //   Transformations list:
   //
@@ -3533,18 +3598,32 @@ void LoopNest::randomTransform(int64_t seed) {
     REORDER_AXIS,
     REORDER,
     TILE,
-    MAX_TRANSFORM
+    UNROLL,
+    NORMALIZE,
+    FLATTEN,
+    COMPRESS_BUFFER,
+    COMPRESS_ALL_BUFFERS,
+    SLICE_HEAD, // 20
+    SLICE_TAIL,
+    CACHE_ACCESSES,
+    COMPUTE_AT, // better message
+    RFACTOR, // TODO
+    VECTORIZE,
+    VECTORIZE_INNER_LOOPS,
+    ELIMINATE_DEAD_STORES,
+    MAX_TRANSFORM,
   };
   bool no_more_inlining = false;
-  n_transforms = 1;
   try {
+    // n_transforms = 1;
     for (int i = 0; i < n_transforms; i++) {
       int transform = std::rand() % MAX_TRANSFORM;
-      transform = TILE;
+      // transform = seed;
       switch (transform) {
         case SIMPLIFY: {
+          message = "simplify();\n";
+          randomization_helper::printHistory(i, message);
           simplify();
-          history += "simplify\n";
           break;
         }
         case COMPUTE_INLINE: {
@@ -3552,9 +3631,10 @@ void LoopNest::randomTransform(int64_t seed) {
             auto bufs = NodeFinder<Buf>::find(root_stmt_);
             if (bufs.size() > 0) {
               int buf_number = std::rand() % bufs.size();
+              message =
+                  "computeInline(" + bufs[buf_number]->name_hint() + ");\n";
+              randomization_helper::printHistory(i, message);
               computeInline(bufs[buf_number]);
-              history +=
-                  "compute_inline " + bufs[buf_number]->name_hint() + "\n";
             }
           }
           break;
@@ -3562,16 +3642,18 @@ void LoopNest::randomTransform(int64_t seed) {
         case INLINE_ALL: {
           if (!no_more_inlining) {
             int allow_dup = std::rand() % 2;
+            message =
+                "inlineIntermediateBufs(" + std::to_string(allow_dup) + ");\n";
+            randomization_helper::printHistory(i, message);
             inlineIntermediateBufs(allow_dup);
-            history +=
-                "inlineIntermediateBufs(" + std::to_string(allow_dup) + ")\n";
             no_more_inlining = true;
           }
           break;
         }
         case OPT_COND: {
+          message = "optimizeConditionals();\n";
+          randomization_helper::printHistory(i, message);
           optimizeConditionals();
-          history += "optimizeConditionals\n";
           break;
         }
         case SPLIT_TAIL: {
@@ -3582,9 +3664,10 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
           int factor = std::rand() % 20 + 1;
+          message = "splitWithTail(loops[" + std::to_string(loop_n) + "], " +
+              std::to_string(factor) + ");\n";
+          randomization_helper::printHistory(i, message);
           splitWithTail(loop, factor);
-          history += "splitWithTail(loops[" + std::to_string(loop_n) + "], " +
-              std::to_string(factor) + ")\n";
           break;
         }
         case SPLIT_MASK: {
@@ -3595,33 +3678,35 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
           int factor = std::rand() % 20 + 1;
-          splitWithMask(loop, factor);
-          history += "splitWithMask(loops[" + std::to_string(loop_n) + "], " +
+          message = "splitWithMask(loops[" + std::to_string(loop_n) + "], " +
               std::to_string(factor) + ")\n";
+          randomization_helper::printHistory(i, message);
+          splitWithMask(loop, factor);
           break;
         }
         case DIST1: {
-          // TODO: Fix infinite loop somewhere in the code below and reenable
-#if 0
-        auto loops = NodeFinder<For>::find(root_stmt_);
-        if (loops.size() == 0) {
-          break;
-        }
-        int loop_n = std::rand() % loops.size();
-        auto loop = loops[loop_n];
-        std::vector<StmtPtr> stmts(loop->body()->stmts().begin(), loop->body()->stmts().end());
-        int n_pivots = std::rand() % stmts.size();
-        std::unordered_set<StmtPtr> pivots;
-        if (stmts.size() == 0) {
-          break;
-        }
-        for (int j = 0; j < n_pivots; j++) {
-          int stmt_n = std::rand() % stmts.size();
-          pivots.insert(stmts[stmt_n]);
-        }
-        distributeLoop(loop, pivots);
-        history += "distributeLoop(loops[" + std::to_string(loop_n) + "], pivots_num=" + std::to_string(n_pivots) + ")\n";
-#endif
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % loops.size();
+          auto loop = loops[loop_n];
+          std::vector<StmtPtr> stmts(
+              loop->body()->begin(), loop->body()->end());
+          if (stmts.size() == 0) {
+            break;
+          }
+          int n_pivots = std::rand() % stmts.size() + 1;
+          std::vector<StmtPtr> pivots;
+          std::vector<int> chosen_indices;
+          std::tie(pivots, chosen_indices) =
+              randomization_helper::select_n_randomly<StmtPtr>(stmts, n_pivots);
+          std::unordered_set<StmtPtr> pivots_set(pivots.begin(), pivots.end());
+          message = "distributeLoop(loops[" + std::to_string(loop_n) +
+              "], pivots=stmts(" + randomization_helper::join(chosen_indices) +
+              "))\n";
+          randomization_helper::printHistory(i, message);
+          distributeLoop(loop, pivots_set);
           break;
         }
         case DIST2: {
@@ -3633,8 +3718,9 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
 
+          message = "distributeLoop(loops[" + std::to_string(loop_n) + "])\n";
+          randomization_helper::printHistory(i, message);
           distributeLoop(loop);
-          history += "distributeLoop(loops[" + std::to_string(loop_n) + "])\n";
           break;
         }
         case DIST3: {
@@ -3646,9 +3732,10 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
 
+          message = "distributeLoopAndParents(loops[" + std::to_string(loop_n) +
+              "])\n";
+          randomization_helper::printHistory(i, message);
           distributeLoopAndParents(loop);
-          history += "distributeLoopAndParents(loops[" +
-              std::to_string(loop_n) + "])\n";
           break;
         }
         case DIST4: {
@@ -3660,9 +3747,10 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
 
-          distributeLoopOverInnerLoops(loop);
-          history += "distributeLoopOverInnerLoops(loops[" +
+          message = "distributeLoopOverInnerLoops(loops[" +
               std::to_string(loop_n) + "])\n";
+          randomization_helper::printHistory(i, message);
+          distributeLoopOverInnerLoops(loop);
           break;
         }
         case DIST5: {
@@ -3674,41 +3762,40 @@ void LoopNest::randomTransform(int64_t seed) {
           int loop_n = std::rand() % loops.size();
           auto loop = loops[loop_n];
 
-          distributeLoopAndParentsOverInnerLoops(loop);
-          history += "distributeLoopAndParentsOverInnerLoops(loops[" +
+          message = "distributeLoopAndParentsOverInnerLoops(loops[" +
               std::to_string(loop_n) + "])\n";
+          randomization_helper::printHistory(i, message);
+          distributeLoopAndParentsOverInnerLoops(loop);
           break;
         }
         case FUSE_LOOPS: {
+          // Get all the loops
           auto loops = NodeFinder<For>::find(root_stmt_);
           if (loops.size() <= 1) {
             break;
           }
+
+          // Find a random number of loops to fuse
           int num_loops_to_fuse =
               std::max(2, (int)(std::rand() % loops.size()));
 
-          // Choose a random set of loops
-          std::vector<int> loop_numbers(loops.size());
-          std::iota(loop_numbers.begin(), loop_numbers.end(), 0);
-          std::random_shuffle(loop_numbers.begin(), loop_numbers.end());
-
           std::vector<ForPtr> loops_to_fuse;
-          std::string debug_str;
-          for (int i = 0; i < num_loops_to_fuse; i++) {
-            int loop_number = loop_numbers[i];
-            debug_str += std::to_string(loop_number) + ", ";
-            loops_to_fuse.push_back(loops[loop_number]);
-          }
+          std::vector<int> chosen_indices;
+          std::tie(loops_to_fuse, chosen_indices) =
+              randomization_helper::select_n_randomly<ForPtr>(
+                  loops, num_loops_to_fuse);
 
+          message = "fuseLoops(loops[" +
+              randomization_helper::join(chosen_indices) + "], &fused_loop);\n";
+          randomization_helper::printHistory(i, message);
           // Fuse the loops
           ForPtr fused_loop;
-          if (fuseLoops(loops_to_fuse, &fused_loop)) {
-            history += "fuseLoops[" + debug_str + "])\n";
-          }
+          fuseLoops(loops_to_fuse, &fused_loop);
           break;
         }
 
         case REORDER_AXIS: {
+          // Get all the loops
           auto loops = NodeFinder<For>::find(root_stmt_);
           if (loops.size() <= 1) {
             break;
@@ -3728,57 +3815,77 @@ void LoopNest::randomTransform(int64_t seed) {
           if (valid_pairs.size() == 0) {
             break;
           }
-          int valid_pair_n = rand() % valid_pairs.size();
+          int valid_pair_n = std::rand() % valid_pairs.size();
           auto loop_pair = valid_pairs.at(valid_pair_n);
           auto first_loop = std::get<0>(loop_pair);
           auto second_loop = std::get<1>(loop_pair);
 
+          std::string first_index =
+              randomization_helper::indexOf(loops, first_loop);
+          std::string second_index =
+              randomization_helper::indexOf(loops, second_loop);
+          message = "reorderAxis(loops[" + first_index + "], loops[" +
+              second_index + "]);\n";
+          randomization_helper::printHistory(i, message);
           // reorder the axis
           reorderAxis(first_loop, second_loop);
-
-          history += "reorderAxis for " + std::to_string(first_loop) + " and " +
-              std::to_string(second_loop) + "\n";
           break;
         }
 
         case REORDER: {
-          auto loops = NodeFinder<For>::find(root_stmt_);
-          if (loops.size() <= 1) {
-            break;
-          }
-          auto all_nested_loops = GetAllPerfectlyNestedLoopNests(loops);
-          if (all_nested_loops.size() == 0) {
-            break;
-          }
-          // Randomly pick a set of consecutive loops to reorder
-          int index = rand() % all_nested_loops.size();
-          auto nested_loops = all_nested_loops.at(index);
-
-          // Randomly create a permutation for reordering
-          std::vector<size_t> permutation(nested_loops.size());
-          std::iota(permutation.begin(), permutation.end(), 0);
-          std::random_shuffle(permutation.begin(), permutation.end());
-
-          // reorder
-          reorder(nested_loops, permutation);
-          history += "reorder\n";
-          break;
-        }
-
-        case TILE: {
+          // Get all the loops
           auto loops = NodeFinder<For>::find(root_stmt_);
           if (loops.size() <= 1) {
             break;
           }
 
           // Find all perfectly nested loop nests
-          auto all_nested_loops = GetAllPerfectlyNestedLoopNests(loops);
+          auto all_nested_loops =
+              randomization_helper::GetAllPerfectlyNestedLoopNests(loops);
           if (all_nested_loops.size() == 0) {
             break;
           }
 
-          // Choose a set of perfectly nested loop nest and then choose a pair
-          // of loops from it
+          // Randomly pick a set of consecutive loops to reorder
+          int index = rand() % all_nested_loops.size();
+          auto nested_loops = all_nested_loops.at(index);
+
+          // Create a random permutation for reordering
+          std::vector<size_t> permutation(nested_loops.size());
+          std::iota(permutation.begin(), permutation.end(), 0);
+          std::random_shuffle(permutation.begin(), permutation.end());
+
+          // Generate a good history message
+          std::vector<std::string> indices;
+          for (auto l : nested_loops) {
+            indices.push_back(randomization_helper::indexOf(loops, l));
+          }
+          message = "reorder(loops[" + randomization_helper::join(indices) +
+              "], permutation=[" + randomization_helper::join(permutation) +
+              "]);\n";
+          randomization_helper::printHistory(i, message);
+          // reorder
+          reorder(nested_loops, permutation);
+          break;
+        }
+
+        case TILE: {
+          // Get all the loops
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() <= 1) {
+            break;
+          }
+
+          // Tile needs two perfectly nested loops. To find such loops, we find
+          // all perfectly nested loop nests, randomly pick one of them, and
+          // randomly pick 2 consecutive loops in that loop nest.
+          // Find all perfectly nested loop nests
+          auto all_nested_loops =
+              randomization_helper::GetAllPerfectlyNestedLoopNests(loops);
+          if (all_nested_loops.size() == 0) {
+            break;
+          }
+
           int index = rand() % all_nested_loops.size();
           auto nested_loops = all_nested_loops.at(index);
           if (nested_loops.size() < 2) {
@@ -3788,39 +3895,262 @@ void LoopNest::randomTransform(int64_t seed) {
           auto x_loop = nested_loops.at(loop_number);
           auto y_loop = nested_loops.at(loop_number + 1);
 
-          auto find_factor = [](ForPtr loop) {
-            ExprPtr loop_stop = loop->stop();
-            auto loop_imm = intValue(loop_stop);
-            if (loop_imm) {
-              int loop_bound = *loop_imm;
-              int factor = rand() % (loop_bound - 1) + 1;
-              return factor;
-            }
-            return -1;
-          };
-
-          int x_factor = find_factor(x_loop);
-          int y_factor = find_factor(y_loop);
+          int x_factor = randomization_helper::find_factor(x_loop);
+          int y_factor = randomization_helper::find_factor(y_loop);
           if (x_factor == -1 || y_factor == -1) {
             break;
           }
+
+          std::string x_loop_index =
+              randomization_helper::indexOf(loops, x_loop);
+          std::string y_loop_index =
+              randomization_helper::indexOf(loops, y_loop);
+          message =
+              "tile(loops[" + x_loop_index + "], loops[" + y_loop_index + "], ";
+          message += std::to_string(x_factor) + ", " +
+              std::to_string(y_factor) + ");\n";
+          randomization_helper::printHistory(i, message);
           // tile
           tile(x_loop, y_loop, x_factor, y_factor);
-          history += "tile\n";
           break;
         }
 
-          // TODO: Add remaining transforms
+        case UNROLL: {
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % loops.size();
+          auto loop = loops[loop_n];
+
+          message = "unroll(loops[" + std::to_string(loop_n) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          unroll(loop);
+          break;
+        }
+
+        case NORMALIZE: {
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % loops.size();
+          auto loop = loops[loop_n];
+
+          message = "normalize(loops[" + std::to_string(loop_n) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          normalize(loop);
+          break;
+        }
+
+        case FLATTEN: {
+          // Get all the loops
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() <= 1) {
+            break;
+          }
+
+          // Find all perfectly nested loop nests
+          auto all_nested_loops =
+              randomization_helper::GetAllPerfectlyNestedLoopNests(loops);
+          if (all_nested_loops.size() == 0) {
+            break;
+          }
+
+          // Randomly pick a set of consecutive loops to flatten
+          int index = rand() % all_nested_loops.size();
+          auto nested_loops = all_nested_loops.at(index);
+
+          // Generate a good history message
+          std::vector<std::string> indices;
+          for (auto l : nested_loops) {
+            indices.push_back(randomization_helper::indexOf(loops, l));
+          }
+          message =
+              "flatten(loops[" + randomization_helper::join(indices) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          // flatten
+          flatten(nested_loops);
+          break;
+        }
+
+        case COMPRESS_BUFFER: {
+          auto buffers = NodeFinder<Buf>::find(root_stmt_);
+          if (buffers.size() < 0) {
+            break;
+          }
+          int buffer_n = std::rand() % buffers.size();
+          auto buffer = buffers[buffer_n];
+
+          message = "compressBuffer(buffers[" + std::to_string(buffer_n) +
+              "], root_stmt_);\n";
+          randomization_helper::printHistory(i, message);
+          compressBuffer(buffer, root_stmt_);
+          break;
+        }
+
+        case COMPRESS_ALL_BUFFERS: {
+          auto buffers = BufFinder::find(root_stmt_);
+          if (buffers.size() < 0) {
+            break;
+          }
+
+          message = "compressAllBuffers(root_stmt_);\n";
+          randomization_helper::printHistory(i, message);
+          compressAllBuffers(root_stmt_);
+          break;
+        }
+
+        case SLICE_HEAD: {
+          // Get all the loops
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % loops.size();
+          auto loop = loops[loop_n];
+
+          int factor = randomization_helper::find_factor(loop);
+          if (factor == -1) {
+            break;
+          }
+          message = "sliceHead(loops[" + std::to_string(loop_n) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          ;
+          sliceHead(loop, factor);
+          break;
+        }
+
+        case SLICE_TAIL: {
+          // Get all the loops
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          if (loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % loops.size();
+          auto loop = loops[loop_n];
+
+          int factor = randomization_helper::find_factor(loop);
+          if (factor == -1) {
+            break;
+          }
+          message = "sliceTail(loops[" + std::to_string(loop_n) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          sliceTail(loop, factor);
+          break;
+        }
+
+        case CACHE_ACCESSES: {
+          // TODO - Implement cache_access
+          break;
+        }
+
+        case COMPUTE_AT: {
+          // To find valid compute at pairs, we need to collect the producer
+          // consumer pairs. For now, we do not collect all such pairs for
+          // simplicity. For now, we collect producer and the immediate parent
+          // loop of the consumer. We could collect all the consumer enclosing
+          // loops, but then we will have to clean up the ones that are shared
+          // with the producer encloser loop. Currently, we only test on the
+          // immediate parent loop.
+          auto buffers = BufFinder::find(root_stmt_);
+          std::vector<std::pair<StmtPtr, ForPtr>> producer_consumer_pairs;
+
+          for (auto buffer : buffers) {
+            auto producers = getAllWritesToBuf(buffer);
+            auto consumers = StmtsReadingBuf::find(root_stmt_, buffer);
+            if (producers.size() != 1 || consumers.empty()) {
+              continue;
+            }
+
+            for (auto producer : producers) {
+              for (auto consumer : consumers) {
+                auto parent_loop = getParentLoop(consumer);
+                auto pc_pair = std::make_pair(producer, parent_loop);
+                producer_consumer_pairs.push_back(pc_pair);
+              }
+            }
+          }
+
+          if (producer_consumer_pairs.size() == 0) {
+            break;
+          }
+
+          // Choose a random pair
+          int pair_n = std::rand() % producer_consumer_pairs.size();
+          auto pc_pair = producer_consumer_pairs.at(pair_n);
+          auto store = std::get<0>(pc_pair);
+          auto for_ptr = std::get<1>(pc_pair);
+
+          // TODO - come up with better message
+          message = "computeAt(....);\n";
+          randomization_helper::printHistory(i, message);
+          computeAt(store, for_ptr);
+          break;
+        }
+
+        case RFACTOR: {
+          // TODO - Implement rfactor
+          break;
+        }
+
+        case VECTORIZE: {
+          auto loops = NodeFinder<For>::find(root_stmt_);
+          std::vector<ForPtr> innermost_loops;
+
+          for (auto loop : loops) {
+            bool containsSubLoops = false;
+            if (BlockPtr body = to<Block>(loop->body())) {
+              for (StmtPtr stmt : *body) {
+                if (ForPtr f2 = to<For>(stmt)) {
+                  containsSubLoops = true;
+                }
+              }
+            }
+
+            if (!containsSubLoops) {
+              innermost_loops.push_back(loop);
+            }
+          }
+
+          if (innermost_loops.size() == 0) {
+            break;
+          }
+          int loop_n = std::rand() % innermost_loops.size();
+          auto loop = innermost_loops[loop_n];
+
+          message = "vectorize(loops[" + std::to_string(loop_n) + "]);\n";
+          randomization_helper::printHistory(i, message);
+          vectorize(loop);
+          break;
+        }
+
+        case VECTORIZE_INNER_LOOPS: {
+          message = "vectorizeInnerLoops();\n";
+          randomization_helper::printHistory(i, message);
+          vectorizeInnerLoops();
+          break;
+        }
+
+        case ELIMINATE_DEAD_STORES: {
+          message = "eliminateDeadStores();\n";
+          randomization_helper::printHistory(i, message);
+          eliminateDeadStores();
+          break;
+        }
+
+        // TODO: Add remaining transforms
         default:
           break;
       }
     }
   } catch (...) {
     std::cout << "EXCEPTION THROWN!\n";
-    std::cout << "SEED: " << seed << "\n" << history;
+    std::cout << "SEED: " << seed << "\n";
+    throw std::runtime_error("Random test failed");
   }
-  GRAPH_DEBUG("SEED: ", seed, "\n", history);
-
+  message = "End of transformations;\n";
+  randomization_helper::printHistory(n_transforms, message);
   return;
 }
 
