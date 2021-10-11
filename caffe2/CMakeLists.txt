@@ -13,7 +13,7 @@ endif()
 
 # Debug messages - if you want to get a list of source files and examine
 # target information, enable the following by -DPRINT_CMAKE_DEBUG_INFO=ON.
-set(PRINT_CMAKE_DEBUG_INFO FALSE CACHE BOOL "print cmake debug information")
+set(PRINT_CMAKE_DEBUG_INFO TRUE CACHE BOOL "print cmake debug information")
 if(PRINT_CMAKE_DEBUG_INFO)
   include(../cmake/DebugHelper.cmake)
 endif()
@@ -1009,14 +1009,6 @@ if(NOT INTERN_BUILD_MOBILE)
   add_dependencies(torch_cpu Caffe2_PROTO)
 endif()
 
-# Build model tracer for tracing-based selective build
-if(TRACING_BASED AND NOT BUILD_LITE_INTERPRETER AND NOT INTERN_BUILD_MOBILE)
-  add_subdirectory(
-    ${TORCH_ROOT}/torch/csrc/jit/mobile/model_tracer
-    ${CMAKE_BINARY_DIR}/model_tracer
-  )
-endif()
-
 # Codegen selected_mobile_ops.h for template selective build
 if(BUILD_LITE_INTERPRETER AND SELECTED_OP_LIST)
   message("running gen_selected_mobile_ops_header for:  '${SELECTED_OP_LIST}'")
@@ -1547,6 +1539,15 @@ elseif(USE_ROCM)
 endif()
 if(USE_MLCOMPUTE)
   target_link_libraries(torch PUBLIC torch_mlc_library)
+endif()
+
+# Build model tracer for tracing-based selective build
+if(NOT BUILD_LITE_INTERPRETER AND NOT INTERN_BUILD_MOBILE)
+  #if(TRACING_BASED AND NOT BUILD_LITE_INTERPRETER AND NOT INTERN_BUILD_MOBILE)
+  add_subdirectory(
+          ${TORCH_ROOT}/torch/csrc/jit/mobile/model_tracer
+          ${CMAKE_BINARY_DIR}/model_tracer
+  )
 endif()
 
 if(PRINT_CMAKE_DEBUG_INFO)

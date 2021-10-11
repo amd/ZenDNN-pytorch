@@ -1,5 +1,7 @@
 #include <torch/csrc/jit/mobile/model_tracer/MobileModelRunner.h>
 #include <torch/csrc/jit/mobile/model_tracer/TensorUtils.h>
+#include <torch/csrc/jit/mobile/import.h>
+#include <torch/csrc/jit/mobile/module.h>
 
 namespace torch {
 namespace jit {
