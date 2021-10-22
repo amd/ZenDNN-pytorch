@@ -105,7 +105,7 @@ def export(model, args, f, export_params=True, verbose=False, training=None,
            input_names=None, output_names=None, operator_export_type=None,
            opset_version=None, do_constant_folding=True, example_outputs=None,
            dynamic_axes=None, keep_initializers_as_inputs=None, custom_opsets=None,
-           use_external_data_format=None, export_modules_as_functions=False):
+           export_modules_as_functions=False):
     if operator_export_type is None:
         if torch.onnx.PYTORCH_ONNX_CAFFE2_BUNDLE:
             operator_export_type = OperatorExportTypes.ONNX_ATEN_FALLBACK
@@ -115,17 +115,12 @@ def export(model, args, f, export_params=True, verbose=False, training=None,
     if example_outputs is not None:
         warnings.warn("`example_outputs' is deprecated and ignored. Will be removed in "
                       "next PyTorch release.")
-    if use_external_data_format is not None:
-        warnings.warn("`use_external_data_format' is deprecated and ignored. Will be removed in next "
-                      "PyTorch release. The code will work as it is False if models are not larger than 2GB, "
-                      "Otherwise set to False because of size limits imposed by Protocol Buffers.")
 
     _export(model, args, f, export_params, verbose, training, input_names, output_names,
             operator_export_type=operator_export_type, opset_version=opset_version,
             do_constant_folding=do_constant_folding, example_outputs=example_outputs,
             dynamic_axes=dynamic_axes, keep_initializers_as_inputs=keep_initializers_as_inputs,
-            custom_opsets=custom_opsets, use_external_data_format=use_external_data_format,
-            export_modules_as_functions=export_modules_as_functions)
+            custom_opsets=custom_opsets, export_modules_as_functions=export_modules_as_functions)
 
 
 def _is_constant_tensor_list(node):
@@ -336,20 +331,6 @@ def _decide_constant_folding(do_constant_folding, operator_export_type, training
                       "turning off constant folding or setting the training=TrainingMode.EVAL.")
     return do_constant_folding
 
-
-def _decide_external_data_format(use_external_data_format, operator_export_type, f):
-    val_use_external_data_format = _resolve_args_by_export_type("use_external_data_format",
-                                                                use_external_data_format,
-                                                                operator_export_type)
-    # f can be a non-string in regular-sized model export case, but for large model export, f must be a non-empty
-    # string specifying the location of the model. For large model cases, if f is not a non-empty string,
-    # then this method returns an empty string, which is an error condition for the large model export code
-    # path later (but not for regular model export code path).
-    if (val_use_external_data_format is None or val_use_external_data_format is True) and isinstance(f, str):
-        model_file_location = f
-    else:
-        model_file_location = str()
-    return val_use_external_data_format, model_file_location
 
 def _decide_input_format(model, args):
     import inspect
@@ -700,8 +681,7 @@ def _export(model, args, f, export_params=True, verbose=False, training=None,
             opset_version=None, do_constant_folding=True,
             dynamic_axes=None, keep_initializers_as_inputs=None,
             fixed_batch_size=False, custom_opsets=None, add_node_names=True,
-            use_external_data_format=None, onnx_shape_inference=True,
-            export_modules_as_functions=False):
+            onnx_shape_inference=True, export_modules_as_functions=False):
 
     export_modules_as_functions = _setup_trace_module_map(model, export_modules_as_functions)
 
@@ -741,9 +721,10 @@ def _export(model, args, f, export_params=True, verbose=False, training=None,
                                                              opset_version)
             val_add_node_names = _decide_add_node_names(add_node_names, operator_export_type)
             val_do_constant_folding = _decide_constant_folding(do_constant_folding, operator_export_type, training)
-            val_use_external_data_format, model_file_location = _decide_external_data_format(use_external_data_format,
-                                                                                             operator_export_type,
-                                                                                             f)
+            if isinstance(f, str):
+                model_file_location = f
+            else:
+                model_file_location = str()
             args = _decide_input_format(model, args)
             if dynamic_axes is None:
                 dynamic_axes = {}
@@ -764,6 +745,9 @@ def _export(model, args, f, export_params=True, verbose=False, training=None,
 
             torch._C._jit_pass_dce_allow_deleting_nodes_with_side_effects(graph)
             node_attr_to_name = {}  # type: ignore[var-annotated]
+            # Default val_use_external_data_format = False, decide whether to change its value by
+            # the model size in _export_onnx().
+            val_use_external_data_format = False
             if export_modules_as_functions is not None:
                 # NOTE: cannot call DCE after this pass. DCE will remove function definition nodes.
                 node_attr_to_name = torch._C._jit_pass_onnx_function_extraction(
