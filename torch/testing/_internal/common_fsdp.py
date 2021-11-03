@@ -49,6 +49,18 @@ def get_full_params(model, recurse=True):
 def _maybe_cuda(model, move_to_cuda):
     return model.cuda() if move_to_cuda else model
 
+class DummyProcessGroup:
+    def __init__(self, rank: int, size: int):
+        self._rank = rank
+        self._size = size
+
+    def rank(self) -> int:
+        return self._rank
+
+    def size(self) -> int:
+        return self._size
+
+
 class TransformerWithSharedParams(nn.Module):
     def __init__(
         self, group, *args, d_vocab=23, d_model=16, add_bn=True,
