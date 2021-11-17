@@ -430,24 +430,6 @@ at::Tensor LazyNativeFunctions::max_pool3d(
       self, kernel_size, stride, padding, dilation, ceil_mode);
 }
 
-at::Tensor LazyNativeFunctions::mul(const at::Tensor& self,
-                                    const at::Tensor& other) {
-  LTC_FN_COUNTER("lazy::");
-  return DoBinaryOp(self, other,
-                    [&](const LazyTensor& xself, const LazyTensor& xother) {
-                      return lazy_tensor_aten_ops::mul(xself, xother);
-                    });
-}
-
-at::Tensor LazyNativeFunctions::mul(const at::Tensor& self,
-                                    const at::Scalar& other) {
-  LTC_FN_COUNTER("lazy::");
-  return DoBinaryOp(self, other,
-                    [&](const LazyTensor& xself, const at::Scalar& other) {
-                      return lazy_tensor_aten_ops::mul(xself, other);
-                    });
-}
-
 std::tuple<at::Tensor, at::Tensor, at::Tensor>
 LazyNativeFunctions::native_batch_norm(
     const at::Tensor& input, const c10::optional<at::Tensor>& weight,

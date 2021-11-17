@@ -163,6 +163,10 @@ std::vector<Shape> compute_shape_mean(const at::Tensor& self, c10::optional<at::
   return {Shape(self.scalar_type(), {})};
 }
 
+std::vector<Shape> compute_shape_mul(const at::Tensor & self, const at::Scalar & other) {
+  return {Shape(self.scalar_type(), {self.sizes().vec()})};
+}
+
 std::vector<Shape> compute_shape_mv(const at::Tensor& self, const at::Tensor& vec) {
   return {Shape(self.scalar_type(), {self.size(0)})};
 }

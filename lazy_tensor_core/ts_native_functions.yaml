@@ -46,6 +46,8 @@ full_codegen:
   - mean
   - mean.dim
   - mm
+  - mul.Tensor
+  - mul.Scalar
   - mv
   - native_layer_norm
   - native_layer_norm_backward
@@ -92,8 +94,6 @@ supported:
   - empty_strided
   - expand
   - fill_.Scalar
-  - mul.Tensor
-  - mul.Scalar
   - native_batch_norm
   - native_batch_norm_backward
   - max_pool2d_with_indices
