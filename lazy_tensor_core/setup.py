@@ -252,6 +252,7 @@ def make_relative_rpath(path):
 
 extra_compile_args = [
     '-std=c++14',
+    '-fno-omit-frame-pointer',
     '-Wno-sign-compare',
     '-Wno-unknown-pragmas',
     '-Wno-return-type',
