@@ -135,7 +135,7 @@ torch::lazy::hash_t TsNode::GetOpHash(OpKind op,
                                       const torch::lazy::Shape& shape,
                                       torch::lazy::hash_t hash_seed) {
   torch::lazy::hash_t h =
-      torch::lazy::HashCombine(op.hash(), torch::lazy::Hash(shape.to_string()));
+      torch::lazy::HashCombine(op.hash(), torch::lazy::Hash(shape.dim()));
   return torch::lazy::HashCombine(h, hash_seed);
 }
 

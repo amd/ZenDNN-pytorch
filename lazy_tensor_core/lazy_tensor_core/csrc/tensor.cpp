@@ -268,11 +268,13 @@ torch::lazy::Value LazyTensor::GetIrValueForTensor(const at::Tensor& tensor,
   compiler::BackendDataPtr data;
   bool read_only = false;
   if (tensor.dim() == 0 && tensor.numel() == 1) {
-    at::Scalar value = tensor.item();
-    if (IsSpecialScalar(value)) {
-      return ir::ops::ScalarOp(std::move(value), tensor.scalar_type());
-    }
-    data = LazyGraphExecutor::Get()->GetDeviceData(tensor.cpu(), device);
+    // at::Scalar value = tensor.item();
+    // if (IsSpecialScalar(value)) {
+      // return ir::ops::ScalarOp(std::move(value), tensor.scalar_type());
+    // }
+    // TODO(whc) can we avoid the copy to cpu here?
+    data = LazyGraphExecutor::Get()->GetDeviceData(tensor, device);
+    // data = LazyGraphExecutor::Get()->GetDeviceData(tensor.cpu(), device);
     read_only = true;
   } else {
     LTC_TIMED("IrValueTensorToDataHandle");
