@@ -14,6 +14,7 @@
 #include <c10/util/irange.h>
 
 #include <vector>
+#include <iostream>
 
 // First the required LAPACK implementations are registered here.
 // A comment above the registered LAPACK routine suggest which batched
@@ -241,6 +242,45 @@ TORCH_META_FUNC(triangular_solve)(const Tensor& self, const Tensor& A, bool uppe
   }
 }
 
+TORCH_META_FUNC(linalg_svd_ex)(const Tensor& A,
+                               bool full_matrices,
+                               bool check_errors) {
+  TORCH_CHECK(A.dim() >= 2, "torch.linalg.svd: input should have at least 2 dimensions, but has ", A.dim(), " dimensions instead");
+
+  // We need to distinguish the cuSOLVER case, as cuSOLVER expects F-contig matrices, but
+  // it computes V rather than Vh
+  const bool use_cusolver = at::native::svd_uses_cusolver(A);
+
+  auto sizes = A.sizes().vec();
+  const auto m = sizes.cend()[-2];
+  const auto n = sizes.cend()[-1];
+  const auto k = std::min(m, n);
+  const auto A_c_contiguous = A.is_contiguous();
+
+  // Prepare sizes for U
+  sizes.back() = full_matrices ? m : k;
+  // Optimization: If A is C-contig (F-transposed) we compute the SVD of A^T and transpose the outputs
+  auto U_strides = at::native::contiguous_strides(sizes, /*f-contig*=*/!A_c_contiguous || use_cusolver);
+  set_output(0, sizes, U_strides, A.options(), {});
+
+  // Prepare sizes for Vh
+  sizes.end()[-2] = full_matrices ? n : k;
+  sizes.end()[-1] = n;
+  // Optimization: If A is C-contig (F-transposed) we compute the SVD of A^T and transpose the outputs
+  auto Vh_strides = at::native::contiguous_strides(sizes, /*f-contig*=*/!A_c_contiguous && !use_cusolver);
+  set_output(2, sizes, Vh_strides, A.options(), {});
+
+  // Prepare sizes for S. S is always real, even when A is complex.
+  sizes = A.sizes().vec();
+  sizes.pop_back();
+  sizes.end()[-1] = k;
+  set_output(1, sizes, {}, A.options().dtype(c10::toValueType(A.scalar_type())), {});
+
+  // Prepare sizes for info
+  sizes.pop_back();
+  set_output(3, sizes, {}, A.options().dtype(kInt), {});
+}
+
 } // namespace meta
 
 namespace native {
@@ -259,10 +299,6 @@ void lapackCholeskySolve(char uplo, int n, int nrhs, scalar_t *a, int lda, scala
 
 template<class scalar_t, class value_t=scalar_t>
 void lapackSymeig(char jobz, char uplo, int n, scalar_t *a, int lda, value_t *w, scalar_t *work, int lwork, value_t *rwork, int *info);
-
-template<class scalar_t, class value_t=scalar_t>
-void lapackSvd(char jobz, int m, int n, scalar_t *a, int lda,
-               value_t *s, scalar_t *u, int ldu, scalar_t *vt, int ldvt, scalar_t *work, int lwork, value_t *rwork, int *iwork, int *info);
 
 template<> void lapackSolve<c10::complex<double>>(int n, int nrhs, c10::complex<double> *a, int lda, int *ipiv, c10::complex<double> *b, int ldb, int *info) {
   zgesv_(&n, &nrhs, reinterpret_cast<std::complex<double>*>(a), &lda, ipiv, reinterpret_cast<std::complex<double>*>(b), &ldb, info);
@@ -2947,98 +2983,251 @@ std::tuple<Tensor,Tensor> eig(const Tensor& self, bool eigenvectors) {
   return std::tuple<Tensor, Tensor>(e, v);
 }
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ svd ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ linalg_svd ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-template <typename scalar_t>
-static void apply_svd(Tensor& self, Tensor& U, Tensor& S, Tensor& VT,
-                      char jobz, std::vector<int64_t>& infos) {
-#if !AT_BUILD_WITH_LAPACK()
-  AT_ERROR("svd: LAPACK library not found in compilation");
-#else
-  using value_t = typename c10::scalar_value_type<scalar_t>::type;
-  auto self_data = self.data_ptr<scalar_t>();
-  auto U_data = U.data_ptr<scalar_t>();
-  auto S_data = S.data_ptr<value_t>();
-  auto VT_data = VT.data_ptr<scalar_t>();
-  auto self_stride = matrixStride(self);
-  auto U_stride = jobz == 'N' ? 1 : matrixStride(U);
-  auto S_stride = S.size(-1);
-  auto VT_stride = jobz == 'N' ? 1 : matrixStride(VT);
-  auto batchsize = batchCount(self);
+/* torch.svd, implemented in terms of torch.linalg.svd. There are two main
+   differences:
 
-  // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
-  int info;
-  auto m = self.size(-2);
-  auto n = self.size(-1);
-  auto lda = std::max<int64_t>(1, m);
-  auto ldvt = std::max<int64_t>(1, jobz == 'N' ? 1 : VT.size(-2));
-  auto mn = std::min(m, n);
-  Tensor iwork = at::empty({8 * mn}, at::kInt);
-  auto iwork_data = iwork.data_ptr<int>();
-  Tensor rwork;
-  value_t* rwork_data = nullptr;
-  if (isComplexType(at::typeMetaToScalarType(self.dtype()))) {
-    auto lrwork  = computeLRWorkDim(jobz, m, n);
-    // rwork is an array of floats or doubles depending on the type
-    rwork = at::empty({std::max(int64_t(1), lrwork)}, at::typeMetaToScalarType(S.dtype()));
-    rwork_data = rwork.data_ptr<value_t>();
+    1. the 2nd parameter is bool some=True, which if effectively the opposite
+       of full_matrices=True
+
+    2. svd returns V, while linalg.svd returns Vh = V^T (for real inputs) or Vh = V^H (for complex inputs).
+       To accommodate the difference, we transpose() and conj() Vh upon return
+*/
+
+DEFINE_DISPATCH(svd_stub);
+
+void linalg_svd_and_svdvals(const Tensor& A,
+                               const bool full_matrices,
+                               const bool compute_uv,
+                               const bool check_errors,
+                               Tensor & U,
+                               Tensor & S,
+                               Tensor & Vh,
+                               Tensor & info) {
+  // We need to distinguish the cuSOLVER case, as cuSOLVER expects F-contig matrices, but
+  // it computes V rather than Vh
+  const bool use_cusolver = at::native::svd_uses_cusolver(A);
+
+  // A always needs to be copied as its contents will be destroyed during the computaton of the SVD
+  const auto A_copy = cloneBatchedColumnMajor(A);
+
+  // Prepare S
+  const auto S_ready = S.is_contiguous();
+  const auto S_ = borrow_else_clone(S_ready, S, S, /*C-contig*/true);
+
+  // Prepare U / Vh
+  // U_ and Vh_ are just going to be accessed whenever compute_uv == true
+  bool U_ready = true;
+  auto U_ = U;
+  bool Vh_ready = true;
+  auto Vh_ = Vh;
+  if (compute_uv) {
+    U_ready = U_.mT().is_contiguous();
+    U_ = borrow_else_clone_tensor(U_ready, U_, U_, /*C-contig*/false);
+
+    Vh_ready = (!use_cusolver && Vh_.mT().is_contiguous())
+            || (use_cusolver && Vh_.is_contiguous());
+    std::cout << U_ready << " " << Vh_ready << " " << use_cusolver << std::endl;
+    Vh_ = borrow_else_clone_tensor(Vh_ready, Vh_, Vh_, /*C-contig*/use_cusolver);
+
+    TORCH_INTERNAL_ASSERT(U_.mT().is_contiguous());
+    TORCH_INTERNAL_ASSERT(use_cusolver ? Vh_.is_contiguous() : Vh_.mT().is_contiguous());
   }
 
-  // Run once, first to get the optimum work size.
-  // Since we deal with batches of matrices with the same dimensions, doing this outside
-  // the loop saves (batch_size - 1) workspace queries which would provide the same result
-  // and (batch_size - 1) calls to allocate and deallocate workspace using at::empty()
-  int lwork = -1;
-  scalar_t wkopt;
-  lapackSvd<scalar_t, value_t>(jobz, m, n, self_data, lda, S_data, U_data, lda, VT_data, ldvt, &wkopt, lwork, rwork_data, iwork_data, &info);
-  lwork = std::max<int>(1, real_impl<scalar_t, value_t>(wkopt));
-  Tensor work = at::empty({lwork}, self.options());
-  auto work_data = work.data_ptr<scalar_t>();
+  // Prepare info
+  const auto info_ready = info.is_contiguous();
+  const auto info_ = borrow_else_clone(info_ready, info, info, /*C-contig*/true);
 
-  for (const auto i : c10::irange(batchsize)) {
-    scalar_t* self_working_ptr = &self_data[i * self_stride];
-    value_t* S_working_ptr = &S_data[i * S_stride];
-    scalar_t* U_working_ptr = &U_data[i * U_stride];
-    scalar_t* VT_working_ptr = &VT_data[i * VT_stride];
+  svd_stub(A.device().type(),
+           A,
+           A_copy,
+           full_matrices,
+           compute_uv,
+           U_, *S_, Vh_, *info_);
 
-    // Compute S, U (optionally) and VT (optionally)
-    lapackSvd<scalar_t, value_t>(jobz, m, n, self_working_ptr, lda,
-                        S_working_ptr, U_working_ptr, lda, VT_working_ptr, ldvt, work_data, lwork, rwork_data, iwork_data, &info);
-    infos[i] = info;
-    if (info != 0) {
-      return;
+  if (!U.is_same(U_)) {
+    std::cout << "COPY U" << std::endl;
+    U.copy_(U_);
+  }
+  if (!S_ready) {
+    std::cout << "COPY S" << std::endl;
+    S.copy_(*S_);
+  }
+  if (!Vh.is_same(Vh_)) {
+    std::cout << "COPY Vh" << std::endl;
+    Vh.copy_(Vh_);
+  }
+  if (!info_ready) {
+    info.copy_(*info_);
+  }
+
+  if (check_errors) {
+    if (A.dim() > 2) {
+      batchCheckErrors(info, "linalg.svd");
+    } else {
+      singleCheckErrors(info.item<int64_t>(), "linalg.svd");
     }
   }
-#endif
 }
 
-std::tuple<Tensor, Tensor, Tensor> _svd_helper_cpu(const Tensor& self, bool some, bool compute_uv) {
-  std::vector<int64_t> infos(batchCount(self), 0);
+TORCH_IMPL_FUNC(linalg_svd_ex_out)(const Tensor& A,
+                                   bool full_matrices,
+                                   bool check_errors,
+                                   const Tensor & U,
+                                   const Tensor & S,
+                                   const Tensor & Vh,
+                                   const Tensor & info) {
+  linalg_svd_and_svdvals(A,
+                         full_matrices,
+                         /*compute_uv=*/true,
+                         check_errors,
+                         const_cast<Tensor&>(U),
+                         const_cast<Tensor&>(S),
+                         const_cast<Tensor&>(Vh),
+                         const_cast<Tensor&>(info));
+}
 
-  char jobz = compute_uv ? (some ? 'S' : 'A') : 'N';
+std::tuple<Tensor&, Tensor&, Tensor&> linalg_svd_out(const Tensor& A,
+                                                     bool full_matrices,
+                                                     Tensor & U,
+                                                     Tensor & S,
+                                                     Tensor & Vh) {
+  auto info = at::empty({0}, A.options().dtype(kInt));
+  at::linalg_svd_ex_out(U, S, Vh, info, A, full_matrices, /*chech_errors=*/false);
 
-  Tensor U_working_copy, S_working_copy, VT_working_copy;
-  std::tie(U_working_copy, S_working_copy, VT_working_copy) = _create_U_S_VT(self, some, compute_uv);
-
-  auto self_working_copy = cloneBatchedColumnMajor(self);
-
-  AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES(self.scalar_type(), "svd_cpu", [&]{
-    apply_svd<scalar_t>(self_working_copy, U_working_copy, S_working_copy, VT_working_copy, jobz, infos);
-  });
-
-  if (self.dim() > 2) {
-    batchCheckErrors(infos, "svd_cpu");
+  if (A.dim() > 2) {
+    batchCheckErrors(info, "torch.linalg.svd");
   } else {
-    singleCheckErrors(infos[0], "svd_cpu");
+    singleCheckErrors(info.item<int64_t>(), "torch.linalg.svd");
   }
 
-  if (compute_uv) {
-    // so far we have computed VT, but torch.svd returns V instead. Adjust accordingly.
-    // Note that the 'apply_svd' routine returns VT = V^T (for real inputs) or VT = V^H (for complex inputs), not V.
-    VT_working_copy = VT_working_copy.conj();
-    VT_working_copy.transpose_(-2, -1);
+  return std::tie(U, S, Vh);
+}
+
+std::tuple<Tensor, Tensor, Tensor> linalg_svd(const Tensor& A, bool full_matrices) {
+  Tensor U, S, Vh, info;
+  std::tie(U, S, Vh, info) = at::linalg_svd_ex(A, full_matrices, /*chech_errors=*/false);
+
+  if (A.dim() > 2) {
+    batchCheckErrors(info, "torch.linalg.svd");
+  } else {
+    singleCheckErrors(info.item<int64_t>(), "torch.linalg.svd");
   }
-  return std::make_tuple(U_working_copy, S_working_copy, VT_working_copy);
+
+  return std::make_tuple(std::move(U), std::move(S), std::move(Vh));
+}
+
+// Can't make it structured as its a composition of the `svd` and a projection
+std::tuple<Tensor&, Tensor&> linalg_svdvals_ex_out(const Tensor& A,
+                                                   bool check_errors,
+                                                   Tensor & S,
+                                                   Tensor & info) {
+  // Type checks and resizes
+  // singular values are always real-valued
+  checkLinalgCompatibleDtype(
+      "torch.linalg.svdvals_ex", S.scalar_type(), toValueType(A.scalar_type()));
+  TORCH_CHECK(
+      info.scalar_type() == ScalarType::Int,
+      "torch.linalg.svdvals_ex: ",
+      "Expected info to have ", ScalarType::Int, " dtype, but got info with dtype ", info.scalar_type());
+
+  // Dummies
+  Tensor U, Vh;
+  const bool A_requires_grad = (at::GradMode::is_enabled() && A.requires_grad());
+  if (A_requires_grad) {
+    // U, S, Vh, infos will be resized accordingly, and they will be saved for backward by
+    // linalg_svd_ex
+    U = at::empty({0}, A.options());
+    Vh = at::empty({0}, A.options());
+    at::linalg_svd_ex_out(U, S, Vh, info, A, /*full_matrices=*/false, /*check_errors=*/false);
+  } else {
+    // Resize S
+    auto sizes = A.sizes().vec();
+    sizes.pop_back();
+    sizes.end()[-1] = std::min(A.size(-2), A.size(-1));
+    at::native::resize_output(S, sizes);
+
+    // Resize info
+    sizes.pop_back();
+    at::native::resize_output(info, sizes);
+
+    linalg_svd_and_svdvals(A, /*full_matrices=*/false, /*compute_uv=*/false, /*check_errors=*/false, U, S, Vh, info);
+  }
+
+  if (check_errors) {
+    if (A.dim() > 2) {
+      batchCheckErrors(info, "torch.linalg.svdvals_ex");
+    } else {
+      singleCheckErrors(info.item<int64_t>(), "torch.linalg.svdvals_ex");
+    }
+  }
+
+  return std::tie(S, info);
+}
+
+std::tuple<Tensor, Tensor> linalg_svdvals_ex(const Tensor& A, bool check_errors) {
+  // Dummies
+  Tensor S, info;
+  const bool A_requires_grad = (at::GradMode::is_enabled() && A.requires_grad());
+  if (A_requires_grad) {
+    std::tie(std::ignore, S, std::ignore, info) = at::linalg_svd_ex(A, /*full_matrices=*/false, /*check_errors*/false);
+
+    if (check_errors) {
+      if (A.dim() > 2) {
+        batchCheckErrors(info, "torch.linalg.svdvals_ex");
+      } else {
+        singleCheckErrors(info.item<int64_t>(), "torch.linalg.svdvals_ex");
+      }
+    }
+  } else {
+    S = at::empty({0}, A.options().dtype(c10::toValueType(A.scalar_type())));
+    info = at::empty({0}, A.options().dtype(kInt));
+    at::linalg_svdvals_ex_out(S, info, A, /*check_errors*/check_errors);
+  }
+  return std::make_tuple(std::move(S), std::move(info));
+}
+
+Tensor& linalg_svdvals_out(const Tensor& A, Tensor & S) {
+  checkLinalgCompatibleDtype(
+      "torch.linalg.svdvals", S.scalar_type(), toValueType(A.scalar_type()));
+  auto info = at::empty({0}, A.options().dtype(kInt));
+  at::linalg_svdvals_ex_out(S, info, A, /*chech_errors=*/false);
+
+  if (A.dim() > 2) {
+    batchCheckErrors(info, "torch.linalg.svdvals");
+  } else {
+    singleCheckErrors(info.item<int64_t>(), "torch.linalg.svdvals");
+  }
+
+  return S;
+}
+
+Tensor linalg_svdvals(const Tensor& A) {
+  auto S = at::empty({0}, A.options().dtype(c10::toValueType(A.scalar_type())));
+  at::linalg_svdvals_out(S, A);
+  return S;
+}
+
+std::tuple<Tensor&, Tensor&, Tensor&> svd_out(const Tensor& self, bool some, bool compute_uv, Tensor& U, Tensor& S, Tensor& V) {
+  checkLinalgCompatibleDtype("svd", U, self, "U");
+  checkLinalgCompatibleDtype("svd", V, self, "V");
+  // singular values are always real-valued
+  ScalarType real_dtype = toValueType(self.scalar_type());
+  checkLinalgCompatibleDtype("svd", S.scalar_type(), real_dtype, "S");
+
+  // Compute V.mH() in-place. First the transpose, then the conj
+  Tensor U_, S_, V_;
+  std::tie(U_, S_, V_) = at::svd(self, /*full_matrices=*/!some, compute_uv);
+
+  at::native::resize_output(U, U_.sizes());
+  U.copy_(U_);
+  at::native::resize_output(S, S_.sizes());
+  S.copy_(S_);
+  at::native::resize_output(V, V_.sizes());
+  V.copy_(V_);
+
+  return std::tie(U, S, V);
 }
 
 std::tuple<Tensor, Tensor, Tensor> svd(const Tensor& self, bool some, bool compute_uv) {
@@ -3056,114 +3245,25 @@ std::tuple<Tensor, Tensor, Tensor> svd(const Tensor& self, bool some, bool compu
   //     "_, S, _ = torch.svd(A, some=some, compute_uv=False)\n",
   //     "should be replaced with\n",
   //     "S = torch.linalg.svdvals(A)");
+  TORCH_CHECK(self.dim() >= 2, "torch.linalg.svd: input should have at least 2 dimensions, but has ", self.dim(), " dimensions instead");
+  Tensor U, S, Vh;
+  if (compute_uv) {
+    std::tie(U, S, Vh) = at::linalg_svd(self, /*full_matrices=*/!some);
+  } else {
+    S = at::linalg_svdvals(self);
+    // some == false returns U, Vh of size (m, m), (n, n) full of zeros
+    const auto m = self.size(-2);
+    const auto n = self.size(-1);
 
-  TORCH_CHECK(self.dim() >= 2,
-              "svd input should have at least 2 dimensions, but has ", self.dim(), " dimensions instead");
-  return at::_svd_helper(self, some, compute_uv);
-}
-
-std::tuple<Tensor&, Tensor&, Tensor&> svd_out(const Tensor& self, bool some, bool compute_uv, Tensor& U, Tensor& S, Tensor& V) {
-  checkSameDevice("svd", U, self, "U");
-  checkSameDevice("svd", S, self, "S");
-  checkSameDevice("svd", V, self, "V");
-  checkLinalgCompatibleDtype("svd", U, self, "U");
-  checkLinalgCompatibleDtype("svd", V, self, "V");
-  // singular values are always real-valued here
-  ScalarType real_dtype = toValueType(self.scalar_type());
-  checkLinalgCompatibleDtype("svd", S.scalar_type(), real_dtype, "S");
-
-  Tensor U_tmp, S_tmp, V_tmp;
-  std::tie(U_tmp, S_tmp, V_tmp) = at::native::svd(self, some, compute_uv);
-
-  at::native::resize_output(U, U_tmp.sizes());
-  at::native::resize_output(S, S_tmp.sizes());
-  at::native::resize_output(V, V_tmp.sizes());
-  U.copy_(U_tmp);
-  S.copy_(S_tmp);
-  V.copy_(V_tmp);
-  return std::tuple<Tensor&, Tensor&, Tensor&>(U, S, V);
-}
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ linalg_svd ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-/* torch.linalg.svd, implemented in terms of torch.svd. There are two main
-   differences:
-
-    1. the 2nd parameter is bool some=True, which if effectively the opposite
-       of full_matrices=True
-
-    2. svd returns V, while linalg.svd returns Vh = V^T (for real inputs) or Vh = V^H (for complex inputs).
-       To accommodate the difference, we transpose() and conj() V upon return
-*/
-
-std::tuple<Tensor, Tensor, Tensor> linalg_svd(const Tensor& self, bool full_matrices) {
-  TORCH_CHECK(self.dim() >= 2,
-              "svd input should have at least 2 dimensions, but has ", self.dim(), " dimensions instead");
-
-    bool some = !full_matrices;
-    Tensor U, S, V;
-    std::tie(U, S, V) = at::_svd_helper(self, some, /*compute_uv=*/true);
-
-    Tensor Vh = V.mH();
-    return std::make_tuple(U, S, Vh);
-}
-
-static void svd_resize_and_copy(const char *name, const Tensor& src, Tensor &dst) {
-  TORCH_CHECK(src.device() == dst.device(), "svd output tensor ", name, " is on the wrong device: expected ", src.device(), " got ", dst.device());
-  at::native::resize_output(dst, src.sizes());
-  dst.copy_(src);
-}
-
-std::tuple<Tensor&, Tensor&, Tensor&> linalg_svd_out(const Tensor& self, bool full_matrices, Tensor& U, Tensor& S, Tensor& Vh) {
-  checkSameDevice("svd", U, self, "U");
-  checkSameDevice("svd", S, self, "S");
-  checkSameDevice("svd", Vh, self, "Vh");
-  checkLinalgCompatibleDtype("linalg.svd", U, self, "U");
-  checkLinalgCompatibleDtype("linalg.svd", Vh, self, "Vh");
-  // singular values are always real-valued here
-  ScalarType real_dtype = toValueType(self.scalar_type());
-  checkLinalgCompatibleDtype("linalg.svd", S.scalar_type(), real_dtype, "S");
-  Tensor U_tmp, S_tmp, Vh_tmp;
-  std::tie(U_tmp, S_tmp, Vh_tmp) = at::native::linalg_svd(self, full_matrices);
-  svd_resize_and_copy("U", U_tmp, U);
-  svd_resize_and_copy("S", S_tmp, S);
-  svd_resize_and_copy("V", Vh_tmp, Vh);
-  return std::tuple<Tensor&, Tensor&, Tensor&>(U, S, Vh);
-}
-
-Tensor linalg_svdvals(const Tensor& input) {
-  TORCH_CHECK(
-      input.dim() >= 2,
-      "torch.linalg.svdvals: input should have at least 2 dimensions, but has ",
-      input.dim(),
-      " dimensions instead");
-
-  Tensor singular_values;
-
-  // if input requires grad we must compute the singular vectors to make this function differentiable
-  // the singular vectors are not exposed to the user
-  const bool input_requires_grad = (at::GradMode::is_enabled() && input.requires_grad());
-  std::tie(std::ignore, singular_values, std::ignore) =
-      at::_svd_helper(input, /*some=*/true, /*compute_uv=*/input_requires_grad);
-  return singular_values;
-}
-
-Tensor& linalg_svdvals_out(const Tensor& input, Tensor& result) {
-  checkSameDevice("torch.linalg.svdvals", result, input);
-
-  // singular values are always real-valued
-  ScalarType real_dtype = toValueType(input.scalar_type());
-  checkLinalgCompatibleDtype(
-      "torch.linalg.svdvals", result.scalar_type(), real_dtype);
-
-  Tensor singular_values_tmp;
-  std::tie(std::ignore, singular_values_tmp, std::ignore) =
-      at::_svd_helper(input, /*some=*/true, /*compute_uv=*/false);
-
-  at::native::resize_output(result, singular_values_tmp.sizes());
-  result.copy_(singular_values_tmp);
-
-  return result;
+    auto sizes = self.sizes().vec();
+    sizes.end()[-1] = m;
+    U = at::zeros(sizes, self.options());
+    sizes.end()[-2] = n;
+    sizes.end()[-1] = n;
+    Vh = at::zeros(sizes, self.options());
+  }
+  // linalg_svd returns U, S, Vh
+  return std::make_tuple(std::move(U), std::move(S), Vh.mH());
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ lstsq ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

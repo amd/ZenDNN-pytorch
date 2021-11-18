@@ -22,6 +22,7 @@ all_operators_with_namedtuple_return = {
     '_fused_moving_avg_obs_fq_helper',
     '_det_lu_based_helper',
     '_lu_with_info',
+    'linalg_svd_ex', 'linalg_svdvals_ex',
 }
 
 
@@ -73,6 +74,8 @@ class TestNamedTupleAPI(TestCase):
                names=('values', 'indices'), hasout=True),
             op(operators=['svd', '_svd_helper'], input=(), names=('U', 'S', 'V'), hasout=True),
             op(operators=['linalg_svd'], input=(), names=('U', 'S', 'Vh'), hasout=True),
+            op(operators=['linalg_svd_ex'], input=(), names=('U', 'S', 'Vh', 'info'), hasout=True),
+            op(operators=['linalg_svdvals_ex'], input=(), names=('S', 'info'), hasout=True),
             op(operators=['slogdet'], input=(), names=('sign', 'logabsdet'), hasout=False),
             op(operators=['qr', 'linalg_qr'], input=(), names=('Q', 'R'), hasout=True),
             op(operators=['solve'], input=(a,), names=('solution', 'LU'), hasout=True),

@@ -3,6 +3,7 @@
 #include <c10/core/ScalarType.h>
 #include <ATen/ExpandUtils.h>
 #include <ATen/TensorUtils.h>
+#include <ATen/cuda/CUDAConfig.h>
 #include <limits>
 #include <sstream>
 #include <cstring>
@@ -72,6 +73,32 @@ Tensor copyBatchedColumnMajor(const Tensor& src, int64_t nrows,
   auto copy = at::empty_strided(copy_sizes, copy_strides, src.options());
   copy.narrow(-2, 0, src.size(-2)).copy_(src);
   return copy;
+}
+
+DimVector contiguous_strides(const IntArrayRef sizes, const bool f_contig) {
+  return contiguous_strides_template<DimVector>(sizes, f_contig);
+}
+
+std::vector<int64_t> contiguous_strides_vec(const IntArrayRef sizes, const bool f_contig) {
+  return contiguous_strides_template<std::vector<int64_t>>(sizes, f_contig);
+}
+
+/*
+ * contig chooses between C-contig (true) and F-contig (false)
+ */
+c10::MaybeOwned<Tensor> borrow_else_clone(const bool cond, const Tensor& borrow, const Tensor& clone, const bool contig) {
+  return cond ? c10::MaybeOwned<Tensor>::borrowed(borrow)
+              : c10::MaybeOwned<Tensor>::owned(contig ? clone.clone(MemoryFormat::Contiguous)
+                                                      : cloneBatchedColumnMajor(clone));
+}
+
+/*
+ * contig chooses between C-contig (true) and F-contig (false)
+ */
+Tensor borrow_else_clone_tensor(const bool cond, const Tensor& borrow, const Tensor& clone, const bool contig) {
+  return cond ? borrow
+              : contig ? clone.clone(MemoryFormat::Contiguous)
+                       : cloneBatchedColumnMajor(clone);
 }
 
 /*
@@ -443,6 +470,16 @@ void checkUplo(const c10::string_view uplo) {
   char uplo_uppercase = static_cast<char>(std::toupper(static_cast<unsigned char>(uplo[0])));
   TORCH_CHECK(uplo.size() == 1 && (uplo_uppercase == 'U' || uplo_uppercase == 'L'),
     "Expected UPLO argument to be 'L' or 'U', but got ", uplo);
+}
+
+bool svd_uses_cusolver(const Tensor& A) {
+  // TODO Rename to `svd_cuda_backend` and return a LinalgBackend once this PR is merged:
+  // https://github.com/pytorch/pytorch/pull/67980
+  #ifdef USE_CUSOLVER
+    return A.is_cuda();
+  #else
+    return false;
+  #endif
 }
 
 void checkSameDevice(const std::string& fn_name, Tensor result, Tensor input, const std::string& result_name) {
