@@ -159,7 +159,7 @@ at::Tensor _cudnn_ctc_loss_backward(const at::Tensor& grad_out, const at::Tensor
 at::Tensor elu_double_backward(const Tensor& grad, const Tensor& grad_output, const Scalar& alpha, const Scalar& scale, const Scalar& input_scale, bool is_result, const Tensor& self_or_result);
 
 Tensor svd_backward(const std::vector<torch::autograd::Variable> &grads,
-          bool full_matrices, bool compute_uv, const Tensor& U, const Tensor& S, const Tensor& Vh);
+          bool full_matrices, const Tensor& U, const Tensor& S, const Tensor& Vh);
 Tensor slice_backward_wrapper(
     const at::Tensor& grad,
     const c10::IntArrayRef& input_sizes,

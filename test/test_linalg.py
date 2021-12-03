@@ -2882,7 +2882,7 @@ class TestLinalg(TestCase):
     @skipCPUIfNoLapack
     @dtypes(*floating_and_complex_types())
     def test_svd_errors_and_warnings(self, device, dtype):
-        for svd in [torch.svd, torch.linalg.svd]:
+        for svd in [torch.linalg.svd, torch.svd]:
             # if non-empty out tensor with wrong shape is passed a warning is given
             a = torch.randn(3, 3, dtype=dtype, device=device)
             real_dtype = a.real.dtype if dtype.is_complex else dtype
@@ -2902,19 +2902,15 @@ class TestLinalg(TestCase):
             out_u = torch.empty(0, dtype=torch.int, device=device)
             out_s = torch.empty(0, dtype=torch.int, device=device)
             out_v = torch.empty(0, dtype=torch.int, device=device)
-            with self.assertRaisesRegex(RuntimeError, "but got U with dtype Int"):
+            with self.assertRaisesRegex(RuntimeError, "but got int instead"):
                 svd(a, out=(out_u, out_s, out_v))
 
             out_u = torch.empty(0, dtype=dtype, device=device)
-            if svd == torch.linalg.svd:
-                msg = "but got Vh with dtype Int"
-            else:
-                msg = "but got V with dtype Int"
-            with self.assertRaisesRegex(RuntimeError, msg):
+            with self.assertRaisesRegex(RuntimeError, "but got int instead"):
                 svd(a, out=(out_u, out_s, out_v))
 
             out_v = torch.empty(0, dtype=dtype, device=device)
-            with self.assertRaisesRegex(RuntimeError, "but got S with dtype Int"):
+            with self.assertRaisesRegex(RuntimeError, "but got int instead"):
                 svd(a, out=(out_u, out_s, out_v))
 
             # device should match

@@ -686,8 +686,24 @@ void svd_cusolver(const Tensor& A,
 
   // heuristic for using `gesvdjBatched` over `gesvdj`
   if (m <= 32 && n <= 32 && batch_size > 1 && (full_matrices || m == n)) {
+    auto U_ = U;
+    auto V_ = V;
+    if (!compute_uv) {
+      auto sizes = A_copy.sizes().vec();
+      sizes.end()[-1] = m;
+      auto U_ = at::empty(sizes, A.options());
+      sizes.end()[-2] = n;
+      sizes.end()[-1] = n;
+      auto V_ = at::empty(sizes, A.options());
+    }
     svd_cusolver_gesvdjBatched(A_copy, U, S, V, info, compute_uv);
   } else {
+    auto U_ = U;
+    auto V_ = V;
+    if (!compute_uv) {
+      auto U_ = at::empty({m, m}, A.options());
+      auto V_ = at::empty({n, n}, A.options());
+    }
     svd_cusolver_gesvdj(A_copy, U, S, V, info, full_matrices, compute_uv);
   }
 

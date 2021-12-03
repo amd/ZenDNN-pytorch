@@ -2817,7 +2817,9 @@ void svd_kernel(const Tensor& A,
     case at::LinalgBackend::Cusolver:
     default:
       svd_cusolver(A, A_copy, full_matrices, compute_uv, U, S, Vh.mT(), info);
-      Vh._set_conj(!Vh.is_conj());
+      if (compute_uv) {
+        Vh._set_conj(!Vh.is_conj());
+      }
   }
 #else
   svd_magma(A_copy, full_matrices, compute_uv, U, S, Vh, info);

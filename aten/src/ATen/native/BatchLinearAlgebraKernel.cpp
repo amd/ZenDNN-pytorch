@@ -970,8 +970,8 @@ static void apply_svd(const Tensor& A,
   const auto m = A.size(-2);
   const auto n = A.size(-1);
   const auto lda = A.strides().end()[-1];
-  const auto ldu= U.strides().end()[-1];
-  const auto ldvh = Vh.strides().end()[-1];
+  const auto ldu= compute_uv ? U.strides().end()[-1] : 1;
+  const auto ldvh = compute_uv ? Vh.strides().end()[-1] : 1;
 
   auto iwork = std::vector<int>(8 * std::min(m, n));
   auto iwork_data = iwork.data();

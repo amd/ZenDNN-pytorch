@@ -1549,31 +1549,6 @@ Examples::
     https://en.wikipedia.org/wiki/Singular_value_decomposition#Singular_values,_singular_vectors,_and_their_relation_to_the_SVD
 """)
 
-svd_ex = _add_docstr(_linalg.linalg_svd_ex, r"""
-linalg.svd_ex(A, full_matrices=True, check_errors=False, *, out=None) -> (Tensor, Tensor, Tensor, Tensor)
-This is a version of :func:`~svd` that does not perform error checks unless :attr:`check_errors`\ `= True`.
-It also returns the :attr:`info` tensor returned by `LAPACK', `cuSolver` or `MAGMA`, depending on the backend used.
-""" + fr"""
-.. note:: {common_notes["sync_note_ex"]}
-.. warning:: {common_notes["experimental_warning"]}
-""" + r"""
-
-Args:
-    A (Tensor): tensor of shape `(*, m, n)` where `*` is zero or more batch dimensions.
-    check_errors (bool, optional): controls whether to check the content of `info` and raise
-                                   an error if it is non-zero. Default: `False`.
-    full_matrices (bool, optional): controls whether to compute the full or reduced
-                                    SVD, and consequently,
-                                    the shape of the returned tensors
-                                    `U` and `Vh`. Default: `True`.
-
-Keyword args:
-    out (tuple, optional): output tuple of four tensors. Ignored if `None`.
-
-Returns:
-    A named tuple `(U, S, Vh, info)`
-""")
-
 svdvals = _add_docstr(_linalg.linalg_svdvals, r"""
 linalg.svdvals(A, *, out=None) -> Tensor
 
@@ -1613,27 +1588,6 @@ Examples::
 
     >>> torch.dist(S, torch.linalg.svd(A, full_matrices=False).S)
     tensor(2.4576e-07)
-""")
-
-svdvals_ex = _add_docstr(_linalg.linalg_svdvals_ex, r"""
-linalg.svdvals_ex(A, check_errors=False, *, out=None) -> (Tensor, Tensor)
-This is a version of :func:`~svdvals` that does not perform error checks unless :attr:`check_errors`\ `= True`.
-It also returns the :attr:`info` tensor returned by `LAPACK', `cuSolver` or `MAGMA`, depending on the backend used.
-""" + fr"""
-.. note:: {common_notes["sync_note_ex"]}
-.. warning:: {common_notes["experimental_warning"]}
-""" + r"""
-
-Args:
-    A (Tensor): tensor of shape `(*, m, n)` where `*` is zero or more batch dimensions.
-    check_errors (bool, optional): controls whether to check the content of `info` and raise
-                                   an error if it is non-zero. Default: `False`.
-
-Keyword args:
-    out (tuple, optional): output tuple of two tensors. Ignored if `None`.
-
-Returns:
-    A named tuple `(S, info)`
 """)
 
 cond = _add_docstr(_linalg.linalg_cond, r"""

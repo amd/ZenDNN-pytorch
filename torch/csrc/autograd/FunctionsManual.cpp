@@ -2243,11 +2243,7 @@ Tensor slice_backward_wrapper(
 //
 // This makes no assumption on the signs of sigma.
 Tensor svd_backward(const std::vector<torch::autograd::Variable> &grads,
-          bool full_matrices, bool compute_uv, const Tensor& U, const Tensor& sigma, const Tensor& Vh) {
-  TORCH_CHECK(compute_uv,
-           "svd_backward: Setting compute_uv to false in torch.svd doesn't compute singular matrices, ",
-           "and hence we cannot compute backward. Please use torch.svd(compute_uv=True)");
-
+          bool full_matrices, const Tensor& U, const Tensor& sigma, const Tensor& Vh) {
   auto m = U.size(-2);
   auto n = Vh.size(-1);
   auto k = sigma.size(-1);
@@ -2989,7 +2985,7 @@ Tensor det_backward(const Tensor & grad, const Tensor& self, const Tensor& det) 
     // svd: self -> (U, S, V), which is different
     // from torch.linalg.svd which is a map self -> (U, S, Vh), where
     // Vh = V.mH()
-    return svd_backward({u_grad, s_grad, v_grad}, true, true, u, s, v);
+    return svd_backward({u_grad, s_grad, v_grad}, true, u, s, v);
   };
 
   auto eps = at::native::_get_epsilon(c10::toValueType(self.scalar_type()));
@@ -3080,7 +3076,7 @@ Tensor logdet_backward(const Tensor & grad, const Tensor& self, const Tensor& lo
     Tensor v = vh.mH();
     // logdet = \sum log(sigma)
     auto gsigma = grad.unsqueeze(-1).div(sigma);
-    return svd_backward({{}, gsigma, {}}, true, true, u, sigma, v);
+    return svd_backward({{}, gsigma, {}}, true, u, sigma, v);
   };
 
   auto nonsingular_case_backward = [&](const Tensor& grad, const Tensor& self) -> Tensor {
@@ -3138,7 +3134,7 @@ Tensor slogdet_backward(const Tensor& grad_logabsdet,
     // so logabsdet = \sum log(abs(sigma))
     // but det = 0, so backward logabsdet = \sum log(sigma)
     auto gsigma = grad_logabsdet.unsqueeze(-1).div(sigma);
-    return svd_backward({{}, gsigma, {}}, true, true, u, sigma, v);
+    return svd_backward({{}, gsigma, {}}, true, u, sigma, v);
   };
 
   auto nonsingular_case_backward = [&](const Tensor& grad_logabsdet, const Tensor& self) -> Tensor {
