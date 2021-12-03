@@ -1234,11 +1234,7 @@ class CudaMemoryLeakCheck():
         success = True
         for i, (before, after) in enumerate(zip(self.befores, afters)):
             if not TEST_WITH_ROCM:
-                try:
-                    self.testcase.assertEqual(
-                    before, after, msg='{} leaked {} bytes CUDA memory on device {}'.format(
-                        self.name, after - before, i))
-                except AssertionError as e:
+                if (before != after):
                     success = False
                     break
             else:
