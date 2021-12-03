@@ -1210,15 +1210,19 @@ class CudaMemoryLeakCheck():
         initialize_cuda_context_rng()
 
     @staticmethod
-    def get_cuda_memory_usage():
+    def get_cuda_memory_usage(gc_collect=False):
         # we don't need CUDA synchronize because the statistics are not tracked at
         # actual freeing, but at when marking the block as free.
         num_devices = torch.cuda.device_count()
-        gc.collect()
+        if (gc_collect):
+            gc.collect()
         return tuple(torch.cuda.memory_allocated(i) for i in range(num_devices))
 
     def __enter__(self):
         self.befores = self.get_cuda_memory_usage()
+        for b in self.befores:
+            if b > 0:
+                self.befores = self.get_cuda_memory_usage(gc_collect=True)
 
     def __exit__(self, exec_type, exec_value, traceback):
         # Don't check for leaks if an exception was thrown
@@ -1227,17 +1231,30 @@ class CudaMemoryLeakCheck():
 
         afters = self.get_cuda_memory_usage()
 
+        success = True
         for i, (before, after) in enumerate(zip(self.befores, afters)):
             if not TEST_WITH_ROCM:
-                self.testcase.assertEqual(
+                try:
+                    self.testcase.assertEqual(
                     before, after, msg='{} leaked {} bytes CUDA memory on device {}'.format(
                         self.name, after - before, i))
+                except AssertionError as e:
+                    success = False
+                    break
             else:
                 # See #62533
                 # ROCM: Sometimes the transient memory is reported as leaked memory
                 if before != after:
                     warnings.warn('{} leaked {} bytes ROCm memory on device {}'.format(
                         self.name, after - before, i), RuntimeWarning)
+        if not success:
+            afters = self.get_cuda_memory_usage(gc_collect=True)
+            for i, (before, after) in enumerate(zip(self.befores, afters)):
+                if not TEST_WITH_ROCM:
+                    self.testcase.assertEqual(
+                    before, after, msg='{} leaked {} bytes CUDA memory on device {}'.format(
+                        self.name, after - before, i))
+
 
 @contextmanager
 def skip_exception_type(exc_type):
