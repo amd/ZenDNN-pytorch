@@ -974,14 +974,14 @@ static void apply_svd(const Tensor& A,
   const auto ldvh = compute_uv ? Vh.strides().end()[-1] : 1;
 
   auto iwork = std::vector<int>(8 * std::min(m, n));
-  auto iwork_data = iwork.data();
+  auto* const iwork_data = iwork.data();
 
   // rwork is just used for the complex decomposition
   auto rwork = std::vector<value_t>{};
   if (A.is_complex()) {
     rwork.resize(std::max(computeLRWorkDim(jobz, m, n), int64_t{1}));
   }
-  value_t* const rwork_data = rwork.data();
+  auto* const rwork_data = rwork.data();
 
   // Query svd for the optimal lwork size
   int lwork = -1;
@@ -991,18 +991,17 @@ static void apply_svd(const Tensor& A,
     lwork = std::max<int>(1, real_impl<scalar_t, value_t>(wkopt));
   }
   auto work = std::vector<scalar_t>(lwork);
-  auto work_data = work.data();
+  auto* const work_data = work.data();
 
   for (const auto i : c10::irange(batchsize)) {
-    scalar_t* A_working_ptr = &A_data[i * A_stride];
-    value_t* S_working_ptr = &S_data[i * S_stride];
-    scalar_t* U_working_ptr = compute_uv ? &U_data[i * U_stride] : nullptr;
-    scalar_t* Vh_working_ptr = compute_uv ? &Vh_data[i * Vh_stride] : nullptr;
-    int* info_working_ptr = &info_data[i];
+    auto* const A_working_ptr = &A_data[i * A_stride];
+    auto* const S_working_ptr = &S_data[i * S_stride];
+    auto* const U_working_ptr = compute_uv ? &U_data[i * U_stride] : nullptr;
+    auto* const Vh_working_ptr = compute_uv ? &Vh_data[i * Vh_stride] : nullptr;
 
     // Compute S, U (optionally) and Vh (optionally)
     lapackSvd<scalar_t, value_t>(jobz, m, n, A_working_ptr, lda,
-                        S_working_ptr, U_working_ptr, ldu, Vh_working_ptr, ldvh, work_data, lwork, rwork_data, iwork_data, info_working_ptr);
+                        S_working_ptr, U_working_ptr, ldu, Vh_working_ptr, ldvh, work_data, lwork, rwork_data, iwork_data, info_data + i);
   }
 #endif
 }

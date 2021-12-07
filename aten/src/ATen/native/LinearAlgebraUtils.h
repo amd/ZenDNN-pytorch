@@ -207,7 +207,6 @@ TORCH_API std::tuple<std::vector<int64_t>,
                      std::vector<int64_t>,
                      int64_t> _compute_geometry_for_Q(const Tensor& input, bool reduced);
 
-TORCH_API std::tuple<Tensor, Tensor, Tensor> _create_U_S_VT(const Tensor& input, bool some, bool compute_uv, const bool svd_use_cusolver=false);
 
 TORCH_API Tensor same_stride_to(const Tensor& original_tensor, const at::TensorOptions& options);
 

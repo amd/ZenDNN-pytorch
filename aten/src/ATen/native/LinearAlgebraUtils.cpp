@@ -338,64 +338,6 @@ std::tuple<std::vector<int64_t>,
   return std::make_tuple(q_sizes, q_strides, n_columns_q);
 }
 
-// Function to generate empty tensors of required size, strides and dtype for the SVD operation
-std::tuple<Tensor, Tensor, Tensor> _create_U_S_VT(const Tensor& input, bool some, bool compute_uv,
-    const bool svd_use_cusolver) {
-
-  // U, S, VT are initialized as empty tensors.
-  // For CPU LAPACK and GPU MAGMA backend, the tensors are initialized on CPU.
-  // For GPU cuSOLVER backend, the tensors are initialized on GPU.
-  const auto usvt_device = svd_use_cusolver ? at::kCUDA : at::kCPU;
-
-  auto sizes = input.sizes().vec();
-  int64_t m = input.size(-2), n = input.size(-1);
-
-  sizes[input.dim() - 1] = some ? std::min(m, n) : m;
-  auto u_strides = at::detail::defaultStrides(sizes);
-  // U should be a column-major or a batch of column-major matrices
-  // ... x m x ucol will have strides: ...., ucol, 1
-  // We require: ...., 1, m
-  u_strides[input.dim() - 1] = m;
-  u_strides[input.dim() - 2] = 1;
-
-  // cuSOLVER's gesvdjBatched fails with illegal memory access and
-  // cuSOLVER's gesvdj fails with CUSOLVER_STATUS_EXECUTION_FAILED
-  // if matrices for U and VT are not allocated
-  // even though the result of computation is not used we need to allocate this memory
-
-  Tensor U_empty = (compute_uv || svd_use_cusolver)
-      ? at::empty_strided(sizes, u_strides, input.options().device(usvt_device))
-      : at::empty({0}, input.options().device(usvt_device));
-
-  // VT should be a column-major or a batch of column-major matrices
-  sizes[input.dim() - 2] = some ? std::min(m, n) : n;
-  sizes[input.dim() - 1] = n;
-  auto vt_strides = at::detail::defaultStrides(sizes);
-  if (!svd_use_cusolver) {
-    vt_strides[input.dim() - 1] = sizes[input.dim() - 2];
-    vt_strides[input.dim() - 2] = 1;
-  }
-  Tensor VT_empty = (compute_uv || svd_use_cusolver)
-      ? at::empty_strided(sizes, vt_strides, input.options().device(usvt_device))
-      : at::empty({0}, input.options().device(usvt_device));
-
-  // U and VT might not get filled in this case
-  if (!some && compute_uv && input.numel() == 0) {
-    U_empty.zero_();
-    VT_empty.zero_();
-    // make U and VT an identity matrix, because they should be orthogonal
-    U_empty.diagonal(0, -2, -1).fill_(1);
-    VT_empty.diagonal(0, -2, -1).fill_(1);
-  }
-
-  sizes.pop_back();
-  sizes[input.dim() - 2] = std::min(m, n);
-  ScalarType dtype = toValueType(input.scalar_type());
-  Tensor S_empty = at::empty(sizes, input.options().dtype(dtype).device(usvt_device));
-
-  return std::tuple<Tensor, Tensor, Tensor>(U_empty, S_empty, VT_empty);
-}
-
 // Function used instead of .to so that the original strides are retained
 // .to doesn't retain strides and make the output tensor contiguous
 Tensor same_stride_to(const Tensor& original_tensor, const at::TensorOptions& options) {
@@ -473,11 +415,17 @@ void checkUplo(const c10::string_view uplo) {
 }
 
 bool svd_uses_cusolver(const Tensor& A) {
-  // TODO Rename to `svd_cuda_backend` and return a LinalgBackend once this PR is merged:
-  // https://github.com/pytorch/pytorch/pull/67980
-  #ifdef USE_CUSOLVER
-    return A.is_cuda();
+  // This is the definition of the USE_CUSOLVER macro
+  #if defined(CUDART_VERSION) && defined(CUSOLVER_VERSION)
+  #if AT_MAGMA_ENABLED()
+    TORCH_WARN("all");
+    return A.is_cuda() && at::globalContext().linalg.PreferredBackend() != at::LinalgBackend::Magma;
   #else
+    TORCH_WARN("no magma");
+    return A.is_cuda();
+  #endif
+  #else
+    TORCH_WARN("false");
     return false;
   #endif
 }

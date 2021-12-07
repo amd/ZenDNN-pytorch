@@ -2816,8 +2816,12 @@ void svd_kernel(const Tensor& A,
       }
     case at::LinalgBackend::Cusolver:
     default:
-      svd_cusolver(A, A_copy, full_matrices, compute_uv, U, S, Vh.mT(), info);
       if (compute_uv) {
+        TORCH_WARN(Vh.strides());
+        TORCH_INTERNAL_ASSERT(Vh.is_contiguous());
+      }
+      svd_cusolver(A, A_copy, full_matrices, compute_uv, U, S, compute_uv ? Vh.mT() : Vh, info);
+      if (compute_uv && Vh.is_complex()) {
         Vh._set_conj(!Vh.is_conj());
       }
   }

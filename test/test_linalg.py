@@ -2913,26 +2913,6 @@ class TestLinalg(TestCase):
             with self.assertRaisesRegex(RuntimeError, "but got int instead"):
                 svd(a, out=(out_u, out_s, out_v))
 
-            # device should match
-            if torch.cuda.is_available():
-                wrong_device = 'cpu' if self.device_type != 'cpu' else 'cuda'
-                out_u = torch.empty(0, device=wrong_device, dtype=dtype)
-                out_s = torch.empty(0, device=wrong_device, dtype=real_dtype)
-                out_v = torch.empty(0, device=wrong_device, dtype=dtype)
-                with self.assertRaisesRegex(RuntimeError, "tensors to be on the same device"):
-                    # error from out_u
-                    svd(a, out=(out_u, out_s, out_v))
-
-                out_u = torch.empty(0, device=device, dtype=dtype)
-                with self.assertRaisesRegex(RuntimeError, "tensors to be on the same device"):
-                    # error from out_s
-                    svd(a, out=(out_u, out_s, out_v))
-
-                out_s = torch.empty(0, device=device, dtype=real_dtype)
-                with self.assertRaisesRegex(RuntimeError, "tensors to be on the same device"):
-                    # error from out_v
-                    svd(a, out=(out_u, out_s, out_v))
-
             # if input contains NaN then an error is triggered for svd
             # When cuda < 11.5, cusolver raises CUSOLVER_STATUS_EXECUTION_FAILED when input contains nan.
             # When cuda >= 11.5, cusolver normally finishes execution and sets info array indicating convergence issue.
@@ -3046,7 +3026,8 @@ class TestLinalg(TestCase):
         out0 = torch.empty_like(result[0])
         out1 = torch.empty_like(result[1])
         out2 = torch.empty_like(result[2])
-        torch.linalg.svdvals(a, out=out0)
+        torch.linalg.svdvals(a, out=out1)
+        out1 = torch.empty_like(result[1])
         torch.linalg.svd(a, full_matrices=False, out=(out0, out1, out2))
 
     def cholesky_solve_test_helper(self, A_dims, b_dims, upper, device, dtype):

@@ -2999,6 +2999,22 @@ void linalg_svd_and_svdvals(const Tensor& A,
                                Tensor & U,
                                Tensor & S,
                                Tensor & Vh) {
+  // Half optimisation half precondition for some parts of the LAPACK / cuSOLVER 
+  // In particular, the call to lapackSvd to compute lwork fails otherwise
+  if (A.numel() == 0) {
+    // Needed in the case that we have e.g. A.shape == (3, 0) and full_matrices=True
+    if (compute_uv && full_matrices) {
+      if (U.numel() != 0) {
+        U.zero_();
+        U.diagonal(0, -2, -1).fill_(1.);
+      }
+      if (Vh.numel() != 0) {
+        Vh.zero_();
+        Vh.diagonal(0, -2, -1).fill_(1.);
+      }
+    }
+    return;
+  }
   // We need to distinguish the cuSOLVER case, as cuSOLVER expects F-contig matrices, but
   // it computes V rather than Vh
   const bool use_cusolver = at::native::svd_uses_cusolver(A);
@@ -3019,6 +3035,10 @@ void linalg_svd_and_svdvals(const Tensor& A,
                             || (!use_cusolver && Vh.mT().is_contiguous())
                             || (use_cusolver && Vh.is_contiguous());
   const auto Vh_ = borrow_else_clone(Vh_ready, Vh, Vh, /*C-contig*/use_cusolver);
+  if (compute_uv && use_cusolver) {
+    TORCH_INTERNAL_ASSERT(Vh.is_contiguous());
+  }
+  TORCH_WARN(use_cusolver);
 
   // We need the const_cast because some of the cusolver routines compute V rather than Vh
   // so we need to compute the output.
@@ -3107,18 +3127,23 @@ std::tuple<Tensor&, Tensor&, Tensor&> svd_out(const Tensor& self, bool some, boo
     if (V.dim() >= 2) {
       V.transpose_(-2, -1);
     }
-    at::linalg_svd_out(U, S, V, self, /*full_matrices=*/!some);
-    V.transpose_(-2, -1);
-    if (self.is_complex()) {
+    if (V.is_complex()) {
       V._set_conj(!V.is_conj());
     }
+    at::linalg_svd_out(U, S, V, self, /*full_matrices=*/!some);
+    V.transpose_(-2, -1);
   } else {
+    TORCH_CHECK(self.scalar_type() == U.scalar_type(),
+    "torch.svd: Expected out tensor to have dtype ", self.scalar_type(), " but got ", U.scalar_type(), " instead");
+
+    TORCH_CHECK(self.scalar_type() == V.scalar_type(),
+    "torch.svd: Expected out tensor to have dtype ", self.scalar_type(), " but got ", V.scalar_type(), " instead");
+
     at::linalg_svdvals_out(S, self);
     // some == false returns U, Vh of size (m, m), (n, n) full of zeros
     const auto m = self.size(-2);
     const auto n = self.size(-1);
     auto sizes = self.sizes().vec();
-
 
     sizes.end()[-1] = m;
     at::native::resize_output(U, sizes);
