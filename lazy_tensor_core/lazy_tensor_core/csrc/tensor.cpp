@@ -479,7 +479,7 @@ LazyTensor GetOrCreateLtcTensor(const c10::optional<at::Tensor>& tensor,
 
 LazyTensor GetLtcTensorOrCreateForWrappedNumber(const at::Tensor& tensor, const torch::lazy::BackendDevice& device) {
   return tensor.unsafeGetTensorImpl()->is_wrapped_number() ?
-      GetOrCreateLtcTensor(tensor, device) : GetLtcTensor(tensor);
+      GetOrCreateLtcTensor(tensor, device) : GetOrCreateLtcTensor(tensor, device);
 }
 
 at::Tensor CreateAtenFromLtcTensor(const LazyTensor& ltc_tensor) {
