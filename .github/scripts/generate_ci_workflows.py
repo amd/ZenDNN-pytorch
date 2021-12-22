@@ -80,45 +80,12 @@ class CIFlowConfig:
     # For use to enable workflows to run on pytorch/pytorch-canary
     run_on_canary: bool = False
     labels: Set[str] = field(default_factory=set)
-    trigger_action: str = 'unassigned'
-    trigger_actor: str = 'pytorchbot'
-    root_job_name: str = 'ciflow_should_run'
-    root_job_condition: str = ''
-    label_conditions: str = ''
-
-    def gen_root_job_condition(self) -> None:
-        # CIFlow conditions:
-        #  - Workflow should always run on push
-        #  - CIFLOW_DEFAULT workflows should run on PRs even if no `ciflow/` labels on PR
-        #  - Otherwise workflow should be scheduled on all qualifying events
-        label_conditions = [f"contains(github.event.pull_request.labels.*.name, '{label}')" for label in sorted(self.labels)]
-        self.label_conditions = ' || '.join(label_conditions)
-        repo_condition = "github.repository_owner == 'pytorch'" if self.run_on_canary else "github.repository == 'pytorch/pytorch'"
-        push_event = "github.event_name == 'push'"
-        scheduled_event = "github.event_name == 'schedule'"
-        pr_updated_event = f"github.event_name == 'pull_request' && github.event.action != '{self.trigger_action}'"
-        if LABEL_CIFLOW_DEFAULT in self.labels:
-            run_with_no_labels = f"({pr_updated_event}) && " \
-                                 f"!contains(join(github.event.pull_request.labels.*.name), '{LABEL_CIFLOW_PREFIX}')"
-        else:
-            run_with_no_labels = "false"
-        self.root_job_condition = f"${{{{ ({repo_condition}) && (\n" \
-                                  f"            ({push_event}) ||\n" \
-                                  f"            ({scheduled_event}) ||\n" \
-                                  f"            ({self.label_conditions}) ||\n" \
-                                  f"            ({run_with_no_labels}))\n"\
-                                  f"         }}}}"
-
-    def reset_root_job(self) -> None:
-        self.root_job_name = ''
-        self.root_job_condition = ''
 
     def __post_init__(self) -> None:
         self.labels.add(LABEL_CIFLOW_ALL)
         if LABEL_CIFLOW_SCHEDULED not in self.labels:
             self.labels.add(LABEL_CIFLOW_TRUNK)
         assert all(label.startswith(LABEL_CIFLOW_PREFIX) for label in self.labels)
-        self.gen_root_job_condition()
 
 
 @dataclass
@@ -165,6 +132,7 @@ class CIWorkflow:
     build_generates_artifacts: bool = True
     build_with_debug: bool = False
     is_scheduled: str = ''
+    is_default: bool = False
     num_test_shards: int = 1
     only_run_smoke_tests_on_pull_request: bool = False
     num_test_shards_on_pull_request: int = -1
@@ -198,6 +166,9 @@ class CIWorkflow:
         if self.fx2trt_test:
             self.enable_fx2trt_test = 1
 
+        if LABEL_CIFLOW_DEFAULT in self.ciflow_config.labels:
+            self.is_default = 1
+
         # If num_test_shards_on_pull_request is not user-defined, default to num_test_shards unless we are
         # only running smoke tests on the pull request.
         if self.num_test_shards_on_pull_request == -1:
@@ -216,7 +187,6 @@ class CIWorkflow:
             assert self.test_runner_type in WINDOWS_RUNNERS, err_message
 
         assert LABEL_CIFLOW_ALL in self.ciflow_config.labels
-        assert LABEL_CIFLOW_ALL in self.ciflow_config.label_conditions
         if self.arch == 'linux':
             assert LABEL_CIFLOW_LINUX in self.ciflow_config.labels
         if self.arch == 'windows':

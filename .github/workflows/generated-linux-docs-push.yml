@@ -4,8 +4,12 @@
 name: linux-docs-push
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, unassigned]
+  push:
+    tags:
+      - 'ciflow/all/*'
+      - 'ciflow/cpu/*'
+      - 'ciflow/linux/*'
+      - 'ciflow/scheduled/*'
   schedule:
     - cron: 0 0 * * *
   workflow_dispatch:
@@ -35,28 +39,8 @@ concurrency:
 
 jobs:
 
-  ciflow_should_run:
-    runs-on: linux.large
-    timeout-minutes: 240
-    env:
-      IS_PROBOT_TRIGGER_EVENT: ${{ (github.event.action == 'unassigned') && (github.event.assigneed.login == 'pytorchbot') }}
-      LABEL_CONDITIONS: ${{ contains(github.event.pull_request.labels.*.name, 'ciflow/all') || contains(github.event.pull_request.labels.*.name, 'ciflow/cpu') || contains(github.event.pull_request.labels.*.name, 'ciflow/linux') || contains(github.event.pull_request.labels.*.name, 'ciflow/scheduled') }}
-      LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-    if: ${{ (github.repository == 'pytorch/pytorch') && (
-            (github.event_name == 'push') ||
-            (github.event_name == 'schedule') ||
-            (contains(github.event.pull_request.labels.*.name, 'ciflow/all') || contains(github.event.pull_request.labels.*.name, 'ciflow/cpu') || contains(github.event.pull_request.labels.*.name, 'ciflow/linux') || contains(github.event.pull_request.labels.*.name, 'ciflow/scheduled')) ||
-            (false))
-         }}
-    steps:
-      - name: noop
-        run: echo running ciflow_should_run
-      - name: print labels
-        run: echo "${LABELS}"
-
   build:
     runs-on: linux.2xlarge
-    needs: [ciflow_should_run]
     timeout-minutes: 240
     env:
       JOB_BASE_NAME: linux-docs-push-build
@@ -258,7 +242,7 @@ jobs:
     strategy:
       matrix:
         docs_type: [cpp, python]
-    needs: [build, ciflow_should_run]
+    needs: [build]
     env:
       DOCKER_IMAGE: ${{ needs.build.outputs.docker_image }}
       DOCS_TYPE: ${{ matrix.docs_type }}

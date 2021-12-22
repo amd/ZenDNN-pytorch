@@ -8,14 +8,23 @@ name: !{{ build_environment }}
 {%- endblock %}
 
 on:
+{%- if is_default %}
   pull_request:
-    types: [opened, synchronize, reopened, !{{ ciflow_config.trigger_action }}]
+{%- endif -%}
+{%- for label in ciflow_config.labels | sort %}
+  {%- if loop.first %}
+  push:
+    tags:
+  {%- endif %}
+  {%- if label != "ciflow/default" %}
+      - '!{{ label }}/*'
+  {%- endif %}
+{%- endfor %}
 
 {% block build +%}
   # building and testing in a single job since bazel runs only small subset of tests
   build-and-test:
     runs-on: !{{ test_runner_type }}
-    needs: [!{{ ciflow_config.root_job_name }}]
     env:
       JOB_BASE_NAME: !{{ build_environment }}-build-and-test
       NUM_TEST_SHARDS: !{{ num_test_shards }}
