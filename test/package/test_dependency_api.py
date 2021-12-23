@@ -182,16 +182,11 @@ class TestDependencyAPI(PackageTestCase):
         obj2 = package_a.PackageAObject(obj)
 
         buffer = BytesIO()
-        with PackageExporter(buffer) as he:
-            he.mock(include="package_a.subpackage")
-            he.intern("**")
-            he.save_pickle("obj", "obj.pkl", obj2)
-
-        buffer.seek(0)
-
-        hi = PackageImporter(buffer)
         with self.assertRaises(NotImplementedError):
-            hi.load_pickle("obj", "obj.pkl")
+            with PackageExporter(buffer) as he:
+                he.mock(include="package_a.subpackage")
+                he.intern("**")
+                he.save_pickle("obj", "obj.pkl", obj2)
 
     def test_allow_empty_with_error(self):
         """If an error occurs during packaging, it should not be shadowed by the allow_empty error."""
