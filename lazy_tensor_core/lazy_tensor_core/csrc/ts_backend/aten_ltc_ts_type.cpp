@@ -13,12 +13,14 @@
 #include "lazy_tensor_core/csrc/ops/cat.h"
 #include "lazy_tensor_core/csrc/ops/random.h"
 #include "lazy_tensor_core/csrc/ops/normal.h"
+#include "lazy_tensor_core/csrc/python_util.h"
 #include "lazy_tensor_core/csrc/tensor_aten_ops.h"
 #include "lazy_tensor_core/csrc/tensor_impl.h"
 #include "lazy_tensor_core/csrc/ts_backend/LazyNativeFunctions.h"
 #include "lazy_tensor_core/csrc/ts_backend/aten_autograd_ops_ts.h"
 #include "lazy_tensor_core/csrc/ts_backend/aten_eager_fallback.h"
 #include "lazy_tensors/computation_client/sys_util.h"
+
 namespace torch_lazy_tensors {
 namespace ir {
 namespace ops {
@@ -246,6 +248,16 @@ at::Tensor LazyNativeFunctions::_copy_from_and_resize(const at::Tensor& self,
     dest_impl->force_refresh_sizes();
   }
   return dst;
+}
+at::Scalar LazyNativeFunctions::_local_scalar_dense(const at::Tensor & self) {
+  TORCH_WARN(false, "aten::_local_scalar_dense was called on a lazy tensor. "
+            "This usually means .item() was called in python, which will hurt performance"
+            " in lazy tensor mode and should be avoided except for infrequent logging. "
+            " The offending operator was called from: ");
+  LOG(WARNING) << GetPythonFrames();
+
+  return at::native::call_fallback_fn<
+      &ltc_eager_fallback, ATEN_OP(_local_scalar_dense)>::call(self);
 }
 
 at::Tensor LazyNativeFunctions::empty(

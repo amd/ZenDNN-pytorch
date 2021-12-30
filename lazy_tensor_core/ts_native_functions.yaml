@@ -104,6 +104,7 @@ supported:
   - empty_strided
   - expand
   - fill_.Scalar
+  - _local_scalar_dense
   - native_batch_norm
   - native_batch_norm_backward
   - normal_
