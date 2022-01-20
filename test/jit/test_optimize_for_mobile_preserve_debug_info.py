@@ -5,14 +5,15 @@ import torch._C
 import torch.backends.xnnpack
 import torch.nn.functional as F
 from torch.testing._internal.jit_utils import JitTestCase
+import typing
 
 class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
     def check_replacement(
         self,
-        model,
-        replacements,
-        jit_pass,
-    ):
+        model: torch.jit.ScriptModule,
+        replacements: typing.Dict[str, str],
+        jit_pass: str,
+    ) -> None :
         """
         model: Model which optimization is performed on
         replacements: Dict mapping from nodes' kinds in the optimized model
@@ -26,9 +27,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             for node in model.graph.nodes()
             if node.kind() in original_kinds
         }
-
         jit_pass(model._c)
-
         for node in model.graph.nodes():
             if node.kind() in replacements:
                 self.assertEqual(
@@ -36,14 +35,14 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                     original_source_ranges[replacements[node.kind()]],
                 )
 
-    def test_replace_conv1d_with_conv2d(self):
+    def test_replace_conv1d_with_conv2d(self) -> None:
         class TestConv1d(torch.nn.Module):
-            def __init__(self, weight, bias):
+            def __init__(self, weight: torch.Tensor, bias: torch.Tensor):
                 super(TestConv1d, self).__init__()
                 self.weight = weight
                 self.bias = bias
 
-            def forward(self, x):
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
                 return F.conv1d(x, self.weight, self.bias)
 
         self.check_replacement(
@@ -63,16 +62,16 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             jit_pass=torch._C._jit_pass_transform_conv1d_to_conv2d,
         )
 
-    def test_insert_pre_packed_linear_before_inline_and_conv_2d_op(self):
+    def test_insert_pre_packed_linear_before_inline_and_conv_2d_op(self) -> None:
         class TestPrepackedLinearBeforeInlineAndConv2dOp(torch.nn.Module):
             def __init__(
                 self,
-                linear_weight,
-                linear_bias,
-                conv2d_weight,
-                conv2d_bias,
-                conv_transpose2d_weight,
-                conv_transpose2d_bias,
+                linear_weight: torch.Tensor,
+                linear_bias: torch.Tensor,
+                conv2d_weight: torch.Tensor,
+                conv2d_bias: torch.Tensor,
+                conv_transpose2d_weight: torch.Tensor,
+                conv_transpose2d_bias: torch.tensor,
             ):
                 super(
                     TestPrepackedLinearBeforeInlineAndConv2dOp,
@@ -85,7 +84,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                 self.conv_transpose2d_weight = conv_transpose2d_weight.float()
                 self.conv_transpose2d_bias = conv_transpose2d_bias.float()
 
-            def forward(self, x):
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
                 linear_res = F.linear(
                     x.float(),
                     self.linear_weight,
@@ -139,7 +138,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             jit_pass=torch._C._jit_pass_insert_prepacked_ops,
         )
 
-    def test_insert_pre_packed_linear_op(self):
+    def test_insert_pre_packed_linear_op(self) -> None:
         self.check_replacement(
             model=torch.jit.trace(torch.nn.Linear(5, 4), torch.rand(3, 2, 5)),
             replacements={
@@ -151,18 +150,18 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
 
     def run_test_fuse_activation_with_pack_ops_linear_conv2d(
         self,
-        linear_activation,
-        linear_activation_kind,
-        conv2d_activation,
-        conv2d_activation_kind,
-    ):
+        linear_activation: torch.Tensor,
+        linear_activation_kind: str,
+        conv2d_activation: torch.Tensor,
+        conv2d_activation_kind: str,
+    ) -> None:
         class TestFuseActivationLinearConv2d(torch.nn.Module):
             def __init__(
                 self,
-                linear_weight,
-                linear_bias,
-                conv2d_weight,
-                conv2d_bias,
+                linear_weight: torch.nn.Parameter,
+                linear_bias: torch.nn.Parameter,
+                conv2d_weight: torch.Tensor,
+                conv2d_bias: torch.Tensor,
             ):
                 super(TestFuseActivationLinearConv2d, self).__init__()
                 self.linear_weight = linear_weight
@@ -230,7 +229,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             jit_pass=torch._C._jit_pass_fuse_clamp_w_prepacked_linear_conv,
         )
 
-    def test_fuse_activation_with_pack_ops_linear_conv2d_1(self):
+    def test_fuse_activation_with_pack_ops_linear_conv2d_1(self) -> None:
         self.run_test_fuse_activation_with_pack_ops_linear_conv2d(
             linear_activation=F.hardtanh,
             linear_activation_kind="aten::hardtanh",
@@ -238,7 +237,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             conv2d_activation_kind="aten::hardtanh_"
         )
 
-    def test_fuse_activation_with_pack_ops_linear_conv2d_2(self):
+    def test_fuse_activation_with_pack_ops_linear_conv2d_2(self) -> None:
         self.run_test_fuse_activation_with_pack_ops_linear_conv2d(
             linear_activation=F.hardtanh_,
             linear_activation_kind="aten::hardtanh_",
@@ -246,7 +245,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             conv2d_activation_kind="aten::hardtanh"
         )
 
-    def test_fuse_activation_with_pack_ops_linear_conv2d_3(self):
+    def test_fuse_activation_with_pack_ops_linear_conv2d_3(self) -> None:
         self.run_test_fuse_activation_with_pack_ops_linear_conv2d(
             linear_activation=F.relu,
             linear_activation_kind="aten::relu",
@@ -254,7 +253,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
             conv2d_activation_kind="aten::relu_"
         )
 
-    def test_fuse_activation_with_pack_ops_linear_conv2d_4(self):
+    def test_fuse_activation_with_pack_ops_linear_conv2d_4(self) -> None:
         self.run_test_fuse_activation_with_pack_ops_linear_conv2d(
             linear_activation=F.relu_,
             linear_activation_kind="aten::relu_",
