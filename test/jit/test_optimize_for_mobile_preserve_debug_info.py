@@ -37,7 +37,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
 
     def test_replace_conv1d_with_conv2d(self) -> None:
         class TestConv1d(torch.nn.Module):
-            def __init__(self, weight: torch.Tensor, bias: torch.Tensor):
+            def __init__(self, weight: torch.Tensor, bias: torch.Tensor) -> None:
                 super(TestConv1d, self).__init__()
                 self.weight = weight
                 self.bias = bias
@@ -72,7 +72,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                 conv2d_bias: torch.Tensor,
                 conv_transpose2d_weight: torch.Tensor,
                 conv_transpose2d_bias: torch.tensor,
-            ):
+            ) -> None:
                 super(
                     TestPrepackedLinearBeforeInlineAndConv2dOp,
                     self,
@@ -169,7 +169,7 @@ class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
                 self.conv2d_weight = conv2d_weight
                 self.conv2d_bias = conv2d_bias
 
-            def forward(self, x):
+            def forward(self, x: torch.Tensor):
                 x = F.linear(
                     input=x,
                     weight=self.linear_weight,
