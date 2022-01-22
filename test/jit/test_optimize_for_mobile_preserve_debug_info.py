@@ -5,14 +5,14 @@ import torch._C
 import torch.backends.xnnpack
 import torch.nn.functional as F
 from torch.testing._internal.jit_utils import JitTestCase
-import typing
+from typing import Callable, Dict
 
 class TestOptimizeForMobilePreserveDebugInfo(JitTestCase):
     def check_replacement(
         self,
         model: torch.jit.ScriptModule,
-        replacements: typing.Dict[str, str],
-        jit_pass: str,
+        replacements: Dict[str, str],
+        jit_pass: Callable[[str], None],
     ) -> None :
         """
         model: Model which optimization is performed on
