@@ -179,7 +179,7 @@ concurrency:
 
 {%- macro checkout(submodules="recursive", deep_clone=True, directory="", repository="pytorch/pytorch") -%}
       - name: Checkout !{{ 'PyTorch' if repository == "pytorch/pytorch" else repository }}
-        uses: zhouzhuojie/checkout@05b13c9a0d21f08f6d5e64a1d5042246d13619d9
+        uses: actions/checkout@v2
         with:
       {%- if deep_clone %}
           # deep clone, to allow use of git merge-base
