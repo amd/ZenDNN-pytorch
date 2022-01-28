@@ -5,9 +5,31 @@
 
 #include <c10/util/irange.h>
 
+#include <cfloat>
+
 namespace torch {
 namespace jit {
 namespace tensorexpr {
+
+namespace {
+// NOTE: this is just to repro the UBSAN issue.
+// Purpose of UbsanLowerBound is just to filter for the case
+// where DstType is unsigned char.
+template <typename T>
+float UbsanLowerBound(T x) {
+  return -MAXFLOAT;
+}
+
+template <>
+float UbsanLowerBound(signed char x) {
+  return -128;
+}
+
+template <>
+float UbsanLowerBound(unsigned char x) {
+  return 0;
+}
+} // namespace
 
 RegisterCodeGen<SimpleIREvaluator> ir_eval_codegen_reg("simple_ir_eval");
 
@@ -461,9 +483,13 @@ class SimpleIREvaluatorImpl : public IRVisitor {
       const Dtype& src_dtype,
       const InterpValue& v) __ubsan_ignore_undefined__ {
     const std::vector<SrcType>& src_values = v.as_vec<SrcType>();
+    DstType r;
+    auto lwr = UbsanLowerBound(r);
     std::vector<DstType> dst_values(src_values.size());
     for (int i = 0; i < src_dtype.lanes(); ++i) {
       // NOLINTNEXTLINE(bugprone-signed-char-misuse)
+      auto val = underlyingValue(src_values[i]);
+      TORCH_INTERNAL_ASSERT(val >= lwr, val, "was too small");
       dst_values[i] = static_cast<DstType>(underlyingValue(src_values[i]));
     }
     return dst_values;
