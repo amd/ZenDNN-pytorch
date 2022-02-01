@@ -90,6 +90,7 @@ Conv2d Stmt:  for (int n = 0; n < 1; n++) {
 """
 
 # Next, feed the constructed stmt to loopnest to prepare for codegen
+init_stmt = stmt
 loopnest = te.LoopNest(stmt, [Pconv])
 loopnest.prepare_for_codegen()
 stmt = te.simplify(loopnest.root_stmt())
