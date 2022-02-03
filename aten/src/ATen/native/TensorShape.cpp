@@ -1937,9 +1937,6 @@ Tensor squeeze_qtensor(const Tensor& self) {
 }
 
 Tensor squeeze_qtensor(const Tensor& self, int64_t dim) {
-  if (self.dim() == 0 || self.sizes()[dim] != 1) {
-    return self;
-  }
   auto quantizer = get_qtensorimpl(self)->quantizer();
   DimVector sizes;
   DimVector strides;
@@ -1955,6 +1952,10 @@ Tensor squeeze_qtensor(const Tensor& self, int64_t dim) {
                                                   per_channel_quantizer->zero_points(),
                                                   axis,
                                                   quantizer->scalar_type());
+  }
+  if (self.dim() == 0 || self.sizes()[dim] != 1) {
+    sizes = self.sizes().vec();
+    strides = self.strides().vec();
   }
   auto result = make_qtensor(self, sizes, strides, quantizer);
   namedinference::propagate_names_except(result, self, {dim});
