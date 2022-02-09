@@ -140,6 +140,7 @@ IValue ScriptModuleDeserializer::readArchive(const std::string& archive_name) {
   auto obj_loader = [&](const at::StrongTypePtr& type, IValue input) {
     auto cls = type.type_->expect<at::ClassType>();
     auto qn = cls->name();
+    std::cout << __FILE_NAME__ << cls->name()->qualifiedName() << std::endl;
     size_t n = cls->numAttributes();
     if (checkHasValidSetGetState(cls)) {
       auto obj = c10::ivalue::Object::create(type, n);

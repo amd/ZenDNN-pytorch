@@ -480,6 +480,8 @@ IValue parseObject(
   const mobile::serialization::ObjectType* obj_type =
       cur_input->object_types()->Get(object->type_index());
   auto cls = loader.getOrCreateClassTypeForObject(object);
+  std::cout << __FILE_NAME__ <<
+      cls->name()->qualifiedName() << std::endl;
   Stack stack;
   switch (obj_type->type()) {
     case mobile::serialization::TypeType::CLASS_WITH_FIELD: {
