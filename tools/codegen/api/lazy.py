@@ -3,10 +3,9 @@ from tools.codegen.model import (Type, BaseTy, BaseType, OptionalType,
                                  ListType, OperatorName, FunctionSchema,
                                  Return)
 from tools.codegen.api.types import (CType, BaseCppType, BaseCType, OptionalCType,
-                                     ConstRefCType, NamedCType,
-                                     MutRefCType,
+                                     NamedCType,
                                      VectorCType, boolT, longT, doubleT, ListCType, stringT,
-                                     scalarT, scalarTypeT, ArrayRefCType, ArrayCType, TupleCType)
+                                     scalarT, scalarTypeT)
 
 valueT = BaseCppType('torch::lazy', 'Value')
 
