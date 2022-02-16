@@ -19,9 +19,8 @@ all_operators_with_namedtuple_return = {
     'linalg_svd', '_linalg_svd', 'linalg_slogdet', 'fake_quantize_per_tensor_affine_cachemask',
     'fake_quantize_per_channel_affine_cachemask', 'linalg_lstsq', 'linalg_eig', 'linalg_cholesky_ex',
     'frexp', 'lu_unpack', 'histogram', '_fake_quantize_per_tensor_affine_cachemask_tensor_qparams',
-    '_fused_moving_avg_obs_fq_helper', 'linalg_lu_factor', 'linalg_lu_factor_ex',
-    '_det_lu_based_helper',
-    '_lu_with_info',
+    '_fused_moving_avg_obs_fq_helper', 'linalg_lu_factor', 'linalg_lu_factor_ex', 'linalg_lu',
+    '_det_lu_based_helper', '_lu_with_info'
 }
 
 
@@ -88,6 +87,7 @@ class TestNamedTupleAPI(TestCase):
             op(operators=['linalg_inv_ex'], input=(), names=('inverse', 'info'), hasout=True),
             op(operators=['linalg_lu_factor'], input=(), names=('LU', 'pivots'), hasout=True),
             op(operators=['linalg_lu_factor_ex'], input=(), names=('LU', 'pivots', 'info'), hasout=True),
+            op(operators=['linalg_lu'], input=(), names=('P', 'L', 'U'), hasout=True),
             op(operators=['fake_quantize_per_tensor_affine_cachemask'],
                input=(0.1, 0, 0, 255), names=('output', 'mask',), hasout=False),
             op(operators=['fake_quantize_per_channel_affine_cachemask'],
