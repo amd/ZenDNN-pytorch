@@ -833,7 +833,8 @@ void gather(
 
   if (cur_rank == root)
   {
-    for (const auto r : c10::irange(numranks)) {
+    for (int r = 0; r < numranks; r++)
+    {
       if (r != root) {
         auto* recvbuff =  reinterpret_cast<char*>(outputs[r].data_ptr());
         NCCL_CHECK(ncclRecv(recvbuff, count, type, r, comm, stream));
@@ -873,7 +874,8 @@ void scatter(
   NCCL_CHECK(ncclGroupStart());
   if (cur_rank == root)
   {
-    for (const auto r : c10::irange(numranks)) {
+    for (int r = 0; r < numranks; r++)
+    {
       if (r != root) {
         size_t send_count = inputs[r].numel();
         auto send_type = to_nccl_data_type(inputs[r]);

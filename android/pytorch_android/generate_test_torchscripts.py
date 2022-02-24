@@ -1,6 +1,4 @@
 import torch
-from torch import Tensor
-from typing import Dict, List, Tuple, Optional
 
 OUTPUT_DIR = "src/androidTest/assets/"
 
@@ -9,8 +7,7 @@ def scriptAndSave(module, fileName):
     script_module = torch.jit.script(module)
     print(script_module.graph)
     outputFileName = OUTPUT_DIR + fileName
-    # note that the lite interpreter model can also be used in full JIT
-    script_module._save_for_lite_interpreter(outputFileName)
+    script_module.save(outputFileName)
     print("Saved to " + outputFileName)
     print('=' * 80)
 

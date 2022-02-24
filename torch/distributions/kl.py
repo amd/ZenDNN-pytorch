@@ -166,8 +166,7 @@ def kl_divergence(p, q):
         fun = _dispatch_kl(type(p), type(q))
         _KL_MEMOIZE[type(p), type(q)] = fun
     if fun is NotImplemented:
-        raise NotImplementedError("No KL(p || q) is implemented for p type {} and q type {}"
-                                  .format(p.__class__.__name__, q.__class__.__name__))
+        raise NotImplementedError
     return fun(p, q)
 
 
@@ -813,13 +812,3 @@ def _kl_cauchy_cauchy(p, q):
     t1 = ((p.scale + q.scale).pow(2) + (p.loc - q.loc).pow(2)).log()
     t2 = (4 * p.scale * q.scale).log()
     return t1 - t2
-
-def _add_kl_info():
-    """Appends a list of implemented KL functions to the doc for kl_divergence."""
-    rows = ["KL divergence is currently implemented for the following distribution pairs:"]
-    for p, q in sorted(_KL_REGISTRY,
-                       key=lambda p_q: (p_q[0].__name__, p_q[1].__name__)):
-        rows.append("* :class:`~torch.distributions.{}` and :class:`~torch.distributions.{}`"
-                    .format(p.__name__, q.__name__))
-    kl_info = '\n\t'.join(rows)
-    kl_divergence.__doc__ += kl_info  # type: ignore[operator]

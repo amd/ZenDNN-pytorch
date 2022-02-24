@@ -1,4 +1,3 @@
-#include <c10/util/irange.h>
 #include <torch/csrc/lazy/core/view_ops/squeeze.h>
 #include <torch/csrc/lazy/ts_backend/ts_lowering_context.h>
 
@@ -10,7 +9,7 @@ namespace lazy {
 std::vector<int64_t> BuildSqueezedDimensions(c10::ArrayRef<int64_t> dimensions,
                                              int64_t squeeze_dim) {
   std::vector<int64_t> output_dimensions;
-  for (const auto i : c10::irange(dimensions.size())) {
+  for (int64_t i = 0; i < dimensions.size(); ++i) {
     int64_t dim = dimensions[i];
     if (dim != 1 || (i != squeeze_dim && squeeze_dim >= 0)) {
       output_dimensions.push_back(dim);

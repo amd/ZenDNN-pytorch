@@ -14,11 +14,7 @@ import org.junit.runner.RunWith;
 public class PytorchInstrumentedTests extends PytorchTestBase {
 
   @Override
-  protected Module loadModel(String path) throws IOException {
-    return Module.load(assetFilePath(path));
-  }
-
-  private String assetFilePath(String assetName) throws IOException {
+  protected String assetFilePath(String assetName) throws IOException {
     final Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
     File file = new File(appContext.getFilesDir(), assetName);
     if (file.exists() && file.length() > 0) {

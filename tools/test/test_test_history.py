@@ -53,7 +53,6 @@ def parse_description(description: str) -> List[Example]:
     return examples
 
 
-@unittest.skip("Skipping as this test is fragile, issue #73083")
 class TestTestHistory(unittest.TestCase):
     maxDiff = None
 

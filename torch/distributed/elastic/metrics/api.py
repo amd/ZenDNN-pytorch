@@ -60,7 +60,7 @@ class MetricStream:
 
 
 _metrics_map = {}
-_default_metrics_handler: MetricHandler = NullMetricHandler()
+_default_metrics_handler = NullMetricHandler()  # type: MetricHandler
 
 
 # pyre-fixme[9]: group has type `str`; used as `None`.

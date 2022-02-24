@@ -8,7 +8,7 @@ class _LazyImport:
        def v():
            return Version('1.2.3')
     and
-       Version = _LazyImport('Version')
+       Versoin = _LazyImport('Version')
        def v():
            return Version('1.2.3')
     The difference here is that in later example imports
@@ -18,12 +18,7 @@ class _LazyImport:
         self._cls_name = cls_name
 
     def get_cls(self):
-        try:
-            import packaging.version  # type: ignore[import]
-        except ImportError:
-            # If packaging isn't installed, try and use the vendored copy
-            # in pkg_resources
-            from pkg_resources import packaging  # type: ignore[attr-defined]
+        from pkg_resources import packaging  # type: ignore[attr-defined]
         return getattr(packaging.version, self._cls_name)
 
     def __call__(self, *args, **kwargs):
