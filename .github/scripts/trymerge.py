@@ -226,11 +226,7 @@ class GitHubPR:
         return cast(str, self.info["author"]["login"])
 
     def get_committer_login(self, num: int = 0) -> str:
-        user = self.info["commits"]["nodes"][num]["commit"]["author"]["user"]
-        # If author is not github user, user node will be null
-        if user is None:
-            return ""
-        return cast(str, user["login"])
+        return cast(str, self.info["commits"]["nodes"][num]["commit"]["author"]["user"]["login"])
 
     def get_committer_author(self, num: int = 0) -> str:
         node = self.info["commits"]["nodes"][num]["commit"]["author"]
