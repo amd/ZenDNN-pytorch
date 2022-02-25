@@ -7,6 +7,23 @@
 #include <cstdlib>
 #include <random>
 
+namespace c10 {
+OperatorName ErasedOperatorDefPtr::operator_name() const {
+  TORCH_INTERNAL_ASSERT(ptr_ != nullptr);
+  return static_cast<c10::Dispatcher::OperatorDef const*>(ptr_)->op.operator_name();
+}
+
+bool ErasedOperatorDefPtr::hasSchema() const {
+  TORCH_INTERNAL_ASSERT(ptr_ != nullptr);
+  return static_cast<c10::Dispatcher::OperatorDef const*>(ptr_)->op.hasSchema();
+}
+
+const FunctionSchema& ErasedOperatorDefPtr::schema() const {
+  TORCH_INTERNAL_ASSERT(ptr_ != nullptr);
+  return static_cast<c10::Dispatcher::OperatorDef const*>(ptr_)->op.schema();
+}
+}
+
 namespace at {
 
 namespace {
@@ -587,7 +604,6 @@ void RecordFunction::before(const char* name, int64_t sequence_nr) {
   state_->name_ = name;
   state_->sequence_nr_ = sequence_nr;
   state_->thread_id_ = currentThreadId();
-  state_->operator_name_.reset();
 
   manager().runStartCallbacks(*this);
 }
@@ -600,7 +616,6 @@ void RecordFunction::before(std::string name, int64_t sequence_nr) {
   state_->name_ = std::move(name);
   state_->sequence_nr_ = sequence_nr;
   state_->thread_id_ = currentThreadId();
-  state_->operator_name_.reset();
 
   manager().runStartCallbacks(*this);
 }
@@ -611,9 +626,9 @@ void RecordFunction::before(
   if (!isActive()) {
     return;
   }
+  state_->op_ = op.getErased();
   state_->sequence_nr_ = sequence_nr;
   state_->thread_id_ = currentThreadId();
-  state_->operator_name_ = op.operator_name();
   state_->op_input_size = op.schema().arguments().size();
   state_->op_output_size = op.schema().returns().size();
   state_->name_ = op.schema().name();
@@ -652,6 +667,13 @@ bool RecordFunction::isAsync() const {
     return state_->is_async_;
   }
   return false;
+}
+
+c10::optional<OperatorName> RecordFunction::operator_name() const {
+  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(state_, "Called operator_name() on inactive RecordFunction");
+  return state_->op_
+    ? c10::optional<OperatorName>(state_->op_.operator_name())
+    : c10::nullopt;
 }
 
 // RecordFunction pre-sampling

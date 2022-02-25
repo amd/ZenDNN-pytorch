@@ -115,6 +115,9 @@ TORCH_API ActiveProfilerType profilerType();
 // Retrieve the thread_local ProfilerConfig.
 TORCH_API ProfilerConfig getProfilerConfig();
 
+using correlation_id_t = uint64_t;
+static constexpr correlation_id_t no_correlation_id = 0;
+
 // ----------------------------------------------------------------------------
 // -- CUDA --------------------------------------------------------------------
 // ----------------------------------------------------------------------------

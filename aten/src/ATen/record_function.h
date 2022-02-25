@@ -13,6 +13,18 @@
 
 namespace c10 {
 class TORCH_API OperatorHandle;
+
+class TORCH_API ErasedOperatorDefPtr {
+ public:
+  operator bool() const { return ptr_ != nullptr; }
+  OperatorName operator_name() const;
+  bool hasSchema() const;
+  const FunctionSchema& schema() const;
+
+ private:
+  friend c10::OperatorHandle;
+  void const* ptr_{nullptr};  // Dispatcher::OperatorDef const*
+};
 }
 
 namespace at {
@@ -249,9 +261,13 @@ struct TORCH_API RecordFunction {
     return state_->handle_;
   }
 
-  c10::optional<OperatorName> operator_name() const {
-    TORCH_INTERNAL_ASSERT_DEBUG_ONLY(state_, "Called operator_name() on inactive RecordFunction");
-    return state_->operator_name_;
+  c10::optional<OperatorName> operator_name() const;
+
+  // NB: We are using a forward declaration of `OperatorHandle`. In order to
+  //     dereference callers will have to include `Dispatcher.h`.
+  const ErasedOperatorDefPtr operator_handle() const {
+    TORCH_INTERNAL_ASSERT_DEBUG_ONLY(state_, "Called operator_handle() on inactive RecordFunction");
+    return state_->op_;
   }
 
   void setHandle(RecordFunctionHandle handle) {
@@ -324,7 +340,7 @@ struct TORCH_API RecordFunction {
     std::vector<c10::IValue> inputs_;
     std::vector<c10::IValue> outputs_;
 
-    c10::optional<c10::OperatorName> operator_name_;
+    ErasedOperatorDefPtr op_;
     size_t op_input_size{0};
     size_t op_output_size{0};
 

@@ -200,6 +200,11 @@ class profile(object):
         if self.use_cuda:
             torch.cuda.synchronize()
         self.kineto_results = _disable_profiler()
+
+        # TODO: the old path now segfaults. Maybe because I'm not emitting
+        # kineto events and disabled `finalizeCPUTrace`?
+        return False
+
         parsed_results = self._parse_kineto_results(self.kineto_results)
         self.function_events = EventList(
             parsed_results,

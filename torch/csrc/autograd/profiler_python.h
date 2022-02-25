@@ -1,7 +1,13 @@
 #pragma once
 
-namespace torch { namespace autograd { namespace profiler { namespace python_tracer {
+#include <torch/csrc/utils/pybind.h>
 
-void init();
+namespace torch {
+namespace profiler {
+namespace python_tracer {
 
-}}}} // namespace torch::autograd::profiler::python_tracer
+void init(pybind11::module_ m);
+
+} // namespace python_tracer
+} // namespace profiler
+} // namespace torch

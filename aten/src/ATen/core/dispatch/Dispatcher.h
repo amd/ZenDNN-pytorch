@@ -76,6 +76,7 @@ private:
   };
   friend class OperatorHandle;
   template<class> friend class TypedOperatorHandle;
+  friend class ErasedOperatorDefPtr;
 
 public:
   ~Dispatcher();
@@ -367,6 +368,13 @@ public:
 
   void redispatchBoxed(DispatchKeySet ks, Stack* stack) const {
     c10::Dispatcher::singleton().redispatchBoxed(*this, ks, stack);
+  }
+
+  // For RecordFunction.
+  ErasedOperatorDefPtr getErased() const {
+    ErasedOperatorDefPtr out;
+    out.ptr_ = (void const*)operatorDef_;
+    return out;
   }
 
 private:

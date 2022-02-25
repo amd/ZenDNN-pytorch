@@ -40,6 +40,15 @@ inline size_t hash_combine(size_t seed, size_t value) {
   return seed ^ (value + 0x9e3779b9 + (seed << 6u) + (seed >> 2u));
 }
 
+struct hash_pair {
+  template <class T1, class T2>
+  size_t operator() (const std::pair<T1, T2>& pair) const {
+    return c10::hash_combine(
+      std::hash<T1>()(pair.first),
+      std::hash<T2>()(pair.second));
+  }
+};
+
 // Creates the SHA1 hash of a string. A 160-bit hash.
 // Based on the implementation in Boost (see notice above).
 // Note that SHA1 hashes are no longer considered cryptographically

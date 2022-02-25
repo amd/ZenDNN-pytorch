@@ -223,9 +223,12 @@ PyObject* THPAutograd_initExtension(PyObject* _unused, PyObject *unused) {
         return e.nBytes();
       });
 
+  torch::profiler::python_tracer::init(m);
+
   py::class_<ProfilerResult>(m, "_ProfilerResult")
     .def("trace_start_us", &ProfilerResult::trace_start_us)
     .def("events", &ProfilerResult::events)
+    .def("graph", &ProfilerResult::graph)
 #ifdef USE_KINETO
     .def("save", &ProfilerResult::save)
 #endif // USE_KINETO
@@ -331,7 +334,6 @@ PyObject* THPAutograd_initExtension(PyObject* _unused, PyObject *unused) {
         s.register_hooks(std::make_unique<torch::autograd::PySavedVariableHooks>(pack_hook, unpack_hook));
     });
 
-  torch::autograd::profiler::python_tracer::init();
   Py_RETURN_TRUE;
 }
 

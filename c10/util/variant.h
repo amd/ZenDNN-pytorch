@@ -323,6 +323,12 @@ namespace std {
 #define C10_MPARK_INCOMPLETE_TYPE_TRAITS
 #endif
 
+#ifdef _WIN32
+#define VISIBILITY_HIDDEN
+#else
+#define VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
+#endif
+
 #endif // C10_MPARK_CONFIG_HPP
 
 // MPark.Variant
@@ -1701,7 +1707,7 @@ struct variant {
   };
 
   template <typename Visitor>
-  struct value_visitor {
+  struct VISIBILITY_HIDDEN value_visitor {
     Visitor&& visitor_;
 
     template <typename... Alts>
