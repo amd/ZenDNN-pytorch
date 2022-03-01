@@ -10828,12 +10828,12 @@
     CPU, CUDA: linalg_lu_out
 
 # linalg.lu_solve
-- func: linalg_lu_solve(Tensor A, Tensor pivots, Tensor B, *, bool left=True, bool adjoint=False) -> Tensor
+- func: linalg_lu_solve(Tensor LU, Tensor pivots, Tensor B, *, bool left=True, bool adjoint=False) -> Tensor
   python_module: linalg
   structured_delegate: linalg_lu_solve.out
   variants: function
 
-- func: linalg_lu_solve.out(Tensor A, Tensor pivots, Tensor B, *, bool left=True, bool adjoint=False, Tensor(a!) out) -> Tensor(a!)
+- func: linalg_lu_solve.out(Tensor LU, Tensor pivots, Tensor B, *, bool left=True, bool adjoint=False, Tensor(a!) out) -> Tensor(a!)
   python_module: linalg
   variants: function
   structured: True
