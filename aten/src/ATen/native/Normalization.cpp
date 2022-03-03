@@ -128,6 +128,7 @@ std::tuple<Tensor,Tensor,Tensor> batch_norm_cpu_transform_input_template(
       at::detail::scalar_tensor_static(0, input.scalar_type(), kCPU);
 
   Tensor output = at::empty_like(input, input.suggest_memory_format());
+
   auto iter = TensorIteratorConfig()
     .add_output(output)
     .add_input(input)
@@ -163,6 +164,7 @@ std::tuple<Tensor,Tensor> batch_norm_cpu_update_stats_template(
 
   Tensor save_mean = at::mean(input, /*dims=*/reduce_dims);
   Tensor save_var_transform = at::empty({n_input}, input.options());
+
   auto save_mean_a = save_mean.accessor<scalar_t, 1>();
   auto save_var_transform_a = save_var_transform.accessor<scalar_t, 1>();
 

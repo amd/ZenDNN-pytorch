@@ -937,6 +937,10 @@ ConvBackend select_conv_backend(
     const bool need_backward,
     const ConvParams& params) {
 
+  if (input.device() == kMeta) {
+    return ConvBackend::Meta;
+  }
+
   // don't send empty inputs through backends
   if (input.size(0) == 0 || input.size(1) == 0) {
     return input.is_mkldnn() ? ConvBackend::MkldnnEmpty : ConvBackend::Empty;
@@ -1182,6 +1186,11 @@ at::Tensor _convolution(
         output.add_(bias[0]);
       }
       output = output.view(calc_output_size(input, weight, params));
+      break;
+    }
+    case ConvBackend::Meta:
+    {
+      output = at::empty(calc_output_size(input, weight, params), input.options().device(kMeta));
       break;
     }
     case ConvBackend::Miopen:
@@ -1665,6 +1674,7 @@ std::tuple<Tensor, Tensor, Tensor> convolution_backward(
       break;
     }
     case ConvBackend::Empty:
+    {
       if (output_mask[0]) {
         backend_grad_input = at::zeros_like(input);
       }
@@ -1675,6 +1685,20 @@ std::tuple<Tensor, Tensor, Tensor> convolution_backward(
         backend_grad_bias = at::zeros(*bias_sizes_opt, weight.options());
       }
       break;
+    }
+    case ConvBackend::Meta:
+    {
+      if (output_mask[0]) {
+        backend_grad_input = at::zeros_like(input, kMeta);
+      }
+      if (output_mask[1]) {
+        backend_grad_weight = at::zeros_like(weight, kMeta);
+      }
+      if (output_mask[2]) {
+        backend_grad_bias = at::zeros(*bias_sizes_opt, weight.options().device(kMeta));
+      }
+      break;
+    }
     case ConvBackend::MkldnnEmpty:
 #if AT_MKLDNN_ENABLED()
       if (output_mask[0]) {

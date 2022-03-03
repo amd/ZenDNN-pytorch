@@ -114,6 +114,7 @@ enum class ConvBackend {
   Cudnn,
   CudnnTranspose,
   Empty,
+  Meta,
   Miopen,
   MiopenDepthwise,
   MiopenTranspose,
