@@ -126,9 +126,9 @@ PyObject* rpc_init(PyObject* _unused, PyObject* noargs) {
               [](py::tuple t) {
                 TORCH_CHECK(t.size() == 2, "Invalid WorkerInfo state.");
 
-                WorkerInfo info(
+                WorkerInfo workerInfo(
                     t[0].cast<std::string>(), t[1].cast<worker_id_t>());
-                return info;
+                return workerInfo;
               }));
 
   auto rpcAgent =
