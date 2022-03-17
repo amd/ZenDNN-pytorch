@@ -7881,13 +7881,13 @@
 
 - func: _cat(Tensor[] tensors, int dim=0) -> Tensor
   dispatch:
-    CPU, Meta: _cat_cpu
+    CPU: _cat_cpu
     CUDA: cat_cuda
     QuantizedCPU: cat_quantized_cpu
 
 - func: _cat.out(Tensor[] tensors, int dim=0, *, Tensor(a!) out) -> Tensor(a!)
   dispatch:
-    CPU, Meta: _cat_out_cpu
+    CPU: _cat_out_cpu
     CUDA: cat_out_cuda
     QuantizedCPU: cat_out_quantized_cpu
 

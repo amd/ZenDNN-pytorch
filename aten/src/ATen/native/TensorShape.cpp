@@ -267,10 +267,6 @@ Tensor & _cat_out_cpu(TensorList tensors, int64_t dim, Tensor& result) {
     return result;
   }
 
-  if (result.device() == kMeta) {
-    return result;
-  }
-
   // fast path for single thread when both inputs and result are contiguous and not empty
   allContiguous = allContiguous && result.is_contiguous(first_tensor_mem_format);
   bool use_serial_kernel = result.numel() < at::internal::GRAIN_SIZE || at::get_num_threads() == 1;
@@ -337,20 +333,6 @@ Tensor & _cat_out_cpu(TensorList tensors, int64_t dim, Tensor& result) {
 
 Tensor _cat_cpu(TensorList tensors, int64_t dim) {
   ScalarType high_type = result_type(tensors);
-  bool use_meta_tensor = false;
-  for (const auto i : c10::irange(tensors.size())) {
-    auto const &t = tensors[i];
-    if (t.device() == kMeta) {
-      use_meta_tensor = true;
-      break;
-    }
-  }
-  Tensor result;
-  if (use_meta_tensor) {
-    result = at::empty({0}, tensors[0].options().dtype(high_type).device(kMeta));
-  } else {
-    result = at::empty({0}, tensors[0].options().dtype(high_type));
-  }
   return native::_cat_out_cpu(tensors, dim, result);
 }
 
