@@ -149,8 +149,12 @@ void ltc_eager_fallback(
       op, stack, torch::lazy::getBackend()->EagerFallbackDeviceType());
 }
 
+std::function<void(void)> register_ts_ltc_eager_fallback;
+
 TORCH_LIBRARY_IMPL(_, Lazy, m) {
-  m.fallback(torch::CppFunction::makeFromBoxedFunction<&ltc_eager_fallback>());
+  register_ts_ltc_eager_fallback = [&]() {
+    m.fallback(torch::CppFunction::makeFromBoxedFunction<&ltc_eager_fallback>());
+  };
 }
 
 void ts_eager_fallback(
