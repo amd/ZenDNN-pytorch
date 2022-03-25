@@ -18,7 +18,10 @@ void ts_eager_fallback(
     torch::jit::Stack* stack,
     c10::DeviceType device_type);
 
-extern std::function<void(void)> register_ts_ltc_eager_fallback;
+// The TorchScript backend does not register itself with pytorch dispatcher
+// until it is explicitly initialized.  This function should only be called
+// by the main Torchscript backend init function.
+void register_ts_ltc_eager_fallback();
 
 } // namespace lazy
 } // namespace torch

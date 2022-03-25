@@ -288,6 +288,7 @@ TORCH_LIBRARY_IMPL(aten, $dispatch_key, m) {
     else:
         deferred_template = CodeTemplate("""\
 TORCH_API void Register${backend_name}${dispatch_key}NativeFunctions() { 
+    auto m = MAKE_TORCH_LIBRARY_IMPL(aten, $dispatch_key);
     $dispatch_registrations_body
 }""")
         deferred_dispatch_registrations = deferred_template.substitute(
