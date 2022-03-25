@@ -50,9 +50,6 @@ $external_backend_headers
 $dispatch_headers
 $ops_headers
 
-${backend_namespace_prologue}
-${export_registration_func} std::function<void(void)> Register${BackendName}${DispatchKey}Modules;
-${backend_namespace_epilogue}
 
 namespace at {
 
@@ -65,17 +62,11 @@ ${dispatch_helpers}
 
 ${dispatch_anonymous_definitions}
 
-TORCH_LIBRARY_IMPL(aten, ${DispatchKey}, m) {
-  ${cpp_namespace}::Register${BackendName}${DispatchKey}Modules = [&]() {
-
-    ${dispatch_registrations}
-
-  };
-
-  ${call_register_dispatchkey_modules};
-}
+${static_init_dispatch_registrations}
 
 } // anonymous namespace
+
+${deferred_dispatch_registrations}
 
 namespace ${dispatch_namespace} {
 

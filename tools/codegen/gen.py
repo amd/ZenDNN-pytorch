@@ -1417,13 +1417,24 @@ def gen_source_files(
                     headers.append(f"#include <ATen/{dispatch_key!s}Functions.h>")
                 return headers
 
+        dispatch_registrations_body = [] if skip_dispatcher_op_registration else list(concatMap(
+            dest.RegisterDispatchKey(
+                backend_index,
+                Target.REGISTRATION,
+                selector,
+                rocm=rocm,
+                cpp_namespace='at::native',
+                class_method_name=None),
+            grouped_native_functions
+        ))
+        static_init_dispatch_registrations = f"""
+            TORCH_LIBRARY_IMPL(aten, {dispatch_key}, m) {
+                {dispatch_registrations_body}
+            }
+            """
         backend_index = backend_indices[dispatch_key]
         dispatch_namespace = str(dispatch_key).lower()
         fm.write_with_template(f'Register{dispatch_key}.cpp', 'RegisterDispatchKey.cpp', lambda: {
-            'BackendName': '',
-            'backend_namespace_prologue': '',
-            'backend_namespace_epilogue': '',
-            'cpp_namespace': '',
             'extra_cuda_headers': extra_cuda_headers if is_cuda_dispatch_key(dispatch_key) else '',
             'external_backend_headers': '',
             'dispatch_headers': dest.gen_registration_headers(backend_index, per_operator_headers, rocm),
@@ -1451,18 +1462,7 @@ def gen_source_files(
                     class_method_name=None),
                 grouped_native_functions
             )),
-            'dispatch_registrations': [] if skip_dispatcher_op_registration else list(concatMap(
-                dest.RegisterDispatchKey(
-                    backend_index,
-                    Target.REGISTRATION,
-                    selector,
-                    rocm=rocm,
-                    cpp_namespace='at::native',
-                    class_method_name=None),
-                grouped_native_functions
-            )),
-            'export_registration_func': "",
-            'call_register_dispatchkey_modules': f"Register{dispatch_key}Modules()"
+            'static_init_dispatch_registrations': static_init_dispatch_registrations
         })
 
         for g in structured_native_functions:

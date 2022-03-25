@@ -261,14 +261,35 @@ def gen_dispatcher_registrations(
         external_backend_headers_str = "\n".join(f'#include "{h}"' for h in headers)
 
     assert class_name is not None
-    ns_helper = NamespaceHelper(cpp_namespace)
     backend_index = backend_indices[dispatch_key]
-    call_register_dispatchkey_modules = f"Register{backend_name}{backend_dispatch_key}Modules()"
+
+    dispatch_registrations_body = list(concatMap(
+        dest.RegisterDispatchKey(
+            backend_index,
+            Target.REGISTRATION,
+            selector,
+            rocm=False,
+            cpp_namespace=cpp_namespace,
+            class_method_name=f'{class_name}'),
+        grouped_native_functions
+    ))
+    deferred_dispatch_registrations = ""
+    static_init_dispatch_registrations = ""
+    if eager_registration:
+        static_init_dispatch_registrations = f"""
+            TORCH_LIBRARY_IMPL(aten, {dispatch_key}, m) {
+                {dispatch_registrations_body}
+            }
+            """
+    else:
+        deferred_dispatch_registrations = f"""
+            TORCH_API void Register{backend_name}{dispatch_key}NativeFunctions() {
+                {dispatch_registrations_body}
+            }
+            """
     fm.write_with_template(f'Register{dispatch_key}.cpp', 'RegisterDispatchKey.cpp', lambda: {
-        'BackendName': backend_name,
-        'backend_namespace_prologue': ns_helper.prologue,
-        'backend_namespace_epilogue': ns_helper.epilogue,
-        'cpp_namespace': cpp_namespace,
+        'static_init_dispatch_registrations': static_init_dispatch_registrations,
+        'deferred_dispatch_registrations': deferred_dispatch_registrations,
         'extra_cuda_headers': '',
         'external_backend_headers': external_backend_headers_str,
         'ops_headers': '#include <ATen/Functions.h>' if not per_operator_headers else '',
@@ -287,21 +308,10 @@ def gen_dispatcher_registrations(
                 class_method_name=f'{class_name}'),
             grouped_native_functions
         )),
-        'dispatch_registrations': list(concatMap(
-            dest.RegisterDispatchKey(
-                backend_index,
-                Target.REGISTRATION,
-                selector,
-                rocm=False,
-                cpp_namespace=cpp_namespace,
-                class_method_name=f'{class_name}'),
-            grouped_native_functions
-        )),
         # If eager_registration is True, register the native functions
         # for the dispatch key immediately on load. Otherwise, wait to
         # register the functions until the generated registration func is explicitly invoked
         'export_registration_func': "" if eager_registration else "TORCH_API",
-        'call_register_dispatchkey_modules': call_register_dispatchkey_modules if eager_registration else "",
     })
 
 def run(source_yaml: str, output_dir: str, dry_run: bool, impl_path: Optional[str] = None) -> None:
