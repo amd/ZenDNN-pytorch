@@ -11,6 +11,7 @@ from tools.codegen.model import (BackendIndex, BackendMetadata, DispatchKey,
 from tools.codegen.selective_build.selector import SelectiveBuilder
 from tools.codegen.utils import Target, concatMap, context, YamlLoader, FileManager
 from tools.codegen.context import native_function_manager
+from tools.codegen.code_template import CodeTemplate
 import tools.codegen.dest as dest
 import tools.codegen.api.dispatcher as dispatcher
 from tools.codegen.api.types import DispatcherSignature
@@ -276,17 +277,25 @@ def gen_dispatcher_registrations(
     deferred_dispatch_registrations = ""
     static_init_dispatch_registrations = ""
     if eager_registration:
-        static_init_dispatch_registrations = f"""
-            TORCH_LIBRARY_IMPL(aten, {dispatch_key}, m) {
-                {dispatch_registrations_body}
-            }
-            """
+        static_template = CodeTemplate("""\
+TORCH_LIBRARY_IMPL(aten, $dispatch_key, m) { 
+    $dispatch_registrations_body
+};""")
+        static_init_dispatch_registrations = static_template.substitute(
+            dispatch_key=dispatch_key,
+            dispatch_registrations_body=dispatch_registrations_body
+        )
     else:
-        deferred_dispatch_registrations = f"""
-            TORCH_API void Register{backend_name}{dispatch_key}NativeFunctions() {
-                {dispatch_registrations_body}
-            }
-            """
+        deferred_template = CodeTemplate("""\
+TORCH_API void Register${backend_name}${dispatch_key}NativeFunctions() { 
+    $dispatch_registrations_body
+}""")
+        deferred_dispatch_registrations = deferred_template.substitute(
+            backend_name=backend_name,
+            dispatch_key=dispatch_key,
+            dispatch_registrations_body=dispatch_registrations_body
+        )
+
     fm.write_with_template(f'Register{dispatch_key}.cpp', 'RegisterDispatchKey.cpp', lambda: {
         'static_init_dispatch_registrations': static_init_dispatch_registrations,
         'deferred_dispatch_registrations': deferred_dispatch_registrations,

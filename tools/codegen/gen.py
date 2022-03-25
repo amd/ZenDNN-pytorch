@@ -26,6 +26,7 @@ import tools.codegen.api.native as native
 import tools.codegen.api.meta as meta
 import tools.codegen.api.structured as structured
 from tools.codegen.api.translate import translate
+from tools.codegen.code_template import CodeTemplate
 from tools.codegen.selective_build.selector import SelectiveBuilder
 from tools.codegen.utils import (
     Target, concatMap, context, mapMaybe, YamlDumper, YamlLoader, FileManager, assert_never, make_file_manager
@@ -1417,7 +1418,8 @@ def gen_source_files(
                     headers.append(f"#include <ATen/{dispatch_key!s}Functions.h>")
                 return headers
 
-        dispatch_registrations_body = [] if skip_dispatcher_op_registration else list(concatMap(
+        backend_index = backend_indices[dispatch_key]
+        dispatch_registrations_body = "" if skip_dispatcher_op_registration else "\n".join(list(concatMap(
             dest.RegisterDispatchKey(
                 backend_index,
                 Target.REGISTRATION,
@@ -1426,13 +1428,15 @@ def gen_source_files(
                 cpp_namespace='at::native',
                 class_method_name=None),
             grouped_native_functions
-        ))
-        static_init_dispatch_registrations = f"""
-            TORCH_LIBRARY_IMPL(aten, {dispatch_key}, m) {
-                {dispatch_registrations_body}
-            }
-            """
-        backend_index = backend_indices[dispatch_key]
+        )))
+        static_template = CodeTemplate("""\
+TORCH_LIBRARY_IMPL(aten, $dispatch_key, m) { 
+    $dispatch_registrations_body
+};""")
+        static_init_dispatch_registrations = static_template.substitute(
+            dispatch_key=dispatch_key,
+            dispatch_registrations_body=dispatch_registrations_body
+        )
         dispatch_namespace = str(dispatch_key).lower()
         fm.write_with_template(f'Register{dispatch_key}.cpp', 'RegisterDispatchKey.cpp', lambda: {
             'extra_cuda_headers': extra_cuda_headers if is_cuda_dispatch_key(dispatch_key) else '',
@@ -1462,7 +1466,8 @@ def gen_source_files(
                     class_method_name=None),
                 grouped_native_functions
             )),
-            'static_init_dispatch_registrations': static_init_dispatch_registrations
+            'static_init_dispatch_registrations': static_init_dispatch_registrations,
+            'deferred_dispatch_registrations': "",
         })
 
         for g in structured_native_functions:

@@ -231,13 +231,12 @@ torch::lazy::BackendImplInterface* GetTSBackendImpl() {
 // For the TorchScript backend, we have a special case where the registration does not happen
 // immediately (at static initialization time), so that if an external backend is loaded,
 // it has a chance to register itself, and TorchScript only registers itself if explicitly initialized
-extern TORCH_API std::function<void(void)> RegisterTorchScriptLazyModules;
+extern TORCH_API void RegisterTorchScriptLazyModules();
 
 void InitTorchScriptBackend() {
   static std::unique_ptr<BackendRegistrar> s_registrar;
   s_registrar = std::make_unique<BackendRegistrar>(GetTSBackendImpl());
 
-  CHECK(RegisterTorchScriptLazyModules);
   RegisterTorchScriptLazyModules();
   CHECK(register_ts_ltc_eager_fallback);
   register_ts_ltc_eager_fallback();
