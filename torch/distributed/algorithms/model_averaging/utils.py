@@ -6,6 +6,10 @@ import torch
 import torch.distributed as dist
 
 
+if not dist.is_available():
+    raise RuntimeError("Requires distributed package to be available")
+
+
 def average_parameters(
     params: Iterator[torch.nn.Parameter], process_group: dist.ProcessGroup
 ):
