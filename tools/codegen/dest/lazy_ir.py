@@ -230,6 +230,13 @@ class GenLazyNativeFuncDefinition:
     backend_index: BackendIndex
     tensor_class: str
     gen_forced_fallback_code: bool
+    backend_namespace: str = "torch::lazy"
+    get_tensorlist: str = "GetTensorList"
+    get_tensor_or_wrap_number: str = "GetLtcTensorOrCreateForWrappedNumber"
+    try_get_tensor: str = "TryGetLtcTensor"
+    metrics_counter: str = 'TORCH_LAZY_FN_COUNTER("lazy::")'
+    create_tensor: str = "LazyTensor::Create"
+    create_from_first_tensor: bool = False
 
     def gen_shape_call(self, func: NativeFunction) -> str:
         metadata = self.backend_index.get_kernel(func)
@@ -249,19 +256,20 @@ class GenLazyNativeFuncDefinition:
             elif isinstance(arg.lazy_type, BaseCType):
                 if arg.lazy_type.type is tensorListValueT:
                     lazy_tensor_decls.append(
-                        f"auto lazy_{arg.name}_tensorlist = torch::lazy::GetTensorList({arg.name});"
+                        f"auto lazy_{arg.name}_tensorlist = "
+                        f"{self.backend_namespace}::{self.get_tensorlist}({arg.name});"
                     )
                 else:
                     lazy_tensor_decls.append(
                         f"{self.tensor_class}Ptr lazy_{arg.name} = "
-                        f"torch::lazy::GetLtcTensorOrCreateForWrappedNumber({arg.name}, *common_device);"
+                        f"{self.backend_namespace}::{self.get_tensor_or_wrap_number}({arg.name}, *common_device);"
                     )
             elif isinstance(arg.lazy_type, OptionalCType):
                 # TODO(alanwaketan): Maybe we want to apply GetLtcTensorOrCreateForWrappedNumber here, but hold it
                 # until we encounter a real world example.
                 lazy_tensor_decls.append(
                     f"    {self.tensor_class}Ptr lazy_{arg.name} = "
-                    f"torch::lazy::TryGetLtcTensor({arg.name}.value_or(at::Tensor()));"
+                    f"{self.backend_namespace}::{self.try_get_tensor}({arg.name}.value_or(at::Tensor()));"
                 )
             else:
                 raise AssertionError(
@@ -275,7 +283,7 @@ class GenLazyNativeFuncDefinition:
         return ""
 
     def metrics(self, func: NativeFunction, schema: LazyIrSchema) -> str:
-        return 'TORCH_LAZY_FN_COUNTER("lazy::");'
+        return f'{self.metrics_counter};'
 
     def get_device(self, func: NativeFunction, schema: LazyIrSchema) -> str:
         value_args = schema.filtered_args(values=True, scalars=False)
@@ -327,19 +335,26 @@ class GenLazyNativeFuncDefinition:
         return f"""auto node = torch::lazy::MakeNode<{schema.node_name}>({node_ctor_input_str},
                                                                                       std::move(shapes));"""
 
+    def create_lazy_tensor(self, first_tensor_name):
+        # xla uses an instance method for tensor creation, for the time being
+        if self.create_from_first_tensor:
+            # TODO(whc) remove this if XLA switches to using static method for creation
+            return f"{first_tensor_name}.{self.create_tensor}"
+        return f"{self.backend_namespace}::{self.create_tensor}"
+
     def return_aten_tensor(self, func: NativeFunction, schema: LazyIrSchema) -> str:
         returns_length = len(schema.returns)
         value_args = schema.filtered_args(values=True, scalars=False)
         value_types_names = [f"{a.name}" for a in value_args if not a.is_wrapped_scalar]
         assert len(value_types_names) > 0, "Code below assumes there is at least one tensor arg"
         first_tensor_name = value_types_names[0]
-        bridge_str = """auto result = torch::lazy::CreateAtenFromLtcTensor(
-                torch::lazy::LazyTensor::Create(std::move(node), *common_device));"""
+        bridge_str = f"""auto result = torch::lazy::CreateAtenFromLtcTensor(
+                {self.create_lazy_tensor(first_tensor_name)}(std::move(node), *common_device));"""
 
         if returns_length > 1:
             bridge_str = f"""std::vector<{self.tensor_class}Ptr> lazy_tensors;
         for (int i = 0; i < {returns_length}; i++) {{
-            lazy_tensors.push_back(torch::lazy::LazyTensor::Create(torch::lazy::Value(node, i), *common_device));
+            lazy_tensors.push_back({self.create_lazy_tensor(first_tensor_name)}(torch::lazy::Value(node, i), *common_device));
         }}
         auto result = torch::lazy::TupleAtenFromLtcTensors<{returns_length}>(lazy_tensors);"""
 
