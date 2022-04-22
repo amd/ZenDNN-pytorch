@@ -86,7 +86,6 @@ _SKIP_PYTHON_BINDINGS = [
     'item', '_local_scalar_dense', 'to',
     '_to_copy',
     'copy_sparse_to_sparse_', 'copy_',
-    'numpy_T', 'matrix_H', 'mT', 'mH',  # these need to be an attributes in Python, not functions
     'nonzero(_(out|numpy))?',
     'set_data',
     '.*_overrideable',  # overrideable functions for backend extension
@@ -99,6 +98,12 @@ _SKIP_PYTHON_BINDINGS = [
 ]
 
 SKIP_PYTHON_BINDINGS = list(map(lambda pattern: re.compile(rf'^{pattern}$'), _SKIP_PYTHON_BINDINGS))
+
+# Skip the generation of the method variant
+SKIP_PYTHON_BINDINGS_METHODS = [
+    # these need to be an attributes in Python, not methods
+    'numpy_T', 'matrix_H', 'mT', 'mH',
+]
 
 # These function signatures are not exposed to Python. Note that this signature
 # list does not support regex.
@@ -126,6 +131,28 @@ def should_generate_py_binding(f: NativeFunction) -> bool:
             return False
 
     return True
+
+def filter_skipped_methods(native_functions: List[NativeFunction]) -> List[NativeFunction]:
+
+    @with_native_function
+    def remove_method_if_skipped(f: NativeFunction) -> NativeFunction:
+        if cpp.name(f.func) in SKIP_PYTHON_BINDINGS_METHODS:
+            try:
+                f.variants.remove(Variant.method)
+            except KeyError:
+                assert False, "All the functions in SKIP_PYTHON_BINDING_METHODS should have a method variant"
+        return f
+
+    @with_native_function
+    def has_empty_variants(f: NativeFunction) -> bool:
+        return len(f.variants) == 0
+
+    ret = []
+    for f in native_functions:
+        new_f = remove_method_if_skipped(f)
+        if not has_empty_variants(new_f):
+            ret.append(new_f)
+    return ret
 
 def get_pycname(name: BaseOperatorName) -> str:
     return f'THPVariable_{name}'
@@ -164,6 +191,7 @@ def gen(out: str, native_yaml_path: str, deprecated_yaml_path: str, template_pat
     fm = FileManager(install_dir=out, template_dir=template_path, dry_run=False)
     native_functions = parse_native_yaml(native_yaml_path).native_functions
     native_functions = list(filter(should_generate_py_binding, native_functions))
+    native_functions = filter_skipped_methods(native_functions)
 
     methods = load_signatures(native_functions, deprecated_yaml_path, method=True)
     create_python_bindings(
