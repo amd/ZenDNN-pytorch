@@ -102,7 +102,7 @@ SKIP_PYTHON_BINDINGS = list(map(lambda pattern: re.compile(rf'^{pattern}$'), _SK
 # Skip the generation of the method variant
 SKIP_PYTHON_BINDINGS_METHODS = [
     # these need to be an attributes in Python, not methods
-    'numpy_T', 'matrix_H', 'mT', 'mH',
+    'numpy_T', 'matrix_H', 'mT', 'mH', 'real', 'imag'
 ]
 
 # These function signatures are not exposed to Python. Note that this signature

@@ -60,6 +60,10 @@ def mT(a : Tensor) -> Tensor:
   return a.mT
 def mH(a : Tensor) -> Tensor:
   return a.mH
+def real(a : Tensor) -> Tensor:
+  return a.real
+def imag(a : Tensor) -> Tensor:
+  return a.imag
 def shape(a : Tensor) -> List[int]:
   return a.size()
 )SCRIPT";

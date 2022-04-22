@@ -713,7 +713,9 @@ class TestJit(JitTestCase):
                 x.T,
                 x.mT,
                 x.H,
-                x.mH
+                x.mH,
+                x.real,
+                # x.imag TODO: Does not work for real types
                 # x.layout TODO: layout long -> instance conversion
             )
 
@@ -768,6 +770,34 @@ class TestJit(JitTestCase):
 
         x = make_tensor((3, 4), device="cpu", dtype=torch.complex64)
         self.assertTrue(check(x))
+
+    def test_real(self):
+        @torch.jit.script
+        def check(x):
+            return torch.equal(x.real, torch.real(x))
+
+        x = make_tensor((3, 4), device="cpu", dtype=torch.complex64)
+        self.assertTrue(check(x))
+
+    def test_imag(self):
+        @torch.jit.script
+        def check(x):
+            return torch.equal(x.imag, torch.imag(x))
+
+        x = make_tensor((3, 4), device="cpu", dtype=torch.complex64)
+        self.assertTrue(check(x))
+
+    def test_real_imag_script(self):
+        def real(x):
+            return x.real
+
+        def imag(x):
+            return x.imag
+
+        x = make_tensor((3, 4), device="cpu", dtype=torch.complex64)
+
+        self.checkScript(real, (x, ))
+        self.checkScript(imag, (x, ))
 
     def test_T_mT_H_mH(self):
         def T(x):
