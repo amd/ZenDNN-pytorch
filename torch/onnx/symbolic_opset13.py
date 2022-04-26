@@ -5,7 +5,9 @@
 import torch
 import torch.onnx.symbolic_helper as sym_help
 from torch.onnx.symbolic_helper import parse_args, _unimplemented
-from torch.onnx.symbolic_opset9 import overload_by_arg_count, _maybe_cast_reduce_op_input, nonzero, expand
+from torch.onnx.symbolic_opset9 import (overload_by_arg_count, _maybe_cast_reduce_op_input,
+                                        nonzero, expand, zeros, ones, size, linear, conv2d,
+                                        relu, unused)
 from torch.onnx.symbolic_opset11 import unsqueeze
 from torch.onnx.utils import _add_block, _add_input_to_block, _add_output_to_block
 
@@ -130,19 +132,40 @@ def where(g, condition, self=None, other=None, _outputs=None):
 
 @parse_args("v", "v", "v", "i", "i", "i")
 def fake_quantize_per_channel_affine(g, inputs, scale, zero_point, axis, quant_min=-128, quant_max=127):
-    if quant_min not in [0, -128] or quant_max not in [127, 255]:
+    # NOTE: (0, 127) is allowed as special case. PyTorch restricts activations to be in the range (0, 127).
+    #   https://github.com/pytorch/pytorch/blob/b34b192d6b97325c9f78e5995c48c8498ede34bd/torch/ao/quantization/observer.py#L1422
+    if (quant_min, quant_max) not in [(0, 255), (-128, 127), (0, 127)]:
         raise RuntimeError(
-            "ONNX defines [0, 255] for quint8 and [-128, 127] for qint8, got [{}, {}]".format(quant_min, quant_max))
-
+            "For (quant_min, quant_max), ONNX allows only (0, 127), (0, 255) and (-128, 127). "
+            "Got ({}, {})".format(quant_min, quant_max))
     # ONNX defines zero_point to be int8 or uint8
     if quant_min == 0:
-        zero_point = g.op("Cast", zero_point, to_i=sym_help.cast_pytorch_to_onnx["Byte"])
+        zero_point = g.op("Cast", zero_point, to_i=torch.onnx.TensorProtoDataType.UINT8)
     else:
-        zero_point = g.op("Cast", zero_point, to_i=sym_help.cast_pytorch_to_onnx["Char"])
-    return g.op(
-        "DequantizeLinear",
-        g.op("QuantizeLinear", inputs, scale, zero_point, axis_i=axis),
-        scale, zero_point, axis_i=axis)
+        zero_point = g.op("Cast", zero_point, to_i=torch.onnx.TensorProtoDataType.INT8)
+    quantized = g.op("QuantizeLinear", inputs, scale, zero_point, axis_i=axis)
+    if (quant_min, quant_max) == (0, 127):
+        quantized = g.op("Clip", quantized, unused(g), g.op("Constant", value_t=torch.tensor(127, dtype=torch.uint8)))
+    return g.op("DequantizeLinear", quantized, scale, zero_point, axis_i=axis)
+
+@parse_args("v", "v", "v", "i", "i")
+def fake_quantize_per_tensor_affine(g, inputs, scale, zero_point, quant_min=-128, quant_max=127):
+    # NOTE: (0, 127) is allowed as special case. PyTorch restricts activations to be in the range (0, 127).
+    #   https://github.com/pytorch/pytorch/blob/b34b192d6b97325c9f78e5995c48c8498ede34bd/torch/ao/quantization/observer.py#L1422
+    if (quant_min, quant_max) not in [(0, 255), (-128, 127), (0, 127)]:
+        raise RuntimeError(
+            "For (quant_min, quant_max), ONNX allows only (0, 127), (0, 255) and (-128, 127). "
+            "Got ({}, {})".format(quant_min, quant_max))
+    if quant_min == 0:
+        zero_point = g.op("Cast", zero_point, to_i=torch.onnx.TensorProtoDataType.UINT8)
+    else:
+        zero_point = g.op("Cast", zero_point, to_i=torch.onnx.TensorProtoDataType.INT8)
+    if scale.type().scalarType() != "Float":
+        scale = g.op("Cast", scale, to_i=torch.onnx.TensorProtoDataType.FLOAT)
+    quantized = g.op("QuantizeLinear", inputs, scale, zero_point)
+    if (quant_min, quant_max) == (0, 127):
+        quantized = g.op("Clip", quantized, unused(g), g.op("Constant", value_t=torch.tensor(127, dtype=torch.uint8)))
+    return g.op("DequantizeLinear", quantized, scale, zero_point)
 
 def _reduce_op_symbolic(onnx_op_name):
     def symbolic(g, self, dim=None, keepdim=None):
@@ -151,7 +174,7 @@ def _reduce_op_symbolic(onnx_op_name):
             # all-reduce path
             return sym_help._handle_reduce_dim_none(g, self, onnx_op_name)
         else:
-            keepdim = sym_help._get_const(keepdim, 'i', 'keepdim')
+            keepdim = sym_help._get_const(keepdim, "i", "keepdim")
             return g.op(onnx_op_name, self, dim, keepdims_i=keepdim)
     return symbolic
 
@@ -162,13 +185,19 @@ def _reduce_with_dtype(onnx_op, name):
     def reduce(g, *args, **kwargs):
         @parse_args("v", "none")
         def reduce_nodim(g, self, dtype):
-            if dtype.node().kind() != "prim::Constant":
+            if dtype.node().kind() == "onnx::Constant":
+                dtype = sym_help._get_const(dtype, "i", "dtype")
+                self = g.op("Cast", self, to_i=sym_help.scalar_type_to_onnx[dtype])
+            elif dtype.node().kind() != "prim::Constant":
                 return _unimplemented(name, "dtype")
             return symbolic(g, self)
 
         @parse_args("v", "v", "i", "none")
         def reduce_dim(g, self, dim, keepdim, dtype):
-            if dtype.node().kind() != "prim::Constant":
+            if dtype.node().kind() == "onnx::Constant":
+                dtype = sym_help._get_const(dtype, "i", "dtype")
+                self = g.op("Cast", self, to_i=sym_help.scalar_type_to_onnx[dtype])
+            elif dtype.node().kind() != "prim::Constant":
                 return _unimplemented(name, "dtype")
             return symbolic(g, self, dim, keepdim)
         return reduce_nodim, reduce_dim
@@ -230,7 +259,6 @@ def repeat_interleave(g, self, repeats, dim=None, output_size=None):
     for idx, input_size in enumerate(input_sizes):
         if input_size is None:
             output_sizes[idx], input_sizes[idx] = 0, -1
-    print(output_sizes, input_sizes)
 
     cond_dynamic_repeats = (repeats_dim == 1 and repeats_sizes[0] is None)
     # If input size is dynamic or repeats vector is dynamic
@@ -312,3 +340,128 @@ def repeat_interleave(g, self, repeats, dim=None, output_size=None):
     loop_out = loop.node().output()
     loop_out = g.op("ConcatFromSequence", loop_out, axis_i=dim)
     return loop_out
+
+
+@parse_args("v", "i", "i", "i")
+def diagonal(g, self, offset, dim1, dim2):
+    dim1_size = size(g, self, dim=g.op("Constant", value_t=torch.LongTensor([dim1])))
+    dim2_size = size(g, self, dim=g.op("Constant", value_t=torch.LongTensor([dim2])))
+
+    # Create appropriate mask
+    mask_shape = g.op("Concat", dim1_size, dim2_size, axis_i=0)
+    mask = zeros(g, mask_shape, None, None, None)
+    mask = g.op("EyeLike", mask, k_i=offset)
+
+    # dim1 and dim2 appended as a dimension at the end of the shape
+    rank = sym_help._get_tensor_rank(self)
+    if rank is not None:
+        axes = list(range(rank))
+        axes.remove(dim1)
+        axes.remove(dim2)
+        self = g.op("Transpose", self, perm_i=axes + [dim1, dim2])
+    else:
+        return _unimplemented("diagonal", "unknown input rank")
+
+    # Multiply input and mask to calculate values along diagonal
+    # The mask consists of one values where diagonal values are to be calculated
+    # For example:
+    # [[1.1, 1.2, 1.3],   *    [[1, 0, 0]   =   [[1.1, 0, 0],
+    #  [2.1, 2.2, 2.3],         [0, 1, 0]        [0, 2.2, 0],
+    #  [3.1, 3.2, 3.3]]         [0, 0, 1]]       [0, 0, 3.3]]
+    result = g.op("Mul", self, mask)
+    result = sym_help._reducesum_helper(g, result, axes_i=[-1], keepdims_i=0)
+
+    # Calculate gather indices based on offset and dims
+    # If offset is greater than zero, set offset to zero as this aids in
+    # calculation of selection window
+    offset_op = g.op("Constant", value_t=torch.LongTensor([offset]))
+    if offset >= 0:
+        diag_size = g.op("Max", g.op("Min", dim1_size, g.op("Sub", dim2_size, offset_op)),
+                         g.op("Constant", value_t=torch.LongTensor([0])))
+        offset = 0
+    else:
+        diag_size = g.op("Max", g.op("Min", g.op("Add", dim1_size, offset_op), dim2_size),
+                         g.op("Constant", value_t=torch.LongTensor([0])))
+    diag_size = g.op("Concat", diag_size, axis_i=0)
+
+    # Calculate which diagonal values to select
+    # For example, in cases with offsets:
+    # [[0, 1.1, 0]
+    #  [0, 0, 2.2]]
+    # we need to select the last two columns, so we create a tensor
+    # with all columns that are to be selected
+    # So in this example, it is [1, 2]
+    select_window_ones_fill = ones(g, diag_size, 4, None, None)
+    select_window = g.op("CumSum", select_window_ones_fill, g.op("Constant", value_t=torch.LongTensor([0])))
+    select_window = g.op("Add", select_window, g.op("Constant", value_t=torch.LongTensor([abs(offset) - 1])))
+
+    gather_shape = [size(g, result,
+                         dim=g.op("Constant", value_t=torch.LongTensor([axis]))) for axis in list(range(rank))[:-2]]
+    gather_shape.append(diag_size)
+    gather_shape = g.op("Concat", *gather_shape, axis_i=0)
+    gather_indices = zeros(g, gather_shape, 4, None, None)
+
+    # There might be cases where offset value is greater than number of rows/columns
+    # and might cause the diagonal to overrun and as a result of this, diag_size would be zero.
+    # For example, if
+    #       offset = 9, dim1_size = 2 (columns), dim2_size = 4 (rows)
+    #       diag_size = max(min(2, (4-9)), 0) = 0, based on calculation above
+    # Cases with diagonal overrun always result in diag_size = max(0, -ve value) = 0
+    # In cases without diagonal overrun, we select the appropriate rows/columns along which we
+    # are calculating diagonal values. In cases with diagonal overrun, we return a tensor which has
+    # the dimension of the row/column where overrun occurred as 0-dim, as we are essentially
+    # returning an empty tensor
+    overrun_cond = g.op("Not", g.op("Equal", diag_size, g.op("Constant", value_t=torch.tensor(0, dtype=torch.int64))))
+    if_op = g.op("If", overrun_cond)
+    if_node = if_op.node()
+
+    if_block = _add_block(if_node)
+    gather_indices_if_block = if_block.op("Add", gather_indices, select_window)
+    gather_indices_if_block = sym_help._unsqueeze_helper(if_block, gather_indices_if_block, [rank - 1])
+    final_non_overrun_ = if_block.op("GatherND", result, gather_indices_if_block, batch_dims_i=rank - 2)
+    _add_output_to_block(if_block, final_non_overrun_)
+
+    else_block = _add_block(if_node)
+    final_overrun_ = zeros(else_block, gather_shape, 6, None, None)
+    _add_output_to_block(else_block, final_overrun_)
+    return if_op
+
+class Quantized:
+    """
+    https://github.com/pytorch/pytorch/wiki/PyTorch-ONNX-exporter#quantized-model-export
+    """
+    domain = "quantized"
+
+    @staticmethod
+    def linear(g, q_input, q_weight, bias, op_scale, op_zero_point):
+        input, input_scale, _, _ = sym_help.dequantize_helper(g, q_input)
+        weight, weight_scale, _, axis = sym_help.dequantize_helper(g, q_weight)
+        q_bias = sym_help.requantize_bias_helper(g, bias, input_scale, weight_scale, axis)
+        bias, _, _, _ = sym_help.dequantize_helper(g, q_bias)
+
+        output = linear(g, input, weight, bias)
+
+        return sym_help.quantize_helper(g, output, op_scale, op_zero_point)
+
+    @staticmethod
+    def conv2d(g, q_input, q_weight, bias, stride, padding, dilation, groups, op_scale, op_zero_point):
+        input, input_scale, _, _ = sym_help.dequantize_helper(g, q_input)
+        weight, weight_scale, _, axis = sym_help.dequantize_helper(g, q_weight)
+        q_bias = sym_help.requantize_bias_helper(g, bias, input_scale, weight_scale, axis)
+        bias, _, _, _ = sym_help.dequantize_helper(g, q_bias)
+
+        output = conv2d(g, input, weight, bias, stride, padding, dilation, groups)
+
+        return sym_help.quantize_helper(g, output, op_scale, op_zero_point)
+
+    @staticmethod
+    def conv2d_relu(g, q_input, q_weight, bias, stride, padding, dilation, groups, op_scale, op_zero_point):
+        input, input_scale, _, _ = sym_help.dequantize_helper(g, q_input)
+        weight, weight_scale, _, axis = sym_help.dequantize_helper(g, q_weight)
+        q_bias = sym_help.requantize_bias_helper(g, bias, input_scale, weight_scale, axis)
+        bias, _, _, _ = sym_help.dequantize_helper(g, q_bias)
+
+        output = conv2d(g, input, weight, bias, stride, padding, dilation, groups)
+        output = relu(g, output)
+
+        return sym_help.quantize_helper(g, output, op_scale, op_zero_point)

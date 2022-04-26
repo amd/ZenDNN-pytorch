@@ -1,3 +1,6 @@
+__all__ = ["shutdown", "get_worker_info", "remote", "rpc_sync",
+           "rpc_async", "RRef", "AllGatherStates", "method_factory", "new_method"]
+
 import collections
 import contextlib
 import functools
@@ -13,6 +16,7 @@ from torch._C._distributed_rpc import (
     PyRRef,
     RemoteProfilerManager,
     WorkerInfo,
+    TensorPipeAgent,
     get_rpc_timeout,
     _cleanup_python_rpc_handler,
     _delete_all_user_and_unforked_owner_rrefs,
@@ -37,6 +41,8 @@ from .internal import (
 )
 
 from .constants import DEFAULT_SHUTDOWN_TIMEOUT, UNSET_RPC_TIMEOUT
+
+from ._utils import _group_membership_management, _update_group_membership
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +271,7 @@ def _barrier(worker_names):
         )
 
 @_require_initialized
-def _wait_all_workers():
+def _wait_all_workers(timeout=DEFAULT_SHUTDOWN_TIMEOUT):
     r"""
     Block until all local and remote RPC processes reach this method and wait
     for all outstanding work to complete. Every RPC process must call this
@@ -274,7 +280,7 @@ def _wait_all_workers():
     framework will work after this method returns.
     """
     try:
-        _all_gather(None, timeout=DEFAULT_SHUTDOWN_TIMEOUT)
+        _all_gather(None, timeout=timeout)
     except RuntimeError as ex:
         logger.error(
             f"Failed to respond to 'Shutdown Proceed' in time, got error {ex}"
@@ -283,7 +289,7 @@ def _wait_all_workers():
 
 
 @_require_initialized
-def shutdown(graceful=True):
+def shutdown(graceful=True, timeout=DEFAULT_SHUTDOWN_TIMEOUT):
     r"""
     Perform a shutdown of the RPC agent, and then destroy the RPC agent. This
     stops the local agent from accepting outstanding requests, and shuts
@@ -333,9 +339,21 @@ def shutdown(graceful=True):
     """
     if graceful:
         try:
-            _wait_all_workers()
-            _delete_all_user_and_unforked_owner_rrefs()
-            _get_current_rpc_agent().join(shutdown=True)
+            agent = _get_current_rpc_agent()
+            if not isinstance(agent, TensorPipeAgent) or agent.is_static_group:
+                _wait_all_workers(timeout)
+                _delete_all_user_and_unforked_owner_rrefs()
+                agent.join(shutdown=True)
+            else:
+                # This is a dynamic group so we need to grab the token for the operation
+                my_worker_info = agent.get_worker_info()
+                my_name = my_worker_info.name
+                with _group_membership_management(agent.store, my_name, False):
+                    all_worker_infos = agent.get_worker_infos()
+                    for worker in all_worker_infos:
+                        if worker.name != my_name:
+                            rpc_sync(worker.name, _update_group_membership, args=(my_worker_info, [], {}, False))
+                    agent.join(shutdown=True)
         finally:
             # In case of errors, continue to complete the local shutdown.
             _finalize_shutdown()
@@ -583,6 +601,7 @@ def remote(to, func, args=None, kwargs=None, timeout=UNSET_RPC_TIMEOUT):
         >>> rpc.init_rpc("worker1", rank=1, world_size=2)
         >>> rpc.shutdown()
     """
+    torch._C._log_api_usage_once("torch.distributed.rpc_remote")
     qualified_name = torch.jit._builtins._find_builtin(func)
     dst_worker_info = _to_worker_info(to)
     should_profile = torch.autograd._profiler_enabled()
@@ -761,6 +780,7 @@ def rpc_sync(to, func, args=None, kwargs=None, timeout=UNSET_RPC_TIMEOUT):
         >>> rpc.shutdown()
 
     """
+    torch._C._log_api_usage_once("torch.distributed.rpc_sync")
     fut = _invoke_rpc(to, func, RPCExecMode.SYNC, args, kwargs, timeout)
     return fut.wait()
 
@@ -853,6 +873,7 @@ def rpc_async(to, func, args=None, kwargs=None, timeout=UNSET_RPC_TIMEOUT):
         >>> rpc.init_rpc("worker1", rank=1, world_size=2)
         >>> rpc.shutdown()
     """
+    torch._C._log_api_usage_once("torch.distributed.rpc_async")
     fut = _invoke_rpc(to, func, RPCExecMode.ASYNC, args, kwargs, timeout)
     if hasattr(_thread_local_var, "future_list"):
         _thread_local_var.future_list.append(fut)

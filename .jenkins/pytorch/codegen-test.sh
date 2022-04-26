@@ -26,12 +26,11 @@ set -x
 rm -rf "$OUT"
 
 # aten codegen
-python -m tools.codegen.gen \
+python -m torchgen.gen \
   -d "$OUT"/torch/share/ATen
 
 # torch codegen
 python -m tools.setup_helpers.generate_code \
-  --declarations-path "$OUT"/torch/share/ATen/Declarations.yaml \
   --install_dir "$OUT"
 
 # pyi codegen

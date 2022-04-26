@@ -1,7 +1,8 @@
-#include <ATen/ATen.h>
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#include <ATen/core/Tensor.h>
 #include <ATen/Config.h>
+#include <ATen/Dispatch.h>
 #include <ATen/NamedTensorUtils.h>
-#include <ATen/NativeFunctions.h>
 #include <ATen/Parallel.h>
 #include <ATen/SparseTensorImpl.h>
 #include <ATen/SparseTensorUtils.h>
@@ -9,15 +10,23 @@
 #include <cuda_runtime.h>
 #include <type_traits>
 
+#ifndef AT_PER_OPERATOR_HEADERS
+#include <ATen/Functions.h>
+#include <ATen/NativeFunctions.h>
+#else
+#include <ATen/ops/_sparse_sparse_matmul_native.h>
+#include <ATen/ops/empty.h>
+#include <ATen/ops/empty_like_native.h>
+#endif
+
 #include <thrust/device_ptr.h>
 #include <thrust/for_each.h>
 #include <thrust/sequence.h>
 
-#include <THC/THCThrustAllocator.cuh>
-
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDADataType.h>
 #include <ATen/cuda/CUDAUtils.h>
+#include <ATen/cuda/ThrustAllocator.h>
 #include <cusparse.h>
 #include <ATen/native/sparse/cuda/SparseCUDABlas.h>
 #include <c10/cuda/CUDACachingAllocator.h>
@@ -735,7 +744,7 @@ void sparse_sparse_matmul_cuda_kernel(
 
   auto major_dim = result.size(0);
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  auto allocator = THCThrustAllocator(globalContext().lazyInitCUDA());
+  at::cuda::ThrustAllocator allocator;
   auto policy = thrust::cuda::par(allocator).on(stream);
 
   // Filling the COO row indices
