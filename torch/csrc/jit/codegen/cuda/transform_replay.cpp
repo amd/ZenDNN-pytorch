@@ -769,9 +769,7 @@ TransformPropagator::TransformPropagator(TensorView* from) : starting_tv(from) {
   // While tensor views are being replayed, if they're modified, make sure we
   // propagate back to all producers as well as consumers. This is definitely
   // not the most efficient implementation as what we do is any time a tv is
-  // changed we propagate both forward and backward. If a forward pass touches
-  // every node, the backward pass will try to replay every node, potentially
-  // multiple times.
+  // changed we propagate both forward and backward.
   while (!propagation.empty()) {
     auto tv = *propagation.begin();
     propagation.erase(propagation.begin());
