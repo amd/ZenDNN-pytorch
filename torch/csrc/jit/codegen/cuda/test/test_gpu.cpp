@@ -22319,6 +22319,20 @@ TEST_F(NVFuserTest, FusionPropagateParallelTypesToSiblings_CUDA) {
   testValidate(fe.kernel(), outputs, {t0}, {t0.mean({0})}, __LINE__, __FILE__);
 }
 
+TEST_F(NVFuserTest, demo) {
+  Fusion fusion;
+  FusionGuard fg(&fusion);
+
+  auto tv0 = makeSymbolicTensor(1);
+  fusion.addInput(tv0);
+  auto tv1 = neg(tv0);
+  auto tv2 = sin(tv1);
+  fusion.addOutput(tv2);
+
+  tv2->split(0, 2);
+  tv1->computeAt(tv2, -1);
+}
+
 } // namespace jit
 } // namespace torch
 #endif // #if defined(USE_CUDA)

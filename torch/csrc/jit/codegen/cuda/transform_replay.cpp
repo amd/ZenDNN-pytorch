@@ -761,11 +761,7 @@ bool TransformPropagator::replayCasP(
 }
 
 TransformPropagator::TransformPropagator(TensorView* from) : starting_tv(from) {
-  // Tensors we should try to propagate in the consumer direction
-  std::deque<TensorView*> consumer_propagation{starting_tv};
-
-  // Tensors we should try to propagate in the producer direction
-  std::deque<TensorView*> producer_propagation{starting_tv};
+  std::unordered_set<TensorView*> propagation{starting_tv};
 
   // Seed position with local tv
   replayed_pos[from] = from->nDims();
@@ -776,35 +772,24 @@ TransformPropagator::TransformPropagator(TensorView* from) : starting_tv(from) {
   // changed we propagate both forward and backward. If a forward pass touches
   // every node, the backward pass will try to replay every node, potentially
   // multiple times.
-  while (!consumer_propagation.empty() || !producer_propagation.empty()) {
-    while (!consumer_propagation.empty()) {
-      // Tensor view we will replay onto consumers
-      auto tv = consumer_propagation.front();
-      consumer_propagation.pop_front();
+  while (!propagation.empty()) {
+    auto tv = *propagation.begin();
+    propagation.erase(propagation.begin());
 
-      // Replay tv forward to its consumers.
-      for (auto consumer_tv : consumersOf(tv)) {
-        auto replayed = replayCasP(consumer_tv, tv);
-        // If consumer has changed, mark we should propagate its consumers
-
-        if (replayed) {
-          consumer_propagation.emplace_back(consumer_tv);
-          producer_propagation.emplace_back(consumer_tv);
-        }
+    // Replay tv forward to its consumers.
+    for (auto consumer_tv : consumersOf(tv)) {
+      auto replayed = replayCasP(consumer_tv, tv);
+      // If consumer has changed, mark we should propagate
+      if (replayed) {
+        propagation.insert(consumer_tv);
       }
     }
 
-    while (!producer_propagation.empty()) {
-      // Tensor view we will replay onto producers
-      auto tv = producer_propagation.front();
-      producer_propagation.pop_front();
-      // Replay tv backward to its producers
-      for (auto producer_tv : producersFor(tv)) {
-        auto replayed = replayPasC(producer_tv, tv);
-        if (replayed) {
-          producer_propagation.emplace_back(producer_tv);
-          consumer_propagation.emplace_back(producer_tv);
-        }
+    for (auto producer_tv : producersFor(tv)) {
+      // If producer has changed, mark we should propagate
+      auto replayed = replayPasC(producer_tv, tv);
+      if (replayed) {
+        propagation.insert(producer_tv);
       }
     }
   }
