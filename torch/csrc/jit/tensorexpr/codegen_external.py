@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from tools.codegen.gen import parse_native_yaml, FileManager
-import tools.codegen.model as model
+from torchgen.gen import parse_native_yaml, FileManager
+import torchgen.model as model
 
 def num_leading_spaces(line: str) -> int:
     return len(line) - len(line.lstrip())
@@ -53,11 +53,12 @@ void nnc_aten_{name}(
     void** buf_data,
     int64_t* buf_ranks,
     int64_t* buf_dims,
+    int64_t* buf_strides,
     int8_t* buf_dtypes,
     int64_t args_num,
     int64_t* extra_args) {{
   std::vector<at::Tensor> tensors =
-      constructTensors(bufs_num, buf_data, buf_ranks, buf_dims, buf_dtypes);
+      constructTensors(bufs_num, buf_data, buf_ranks, buf_dims, buf_strides, buf_dtypes);
   at::Tensor& r = tensors[0];
   {nl.join(tensor_decls)}
   try {{
