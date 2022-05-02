@@ -24,12 +24,19 @@
 #include <torch/csrc/jit/mobile/module.h>
 #include <torch/csrc/jit/mobile/import.h>
 #include <torch/csrc/jit/serialization/import.h>
+// #include <torch/csrc/api/include/torch/serialize/archive.h>
+// #include <torch/csrc/api/include/torch/serialize/tensor.h>
+#include <torch/csrc/Export.h>
 #include <torch/script.h>
+// #include <torch/csrc/api/include/torch/torch.h>
+#include <iostream>
+#include <fstream>
 
 #include <c10/mobile/CPUCachingAllocator.h>
 
 #include <chrono>
 using namespace std::chrono;
+int COUNT_VAL = 1;
 
 C10_DEFINE_string(model, "", "The given torch script model to benchmark.");
 C10_DEFINE_string(
@@ -230,6 +237,14 @@ class vkRunner final : public Runner<T> {
 
 } // namespace
 
+// template <typename Value, typename... SaveToArgs>
+// void save(const Value& value, SaveToArgs&&... args) {
+//   serialize::OutputArchive archive(
+//       std::make_shared<jit::CompilationUnit>());
+//   archive << value;
+//   archive.save_to(std::forward<SaveToArgs>(args)...);
+// }
+
 int main(int argc, char** argv) {
   c10::SetUsageMessage(
     "Run speed benchmark for pytorch model.\n"
@@ -286,7 +301,16 @@ int main(int argc, char** argv) {
 #endif
 
   if (FLAGS_print_output) {
-    std::cout << runner->run(module, inputs) << std::endl;
+    if(COUNT_VAL == 1) {
+    auto res = runner->run(module, inputs);
+    std::ofstream myfile;
+    myfile.open ("/data/local/tmp/output.blob", std::ios::app| std::ios::binary);
+    myfile << res;
+    myfile.close();
+    // torch::save(res, "/data/local/tmp/output.blob");
+    // std::cout << runner->run(module, inputs) << std::endl;
+    COUNT_VAL = COUNT_VAL + 1;
+    }
   }
 
   c10::CPUCachingAllocator caching_allocator;
@@ -319,6 +343,7 @@ int main(int argc, char** argv) {
     runner->run(module, inputs);
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
+    std::this_thread::sleep_for(microseconds(32000)-duration);
     times.push_back(duration.count());
   }
   micros = timer.MicroSeconds();

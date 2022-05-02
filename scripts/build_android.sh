@@ -158,8 +158,8 @@ if [ "${ANDROID_DEBUG_SYMBOLS:-}" == '1' ]; then
   CMAKE_ARGS+=("-DANDROID_DEBUG_SYMBOLS=1")
 fi
 
-if [ -n "${USE_VULKAN}" ]; then
-  CMAKE_ARGS+=("-DUSE_VULKAN=ON")
+#if [ -n "${USE_VULKAN}" ]; then
+  CMAKE_ARGS+=("-DUSE_VULKAN=OFF")
   if [ -n "${USE_VULKAN_FP16_INFERENCE}" ]; then
     CMAKE_ARGS+=("-DUSE_VULKAN_FP16_INFERENCE=ON")
   fi
@@ -169,7 +169,7 @@ if [ -n "${USE_VULKAN}" ]; then
   if [ -n "${USE_VULKAN_SHADERC_RUNTIME}" ]; then
     CMAKE_ARGS+=("-DUSE_VULKAN_SHADERC_RUNTIME=ON")
   fi
-fi
+#fi
 
 # Use-specified CMake arguments go last to allow overridding defaults
 CMAKE_ARGS+=($@)
