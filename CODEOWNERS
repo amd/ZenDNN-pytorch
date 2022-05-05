@@ -60,7 +60,7 @@
 # docs
 /torch/linalg/ @lezcano @IvanYashchuk
 # code
-/aten/src/ATen/native/**/*LinearAlgebra* @lezcano @nikitaved @IvanYashchuk
+/aten/src/ATen/native/*/*LinearAlgebra* @lezcano @nikitaved @IvanYashchuk
 # tests
 /test/test_linalg.py @lezcano @nikitaved @IvanYashchuk
 
