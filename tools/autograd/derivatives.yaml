@@ -1500,11 +1500,11 @@
   self: handle_r_to_c(self.scalar_type(), maybe_multiply(-grad, alpha.conj()))
   result: auto_element_wise
 
-- name: sum(Tensor self, *, ScalarType? dtype=None) -> Tensor
-  self: grad.expand(self.sizes())
-  result: auto_linear
+# - name: sum(Tensor self, *, ScalarType? dtype=None) -> Tensor
+#   self: grad.expand(self.sizes())
+#   result: auto_linear
 
-- name: sum.dim_IntList(Tensor self, int[1] dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
+- name: sum.dim_IntList(Tensor self, int[1] dim=[], bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
   self: sum_backward(grad, self.sizes(), dim, keepdim)
   result: auto_linear
 

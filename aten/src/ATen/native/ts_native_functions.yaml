@@ -124,7 +124,7 @@ full_codegen:
   - std.dim
   - std.correction
   - sub.Tensor
-  - sum
+    #  - sum
   - sum.dim_IntList
   - tanh
   - tanh_backward

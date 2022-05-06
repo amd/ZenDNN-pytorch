@@ -1982,7 +1982,7 @@ Tensor value_selecting_reduction_backward(const Tensor& grad, int64_t dim, const
 }
 
 Tensor sum_csr(const Tensor &self, c10::optional<ScalarType> dtype) {
-  return self.values().sum(dtype);
+  return self.values().to(dtype.value()).sum();
 }
 
 } // namespace native
