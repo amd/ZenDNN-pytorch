@@ -154,7 +154,7 @@ class TORCH_API ManagedTensorRanges {
   FastMap<const Value*, Lifetime> value_lifetimes_{};
 };
 
-enum class TORCH_API MemoryPlannerAlgorithm {
+enum class MemoryPlannerAlgorithm {
   // The default in StaticModuleOptions
   kStandardResizing,
   // See [Precomputed Offsets Memory Planning Algorithm] for details.
@@ -453,6 +453,7 @@ class TORCH_API StaticModule {
   }
 
   StaticRuntime& runtime();
+  StaticRuntime clone_runtime_from_cached();
 
   // See [Shared values array]
   size_t value_buffer_size() const {
@@ -611,6 +612,10 @@ class TORCH_API BlockRunner {
   const MemoryPlanner* get_memory_planner() const {
     return planner_.get();
   }
+
+  void maybe_clone_memory_planner(
+      const BlockRunner& src,
+      const FastMap<at::Tensor*, at::Tensor*>& old_tensor_to_new);
 
   bool check_for_memory_leak(
       bool output_returned = true,
@@ -972,6 +977,11 @@ class TORCH_API StaticRuntime {
   // Gets the top-level memory planner. Used for testing.
   const MemoryPlanner* get_memory_planner() const;
 
+  // Clone this static runtime instance. Not to be used concurrently with
+  // operator(). Useful when the precompute_offsets option is on (to
+  // avoid expensive offset computation during the first iteration)
+  StaticRuntime clone() const;
+
   void benchmark(
       const std::vector<std::vector<c10::IValue>>& args_list,
       const std::vector<KeywordArgs>& kwargs_list,
@@ -1032,6 +1042,7 @@ class TORCH_API StaticRuntime {
 
   std::unique_ptr<BlockRunner> block_;
   IValueArray values_;
+  const StaticModule& parent_module_;
 };
 
 } // namespace jit
