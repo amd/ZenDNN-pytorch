@@ -154,6 +154,13 @@ class TORCH_API ManagedTensorRanges {
   FastMap<const Value*, Lifetime> value_lifetimes_{};
 };
 
+enum class TORCH_API MemoryPlannerAlgorithm {
+  // The default in StaticModuleOptions
+  kStandardResizing,
+  // See [Precomputed Offsets Memory Planning Algorithm] for details.
+  kPrecomputedOffsets
+};
+
 struct TORCH_API StaticModuleOptions {
   // enabling out variant allows Static Runtime to do memory planning
   bool enable_out_variant{true};
@@ -181,6 +188,9 @@ struct TORCH_API StaticModuleOptions {
   bool use_maybe_copy_variants{true};
   // enable TensorExpr fusion of ops at model loading time
   bool enable_tensorexpr_fusion{false};
+  // The memory planner to use. Only meaningful if enable_out_variant == true
+  MemoryPlannerAlgorithm memory_planner_algorithm{
+      MemoryPlannerAlgorithm::kStandardResizing};
 };
 
 /// The static runime supports two execution modes.
