@@ -1457,9 +1457,6 @@ class TestSparseCSR(TestCase):
     def test_sparse_add(self, device, dtype):
         def run_test(m, n, index_dtype):
 
-            if TEST_WITH_ROCM and dtype.is_complex:
-                self.skipTest("ROCm doesn't work with complex dtype correctly.")
-
             alpha = random.random()
             nnz1 = random.randint(0, m * n)
             nnz2 = random.randint(0, m * n)
@@ -1663,7 +1660,6 @@ class TestSparseCSR(TestCase):
             b = make_tensor((k, n), dtype=dtype, device=device)
             run_test(c, a, b)
 
-    @skipCUDAIfRocm
     @onlyCUDA
     @skipCUDAIf(
         not _check_cusparse_sddmm_available(),
