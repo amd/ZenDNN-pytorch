@@ -28,7 +28,7 @@ SizeNode::SizeNode(Value input, size_t dim):
     DimensionNode(OpKind{c10::Symbol::fromQualString("aten::size")}, {input}, MHash(dim)),
     dim_(dim) {};
 
-int64_t SizeNode:: getStaticValue() const {
+int64_t SizeNode::getStaticValue() const {
     return dynamic_cast<const TsNode*>(operand(0).node)->shape(0).size(dim_);
 }
 
