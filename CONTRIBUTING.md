@@ -49,7 +49,11 @@
 - [Caffe2 notes](#caffe2-notes)
 - [CI failure tips](#ci-failure-tips)
   - [Which commit is used in CI?](#which-commit-is-used-in-ci)
+<<<<<<< HEAD
 - [Further questions - Dev Infra office hours](#dev-infra-office-hours)
+=======
+- [Dev Infra Office Hours](#dev-infra-office-hours)
+>>>>>>> updated-contributing
 
 <!-- tocstop -->
 
@@ -195,6 +199,7 @@ with `brew install cmake` if you are developing on MacOS or Linux system.
     ```
     remove any `submodule.*` settings in your local git config (`.git/config` of your pytorch repo) and try again.
 * If you're a Windows contributor, please check out [Best Practices](https://github.com/pytorch/pytorch/wiki/Best-Practices-to-Edit-and-Compile-Pytorch-Source-Code-On-Windows).
+* For help with any part of the contributing process, please don’t hesitate to utilize our Zoom office hours! See details [here](https://github.com/pytorch/pytorch/wiki/Dev-Infra-Office-Hours)
 
 ## Nightly Checkout & Pull
 
@@ -1313,6 +1318,7 @@ your PRs, but it will still be present for the select CircleCI jobs listed
 above.
 
 ## Dev Infra Office Hours
+<<<<<<< HEAD
 The Pytorch Dev Infra team is hosting office hours every [Friday at 10AM PST](https://fb.zoom.us/j/91990997296?pwd=b1V1NXVzMGtiNmx4TzJUUEZ2MTdsdz09). We are primarily responsible for a few initiatives including:
 
 - Developer Experience: How easy it is to develop, get signal, and reviews for Pytorch
@@ -1330,3 +1336,6 @@ Note: Since most of the office hour attendees are Meta employees, we will not be
 - November 25th, 2022
 - December 23rd, 2022
 - December 30th, 2022
+=======
+[Dev Infra Office Hours](https://github.com/pytorch/pytorch/wiki/Dev-Infra-Office-Hours) are hosted every Friday to answer any further questions regarding developer experience, green HUD, and CI.
+>>>>>>> updated-contributing
