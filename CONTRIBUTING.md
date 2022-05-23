@@ -50,10 +50,14 @@
 - [CI failure tips](#ci-failure-tips)
   - [Which commit is used in CI?](#which-commit-is-used-in-ci)
 <<<<<<< HEAD
+<<<<<<< HEAD
 - [Further questions - Dev Infra office hours](#dev-infra-office-hours)
 =======
 - [Dev Infra Office Hours](#dev-infra-office-hours)
 >>>>>>> updated-contributing
+=======
+- [Dev Infra Office Hours](#dev-infra-office-hours)
+>>>>>>> install-doxygen
 
 <!-- tocstop -->
 
@@ -1319,6 +1323,7 @@ above.
 
 ## Dev Infra Office Hours
 <<<<<<< HEAD
+<<<<<<< HEAD
 The Pytorch Dev Infra team is hosting office hours every [Friday at 10AM PST](https://fb.zoom.us/j/91990997296?pwd=b1V1NXVzMGtiNmx4TzJUUEZ2MTdsdz09). We are primarily responsible for a few initiatives including:
 
 - Developer Experience: How easy it is to develop, get signal, and reviews for Pytorch
@@ -1339,3 +1344,6 @@ Note: Since most of the office hour attendees are Meta employees, we will not be
 =======
 [Dev Infra Office Hours](https://github.com/pytorch/pytorch/wiki/Dev-Infra-Office-Hours) are hosted every Friday to answer any further questions regarding developer experience, green HUD, and CI.
 >>>>>>> updated-contributing
+=======
+[Dev Infra Office Hours](https://github.com/pytorch/pytorch/wiki/Dev-Infra-Office-Hours) are hosted every Friday to answer any questions regarding developer experience, Green HUD, and CI.
+>>>>>>> install-doxygen
