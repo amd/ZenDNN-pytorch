@@ -128,9 +128,9 @@ numba==0.54.1 ; python_version == "3.9"
 #Pinned versions:
 #test that import:
 
-protobuf==3.20.1
+#protobuf
 #Description:  Google’s data interchange format
-#Pinned versions: 3.20.1
+#Pinned versions:
 #test that import: test_tensorboard.py
 
 psutil

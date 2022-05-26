@@ -234,8 +234,6 @@ class TORCH_API RecordFunctionCallback {
 
 typedef uint64_t CallbackHandle;
 
-constexpr CallbackHandle INVALID_CALLBACK_HANDLE{0};
-
 // It is unnecessary to use atomic operations for enabling
 // thread-local function callbacks. Moreover, it prevents saving to
 // ThreadLocalState because std::atomic is non-copyable.
@@ -293,6 +291,9 @@ struct TORCH_API RecordFunction {
       return;
     }
     inputs_ = args;
+#ifndef NDEBUG
+    inputs_valid_ = true;
+#endif
     before(fn, current_sequence_nr);
   }
 
@@ -398,9 +399,6 @@ struct TORCH_API RecordFunction {
 
   c10::optional<OperatorName> operator_name() const;
 
-  // This method returns a copy of the FunctionSchema and can be expensive.
-  c10::optional<FunctionSchema> operator_schema() const;
-
   void setHandle(RecordFunctionHandle handle) {
     handle_ = handle;
   }
@@ -479,8 +477,6 @@ struct TORCH_API RecordFunction {
 };
 
 TORCH_API StepCallbacks getStepCallbacks(RecordScope scope);
-
-TORCH_API c10::optional<StepCallbacks> getStepCallbacksUnlessEmpty(RecordScope scope);
 
 namespace detail {
 template <typename Inputs, typename F, typename... Args>

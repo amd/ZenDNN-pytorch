@@ -16,8 +16,9 @@
 namespace at {
 namespace native {
 
+constexpr int NUM_INPUTS = 8;
 
-#define AT_FOR_8_CASES(_)  \
+#define AT_FOR_8_INPUTS(_)  \
   _(1)                      \
   _(2)                      \
   _(3)                      \
@@ -27,7 +28,7 @@ namespace native {
   _(7)                      \
   _(8)
 
-c10::SmallVector<std::string> get_extra_args_typenames(const c10::SmallVector<at::Scalar>& extra_args) {
+c10::SmallVector<std::string> get_extra_args_typenames(const std::vector<at::Scalar>& extra_args) {
   c10::SmallVector<std::string> args_typenames(extra_args.size());
   for (auto i = 0; i < extra_args.size(); ++i) {
     args_typenames[i] = at::cuda::jit::typeName(extra_args[i].type());
@@ -64,42 +65,37 @@ int jitted_can_vectorize_up_to(const TensorIteratorBase& iter) {
   return result;
 }
 
-template<bool IS_INPUT, int N>
-static std::unique_ptr<OffsetCalculator<N>> make_unique_offset_calculator(
-          const TensorIteratorBase& iter) {
+template<int N>
+static std::unique_ptr<OffsetCalculator<N>> make_unique_input_offset_calculator(const TensorIteratorBase& iter) {
   // array size can not be 0, this happens when N == 0
   constexpr int array_size = std::max<int>(N, 1);
-  TORCH_INTERNAL_ASSERT(N == (IS_INPUT ? iter.ninputs() : iter.noutputs()));
-
+  TORCH_INTERNAL_ASSERT(N == iter.ntensors() - iter.noutputs());
   std::array<const int64_t*, array_size> strides;
   int64_t element_sizes[array_size];
   for (int i = 0; i < N; i++) {
-    int index = IS_INPUT ? i + iter.noutputs() : i;
-    strides[i] = iter.strides(index).data();
-    element_sizes[i] = iter.element_size(index);
+    strides[i] = iter.strides(i + iter.noutputs()).data();
+    element_sizes[i] = iter.element_size(i + iter.noutputs());
   }
   return std::make_unique<OffsetCalculator<N>>(iter.ndim(), iter.shape().data(), strides.data(), element_sizes);
 }
 
-template <bool IS_INPUT>
 struct OffsetCalculatorVariant {
 #define DEFINE_CASE(index) std::unique_ptr<OffsetCalculator<index>>,
   using OffsetCalculatorTypes = c10::variant<
-    AT_FOR_8_CASES(DEFINE_CASE)
+    AT_FOR_8_INPUTS(DEFINE_CASE)
   >;
 #undef DEFINE_CASE
 
   OffsetCalculatorVariant(const TensorIteratorBase& iter) {
-    int num = IS_INPUT ? iter.ninputs() : iter.noutputs();
-
-    switch(num) {
+    int arity = iter.ninputs();
+    switch(arity) {
 #define DEFINE_CASE(index)        \
-      case index : v = make_unique_offset_calculator<IS_INPUT, index>(iter); break;
+      case index : v = make_unique_input_offset_calculator<index>(iter); break;
 
-      AT_FOR_8_CASES(DEFINE_CASE)
+      AT_FOR_8_INPUTS(DEFINE_CASE)
 #undef DEFINE_CASE
       default:
-        TORCH_CHECK(false, "OffsetCalculatorVariant is not implemented for num_tensor = ", num);
+        TORCH_CHECK(false, "OffsetCalculatorVariant is not implemented for ninputs = ", arity);
     }
   }
 
@@ -112,29 +108,29 @@ struct OffsetCalculatorVariant {
 };
 
 struct ArrayVariant {
-// works for up to 8 input + 8 outputs
-#define DEFINE_CASE(index) at::detail::Array<char*, index>, at::detail::Array<char*, index+8>,
+  // notice: This would produce c10::variant<at::detail::Array<char*, 2...9>>
+#define DEFINE_CASE(index) at::detail::Array<char*, index + 1>,
   using ArrayTypes = c10::variant<
-    AT_FOR_8_CASES(DEFINE_CASE)
+    AT_FOR_8_INPUTS(DEFINE_CASE)
   >;
 #undef DEFINE_CASE
 
   ArrayVariant(const TensorIteratorBase& iter) {
-    int ntensors = iter.ntensors();
-    switch(ntensors) {
-#define DEFINE_CASE(index)                                            \
-      case index: array = at::detail::Array<char*, index>{}; break;   \
-      case index+8: array = at::detail::Array<char*, index+8>{}; break;
+    int arity = iter.ninputs();
+    // This assumes that jiterator kernels only have 1 output
+    switch(arity) {
+#define DEFINE_CASE(index)                              \
+      case index: array = at::detail::Array<char*, index + 1>{}; break;
 
-      AT_FOR_8_CASES(DEFINE_CASE)
+      AT_FOR_8_INPUTS(DEFINE_CASE)
 #undef DEFINE_CASE
 
       default:
-        TORCH_CHECK(false, "ArrayVariant is not implemented for ntensors = ", ntensors);
+        TORCH_CHECK(false, "ArrayVariant is not implemented for ninputs = ", arity);
     }
 
     c10::visit([&](auto& a) {
-      for (auto i = 0; i < ntensors; ++i) {
+      for (auto i = 0; i < arity + 1; ++i) {
         a[i] = (char*)iter.data_ptr(i);
       }
     }, array);
@@ -151,20 +147,21 @@ private:
 struct TrivialOffsetCalculatorVariant {
 #define DEFINE_CASE(index) TrivialOffsetCalculator<index>,
   using TrivialOffsetCalculatorTypes = c10::variant<
-    AT_FOR_8_CASES(DEFINE_CASE)
+    AT_FOR_8_INPUTS(DEFINE_CASE)
   >;
 #undef DEFINE_CASE
 
-  TrivialOffsetCalculatorVariant(int num) {
-    switch(num) {
+  TrivialOffsetCalculatorVariant(const TensorIteratorBase& iter) {
+    int arity = iter.ninputs();
+    switch(arity) {
 #define DEFINE_CASE(index)      \
       case index: v = TrivialOffsetCalculator<index>(); break;
 
-      AT_FOR_8_CASES(DEFINE_CASE)
+      AT_FOR_8_INPUTS(DEFINE_CASE)
 #undef DEFINE_CASE
 
       default:
-        TORCH_CHECK(false, "TrivialOffsetCalculatorVariant is not implemented for num_tensors = ", num);
+        TORCH_CHECK(false, "TrivialOffsetCalculatorVariant is not implemented for ninputs = ", arity);
     }
   }
 
@@ -179,7 +176,7 @@ private:
 struct LoadWithCastVariant {
 #define DEFINE_CASE(index) std::unique_ptr<memory::LoadWithCast<index>>,
   using LoadWithCastPtr = c10::variant<
-    AT_FOR_8_CASES(DEFINE_CASE)
+    AT_FOR_8_INPUTS(DEFINE_CASE)
   >;
 #undef DEFINE_CASE
 
@@ -189,7 +186,7 @@ struct LoadWithCastVariant {
 #define DEFINE_CASE(index)      \
       case index: v = std::make_unique<memory::LoadWithCast<index>>(iter); break;
 
-      AT_FOR_8_CASES(DEFINE_CASE)
+      AT_FOR_8_INPUTS(DEFINE_CASE)
 #undef DEFINE_CASE
 
       default:
@@ -203,35 +200,6 @@ struct LoadWithCastVariant {
 
 private:
   LoadWithCastPtr v;
-};
-
-struct StoreWithCastVariant {
-#define DEFINE_CASE(index) std::unique_ptr<memory::StoreWithCast<index>>,
-  using StoreWithCastPtr = c10::variant<
-    AT_FOR_8_CASES(DEFINE_CASE)
-  >;
-#undef DEFINE_CASE
-
-  StoreWithCastVariant(const TensorIteratorBase& iter) {
-    int num = iter.noutputs();
-    switch(num) {
-#define DEFINE_CASE(index)      \
-      case index: v = std::make_unique<memory::StoreWithCast<index>>(iter); break;
-
-      AT_FOR_8_CASES(DEFINE_CASE)
-#undef DEFINE_CASE
-
-      default:
-        TORCH_CHECK(false, "StoreWithCastVariant is not implemented for noutputs = ", num);
-    }
-  }
-
-  void* data_ptr() {
-    return c10::visit([](auto & v){ return static_cast<void*>(v.get()); }, v);
-  }
-
-private:
-  StoreWithCastPtr v;
 };
 
 }} // namespace at::native

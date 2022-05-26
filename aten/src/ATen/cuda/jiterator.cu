@@ -15,7 +15,7 @@ namespace native {
 static inline void launch_jitted_vectorized_kernel_dynamic(
   const std::string& name, TensorIteratorBase& iter,
   DeviceIndex dev_idx, int64_t N, const std::string& f, void* data_ptr,
-  const c10::SmallVector<at::Scalar>& extra_args, bool return_by_ref) {
+  const std::vector<at::Scalar>& extra_args) {
   TORCH_INTERNAL_ASSERT(N > 0 && N <= std::numeric_limits<int32_t>::max());
   // N is still int64_t for the computation, but it's always safe to cast result to int
   const uint32_t grid = (N + block_work_size() - 1) / block_work_size();
@@ -60,8 +60,7 @@ static inline void launch_jitted_vectorized_kernel_dynamic(
                                                /*contiguous=*/true, /*dynamic_casting=*/false,
                                                at::cuda::jit::BinaryFuncVariant::NoScalar,
                                                extra_args_types,
-                                               vectorized, vec_size,
-                                               return_by_ref);
+                                               vectorized, vec_size);
       std::string kernel_name = vectorized ? name + "_vectorized" + std::to_string(vec_size) : name;
       // Acquires the program
       *fn_ptr = at::cuda::jit::jit_pwise_function(code, kernel_name);
@@ -87,11 +86,9 @@ static inline void launch_jitted_vectorized_kernel_dynamic(
     }
     at::cuda::jit::launch_jitted_pwise_function(*fn_ptr, args.get(), {grid, 1u, 1u}, {num_threads(), 1u, 1u});
   } else {
-    TrivialOffsetCalculatorVariant input_offset_calculator(iter.ninputs());
+    TrivialOffsetCalculatorVariant input_offset_calculator(iter);
     void* ic_ptr = input_offset_calculator.data_ptr();
-    TrivialOffsetCalculatorVariant output_offset_calculator(iter.noutputs());
-    void* oc_ptr = output_offset_calculator.data_ptr();
-
+    auto oc = TrivialOffsetCalculator<1>();
     auto l = memory::LoadWithoutCast();
     auto s = memory::StoreWithoutCast();
 
@@ -101,7 +98,7 @@ static inline void launch_jitted_vectorized_kernel_dynamic(
     args[0] = static_cast<void*>(&N);
     args[1] = data_ptr;
     args[2] = ic_ptr;
-    args[3] = oc_ptr;
+    args[3] = static_cast<void*>(&oc);
     args[4] = static_cast<void*>(&l);
     args[5] = static_cast<void*>(&s);
     args[6] = static_cast<void*>(&scalar_val);
@@ -119,7 +116,7 @@ static inline void launch_jitted_unrolled_kernel_dynamic(
   const std::string& name, TensorIteratorBase& iter,
   DeviceIndex dev_idx, int64_t N, const std::string& f, void* data_ptr,
   void* ic_ptr, void* oc_ptr, void* l_ptr, void* s_ptr, bool contiguous, bool dynamic_casting,
-  const c10::SmallVector<at::Scalar>& extra_args, bool return_by_ref) {
+  const std::vector<at::Scalar>& extra_args) {
 
   TORCH_INTERNAL_ASSERT(N > 0 && N <= std::numeric_limits<int32_t>::max());
   //casting result to int is always safe, intermediate is int64 and won't overflow
@@ -154,7 +151,7 @@ static inline void launch_jitted_unrolled_kernel_dynamic(
                                                f_inputs_type_str, compute_type_str, result_type_str,
                                                contiguous, dynamic_casting,
                                                at::cuda::jit::BinaryFuncVariant::NoScalar,
-                                               extra_args_types, /*vectorized*/false, /*vec_size*/0, return_by_ref);
+                                               extra_args_types);
       *fn_ptr = at::cuda::jit::jit_pwise_function(code, name);
     }
   }
@@ -186,11 +183,10 @@ void jitted_gpu_kernel_dynamic_impl(
     TensorIteratorBase& iter,
     const std::string& f,
     const bool dynamic_casting,
-    const c10::SmallVector<at::Scalar>& extra_args,
-    bool return_by_ref) {
+    const std::vector<at::Scalar>& extra_args) {
 
   TORCH_INTERNAL_ASSERT(iter.can_use_32bit_indexing());
-  TORCH_INTERNAL_ASSERT(iter.noutputs() <= 8);
+  TORCH_INTERNAL_ASSERT(iter.noutputs() == 1);
   TORCH_INTERNAL_ASSERT(iter.ninputs() <= 8);
 
   ArrayVariant data(iter);
@@ -211,15 +207,15 @@ void jitted_gpu_kernel_dynamic_impl(
     if (contiguous) {
       // Case 1: no dynamic casting and contiguous
       launch_jitted_vectorized_kernel_dynamic(kernel_name, iter,
-         iter.device().index(), numel, f, data_ptr, extra_args, return_by_ref);
+         iter.device().index(), numel, f, data_ptr, extra_args);
       return;
     }
 
     // Case 2: no dynamic casting and noncontiguous
-    OffsetCalculatorVariant</*is_input=*/true> input_offset_calculator(iter);
+    OffsetCalculatorVariant input_offset_calculator(iter);
     void* ic_ptr = input_offset_calculator.data_ptr();
-    OffsetCalculatorVariant</*is_input=*/false> output_offset_calculator(iter);
-    void* oc_ptr = output_offset_calculator.data_ptr();
+    auto output_offset_calculator = make_output_offset_calculator(iter);
+    void* oc_ptr = static_cast<void*>(&output_offset_calculator);
 
     auto loader = memory::LoadWithoutCast();
     auto storer = memory::StoreWithoutCast();
@@ -228,44 +224,46 @@ void jitted_gpu_kernel_dynamic_impl(
 
     launch_jitted_unrolled_kernel_dynamic(
       kernel_name, iter, iter.device().index(), numel, f, data_ptr,
-      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args, return_by_ref);
+      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args);
 
     return;
   }
 
   // Cases 3 and 4 are handled below
-  // Both require construction of one or more storers and loaders
+  // Both require construction of a storer (this asserts 1 output) and one or more loaders
 
-  // Creates load casts from inputs (note offset indexing into the iterators noutpus...n tensors)
+  // Creates load casts from inputs (note offset indexing into the iterators 1...n tensors)
   LoadWithCastVariant loader(iter);
   void* l_ptr = loader.data_ptr();
 
-  // Creates store cast to output (the 0...noutpus-1 tensor in TensorIterator)
-  StoreWithCastVariant storer(iter);
-  void* s_ptr = storer.data_ptr();
+  // Creates store cast to output (the zeroth tensor in TensorIterator)
+  auto storer = memory::StoreWithCast(iter.dtype(0));
+  void* s_ptr = static_cast<void*>(&storer);
 
   if (contiguous) {
     // Case 3: dynamic casting and contiguous
-    TrivialOffsetCalculatorVariant input_offset_calculator(iter.ninputs());
+    TrivialOffsetCalculatorVariant input_offset_calculator(iter);
     void* ic_ptr = input_offset_calculator.data_ptr();
-    TrivialOffsetCalculatorVariant output_offset_calculator(iter.noutputs());
-    void* oc_ptr = output_offset_calculator.data_ptr();
+
+    auto output_offset_calculator = TrivialOffsetCalculator<1>();
+    void* oc_ptr = static_cast<void*>(&output_offset_calculator);
 
     launch_jitted_unrolled_kernel_dynamic(
       kernel_name, iter, iter.device().index(), numel, f, data_ptr,
-      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args, return_by_ref);
+      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args);
     return;
   }
 
   // Case 4: dynamic casting and noncontiguous
-  OffsetCalculatorVariant</*is_input=*/true> input_offset_calculator(iter);
+  OffsetCalculatorVariant input_offset_calculator(iter);
   void* ic_ptr = input_offset_calculator.data_ptr();
-  OffsetCalculatorVariant</*is_input=*/false> output_offset_calculator(iter);
-  void* oc_ptr = output_offset_calculator.data_ptr();
+
+  auto output_offset_calculator = make_output_offset_calculator(iter);
+  void* oc_ptr = static_cast<void*>(&output_offset_calculator);
 
   launch_jitted_unrolled_kernel_dynamic(
       kernel_name, iter, iter.device().index(), numel, f, data_ptr,
-      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args, return_by_ref);
+      ic_ptr, oc_ptr, l_ptr, s_ptr, contiguous, dynamic_casting, extra_args);
 }
 
 // Entrypoint for dynamic version of jitted GPU kernels, which accepts dynamic number of inputs
@@ -278,8 +276,7 @@ void jitted_gpu_kernel_dynamic(
     const std::string& kernel_name,
     TensorIteratorBase& iter,
     const std::string& f,
-    const c10::SmallVector<at::Scalar>& extra_args,
-    bool return_by_ref) {
+    const std::vector<at::Scalar>& extra_args) {
 
   // TODO: much of preamble is common to both jitted_gpu_kernel and gpu_kernel
   //   Maybe it could be refactored?
@@ -295,7 +292,7 @@ void jitted_gpu_kernel_dynamic(
 
   if (!iter.can_use_32bit_indexing()) {
     for (auto& sub_iter : iter.with_32bit_indexing()) {
-      jitted_gpu_kernel_dynamic(kernel_name, sub_iter, f, extra_args, return_by_ref);
+      jitted_gpu_kernel_dynamic(kernel_name, sub_iter, f, extra_args);
     }
     return;
   }
@@ -311,22 +308,20 @@ void jitted_gpu_kernel_dynamic(
     }
   }
 
-  jitted_gpu_kernel_dynamic_impl(kernel_name, iter, f, needs_dynamic_casting, extra_args, return_by_ref);
+  jitted_gpu_kernel_dynamic_impl(kernel_name, iter, f, needs_dynamic_casting, extra_args);
 }
 
 } // namespace native
 
 namespace cuda {
 
-c10::SmallVector<at::Tensor> CompileAndLaunchKernel(
+at::Tensor CompileAndLaunchKernel(
   const std::string& code_string,
   const std::string& kernel_name,
-  const int num_outputs,
-  const c10::SmallVector<at::Tensor>& tensors,
-  const c10::SmallVector<at::Scalar>& extra_args,
-  bool return_by_ref) {
+  const std::vector<at::Tensor>& tensors,
+  const std::vector<at::Scalar>& extra_args) {
 
-  c10::SmallVector<at::Tensor> outs(num_outputs);
+  Tensor output;
   TensorIteratorConfig config;
   config
     .set_check_mem_overlap(true)
@@ -334,24 +329,17 @@ c10::SmallVector<at::Tensor> CompileAndLaunchKernel(
     .promote_inputs_to_common_dtype(true)
     .cast_common_dtype_to_outputs(true)
     .enforce_safe_casting_to_output(true)
-    .check_all_same_device(true);
-  for (int i = 0; i < num_outputs; ++i) {
-    config.add_owned_output(outs[i]);
-  }
-  for (const auto& t: tensors) {
+    .check_all_same_device(true)
+    .add_owned_output(output);
+  for (const auto& t: tensors){
     config.add_input(t);
   }
   TensorIterator iter = config.build();
 
   CUDAGuard guard(iter.device());
-  at::native::jitted_gpu_kernel_dynamic(kernel_name, iter, code_string, extra_args, return_by_ref);
+  at::native::jitted_gpu_kernel_dynamic(kernel_name, iter, code_string, extra_args);
 
-  c10::SmallVector<at::Tensor> outputs;
-  for (int i = 0; i < num_outputs; ++i) {
-    outputs.emplace_back(iter.output(i));
-  }
-
-  return outputs;
+  return iter.output();
 }
 
 }} // namespace at::cuda

@@ -65,22 +65,20 @@ TORCH_PRECOMPUTE_META_FUNC(avg_pool2d)
 
   /* resize output */
   if (input.ndimension() == 3) {
-    set_output_raw_strided(
+    set_output(
         0,
         {nInputPlane,
          outputHeight,
          outputWidth},
-        {},
         input.options());
   }
   else {
-    set_output_raw_strided(
+    set_output(
         0,
         {nbatch,
          nInputPlane,
          outputHeight,
          outputWidth},
-        {},
         input.options().memory_format(memory_format));
   }
 
@@ -136,7 +134,7 @@ TORCH_META_FUNC(avg_pool2d_backward) (
     memory_format);
 
   /* resize output */
-  set_output_raw_strided(0, input.sizes(), {}, input.options().memory_format(memory_format));
+  set_output(0, input.sizes(), input.options().memory_format(memory_format));
 }
 
 } // namespace meta
