@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(c10 CXX)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -23,7 +23,7 @@ configure_file(
     ${CMAKE_BINARY_DIR}/c10/macros/cmake_macros.h)
 
 # Note: if you want to add ANY dependency to the c10 library, make sure you
-# check with the core PyTorch developers as the dependendency will be
+# check with the core PyTorch developers as the dependency will be
 # transitively passed on to all libraries dependent on PyTorch.
 file(GLOB C10_SRCS
         *.cpp
@@ -50,6 +50,9 @@ target_compile_options(c10 PRIVATE "-DC10_BUILD_MAIN_LIB")
 if(${COMPILER_SUPPORTS_HIDDEN_VISIBILITY})
   target_compile_options(c10 PRIVATE "-fvisibility=hidden")
 endif()
+if(HAS_WERROR_SIGN_COMPARE AND WERROR)
+  target_compile_options(c10 PRIVATE "-Werror=sign-compare")
+endif()
 
 # ---[ Dependency of c10
 if(${USE_GFLAGS})
@@ -59,6 +62,7 @@ endif()
 if(${USE_GLOG})
     target_link_libraries(c10 PUBLIC glog::glog)
 endif()
+target_link_libraries(c10 PRIVATE fmt::fmt-header-only)
 
 find_package(Backtrace)
 if(Backtrace_FOUND)

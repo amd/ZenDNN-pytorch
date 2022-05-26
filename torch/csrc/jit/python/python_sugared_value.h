@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace torch {
@@ -23,8 +24,8 @@ inline std::shared_ptr<SugaredValue> toSimple(Value* v) {
 // type, *add it in this function's implementation*.
 std::shared_ptr<SugaredValue> toSugaredValue(
     py::object obj,
-    Function& m,
-    SourceRange loc,
+    GraphFunction& m,
+    const SourceRange& loc,
     bool is_constant = false);
 
 c10::optional<StrongFunctionPtr> as_function(const py::object& obj);
@@ -46,7 +47,7 @@ struct VISIBILITY_HIDDEN PythonValue : public SugaredValue {
   // call it like a function, e.g. `outputs = this(inputs)`
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override;
@@ -55,15 +56,15 @@ struct VISIBILITY_HIDDEN PythonValue : public SugaredValue {
 
   std::vector<std::shared_ptr<SugaredValue>> asTuple(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const c10::optional<size_t>& size_hint = {}) override;
 
   std::shared_ptr<SugaredValue> attr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field) override;
 
-  Value* asValue(const SourceRange& loc, Function& m) override {
+  Value* asValue(const SourceRange& loc, GraphFunction& m) override {
     throw ErrorReport(loc)
         << kind() << " cannot be used as a value. "
         << "Perhaps it is a closed over global variable? If so, please "
@@ -76,8 +77,11 @@ struct VISIBILITY_HIDDEN PythonValue : public SugaredValue {
 
   void checkForAddToConstantsError(std::stringstream& ss);
 
+  // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
   py::object self;
+  // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
   c10::optional<py::object> rcb;
+  // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
   Value* moduleSelf_ = nullptr;
 };
 
@@ -86,9 +90,23 @@ struct VISIBILITY_HIDDEN PythonModuleValue : public PythonValue {
 
   std::shared_ptr<SugaredValue> attr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field) override;
 };
+
+// Used for desugaring uses of the torch.cuda module. All the CUDA APIs with
+// torch.cuda.* are resolved using CUDAPythonModuleValue.
+#if !defined(USE_ROCM)
+struct VISIBILITY_HIDDEN CUDAPythonModuleValue : public PythonValue {
+  explicit CUDAPythonModuleValue(py::object mod)
+      : PythonValue(std::move(mod)) {}
+
+  std::shared_ptr<SugaredValue> attr(
+      const SourceRange& loc,
+      GraphFunction& m,
+      const std::string& field) override;
+};
+#endif
 
 // Represents all the parameters of a module as a List[Tensor]
 struct VISIBILITY_HIDDEN ConstantParameterList : public SugaredValue {
@@ -98,7 +116,7 @@ struct VISIBILITY_HIDDEN ConstantParameterList : public SugaredValue {
   }
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& caller,
+      GraphFunction& caller,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override {
@@ -110,8 +128,8 @@ struct VISIBILITY_HIDDEN ConstantParameterList : public SugaredValue {
 };
 
 struct VISIBILITY_HIDDEN ModuleDictMethod : public SugaredValue {
-  explicit ModuleDictMethod(SugaredValuePtr iterable, const std::string& name)
-      : iterable_(iterable), name_(name){};
+  explicit ModuleDictMethod(SugaredValuePtr iterable, std::string name)
+      : iterable_(std::move(iterable)), name_(std::move(name)){};
 
   std::string kind() const override {
     return name_;
@@ -119,7 +137,7 @@ struct VISIBILITY_HIDDEN ModuleDictMethod : public SugaredValue {
 
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& f,
+      GraphFunction& f,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override {
@@ -151,60 +169,76 @@ struct VISIBILITY_HIDDEN ModuleValue : public SugaredValue {
     return "module";
   }
 
-  Value* asValue(const SourceRange& loc, Function& m) override;
+  Value* asValue(const SourceRange& loc, GraphFunction& m) override;
 
-  SugaredValuePtr asTupleValue(const SourceRange& loc, Function& m) override;
+  SugaredValuePtr asTupleValue(const SourceRange& loc, GraphFunction& m)
+      override;
 
   // select an attribute on it, e.g. `this.field`
   std::shared_ptr<SugaredValue> tryGetAttr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field);
 
   // select an attribute on it, e.g. `this.field`
   std::shared_ptr<SugaredValue> attr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field) override;
 
   // select an attribute on it, e.g. `this.field`
-  bool hasAttr(const SourceRange& loc, Function& m, const std::string& field)
-      override;
+  bool hasAttr(
+      const SourceRange& loc,
+      GraphFunction& m,
+      const std::string& field) override;
 
-  // call module.forward
+  // call module.forward with pre_hooks and hooks
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& caller,
+      GraphFunction& caller,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
-      size_t n_binders) override {
-    return attr(loc, caller, "forward")
-        ->call(loc, caller, args, kwargs, n_binders);
-  }
+      size_t n_binders) override;
 
   std::shared_ptr<SugaredDict> getSugaredDict(
       const SourceRange& loc,
-      Function& m);
+      GraphFunction& m);
 
   std::shared_ptr<SugaredDict> getSugaredNamedBufferDict(
       const SourceRange& loc,
-      Function& m);
+      GraphFunction& m);
+
+  std::shared_ptr<SugaredDict> getSugaredNamedParameterList(
+      const SourceRange& loc,
+      GraphFunction& m);
+
+  std::shared_ptr<SugaredDict> getSugaredNamedParameterDict(
+      const SourceRange& loc,
+      GraphFunction& m);
 
   void setAttr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field,
       Value* newValue) override;
 
-  SugaredValuePtr iter(const SourceRange& loc, Function& m) override;
+  SugaredValuePtr iter(const SourceRange& loc, GraphFunction& m) override;
 
   std::shared_ptr<SugaredValue> getitem(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       Value* idx,
       TypePtr type_hint) override;
 
  private:
+  // Check that the type of all submodules is a subtype of ty. If the function
+  // returns false, more information about why it returns false (e.g. which
+  // submodule's type is not a subtype of ty) is printed it why_not if it is not
+  // null.
+  bool areAllSubmodulesSubtypeOf(
+      const TypePtr& ty,
+      std::ostream* why_not = nullptr) const;
+
   Value* self_;
   std::shared_ptr<ConcreteModuleType> concreteType_;
 };
@@ -214,10 +248,10 @@ TypePtr registerNamedTuple(const py::object& obj, const SourceRange& loc);
 
 void recurseThroughNestedModules(
     const SourceRange& loc,
-    Function& m,
+    GraphFunction& m,
     std::vector<SugaredValuePtr>& keys,
     std::vector<SugaredValuePtr>& values,
-    std::shared_ptr<ModuleValue> self,
+    std::shared_ptr<ModuleValue>& self,
     const std::string& prefix,
     const std::string& field);
 
@@ -246,10 +280,10 @@ struct VISIBILITY_HIDDEN SugaredDict : public SugaredValue {
 
   std::shared_ptr<SugaredValue> attr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field) override;
 
-  SugaredValuePtr iter(const SourceRange& loc, Function& m) {
+  SugaredValuePtr iter(const SourceRange& loc, GraphFunction& m) override {
     return keys_;
   };
 
@@ -268,7 +302,7 @@ struct VISIBILITY_HIDDEN BooleanDispatchValue : public SugaredValue {
 
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& caller,
+      GraphFunction& caller,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override;
@@ -287,11 +321,13 @@ struct VISIBILITY_HIDDEN PythonClassValue : public ClassValue {
 
   std::shared_ptr<SugaredValue> attr(
       const SourceRange& loc,
-      Function& m,
+      GraphFunction& m,
       const std::string& field) override;
 
-  bool hasAttr(const SourceRange& loc, Function& m, const std::string& field)
-      override;
+  bool hasAttr(
+      const SourceRange& loc,
+      GraphFunction& m,
+      const std::string& field) override;
 
  private:
   py::object py_type_;
@@ -300,7 +336,12 @@ struct VISIBILITY_HIDDEN PythonClassValue : public ClassValue {
 struct VISIBILITY_HIDDEN PythonExceptionValue : public ExceptionValue {
   explicit PythonExceptionValue(const py::object& exception_class)
       : ExceptionValue(
-            py::str(py::getattr(exception_class, "__name__", py::str("")))) {}
+            py::str(py::getattr(exception_class, "__name__", py::str("")))),
+        exception_class_qualified_name_(
+            py::str(py::module::import("torch._jit_internal")
+                        .attr("_qualified_name")(
+                            exception_class,
+                            /*mangle_name=*/false))) {}
 
   std::string kind() const override {
     return "Python exception";
@@ -308,15 +349,18 @@ struct VISIBILITY_HIDDEN PythonExceptionValue : public ExceptionValue {
 
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& caller,
+      GraphFunction& caller,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override;
+
+ private:
+  std::string exception_class_qualified_name_;
 };
 
 // Python Slice class.
 struct VISIBILITY_HIDDEN PythonSliceClass : public SugaredValue {
-  explicit PythonSliceClass() {}
+  explicit PythonSliceClass() = default;
 
   std::string kind() const override {
     return "Python slice class";
@@ -324,7 +368,7 @@ struct VISIBILITY_HIDDEN PythonSliceClass : public SugaredValue {
 
   std::shared_ptr<SugaredValue> call(
       const SourceRange& loc,
-      Function& caller,
+      GraphFunction& caller,
       at::ArrayRef<NamedValue> args,
       at::ArrayRef<NamedValue> kwargs,
       size_t n_binders) override;
