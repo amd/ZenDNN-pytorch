@@ -18,7 +18,8 @@ class Transformer(Module):
     is based on the paper "Attention Is All You Need". Ashish Vaswani, Noam Shazeer,
     Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Lukasz Kaiser, and
     Illia Polosukhin. 2017. Attention is all you need. In Advances in Neural Information
-    Processing Systems, pages 6000-6010.
+    Processing Systems, pages 6000-6010. Users can build the BERT(https://arxiv.org/abs/1810.04805)
+    model with corresponding parameters.
 
     Args:
         d_model: the number of expected features in the encoder/decoder inputs (default=512).
@@ -123,7 +124,7 @@ class Transformer(Module):
 
             Note: Due to the multi-head attention architecture in the transformer model,
             the output sequence length of a transformer is same as the input sequence
-            (i.e. target) length of the decoder.
+            (i.e. target) length of the decode.
 
             where S is the source sequence length, T is the target sequence length, N is the
             batch size, E is the feature number
@@ -163,8 +164,7 @@ class Transformer(Module):
 
 
 class TransformerEncoder(Module):
-    r"""TransformerEncoder is a stack of N encoder layers. Users can build the
-    BERT(https://arxiv.org/abs/1810.04805) model with corresponding parameters.
+    r"""TransformerEncoder is a stack of N encoder layers
 
     Args:
         encoder_layer: an instance of the TransformerEncoderLayer() class (required).

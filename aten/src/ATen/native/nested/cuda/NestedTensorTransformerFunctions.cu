@@ -15,10 +15,6 @@
 #include <c10/cuda/CUDAStream.h>
 
 #include <ATen/native/nested/NestedTensorTransformerFunctions.h>
-
-#define BLOCK_DIM 256
-#define GRID_DIM_Y 16
-
 namespace at {
 namespace native {
 
@@ -33,8 +29,8 @@ __global__ void remove_padding_transform0213_2(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int offset = offsets[batch_id];
   const int* sizes_i = output_sizes + batch_id * output_dim;
   const int numel_i = sizes_i[0] * sizes_i[1];
@@ -74,8 +70,8 @@ __global__ void remove_padding_2(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int offset = offsets[batch_id];
   const int* sizes_i = output_sizes + batch_id * output_dim;
   const int numel_i = sizes_i[0] * sizes_i[1];
@@ -107,8 +103,8 @@ __global__ void remove_padding(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int offset = offsets[batch_id];
   const int* sizes_i = output_sizes + batch_id * output_dim;
   const int numel_i = sizes_i[0] * sizes_i[1] * sizes_i[2];
@@ -145,10 +141,10 @@ void remove_padding_kernelLauncher(
     const int batch_size) {
   dim3 grid;
   grid.x = batch_size;
-  grid.y = GRID_DIM_Y;
+  grid.y = 16;
   at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream();
   if (output_dim == 2) {
-    remove_padding_2<T><<<grid, BLOCK_DIM, 0, stream>>>(
+    remove_padding_2<T><<<grid, 256, 0, stream>>>(
         input,
         output,
         offsets,
@@ -157,7 +153,7 @@ void remove_padding_kernelLauncher(
         output_dim,
         batch_size);
   } else {
-    remove_padding<T><<<grid, BLOCK_DIM, 0, stream>>>(
+    remove_padding<T><<<grid, 256, 0, stream>>>(
         input,
         output,
         offsets,
@@ -179,13 +175,13 @@ void remove_padding_transform0213_kernelLauncher(
     const int batch_size) {
   dim3 grid;
   grid.x = batch_size;
-  grid.y = GRID_DIM_Y;
+  grid.y = 16;
   at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream();
   TORCH_CHECK(
       output_dim == 2,
       "remove padding transform0213 only support output dim == 2");
 
-  remove_padding_transform0213_2<T><<<grid, BLOCK_DIM, 0, stream>>>(
+  remove_padding_transform0213_2<T><<<grid, 256, 0, stream>>>(
       input,
       output,
       offsets,
@@ -243,8 +239,8 @@ __global__ void add_padding_1(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int* sizes_i = input_sizes + batch_id * input_dim;
   const int batch_output_offset = batch_id * output_sizes_1;
   for (int ii = 0; ii < (output_sizes_1 / grainsize); ii++) {
@@ -282,8 +278,8 @@ __global__ void add_padding_2(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int* sizes_i = input_sizes + batch_id * input_dim;
   const int output_offset = batch_id * output_sizes_1 * output_sizes_2;
   const int output_numel = output_sizes_1 * output_sizes_2;
@@ -327,8 +323,8 @@ __global__ void add_padding_3(
     const int batch_size) {
   const int batch_id = blockIdx.x;
   const int grid_id = blockIdx.y;
-  const int tid = threadIdx.x + grid_id * BLOCK_DIM;
-  const int grainsize = GRID_DIM_Y * BLOCK_DIM;
+  const int tid = threadIdx.x + grid_id * 256;
+  const int grainsize = 16 * 256;
   const int* sizes_i = input_sizes + batch_id * input_dim;
   const int output_offset =
       batch_id * output_sizes_1 * output_sizes_2 * output_sizes_3;
@@ -377,9 +373,9 @@ void add_padding_kernelLauncher(
   at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream();
   dim3 grid;
   grid.x = output_batch_size;
-  grid.y = GRID_DIM_Y;
+  grid.y = 16;
   if (input_dim == 1) {
-    add_padding_1<T><<<grid, BLOCK_DIM, 0, stream>>>(
+    add_padding_1<T><<<grid, 256, 0, stream>>>(
         input,
         output,
         padding_value,
@@ -390,7 +386,7 @@ void add_padding_kernelLauncher(
         batch_size);
   }
   if (input_dim == 2) {
-    add_padding_2<T><<<grid, BLOCK_DIM, 0, stream>>>(
+    add_padding_2<T><<<grid, 256, 0, stream>>>(
         input,
         output,
         padding_value,
@@ -402,7 +398,7 @@ void add_padding_kernelLauncher(
         batch_size);
   }
   if (input_dim == 3) {
-    add_padding_3<T><<<grid, BLOCK_DIM, 0, stream>>>(
+    add_padding_3<T><<<grid, 256, 0, stream>>>(
         input,
         output,
         padding_value,
