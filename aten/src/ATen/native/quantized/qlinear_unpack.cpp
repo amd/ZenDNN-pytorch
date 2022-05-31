@@ -4,12 +4,12 @@ The correct unpack backend function is determined using runtime polymorphism thr
 which is of type intrusive_ptr<LinearPackedParamsBase> and points to either a PackedLinearWeightsQnnp,
 PackedLinearWeights (Fbgemm), or PackedLinearWeightsCudnn at runtime, which all inherit from LinearPackedParamsBase.
 The implementations for the unpack functions can be found in /cpu/qlinear_unpack_impl.cpp, for fbgemm&qnnpack
-and /cudnn/linear_unpack_impl.cpp, for cudnn.
+and /cudnn/LinearUnpackImpl.cpp, for cudnn.
 */
 #include <ATen/ATen.h>
 #include <ATen/native/quantized/cpu/fbgemm_utils.h>
 #include <ATen/native/quantized/packed_params.h>
-#include <ATen/native/quantized/cpu/qnnpack_utils.h>
+#include <ATen/native/quantized/cpu/QnnpackUtils.h>
 #include <torch/custom_class.h>
 #include <torch/library.h>
 
