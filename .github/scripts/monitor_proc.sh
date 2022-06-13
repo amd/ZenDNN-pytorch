@@ -85,10 +85,10 @@ else
     COMMAND_TO_RUN=$@
 fi
 
-echo "Running  ${COMMAND_TO_RUN} > \"${LOG_FILE}\" 2>&1 &"
-${COMMAND_TO_RUN} > "${LOG_FILE}" 2>&1 &
+echo "Running  ${COMMAND_TO_RUN} &"
+${COMMAND_TO_RUN} &
 PID_TO_WATCH=$(ps aux |  grep -v 'grep' | grep -F "${COMMAND_TO_RUN}" | grep -v "$0" | awk '{print $2}' | head -1)
-trap "kill -9 ${PID_TO_WATCH} >/dev/null 2>/dev/null" $(seq 0 15)
+# trap "kill -9 ${PID_TO_WATCH}" 0
 MAX_GPU_MEMORY=0
 MAX_RSS_MEMORY=0
 MAX_PSS_MEMORY=0
@@ -102,7 +102,11 @@ iteration=0
 printf "\n%-15s%-15s%s\n" "Max GPU Mem." "Max RSS Mem." "Max PSS Mem."
 while kill -0 "${PID_TO_WATCH}" >/dev/null 2>/dev/null; do
     for pid in $(get_multi_proc_ids "${PID_TO_WATCH}"); do
-        MAX_GPU_MEMORY=$("${get_gpu_max_memory_usage}" "${pid}" "${MAX_GPU_MEMORY}")
+        if [[ "${BUILD_ENVIRONMENT}" == *cuda* ]]; then
+            MAX_GPU_MEMORY=$("${get_gpu_max_memory_usage}" "${pid}" "${MAX_GPU_MEMORY}")
+        else
+            MAX_GPU_MEMORY=0
+        fi
         MAX_RSS_MEMORY=$(get_cpu_max_rss_memory_usage "${pid}" "${MAX_RSS_MEMORY}")
         MAX_PSS_MEMORY=$(get_cpu_max_pss_memory_usage "${pid}" "${MAX_PSS_MEMORY}")
     done
