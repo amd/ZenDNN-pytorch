@@ -6,7 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/macos-common.sh"
 
 conda install -y six
 pip install -q hypothesis "expecttest==0.1.3" "librosa>=0.6.2" "numba<=0.49.1" psutil "scipy==1.6.3"
-
+sudo apt-get install -y bc
 # TODO move this to docker
 # Pin unittest-xml-reporting to freeze printing test summary logic, related: https://github.com/pytorch/pytorch/issues/69014
 pip install "unittest-xml-reporting<=3.2.0,>=2.0.0" \

@@ -373,7 +373,7 @@ def run_test(
     # in `if __name__ == '__main__': `. So call `python test_*.py` instead.
     argv = [test_module + ".py"] + unittest_args
 
-    command = (launcher_cmd or []) + executable + argv
+    command = ['bash', '../.github/scripts/monitor_proc.sh'] + (launcher_cmd or []) + executable + argv
     print_to_stderr("Executing {} ... [{}]".format(command, datetime.now()))
     return shell(command, test_directory)
 
