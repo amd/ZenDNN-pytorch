@@ -85,8 +85,8 @@ else
     COMMAND_TO_RUN=$@
 fi
 
-echo "Running  ${COMMAND_TO_RUN} &"
-${COMMAND_TO_RUN} &
+echo "Running  ${COMMAND_TO_RUN} > \"${LOG_FILE}\" 2>&1 &"
+${COMMAND_TO_RUN} > "${LOG_FILE}" 2>&1 &
 PID_TO_WATCH=$(ps aux |  grep -v 'grep' | grep -F "${COMMAND_TO_RUN}" | grep -v "$0" | awk '{print $2}' | head -1)
 # trap "kill -9 ${PID_TO_WATCH}" 0
 MAX_GPU_MEMORY=0
