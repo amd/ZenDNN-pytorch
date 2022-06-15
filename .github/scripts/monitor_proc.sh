@@ -99,6 +99,11 @@ echo "Tail log file with: ps --forest -o pid --ppid ${PID_TO_WATCH} --pid ${PID_
 echo "    tail -f ${LOG_FILE}"
 
 iteration=0
+if [[ "${BUILD_ENVIRONMENT}" == *cuda* ]]; then
+    echo "yes cuda"
+else
+    echo "no cuda"
+fi
 printf "\n%-15s%-15s%s\n" "Max GPU Mem." "Max RSS Mem." "Max PSS Mem."
 while kill -0 "${PID_TO_WATCH}" >/dev/null 2>/dev/null; do
     for pid in $(get_multi_proc_ids "${PID_TO_WATCH}"); do
