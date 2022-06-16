@@ -689,8 +689,8 @@ def run_tests(argv=UNITTEST_ARGS):
         if "test_ops" in test_filename:
             subprocess.run([sys.executable, "-m", "pip", "install", "pytest", "pytest-xdist"])
             import pytest
-            os.environ['OMP_NUM_THREADS'] = "1"
-            os.environ['MKL_NUM_THREADS'] = "1"
+            os.environ['OMP_NUM_THREADS'] = "2"
+            os.environ['MKL_NUM_THREADS'] = "2"
             pytest.main(args=[inspect.getfile(sys._getframe(1)), '-n=2', '-v', f'--junitxml={test_report_path}.xml'])
         else:
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
