@@ -91,9 +91,6 @@ MAX_NUM_RETRIES = 3
 DISABLED_TESTS_FILE = '.pytorch-disabled-tests.json'
 SLOW_TESTS_FILE = '.pytorch-slow-tests.json'
 
-slow_tests_dict: Optional[Dict[str, Any]] = None
-disabled_tests_dict: Optional[Dict[str, Any]] = None
-
 NATIVE_DEVICES = ('cpu', 'cuda', 'meta')
 
 class _TestParametrizer(object):
@@ -593,16 +590,14 @@ def run_tests(argv=UNITTEST_ARGS):
     # import test files.
     if IMPORT_SLOW_TESTS:
         if os.path.exists(IMPORT_SLOW_TESTS):
-            global slow_tests_dict
             with open(IMPORT_SLOW_TESTS, 'r') as fp:
-                slow_tests_dict = json.load(fp)
+                os.environ['SLOW_TESTS_DICT'] = fp.read()
         else:
             print(f'[WARNING] slow test file provided but not found: {IMPORT_SLOW_TESTS}')
     if IMPORT_DISABLED_TESTS:
         if os.path.exists(IMPORT_DISABLED_TESTS):
-            global disabled_tests_dict
             with open(IMPORT_DISABLED_TESTS, 'r') as fp:
-                disabled_tests_dict = json.load(fp)
+                os.environ['DISABLED_TESTS_DICT'] = fp.read()
         else:
             print(f'[WARNING] disabled test file provided but not found: {IMPORT_DISABLED_TESTS}')
     # Determine the test launch mechanism
@@ -685,10 +680,17 @@ def run_tests(argv=UNITTEST_ARGS):
         verbose = '--verbose' in argv or '-v' in argv
         if verbose:
             print('Test results will be stored in {}'.format(test_report_path))
-        unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
-            output=test_report_path,
-            verbosity=2 if verbose else 1,
-            resultclass=XMLTestResultVerbose))
+        if "test_ops" in test_filename or test_filename == "test_utils" or test_filename == "test_dataloader":
+            subprocess.run([sys.executable, "-m", "pip", "install", "pytest", "pytest-xdist"])
+            import pytest
+            os.environ["NO_COLOR"] = "1"
+            pytest.main(args=[inspect.getfile(sys._getframe(1)), '--durations=0', '-s', '-n=2', '-vv', f'--junitxml={test_report_path}.xml'])
+        else:
+            exit(0)
+            unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
+                output=test_report_path,
+                verbosity=2 if verbose else 1,
+                resultclass=XMLTestResultVerbose))
     elif REPEAT_COUNT > 1:
         for _ in range(REPEAT_COUNT):
             if not unittest.main(exit=False, argv=argv).result.wasSuccessful():
@@ -1464,13 +1466,17 @@ def remove_device_and_dtype_suffixes(test_name: str) -> str:
 
 def check_if_enable(test: unittest.TestCase):
     test_suite = str(test.__class__).split('\'')[1]
+    if "__main__" not in test_suite:
+        # this probably means it is being run via pytest
+        test_suite = f"__main__.{test_suite.split('.')[1]}"
     raw_test_name = f'{test._testMethodName} ({test_suite})'
-    if slow_tests_dict is not None and raw_test_name in slow_tests_dict:
+    if raw_test_name in json.loads(os.environ.get("SLOW_TESTS_DICT", "{}")):
         getattr(test, test._testMethodName).__dict__['slow_test'] = True
         if not TEST_WITH_SLOW:
             raise unittest.SkipTest("test is slow; run with PYTORCH_TEST_WITH_SLOW to enable test")
     sanitized_test_method_name = remove_device_and_dtype_suffixes(test._testMethodName)
-    if not IS_SANDCASTLE and disabled_tests_dict is not None:
+    if not IS_SANDCASTLE and "DISABLED_TESTS_DICT" in os.environ:
+        disabled_tests_dict = json.loads(os.environ["DISABLED_TESTS_DICT"])
         for disabled_test, (issue_url, platforms) in disabled_tests_dict.items():
             disable_test_parts = disabled_test.split()
             if len(disable_test_parts) > 1:
