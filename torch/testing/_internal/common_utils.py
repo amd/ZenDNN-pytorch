@@ -684,7 +684,7 @@ def run_tests(argv=UNITTEST_ARGS):
             subprocess.run([sys.executable, "-m", "pip", "install", "pytest", "pytest-xdist"])
             import pytest
             os.environ["NO_COLOR"] = "1"
-            pytest.main(args=[inspect.getfile(sys._getframe(1)), '-n=2', '-vv', f'--junitxml={test_report_path}.xml'])
+            pytest.main(args=[inspect.getfile(sys._getframe(1)), '-n=1', '-vv', f'--junitxml={test_report_path}.xml'])
         else:
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
                 output=test_report_path,
