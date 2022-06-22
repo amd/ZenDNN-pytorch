@@ -686,7 +686,6 @@ def run_tests(argv=UNITTEST_ARGS):
             os.environ["NO_COLOR"] = "1"
             pytest.main(args=[inspect.getfile(sys._getframe(1)), '-n=2', '-vv', f'--junitxml={test_report_path}.xml'])
         else:
-            exit(0)
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
                 output=test_report_path,
                 verbosity=2 if verbose else 1,
