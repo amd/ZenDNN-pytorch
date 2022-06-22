@@ -11,7 +11,7 @@ from collections import defaultdict
 import logging
 import itertools
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Partition:

@@ -151,8 +151,8 @@ class NvFuserOperatorSupport(OperatorSupport):
             # call_function aten: inplace variants
             # ===============================================================
             # TODO: These nodes shouldn't show up, the functionalization pass should have removed inplace ops
-            "torch.ops.aten.add_": None,
-            "torch.ops.aten.relu_": None,
+            # "torch.ops.aten.add_": None,
+            # "torch.ops.aten.relu_": None,
 
             # ===============================================================
             # call_function builtins and operator

@@ -17,10 +17,43 @@ from torch.fx.passes.tools_common import CALLABLE_NODE_OPS
 from torch.testing._internal.common_utils import run_tests, parametrize, instantiate_parametrized_tests
 from torch.testing._internal.jit_utils import JitTestCase
 
+from torch._decomp import decomposition_table
+from torch.fx.experimental.proxy_tensor import DecompositionInterpreter
+# import functools
+# from functorch.compile import aot_function
+# from torch.fx.proxy import GraphAppendingTracer
+# from torch.utils._pytree import tree_map
+# from typing import List, Tuple
+from torch._prims.executor import execute
+
+
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def aten_to_dtype(self, dtype: torch.dtype, **kwargs):
+    if len(kwargs) > 0 or not dtype:
+        raise RuntimeError("No support for other to.dtype() formats other than to.dtype(self, dtype)")
+    return torch._prims.convert_element_type(self, dtype)
+
+
+def compiler_fn(obj, *args, **kwargs):
+
+    print("compile fn ")
+
+    new_graph = torch.fx.Graph()
+    decomp = dict(decomposition_table)
+    decomp[torch.ops.aten.to.dtype] = aten_to_dtype
+    DecompositionInterpreter(obj, new_graph, decomposition_table=decomp).run(*args, **kwargs)
+
+    res = torch.fx.GraphModule(obj, new_graph)
+    print(res.code)
+
+    # def with_nvfuser(*args, **kwargs):
+    return execute(res, *args, executor="nvfuser", **kwargs)
+
+    # return with_nvfuser
 class TestFXGraphPasses(JitTestCase):
 
     def test_nvfuser_patition_real_models(self):
@@ -254,10 +287,10 @@ class TestFXGraphPasses(JitTestCase):
                 #         setattr(fused_graph, node.name, torch.jit.script(module) )
 
 
-                # for node in fused_graph.graph.nodes:
-                #     if "fused_" in node.name:
-                        # module = getattr(fused_graph, node.name)
-                        # setattr(fused_graph, node.name, torch.jit.script(module) )
+                for node in fused_graph_module.graph.nodes:
+                    if "fused_" in node.name:
+                        module = getattr(fused_graph_module, node.name)
+                        setattr(module, "_wrapped_call", compiler_fn)
 
 
                 # if draw:
@@ -289,26 +322,6 @@ class TestFXGraphPasses(JitTestCase):
 
                 print("Running fused model...")
                 result = fused_graph_module(*inputs)
-
-
-
-
-
-                # def compiler_fn(fx_module: torch.fx.GraphModule, args):
-                #     new_graph = torch.fx.Graph()
-                #     decomp = dict(decomposition_table)
-                #     decomp[torch.ops.aten.to.dtype] = aten_to_dtype
-                #     DecompositionInterpreter(fx_module, new_graph, decomposition_table=decomp).run(*args)
-
-                #     res = torch.fx.GraphModule(fx_module, new_graph)
-                #     print(res.code)
-
-                #     def with_nvfuser(*args):
-                #         return execute(res, *args, executor="nvfuser")
-
-                #     return with_nvfuser
-
-
 
                 torch.testing.assert_close(expected, result, equal_nan=True, rtol=1e-5, atol=1e-5)
                 print(f"{model_name} Passed!")
