@@ -47,14 +47,27 @@ for op, decomp_fn in decomposition_table.items():
 
 aten2prim_decomp[torch.ops.aten.to.dtype] = aten_to_dtype
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
 
+@static_vars(prim_decomp_cache = {})
 def nvfuser_compiled_fn(graph_module: torch.fx.GraphModule, *args, **kwargs):
-    prim_graph = torch.fx.Graph()
-    DecompositionInterpreter(graph_module, prim_graph, decomposition_table=decomp).run(*args, **kwargs)
-    prim_module = torch.fx.GraphModule(graph_module, prim_graph)
 
-    if print_prim_code:
-        print(prim_module.code)
+    if graph_module in nvfuser_compiled_fn.prim_decomp_cache:
+        prim_module = nvfuser_compiled_fn.prim_decomp_cache[graph_module]
+        # print(f"nvfuser_compiled_fn cache hit!")
+    else:
+        prim_graph = torch.fx.Graph()
+        DecompositionInterpreter(graph_module, prim_graph, decomposition_table=decomp).run(*args, **kwargs)
+        prim_module = torch.fx.GraphModule(graph_module, prim_graph)
+        nvfuser_compiled_fn.prim_decomp_cache[graph_module] = prim_module
+
+        if print_prim_code:
+            print(prim_module.code)
 
     return execute(prim_module, *args, executor="nvfuser", **kwargs)
 
@@ -85,7 +98,7 @@ class Result:
 
     def __repr__(self) -> str:
         return f"{self.module_name}, {self.num_partitions}, {self.partition_time}, "\
-               f"{self.eager_time}, {self.nvfuser_time_1}, "\
+               f"{self.eager_time}, {self.nvfuser_time_1}, {self.nvfuser_time_2}, "\
                f"{self.numerical_check}\n"
 
 class TestFXGraphPasses(JitTestCase):
@@ -365,13 +378,12 @@ class TestFXGraphPasses(JitTestCase):
                 with timer("nvFuser 1st call execution time") as nvfuser_time_1:
                     nvfuser_result = fused_graph_module(*inputs)
                     torch.cuda.synchronize()
-
                 result.nvfuser_time_1 = nvfuser_time_1.elapsed
 
-                # with timer("nvFuser 2nd call execution time") as nvfuser_time_2:
-                #     result = fused_graph_module(*inputs)
-                #     torch.cuda.synchronize()
-                # stat.nvfuser_time_2 = nvfuser_time_2
+                with timer("nvFuser 2nd call execution time") as nvfuser_time_2:
+                    fused_graph_module(*inputs)
+                    torch.cuda.synchronize()
+                result.nvfuser_time_2 = nvfuser_time_2.elapsed
 
                 torch.testing.assert_close(expected, nvfuser_result, equal_nan=True, rtol=1e-5, atol=1e-5)
                 result.numerical_check = True

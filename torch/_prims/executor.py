@@ -13,6 +13,14 @@ if torch.cuda.is_available():
     from torch._C._nvfuser import Fusion, FusionDefinition  # type: ignore[import]
 
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+@static_vars(fusion_cache = {})
 def execute(gm: GraphModule, *args, executor: str = "aten", **kwargs):
     """
     Prototype ATen executor.
@@ -31,47 +39,53 @@ def execute(gm: GraphModule, *args, executor: str = "aten", **kwargs):
         # PROTOTYPE nvfuser executor
         # Everything in the graph must support nvfuser
 
-        fusion = Fusion()
-        with FusionDefinition(fusion) as fd:
+        if gm in execute.fusion_cache:
+            # print(f"execute() cache hit!")
+            fusion, unflatten_spec = execute.fusion_cache[gm]
+        else:
+            fusion = Fusion()
+            with FusionDefinition(fusion) as fd:
 
-            def _to_nvfuser_constant(arg):
-                if isinstance(arg, Number):
-                    return fd.define_constant(arg)
-                else:
-                    return arg
+                def _to_nvfuser_constant(arg):
+                    if isinstance(arg, Number):
+                        return fd.define_constant(arg)
+                    else:
+                        return arg
 
-            class FusionInterpreter(torch.fx.Interpreter):
-                def call_function(self, target, args, kwargs):
-                    args = tuple(map(_to_nvfuser_constant, args))
-                    target = target.impl_nvfuser
-                    args = (fd,) + args
-                    return target(*args, **kwargs)
+                class FusionInterpreter(torch.fx.Interpreter):
+                    def call_function(self, target, args, kwargs):
+                        args = tuple(map(_to_nvfuser_constant, args))
+                        target = target.impl_nvfuser
+                        args = (fd,) + args
+                        return target(*args, **kwargs)
 
-            def to_nv(arg):
-                if isinstance(arg, torch.Tensor):
-                    x = fd.define_tensor(
-                        arg.size(), arg.stride(), getnvFuserDtype(arg.dtype)
-                    )
-                    fd.add_input(x)
-                    return x
-                else:
-                    return arg
+                def to_nv(arg):
+                    if isinstance(arg, torch.Tensor):
+                        x = fd.define_tensor(
+                            arg.size(), arg.stride(), getnvFuserDtype(arg.dtype)
+                        )
+                        fd.add_input(x)
+                        return x
+                    else:
+                        return arg
 
-            # Transforms graph to call nvfuser lowerings
-            nv_args = tree_map(to_nv, args)
-            nv_kwargs = tree_map(to_nv, kwargs)
+                # Transforms graph to call nvfuser lowerings
+                nv_args = tree_map(to_nv, args)
+                nv_kwargs = tree_map(to_nv, kwargs)
 
-            out = FusionInterpreter(gm).run(*nv_args, **nv_kwargs)
-            flat_out, unflatten_spec = torch.utils._pytree.tree_flatten(out)
-            for o in flat_out:
-                fd.add_output(o)
+                out = FusionInterpreter(gm).run(*nv_args, **nv_kwargs)
+                flat_out, unflatten_spec = torch.utils._pytree.tree_flatten(out)
+                for o in flat_out:
+                    fd.add_output(o)
 
-            return torch.utils._pytree.tree_unflatten(
-                fusion.execute(
-                    tuple(arg for arg in args if isinstance(arg, torch.Tensor))
-                ),
-                unflatten_spec,
-            )
+                execute.fusion_cache[gm] = (fusion, unflatten_spec)
+
+        return torch.utils._pytree.tree_unflatten(
+            fusion.execute(
+                tuple(arg for arg in args if isinstance(arg, torch.Tensor))
+            ),
+            unflatten_spec,
+        )
 
     msg = "Received unexpected value for 'executor': {0}. Allowed values are: aten, nvfuser.".format(
         executor
