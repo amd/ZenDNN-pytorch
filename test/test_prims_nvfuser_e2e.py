@@ -10,50 +10,84 @@ from torch.fx._symbolic_trace import symbolic_trace
 
 from torch.fx.passes.infra.partitioner import CapabilityBasedPartitioner
 from torch.fx.passes.backends.nvfuser.operator_support import NvFuserOperatorSupport
-import torch._prims as prims
 from torch.fx.passes.graph_drawer import FxGraphDrawer
-from torch.fx.passes.tools_common import CALLABLE_NODE_OPS
 
 from torch.testing._internal.common_utils import run_tests, parametrize, instantiate_parametrized_tests
 from torch.testing._internal.jit_utils import JitTestCase
 
 from torch._decomp import decomposition_table
 from torch.fx.experimental.proxy_tensor import DecompositionInterpreter
-# import functools
-# from functorch.compile import aot_function
-# from torch.fx.proxy import GraphAppendingTracer
-# from torch.utils._pytree import tree_map
-# from typing import List, Tuple
 from torch._prims.executor import execute
 
+from time import perf_counter
+from contextlib import ContextDecorator
 
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+draw_graph = False
+print_prim_code = False
 
 def aten_to_dtype(self, dtype: torch.dtype, **kwargs):
     if len(kwargs) > 0 or not dtype:
         raise RuntimeError("No support for other to.dtype() formats other than to.dtype(self, dtype)")
     return torch._prims.convert_element_type(self, dtype)
 
+decomp = decomposition_table
+aten2aten_decomp = {}
+aten2prim_decomp = {}
 
-def compiler_fn(obj, *args, **kwargs):
+for op, decomp_fn in decomposition_table.items():
+    if "ref" in decomp_fn.__name__:
+        aten2prim_decomp[op] = decomp_fn
+    else:
+        aten2aten_decomp[op] = decomp_fn
 
-    print("compile fn ")
 
-    new_graph = torch.fx.Graph()
-    decomp = dict(decomposition_table)
-    decomp[torch.ops.aten.to.dtype] = aten_to_dtype
-    DecompositionInterpreter(obj, new_graph, decomposition_table=decomp).run(*args, **kwargs)
+aten2prim_decomp[torch.ops.aten.to.dtype] = aten_to_dtype
 
-    res = torch.fx.GraphModule(obj, new_graph)
-    print(res.code)
 
-    # def with_nvfuser(*args, **kwargs):
-    return execute(res, *args, executor="nvfuser", **kwargs)
+def nvfuser_compiled_fn(graph_module: torch.fx.GraphModule, *args, **kwargs):
+    prim_graph = torch.fx.Graph()
+    DecompositionInterpreter(graph_module, prim_graph, decomposition_table=decomp).run(*args, **kwargs)
+    prim_module = torch.fx.GraphModule(graph_module, prim_graph)
 
-    # return with_nvfuser
+    if print_prim_code:
+        print(prim_module.code)
+
+    return execute(prim_module, *args, executor="nvfuser", **kwargs)
+
+class timer(ContextDecorator):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __enter__(self):
+        self.time = perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.elapsed = (perf_counter() - self.time) * 1000
+        print(f'{self.msg}: {self.elapsed:.3f} ms')
+
+    def __str__(self):
+        return str(self.elapsed)
+
+class Result:
+    def __init__(self, module_name):
+        self.module_name: str = module_name
+        self.num_partitions: int = None
+        self.partition_time: float = None
+        self.eager_time: float = None
+        self.nvfuser_time_1: float = None
+        self.nvfuser_time_2: float = None
+        self.numerical_check: bool = None
+
+    def __repr__(self) -> str:
+        return f"{self.module_name}, {self.num_partitions}, {self.partition_time}, "\
+               f"{self.eager_time}, {self.nvfuser_time_1}, "\
+               f"{self.numerical_check}\n"
+
 class TestFXGraphPasses(JitTestCase):
 
     def test_nvfuser_patition_real_models(self):
@@ -251,7 +285,7 @@ class TestFXGraphPasses(JitTestCase):
         ]
 
         device = 'cuda'
-        draw = False
+        results = []
 
         for dir in test_cases:
             path = dir.split('/')
@@ -263,13 +297,15 @@ class TestFXGraphPasses(JitTestCase):
 
             module = importlib.import_module(module_path)
 
+            result = Result(model_name)
+
             try:
                 m = module.FxModule()
                 m.to(device)
 
                 traced = symbolic_trace(m)
 
-                if draw:
+                if draw_graph:
                     print("Drawing original graph...")
                     drawer = FxGraphDrawer(traced, "test")
                     dot_graph = drawer.get_dot_graph()
@@ -278,26 +314,30 @@ class TestFXGraphPasses(JitTestCase):
                 supported_ops = NvFuserOperatorSupport()
                 partitioner = CapabilityBasedPartitioner(traced, supported_ops)
 
-                fused_graph_module = partitioner.partition_and_fuse()
+                with timer("Partioning time") as partition_time:
+                    fused_graph_module = partitioner.partition_and_fuse()
+                result.partition_time = partition_time.elapsed
 
-                # compile the nvFuser submodel with torchscript jit
+                # compile the fused submodel with torchscript jit + nvFuser
                 # for node in fused_graph.graph.nodes:
                 #     if "fused_" in node.name:
                 #         module = getattr(fused_graph, node.name)
                 #         setattr(fused_graph, node.name, torch.jit.script(module) )
 
-
+                # compiler fused submodules with Prims + nvFuser
+                num_partitions = 0
                 for node in fused_graph_module.graph.nodes:
                     if "fused_" in node.name:
                         module = getattr(fused_graph_module, node.name)
-                        setattr(module, "_wrapped_call", compiler_fn)
+                        setattr(module, "_wrapped_call", nvfuser_compiled_fn)
+                        num_partitions += 1
+                result.num_partitions = num_partitions
 
-
-                # if draw:
-                #     print("Drawing fused graph...")
-                #     drawer = FxGraphDrawer(fused_graph_module, "test")
-                #     dot_graph = drawer.get_dot_graph()
-                #     dot_graph.write_png("after.png")
+                if draw_graph:
+                    print("Drawing fused graph...")
+                    drawer = FxGraphDrawer(fused_graph_module, "test")
+                    dot_graph = drawer.get_dot_graph()
+                    dot_graph.write_png("after.png")
 
                 print("Generating testing data...")
                 with (open(input_data_path, 'rb')) as f:
@@ -314,35 +354,36 @@ class TestFXGraphPasses(JitTestCase):
 
                         inputs.append(input)
 
-                # m.to(device)
-                # fused_graph_module.to(device)
+                # first call to warmup
+                m(*inputs)
 
-                print("Running original model...")
-                expected = m(*inputs)
+                with timer("Eager execution time") as eager_time:
+                    expected = m(*inputs)
+                    torch.cuda.synchronize()
+                result.eager_time = eager_time.elapsed
 
-                print("Running fused model...")
-                result = fused_graph_module(*inputs)
+                with timer("nvFuser 1st call execution time") as nvfuser_time_1:
+                    nvfuser_result = fused_graph_module(*inputs)
+                    torch.cuda.synchronize()
 
-                torch.testing.assert_close(expected, result, equal_nan=True, rtol=1e-5, atol=1e-5)
-                print(f"{model_name} Passed!")
+                result.nvfuser_time_1 = nvfuser_time_1.elapsed
+
+                # with timer("nvFuser 2nd call execution time") as nvfuser_time_2:
+                #     result = fused_graph_module(*inputs)
+                #     torch.cuda.synchronize()
+                # stat.nvfuser_time_2 = nvfuser_time_2
+
+                torch.testing.assert_close(expected, nvfuser_result, equal_nan=True, rtol=1e-5, atol=1e-5)
+                result.numerical_check = True
+
+                print(f"{model_name} has {num_partitions} fusion groups, Passed!")
 
             except Exception as e:
                 print(f"{model_name} failed!", e)
 
+            results.append(result)
 
-    # def test_nvfuser_prim_operator_support(self):
-    #     def _wrapper(a, b, broadcast_dimensions):
-    #         a_bc = prims.broadcast_in_dim(a, b.shape, broadcast_dimensions)
-    #         return prims.add(a_bc, b)
-
-    #     traced = symbolic_trace(_wrapper)
-
-    #     supported_ops = NvFuserOperatorSupport()
-    #     for node in traced.graph.nodes:
-    #         if node.op in CALLABLE_NODE_OPS:
-    #             assert supported_ops.is_node_supported({}, node)
-
-
+        print(results)
 
 instantiate_parametrized_tests(TestFXGraphPasses)
 

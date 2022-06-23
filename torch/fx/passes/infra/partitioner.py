@@ -11,7 +11,7 @@ from collections import defaultdict
 import logging
 import itertools
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 class Partition:
@@ -210,9 +210,9 @@ class CapabilityBasedPartitioner:
             for id in partitions_to_remove:
                 del partitions_by_id[id]
 
-        logging.debug("Partitions proposed:")
+        print(f"Num of partitions proposed: {len(partitions_by_id)}")
         for id, partition in partitions_by_id.items():
-            logging.debug(f"partition #{id}", [node.name for node in partition.nodes])
+            print(f"partition #{id}", [node.name for node in partition.nodes])
 
         return list(partitions_by_id.values())
 
