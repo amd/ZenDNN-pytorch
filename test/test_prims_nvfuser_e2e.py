@@ -324,7 +324,28 @@ class TestFXGraphPasses(JitTestCase):
                     dot_graph = drawer.get_dot_graph()
                     dot_graph.write_png("before.png")
 
-                supported_ops = NvFuserOperatorSupport()
+                print("Generating testing data...")
+                with (open(input_data_path, 'rb')) as f:
+                    inputs_meta = pickle.load(f)
+
+                    inputs = []
+                    for meta in inputs_meta:
+                        type, shape, stride, dtype = meta
+
+                        if dtype in {torch.int, torch.int32, torch.int64, torch.bool, torch.int, torch.uint8}:
+                            input = torch.randint(0, 1, shape, dtype=dtype, device=device)
+                        else:
+                            input = torch.rand(shape, dtype=dtype, device=device)
+
+                        inputs.append(input)
+
+                print("...Aten2aten called ...")
+
+                aten_graph = torch.fx.Graph()
+                DecompositionInterpreter(traced, aten_graph, decomposition_table=aten2aten_decomp).run(*inputs)
+                traced = torch.fx.GraphModule(traced, aten_graph)
+
+                supported_ops = NvFuserOperatorSupport(True)
                 partitioner = CapabilityBasedPartitioner(traced, supported_ops)
 
                 with timer("Partioning time") as partition_time:
@@ -351,21 +372,6 @@ class TestFXGraphPasses(JitTestCase):
                     drawer = FxGraphDrawer(fused_graph_module, "test")
                     dot_graph = drawer.get_dot_graph()
                     dot_graph.write_png("after.png")
-
-                print("Generating testing data...")
-                with (open(input_data_path, 'rb')) as f:
-                    inputs_meta = pickle.load(f)
-
-                    inputs = []
-                    for meta in inputs_meta:
-                        type, shape, stride, dtype = meta
-
-                        if dtype in {torch.int, torch.int32, torch.int64, torch.bool, torch.int, torch.uint8}:
-                            input = torch.randint(0, 1, shape, dtype=dtype, device=device)
-                        else:
-                            input = torch.rand(shape, dtype=dtype, device=device)
-
-                        inputs.append(input)
 
                 # first call to warmup
                 m(*inputs)
