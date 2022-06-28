@@ -553,6 +553,9 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   }
 
   virtual c10::SymIntArrayRef sym_sizes() const {
+    if (C10_UNLIKELY(is_python_dispatch())) {
+      return load_pyobj_interpreter()->sym_sizes(this);
+    }
     return sym_sizes_default();
   }
 
@@ -662,6 +665,12 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
         sizes_and_strides_.size());
   }
 
+  inline c10::SymIntArrayRef sym_sizes_default() const {
+    return c10::SymIntArrayRef(
+        reinterpret_cast<const c10::SymInt*>(sizes_and_strides_.sizes_data()),
+        sizes_and_strides_.size());
+  }
+
  protected:
   /**
    * Customization points for the functions above.  sizes_strides_policy_
@@ -691,11 +700,6 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
       return is_channels_last_3d_contiguous_;
     }
     return is_contiguous_;
-  }
-  inline c10::SymIntArrayRef sym_sizes_default() const {
-    return c10::SymIntArrayRef(
-        reinterpret_cast<const c10::SymInt*>(sizes_and_strides_.sizes_data()),
-        sizes_and_strides_.size());
   }
   inline int64_t dim_default() const {
     return sizes_and_strides_.size();
