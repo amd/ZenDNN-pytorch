@@ -24,7 +24,7 @@ class NvFuserOperatorSupport(OperatorSupport):
     alphabetical order.
     """
 
-    def __init__(self, use_jit_ops=False):
+    def __init__(self, use_only_jit_ops=False):
 
         # TODO: current list copied from torch/csrc/jit/codegen/cuda/parser.cpp is incorrect,
         # as that file is solely for TorchScript and doesn't represent the actual status
@@ -176,16 +176,23 @@ class NvFuserOperatorSupport(OperatorSupport):
             "_operator.getitem": None,
         }
 
-        # take the ops from the decomposition_table that were defined in torch._refs
-        for k, v in decomposition_table.items():
-            if hasattr(v, "__module__") and "torch._refs" in v.__module__:
-                ref_dict[f"torch.ops.{str(k)}"] = None
+        if use_only_jit_ops:
+            ref_dict = jit_dict
+        else:
+            ref_dict = dict(jit_dict)
+            # take the ops from the decomposition_table that were defined in torch._refs
+            for k, v in decomposition_table.items():
+                if hasattr(v, "__module__") and "torch._refs" in v.__module__:
+                    op_packet = k
+                    if isinstance(op_packet, torch._ops.OpOverload):
+                        op_packet = op_packet.overloadpacket
+                    ref_dict[f"torch.ops.{str(op_packet)}"] = None
 
-        for op in dir(torch.ops.prims):
-            if isinstance(op, torch._ops.OpOverloadPacket):
-                ref_dict[f"torch.ops.prims.{op}"] = None
+            for op in dir(torch.ops.prims):
+                if isinstance(getattr(torch.ops.prims, op), torch._ops.OpOverloadPacket):
+                    ref_dict[f"torch.ops.prims.{op}"] = None
 
-        super().__init__(jit_dict if use_jit_ops else ref_dict)
+        super().__init__(ref_dict)
 
     def is_node_supported(
         self, submodules: t.Mapping[str, torch.nn.Module], node: torch.fx.Node

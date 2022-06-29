@@ -39,7 +39,7 @@ aten2aten_decomp = {}
 aten2prim_decomp = {}
 
 for op, decomp_fn in decomposition_table.items():
-    if "ref" in decomp_fn.__name__:
+    if "torch._refs" in decomp_fn.__module__:
         aten2prim_decomp[op] = decomp_fn
     else:
         aten2aten_decomp[op] = decomp_fn
