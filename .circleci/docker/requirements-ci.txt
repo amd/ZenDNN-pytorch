@@ -143,6 +143,11 @@ pytest
 #Pinned versions:
 #test that import: test_typing.py, test_cpp_extensions_aot.py, run_test.py
 
+pynvml
+#Description: testing framework
+#Pinned versions:
+#test that import: test_typing.py, test_cpp_extensions_aot.py, run_test.py
+
 #pytest-benchmark
 #Description: fixture for benchmarking code
 #Pinned versions: 3.2.3
