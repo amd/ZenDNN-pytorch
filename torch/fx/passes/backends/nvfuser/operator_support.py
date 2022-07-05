@@ -167,15 +167,6 @@ class NvFuserOperatorSupport(OperatorSupport):
             #     "_operator.truediv": None,
         }
 
-        # all aten ops that have a decomposition to prims.
-        ref_dict = {
-            # ===============================================================
-            # call_function builtins
-            # ===============================================================
-            "getattr": None,
-            "_operator.getitem": None,
-        }
-
         if use_only_jit_ops:
             ref_dict = jit_dict
         else:
@@ -188,8 +179,15 @@ class NvFuserOperatorSupport(OperatorSupport):
                         op_packet = op_packet.overloadpacket
                     ref_dict[f"torch.ops.{str(op_packet)}"] = None
 
+            unsupported_prims = ["cat", "maximum", "transpose"]
             for op in dir(torch.ops.prims):
                 if isinstance(getattr(torch.ops.prims, op), torch._ops.OpOverloadPacket):
+                    unsupported = False
+                    for prim in unsupported_prims:
+                        if f"{op}" in prim:
+                            unsupported = True
+                    if unsupported:
+                        continue
                     ref_dict[f"torch.ops.prims.{op}"] = None
 
         super().__init__(ref_dict)

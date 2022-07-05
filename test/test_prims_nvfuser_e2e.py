@@ -345,7 +345,8 @@ class TestFXGraphPasses(JitTestCase):
                 DecompositionInterpreter(traced, aten_graph, decomposition_table=aten2aten_decomp).run(*inputs)
                 traced = torch.fx.GraphModule(traced, aten_graph)
 
-                supported_ops = NvFuserOperatorSupport(True)
+                #supported_ops = NvFuserOperatorSupport(True)
+                supported_ops = NvFuserOperatorSupport()
                 partitioner = CapabilityBasedPartitioner(traced, supported_ops)
 
                 with timer("Partioning time") as partition_time:
