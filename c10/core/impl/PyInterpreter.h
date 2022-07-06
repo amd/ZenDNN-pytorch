@@ -134,7 +134,8 @@ struct C10_API PyInterpreter {
   using dim_sig = int64_t(const PyInterpreter*, const TensorImpl*);
   using strides_sig = c10::IntArrayRef(const PyInterpreter*, const TensorImpl*);
   using sizes_sig = c10::IntArrayRef(const PyInterpreter*, const TensorImpl*);
-  using sym_sizes_sig = c10::SymIntArrayRef(const PyInterpreter*, const TensorImpl*);
+  using sym_sizes_sig =
+      c10::SymIntArrayRef(const PyInterpreter*, const TensorImpl*);
 
   PyInterpreter(
       name_sig* name_fn,

@@ -45,7 +45,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "c10/core/SymIntArrayRef.h"
+#include <c10/core/SymIntArrayRef.h>
 
 using namespace at;
 using namespace torch;
@@ -2402,7 +2402,6 @@ c10::SymIntArrayRef concrete_sym_sizes_fn(
     std::cerr << "Calling default sym_sizes_default\n";
     return self->sym_sizes_default();
   }
-
 
   std::cerr << "Writing to buffer\n";
 

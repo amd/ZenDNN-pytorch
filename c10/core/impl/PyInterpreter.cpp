@@ -63,7 +63,9 @@ static c10::IntArrayRef noop_sizes_fn(const PyInterpreter*, const TensorImpl*) {
       "attempted to call `sizes` on Tensor with nontrivial PyObject after corresponding interpreter died");
 }
 
-static c10::SymIntArrayRef noop_sym_sizes_fn(const PyInterpreter*, const TensorImpl*) {
+static c10::SymIntArrayRef noop_sym_sizes_fn(
+    const PyInterpreter*,
+    const TensorImpl*) {
   TORCH_INTERNAL_ASSERT(
       0,
       "attempted to call `sym_sizes` on Tensor with nontrivial PyObject after corresponding interpreter died");
