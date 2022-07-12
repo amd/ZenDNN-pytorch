@@ -182,7 +182,7 @@ class NvFuserOperatorSupport(OperatorSupport):
             "torch.ops.aten.sum_to_size": None,
             "torch.ops.aten._autocast_to_reduced_precision": None,
             "torch.ops.aten._autocast_to_full_precision": None,
-            # "torch.ops.aten.to.dtype": None,      # causing segfault
+            "torch.ops.aten.to.dtype": None,      # causing segfault
             # "torch.ops.aten.type_as": None,       # missing refs
             "torch.ops.aten.linear": None,
             "torch.ops.aten.gelu": None,

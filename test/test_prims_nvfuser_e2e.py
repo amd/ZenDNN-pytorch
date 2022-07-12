@@ -24,6 +24,8 @@ from contextlib import ContextDecorator
 from functorch import make_fx
 from functorch.experimental import functionalize
 
+ipt = input
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -130,7 +132,7 @@ class TestFXGraphPasses(JitTestCase):
             # "torch_bench_graphs/resnet18/resnet18_forward_0",
             # "torch_bench_graphs/mnasnet1_0/mnasnet1_0_backward_0",
             # "torch_bench_graphs/mnasnet1_0/mnasnet1_0_forward_0",
-            # "torch_bench_graphs/BERT_pytorch/BERT_pytorch_forward_0",
+            "torch_bench_graphs/BERT_pytorch/BERT_pytorch_forward_0",
             # "torch_bench_graphs/BERT_pytorch/BERT_pytorch_backward_0",
             # "torch_bench_graphs/resnet50/resnet50_forward_0",
             # "torch_bench_graphs/resnet50/resnet50_backward_0",
@@ -153,7 +155,7 @@ class TestFXGraphPasses(JitTestCase):
             # "torch_bench_graphs/drq/drq_backward_1",
             # "torch_bench_graphs/drq/drq_forward_0",
             # "torch_bench_graphs/pytorch_struct/pytorch_struct_backward_0",
-            "torch_bench_graphs/pytorch_struct/pytorch_struct_forward_0",
+            # "torch_bench_graphs/pytorch_struct/pytorch_struct_forward_0",
             # "torch_bench_graphs/Background_Matting/Background_Matting_backward_0",
             # "torch_bench_graphs/Background_Matting/Background_Matting_forward_0",
             # "torch_bench_graphs/timm_regnet/timm_regnet_forward_0",
@@ -393,6 +395,7 @@ class TestFXGraphPasses(JitTestCase):
                         torch.cuda.synchronize()
                     result.aten_decomp_gm_time = aten_decomp_gm_time.elapsed
 
+                    # r = ipt("Type something (anything) to continue: ")
                     with timer("nvFuser 1st call execution time") as nvfuser_time_1:
                         nvfuser_result = fused_graph_module(*inputs)
                         torch.cuda.synchronize()
