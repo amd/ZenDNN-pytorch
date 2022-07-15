@@ -12622,7 +12622,10 @@ op_db: List[OpInfo] = [
            decorators=[
                skipCUDAIf(_get_torch_cuda_version() < (11, 4), "not available before CUDA 11.3.1"),
                skipCUDAIfNoCusolver, skipCUDAIfRocm, skipCPUIfNoLapack],
-           ),
+           skips=(
+               DecorateInfo(unittest.skip("memory hog"), 'TestCommon', 'test_out_warning'),
+               DecorateInfo(unittest.skip("memory hog"), 'TestJit', 'test_variant_consistency_jit'),
+           )),
     OpInfo('linalg.lstsq',
            aten_name='linalg_lstsq',
            dtypes=floating_and_complex_types(),
@@ -12952,7 +12955,10 @@ op_db: List[OpInfo] = [
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
-           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack]),
+           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
+           skips=(
+                DecorateInfo(unittest.skip("memory hog"), 'TestGradients', 'test_fn_fwgrad_bwgrad'),
+           )),
     OpInfo('lu_unpack',
            op=torch.lu_unpack,
            dtypes=floating_and_complex_types(),
