@@ -702,15 +702,24 @@ def run_tests(argv=UNITTEST_ARGS):
             pytest_report_path = test_report_path.replace('python-unittest', 'python-pytest')
             os.makedirs(pytest_report_path, exist_ok=True)
             # part of our xml parsing looks for grandparent folder names
-            pytest_report_path = os.path.join(pytest_report_path, f"{test_filename}.xml")
-            print(f'Test results will be stored in {pytest_report_path}')
+            pytest_report_path_parallel = os.path.join(pytest_report_path, f"{test_filename}-parallel.xml")
+            pytest_report_path_serial = os.path.join(pytest_report_path, f"{test_filename}-serial.xml")
+            print(f'Test results will be stored in {pytest_report_path_parallel}')
             # mac slower on 4 proc than 3
             num_procs = 2
-            exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), f'-n={num_procs}', '-vv', '-x',
-                                    '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path}'])
-            del os.environ["USING_PYTEST"]
-            sanitize_pytest_xml(f'{pytest_report_path}')
+            exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), f'-n={num_procs}', '-vv', '-x', '-m=not serial',
+                                    '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path_parallel}'])
+            sanitize_pytest_xml(f'{pytest_report_path_parallel}')
             # exitcode of 5 means no tests were found, which happens for some test configs
+            if exit_code != 0 and exit_code != 5:
+                del os.environ["USING_PYTEST"]
+                exit(exit_code)
+
+            exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), '-vv', '-x', '-m=serial',
+                                    '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path_serial}'])
+            sanitize_pytest_xml(f'{pytest_report_path_serial}')
+
+            del os.environ["USING_PYTEST"]
             exit(0 if exit_code == 5 else exit_code)
         else:
             os.makedirs(test_report_path, exist_ok=True)

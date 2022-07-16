@@ -8,6 +8,7 @@ import operator
 import random
 import unittest
 import math
+import pytest
 
 import torch
 import numpy as np
@@ -12624,7 +12625,8 @@ op_db: List[OpInfo] = [
                skipCUDAIfNoCusolver, skipCUDAIfRocm, skipCPUIfNoLapack],
            skips=(
                DecorateInfo(unittest.skip("memory hog"), 'TestCommon', 'test_out_warning'),
-               DecorateInfo(unittest.skip("memory hog"), 'TestJit', 'test_variant_consistency_jit'),
+               DecorateInfo(pytest.mark.serial, 'TestJit', 'test_variant_consistency_jit'),
+               DecorateInfo(unittest.skip("memory hog"), 'TestCommon', 'test_conj_view'),
            )),
     OpInfo('linalg.lstsq',
            aten_name='linalg_lstsq',
@@ -12988,6 +12990,7 @@ op_db: List[OpInfo] = [
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out'),
                # UserWarning not triggered : Resized a non-empty tensor but did not warn about it.
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out_warning'),
+               DecorateInfo(unittest.skip('memory hog'), 'Gradients', 'test_forward_mode_AD'),
            )),
     OpInfo('lu_solve',
            op=torch.lu_solve,
