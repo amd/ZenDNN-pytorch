@@ -12953,7 +12953,10 @@ op_db: List[OpInfo] = [
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
-           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack]),
+           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
+           skips=(
+                DecorateInfo(unittest.skip("memory hog"), 'TestGradients', 'test_fn_fwgrad_bwgrad'),
+           )),
     OpInfo('linalg.lu',
            aten_name='linalg_lu',
            op=torch.linalg.lu,
@@ -12964,6 +12967,7 @@ op_db: List[OpInfo] = [
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
            skips=(
                 DecorateInfo(unittest.skip("memory hog"), 'TestGradients', 'test_fn_fwgrad_bwgrad'),
+                DecorateInfo(unittest.skip("memory hog"), 'TestCommon', 'test_dtypes'),
            )),
     OpInfo('lu_unpack',
            op=torch.lu_unpack,
