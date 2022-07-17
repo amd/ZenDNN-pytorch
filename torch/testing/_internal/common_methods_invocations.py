@@ -12624,8 +12624,7 @@ op_db: List[OpInfo] = [
                skipCUDAIf(_get_torch_cuda_version() < (11, 4), "not available before CUDA 11.3.1"),
                skipCUDAIfNoCusolver, skipCUDAIfRocm, skipCPUIfNoLapack],
            skips=(
-               DecorateInfo(unittest.skip("memory hog")),
-               DecorateInfo(pytest.mark.serial, 'TestJit', 'test_variant_consistency_jit'),
+               DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('linalg.lstsq',
            aten_name='linalg_lstsq',
@@ -12942,7 +12941,7 @@ op_db: List[OpInfo] = [
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
            skips=(
-                DecorateInfo(unittest.skip("memory hog")),
+                DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('linalg.lu_factor_ex',
            aten_name='linalg_lu_factor_ex',
@@ -12953,7 +12952,7 @@ op_db: List[OpInfo] = [
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
            skips=(
-                DecorateInfo(unittest.skip("memory hog")),
+                DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('linalg.lu',
            aten_name='linalg_lu',
@@ -12964,7 +12963,7 @@ op_db: List[OpInfo] = [
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
            skips=(
-                DecorateInfo(unittest.skip("memory hog")),
+                DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('lu_unpack',
            op=torch.lu_unpack,
@@ -12995,7 +12994,7 @@ op_db: List[OpInfo] = [
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out'),
                # UserWarning not triggered : Resized a non-empty tensor but did not warn about it.
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out_warning'),
-               DecorateInfo(unittest.skip('memory hog')),
+               DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('lu_solve',
            op=torch.lu_solve,
