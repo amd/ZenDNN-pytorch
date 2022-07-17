@@ -720,10 +720,15 @@ def run_tests(argv=UNITTEST_ARGS):
             sanitize_pytest_xml(f'{pytest_report_path_serial}')
 
             del os.environ["USING_PYTEST"]
-            exit(0 if exit_code == 5 else exit_code)
-        else:
             os.makedirs(test_report_path, exist_ok=True)
             verbose = '--verbose' in argv or '-v' in argv
+            unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
+                output=test_report_path,
+                verbosity=2 if verbose else 1,
+                resultclass=XMLTestResultVerbose))
+
+            exit(0 if exit_code == 5 else exit_code)
+        else:
             if verbose:
                 print(f'Test results will be stored in {test_report_path}')
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
