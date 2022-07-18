@@ -729,6 +729,8 @@ def run_tests(argv=UNITTEST_ARGS):
 
             exit(0 if exit_code == 5 else exit_code)
         else:
+            os.makedirs(test_report_path, exist_ok=True)
+            verbose = '--verbose' in argv or '-v' in argv
             if verbose:
                 print(f'Test results will be stored in {test_report_path}')
             unittest.main(argv=argv, testRunner=xmlrunner.XMLTestRunner(
