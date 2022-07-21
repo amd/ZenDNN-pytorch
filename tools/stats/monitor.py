@@ -14,9 +14,12 @@ def pip_install(package_name: str) -> None:
         ).returncode
         != 0
     ):
-        subprocess.run(
+        output = subprocess.run(
             [sys.executable, "-m", "pip", "install", package_name], capture_output=True
         )
+        if output.returncode != 0:
+            print(output.stderr.decode("utf-8"))
+            print(output.stdout.decode("utf-8"))
 
 
 def main() -> None:

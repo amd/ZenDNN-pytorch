@@ -44,7 +44,11 @@ runs:
       run: |
         # Remove any previous test reports if they exist
         rm -f usage-log-*.zip
-        zip "usage-log-${FILE_SUFFIX}.zip" 'usage_log.txt'
+        # this workflow is also run in bazel build test, but we dont generate usage reports for it
+        # so check to see if the file exists first
+        if [ -f 'usage_log.txt' ]; then
+            zip "usage-log-${FILE_SUFFIX}.zip" 'usage_log.txt'
+        fi
 
     # Windows zip
     - name: Zip JSONs for upload
