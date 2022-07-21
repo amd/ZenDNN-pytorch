@@ -3869,27 +3869,29 @@ TEST_F(LazyOpsTest, TestChainMatMul) {
 
 TEST_F(LazyOpsTest, TestLinear) {
   torch::Tensor input = torch::rand(
-      {2, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+      {200, 4000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor weight = torch::rand(
-      {3, 4}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+      {300, 4000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
   torch::Tensor bias = torch::rand(
-      {3}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
-  torch::Tensor result = torch::linear(input, weight);
-  torch::Tensor result_with_bias = torch::linear(input, weight, bias);
-  ForEachDevice([&](const torch::Device& device) {
-    torch::Tensor lazy_input = CopyToDevice(input, device);
-    torch::Tensor lazy_weight = CopyToDevice(weight, device);
-    torch::Tensor lazy_bias = CopyToDevice(bias, device);
-    torch::Tensor lazy_result = torch::linear(lazy_input, lazy_weight);
-    torch::Tensor lazy_result_with_bias =
-        torch::linear(lazy_input, lazy_weight, lazy_bias);
-    AllClose(result, lazy_result, /*rtol=*/1e-2, /*atol=*/1e-4);
-    AllClose(
-        result_with_bias,
-        lazy_result_with_bias,
-        /*rtol=*/1e-2,
-        /*atol=*/1e-4);
-  });
+      {300}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  for (int i = 0; i < 10000; i++) {
+    torch::Tensor result = torch::linear(input, weight);
+    torch::Tensor result_with_bias = torch::linear(input, weight, bias);
+    ForEachDevice([&](const torch::Device& device) {
+      torch::Tensor lazy_input = CopyToDevice(input, device);
+      torch::Tensor lazy_weight = CopyToDevice(weight, device);
+      torch::Tensor lazy_bias = CopyToDevice(bias, device);
+      torch::Tensor lazy_result = torch::linear(lazy_input, lazy_weight);
+      torch::Tensor lazy_result_with_bias =
+          torch::linear(lazy_input, lazy_weight, lazy_bias);
+      AllClose(result, lazy_result, /*rtol=*/1e-2, /*atol=*/1e-4);
+      AllClose(
+          result_with_bias,
+          lazy_result_with_bias,
+          /*rtol=*/1e-2,
+          /*atol=*/1e-4);
+    });
+  }
 }
 
 TEST_F(LazyOpsTest, TestPinverse) {
