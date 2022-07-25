@@ -3,6 +3,7 @@
 #include "c10/core/DeviceType.h"
 
 #include <c10/core/Device.h>
+#include <c10/cuda/CUDACachingAllocator.h>
 #include <test/cpp/lazy/test_lazy_ops_util.h>
 #include <torch/csrc/lazy/core/debug_util.h>
 #include <torch/csrc/lazy/core/helpers.h>
@@ -3867,30 +3868,25 @@ TEST_F(LazyOpsTest, TestChainMatMul) {
   });
 }
 
-TEST_F(LazyOpsTest, TestLinear) {
+TEST_F(LazyOpsTest, TestMemLeak) {
+  auto lazy_backend_device = torch::lazy::BackendDevice();
+  torch::Device device = torch::lazy::backendDeviceToAtenDevice(lazy_backend_device);
+  size_t n_repeat = 1000;
+  if(const char* repeat = std::getenv("REPEAT")) {
+    n_repeat = atoi(repeat);
+    std::cout << "n_repeat " << n_repeat << std::endl;
+  }
   torch::Tensor input = torch::rand(
-      {200, 4000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
-  torch::Tensor weight = torch::rand(
-      {300, 4000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
-  torch::Tensor bias = torch::rand(
-      {300}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
-  for (int i = 0; i < 10000; i++) {
-    torch::Tensor result = torch::linear(input, weight);
-    torch::Tensor result_with_bias = torch::linear(input, weight, bias);
-    ForEachDevice([&](const torch::Device& device) {
-      torch::Tensor lazy_input = CopyToDevice(input, device);
-      torch::Tensor lazy_weight = CopyToDevice(weight, device);
-      torch::Tensor lazy_bias = CopyToDevice(bias, device);
-      torch::Tensor lazy_result = torch::linear(lazy_input, lazy_weight);
-      torch::Tensor lazy_result_with_bias =
-          torch::linear(lazy_input, lazy_weight, lazy_bias);
-      AllClose(result, lazy_result, /*rtol=*/1e-2, /*atol=*/1e-4);
-      AllClose(
-          result_with_bias,
-          lazy_result_with_bias,
-          /*rtol=*/1e-2,
-          /*atol=*/1e-4);
-    });
+      {80000000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+
+  auto stats = c10::cuda::CUDACachingAllocator::getDeviceStats(/*device_id*/0);
+  for (int i = 0; i < n_repeat; i++) {
+    torch::Tensor lazy_input = CopyToDevice(input, device);
+    
+    auto new_stats = c10::cuda::CUDACachingAllocator::getDeviceStats(/*device_id*/0);
+    size_t bytes_this_loop = new_stats.allocated_bytes.at(0).current - stats.allocated_bytes.at(0).current;
+    LOG(ERROR) << "CudaCachingAllocator new allocated_bytes this loop: " << bytes_this_loop;
+    stats = new_stats;
   }
 }
 
