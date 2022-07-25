@@ -930,6 +930,7 @@ def main():
 
     has_failed = False
     failure_messages = []
+    selected_tests = list(filter(lambda x: x in ['test_ops', 'test_ops_gradients', 'test_ops_jit'], selected_tests))
     try:
         for test in selected_tests:
             options_clone = copy.deepcopy(options)
