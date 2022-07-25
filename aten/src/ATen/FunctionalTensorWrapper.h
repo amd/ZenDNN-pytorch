@@ -130,7 +130,9 @@ struct TORCH_API FunctionalTensorWrapper : public c10::TensorImpl {
       c10::VariableVersion&& version_counter,
       bool allow_tensor_metadata_change) const override;
 
-  ~FunctionalTensorWrapper() override = default;
+  ~FunctionalTensorWrapper() override {
+      LOG(ERROR) << "~FunctionalTensorWrapper() " << value_.sizes();
+  }
 
   // FunctionalTensorWrapper overrides all custom size/stride function,
   // so that if the inner tensor has a custo implementation

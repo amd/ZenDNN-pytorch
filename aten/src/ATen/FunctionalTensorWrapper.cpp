@@ -40,6 +40,8 @@ FunctionalTensorWrapper::FunctionalTensorWrapper(const Tensor& value)
     ),
     value_(value)
 {
+  LOG(ERROR) << " FunctionalTensorWrapper() " << value_.sizes();
+
   set_constructor_metadata();
 }
 
@@ -115,6 +117,7 @@ FunctionalTensorWrapper::FunctionalTensorWrapper(const Tensor& view_value, const
     ),
     value_(view_value)
 {
+  LOG(ERROR) << " FunctionalTensorWrapper(view) " << value_.sizes();
   set_constructor_metadata();
   // Copy the original tensor's ViewMeta vector and push the current one.
   if (base->view_metas_.size() > 0) {

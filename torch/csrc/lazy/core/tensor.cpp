@@ -27,6 +27,9 @@ LazyTensorPtr GetOrCreateLtcTensor(
 } // namespace
 
 LazyTensor::Data::~Data() {
+  if(tensor_data) {
+    LOG(ERROR) << "~Data() " << tensor_data->sizes();
+  }
   LazyGraphExecutor::Get()->UnregisterTensor(this);
 }
 
