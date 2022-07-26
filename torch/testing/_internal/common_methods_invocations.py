@@ -13076,9 +13076,7 @@ op_db: List[OpInfo] = [
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
-           skips=(
-                DecorateInfo(pytest.mark.serial),
-           )),
+           skips=(DecorateInfo(pytest.mark.serial))),
     OpInfo('linalg.lu_factor_ex',
            aten_name='linalg_lu_factor_ex',
            op=torch.linalg.lu_factor_ex,
@@ -13089,9 +13087,7 @@ op_db: List[OpInfo] = [
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
-           skips=(
-                DecorateInfo(pytest.mark.serial),
-           )),
+           skips=(DecorateInfo(pytest.mark.serial))),
     OpInfo('linalg.lu',
            aten_name='linalg_lu',
            op=torch.linalg.lu,
@@ -13103,9 +13099,7 @@ op_db: List[OpInfo] = [
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
-           skips=(
-                DecorateInfo(pytest.mark.serial),
-           )),
+           skips=(DecorateInfo(pytest.mark.serial))),
     OpInfo('lu_unpack',
            op=torch.lu_unpack,
            dtypes=floating_and_complex_types(),
