@@ -852,7 +852,7 @@ if (
     "linux" in os.environ["BUILD_ENVIRONMENT"]
     and TEST_CUDA
 ):
-    torch.cuda.set_per_process_memory_fraction(0.5)
+    torch.cuda.set_per_process_memory_fraction(0.25)
 
 def skipIfCrossRef(fn):
     @wraps(fn)
