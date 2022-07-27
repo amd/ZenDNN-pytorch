@@ -699,9 +699,7 @@ def run_tests(argv=UNITTEST_ARGS):
         test_filename = sanitize_test_filename(inspect.getfile(sys._getframe(1)))
         test_report_path = TEST_SAVE_XML + LOG_SUFFIX
         test_report_path = os.path.join(test_report_path, test_filename)
-        if test_filename in PYTEST_FILES and not IS_SANDCASTLE and not (
-            "cuda" in os.environ["BUILD_ENVIRONMENT"] and "linux" in os.environ["BUILD_ENVIRONMENT"]
-        ):
+        if test_filename in PYTEST_FILES and not IS_SANDCASTLE:
             # exclude linux cuda tests because we run into memory issues when running in parallel
             import pytest
             os.environ["NO_COLOR"] = "1"
@@ -709,17 +707,38 @@ def run_tests(argv=UNITTEST_ARGS):
             pytest_report_path = test_report_path.replace('python-unittest', 'python-pytest')
             os.makedirs(pytest_report_path, exist_ok=True)
             # part of our xml parsing looks for grandparent folder names
-            pytest_report_path = os.path.join(pytest_report_path, f"{test_filename}.xml")
-            print(f'Test results will be stored in {pytest_report_path}')
             # mac slower on 4 proc than 3
             num_procs = 3 if "macos" in os.environ["BUILD_ENVIRONMENT"] else 4
-            exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), f'-n={num_procs}', '-vv', '-x',
-                                    '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path}'])
-            del os.environ["USING_PYTEST"]
-            sanitize_pytest_xml(f'{pytest_report_path}')
-            # exitcode of 5 means no tests were found, which happens since some test configs don't
-            # run tests from certain files
-            exit(0 if exit_code == 5 else exit_code)
+            if "cuda" in os.environ["BUILD_ENVIRONMENT"] and "linux" in os.environ["BUILD_ENVIRONMENT"]:
+                pytest_report_path_parallel = os.path.join(pytest_report_path, f"{test_filename}-parallel.xml")
+                print(f'Test results will be stored in {pytest_report_path_parallel}')
+
+                exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), f'-n={num_procs}', '-vv', '-x',
+                                              '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path_parallel}',
+                                              '-m=not serial'])
+                sanitize_pytest_xml(f'{pytest_report_path_parallel}')
+                if exit_code != 0 and exit_code != 5:
+                    del os.environ["USING_PYTEST"]
+                    exit(exit_code)
+
+                pytest_report_path_serial = os.path.join(pytest_report_path, f"{test_filename}-serial.xml")
+                print(f'Test results will be stored in {pytest_report_path_serial}')
+                exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), '-vv', '-x',
+                                              '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path_serial}',
+                                              '-m=serial'])
+                sanitize_pytest_xml(f'{pytest_report_path_serial}')
+                del os.environ["USING_PYTEST"]
+                exit(0 if exit_code == 5 else exit_code)
+            else:
+                pytest_report_path = os.path.join(pytest_report_path, f"{test_filename}.xml")
+                print(f'Test results will be stored in {pytest_report_path}')
+                exit_code = pytest.main(args=[inspect.getfile(sys._getframe(1)), f'-n={num_procs}', '-vv', '-x',
+                                        '--reruns=2', '-rfEsX', f'--junit-xml-reruns={pytest_report_path}'])
+                del os.environ["USING_PYTEST"]
+                sanitize_pytest_xml(f'{pytest_report_path}')
+                # exitcode of 5 means no tests were found, which happens since some test configs don't
+                # run tests from certain files
+                exit(0 if exit_code == 5 else exit_code)
         else:
             os.makedirs(test_report_path, exist_ok=True)
             verbose = '--verbose' in argv or '-v' in argv

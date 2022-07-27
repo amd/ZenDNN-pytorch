@@ -12750,9 +12750,7 @@ op_db: List[OpInfo] = [
            decorators=[
                skipCUDAIf(_get_torch_cuda_version() < (11, 4), "not available before CUDA 11.3.1"),
                skipCUDAIfNoCusolver, skipCUDAIfRocm, skipCPUIfNoLapack],
-           skips=(
-               DecorateInfo(pytest.mark.serial),
-           )),
+           skips=(DecorateInfo(pytest.mark.serial),)),
     OpInfo('linalg.lstsq',
            aten_name='linalg_lstsq',
            dtypes=floating_and_complex_types(),
@@ -13098,8 +13096,7 @@ op_db: List[OpInfo] = [
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_linalg_lu,
-           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
-           skips=(DecorateInfo(pytest.mark.serial),)),
+           decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],),
     OpInfo('lu_unpack',
            op=torch.lu_unpack,
            dtypes=floating_and_complex_types(),
@@ -13133,7 +13130,6 @@ op_db: List[OpInfo] = [
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out'),
                # UserWarning not triggered : Resized a non-empty tensor but did not warn about it.
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out_warning'),
-               DecorateInfo(pytest.mark.serial),
            )),
     OpInfo('lu_solve',
            op=torch.lu_solve,
