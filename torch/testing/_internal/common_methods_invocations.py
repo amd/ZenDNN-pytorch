@@ -12602,7 +12602,7 @@ op_db: List[OpInfo] = [
            sample_inputs_func=sample_inputs_linalg_cholesky,
            gradcheck_wrapper=gradcheck_wrapper_hermitian_input,
            decorators=[skipCUDAIfNoMagmaAndNoCusolver, skipCPUIfNoLapack],
-           ),
+           skips=(DecorateInfo(pytest.mark.serial),)),
     OpInfo('linalg.vecdot',
            aten_name='linalg_vecdot',
            ref=lambda x, y, *, dim=-1: (x.conj() * y).sum(dim),
