@@ -17672,8 +17672,7 @@ op_db: List[OpInfo] = [
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
            sample_inputs_func=sample_inputs_msort,
-           skips=(
-           )),
+           skips=(DecorateInfo(pytest.mark.serial),)),
     OpInfo('movedim',
            aliases=('moveaxis',),
            dtypes=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16, torch.chalf),
