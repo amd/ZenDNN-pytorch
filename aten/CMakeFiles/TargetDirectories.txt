@@ -1,2 +1,0 @@
-/scratch/voz/work/pytorch/aten/CMakeFiles/edit_cache.dir
-/scratch/voz/work/pytorch/aten/CMakeFiles/rebuild_cache.dir

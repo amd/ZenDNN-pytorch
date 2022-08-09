@@ -16,17 +16,12 @@
 #include <ATen/core/grad_mode.h>
 #include <ATen/core/enum_tag.h>
 
-#include <iostream>
-#define HAS_TORCH_SHOW_DISPATCH_TRACE
-
 namespace c10 {
 
 TORCH_API bool show_dispatch_trace();
 
 class TORCH_API OperatorHandle;
 template<class FuncType> class TypedOperatorHandle;
-
-bool TORCH_API show_dispatch_trace_enabled();
 
 /**
  * Implement this interface and register your instance with the dispatcher
@@ -554,10 +549,6 @@ inline Return Dispatcher::callWithDispatchKeySlowPath(const TypedOperatorHandle<
     return std::move(captureKernelCall).release();
   }
 
-  if (show_dispatch_trace_enabled()) {
-    std::cout << "[" << op.schema().name() << "] " << dispatchKeySet.highestPriorityTypeId() << " (::callWithDispatchKeySlowPath)" << std::endl;
-  }
-
   // keeping the guard alive while executing the kernel
   return kernel.template call<Return, Args...>(op, dispatchKeySet, std::forward<Args>(args)...);
 }
@@ -574,10 +565,6 @@ C10_ALWAYS_INLINE_UNLESS_MOBILE Return Dispatcher::call(const TypedOperatorHandl
   }
 #endif
   const KernelFunction& kernel = op.operatorDef_->op.lookup(dispatchKeySet);
-
-  if (show_dispatch_trace_enabled()) {
-    std::cout << "[" << op.schema().name() << "] " << dispatchKeySet.highestPriorityTypeId() << " (::call)" << std::endl;
-  }
 #ifndef PYTORCH_DISABLE_PER_OP_PROFILING
   auto step_callbacks = at::getStepCallbacksUnlessEmpty(at::RecordScope::FUNCTION);
   if (C10_UNLIKELY(step_callbacks.has_value() && op.operatorDef_->op.isObserved())) {
@@ -598,9 +585,6 @@ inline Return Dispatcher::redispatch(const TypedOperatorHandle<Return (Args...)>
   }
 #endif
   const KernelFunction& kernel = op.operatorDef_->op.lookup(currentDispatchKeySet);
-  if (show_dispatch_trace_enabled()) {
-    std::cout << "[" << op.schema().name() << "] " << currentDispatchKeySet.highestPriorityTypeId() << " (::redispatch)" << std::endl;
-  }
   return kernel.template call<Return, Args...>(op, currentDispatchKeySet, std::forward<Args>(args)...);
 }
 
@@ -614,10 +598,6 @@ inline void Dispatcher::callBoxed(const OperatorHandle& op, Stack* stack) const 
   }
 #endif
   const auto& kernel = entry.lookup(dispatchKeySet);
-  if (show_dispatch_trace_enabled()) {
-    std::cout << dispatchKeySet << std::endl;
-    std::cout << "[" << op.schema().name() << "] " << dispatchKeySet.highestPriorityTypeId() << " (::callBoxed)" << std::endl;
-  }
 #ifndef PYTORCH_DISABLE_PER_OP_PROFILING
   auto step_callbacks = at::getStepCallbacksUnlessEmpty(at::RecordScope::FUNCTION);
   if (C10_UNLIKELY(step_callbacks.has_value() && entry.isObserved())) {
@@ -649,9 +629,6 @@ inline void Dispatcher::redispatchBoxed(const OperatorHandle& op, DispatchKeySet
   }
 #endif
   const auto& kernel = entry.lookup(dispatchKeySet);
-  if (show_dispatch_trace_enabled()) {
-    std::cout << "[" << op.schema().name() << "] " << dispatchKeySet.highestPriorityTypeId() << " (::redispatchBoxed)" << std::endl;
-  }
   return kernel.callBoxed(op, dispatchKeySet, stack);
 }
 
