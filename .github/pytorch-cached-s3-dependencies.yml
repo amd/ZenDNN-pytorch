@@ -15,8 +15,10 @@ validation:
     - "cudnn/"
   ossci-macos:
     - "test/"
+  ossci-raw-job-status:
+    - "test/"
 
 urls:
-  - bucket: ossci-windows
+  - bucket: ossci-raw-job-status
     url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
-    key: miniconda/Miniconda3-latest-Windows-x86_64.exe
+    key: test/Miniconda3-latest-Windows-x86_64.exe
