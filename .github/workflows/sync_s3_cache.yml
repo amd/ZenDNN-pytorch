@@ -6,15 +6,15 @@
 
 name: Update S3 dependencies on public OSSCI S3 buckets
 on:
-  schedule:
+#  schedule:
     # Sync every hour
-    - cron: "0 * * * *"
+#    - cron: "0 * * * *"
   # Have the ability to trigger this job manually using the API as well
   workflow_dispatch:
 
 jobs:
   sync-s3-cache:
-    runs-on: ubuntu-18.04
+    runs-on: linux.2xlarge
     if: ${{ github.repository == 'pytorch/pytorch' }}
     steps:
       - name: Checkout PyTorch
@@ -23,9 +23,6 @@ jobs:
           submodules: false
           fetch-depth: 1
       - name: Sync S3 file cache
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_OSSCI_S3_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_OSSCI_S3_ACCESS_KEY }}
         uses: docker://pytorch/sync_s3_thirdparty_deps
         with:
           args: ".github/pytorch-cached-s3-dependencies.yml"
