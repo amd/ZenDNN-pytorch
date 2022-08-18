@@ -25,6 +25,9 @@ jobs:
           submodules: false
           fetch-depth: 1
       - name: Sync S3 file cache
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
         uses: docker://pytorch/sync_s3_thirdparty_deps
         with:
           args: ".github/pytorch-cached-s3-dependencies.yml"
