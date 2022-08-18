@@ -825,8 +825,6 @@ class GitHubPR:
                     print(f"Skipping {idx+1} of {len(rev_list)} PR (#{pr_num}) as its already been merged")
                     continue
                 commit_msg = pr.gen_commit_message(filter_ghstack=True)
-                # Raises exception if matching rule is not found
-                find_matching_merge_rule(pr, repo, force=force, skip_internal_checks=can_skip_internal_checks(self, comment_id))
 
             repo.cherry_pick(rev)
             repo.amend_commit_message(commit_msg)
@@ -846,9 +844,11 @@ class GitHubPR:
     def merge_into(self, repo: GitRepo, *,
                    force: bool = False,
                    dry_run: bool = False,
-                   comment_id: Optional[int] = None) -> None:
+                   comment_id: Optional[int] = None,
+                   land_checks: Optional[bool] = False) -> None:
         # Raises exception if matching rule is not found
-        find_matching_merge_rule(self, repo, force=force, skip_internal_checks=can_skip_internal_checks(self, comment_id))
+        if not land_checks:
+            find_matching_merge_rule(self, repo, force=force, skip_internal_checks=can_skip_internal_checks(self, comment_id))
         self.merge_changes(repo, force, comment_id)
 
         repo.push(self.default_branch(), dry_run)
@@ -1196,7 +1196,6 @@ def merge(pr_num: int, repo: GitRepo,
         if initial_commit_sha != pr.last_commit()['oid']:
             raise RuntimeError("New commits were pushed while merging. Please rerun the merge command.")
         try:
-            find_matching_merge_rule(pr, repo)
             pending = pr_get_pending_checks(pr)
             failing = pr_get_failed_checks(pr)
 
@@ -1216,7 +1215,7 @@ def merge(pr_num: int, repo: GitRepo,
             if land_checks:
                 validate_land_time_checks(org, project, land_check_commit)
 
-            return pr.merge_into(repo, dry_run=dry_run, force=force, comment_id=comment_id)
+            return pr.merge_into(repo, dry_run=dry_run, force=force, comment_id=comment_id, land_checks=land_checks)
         except MandatoryChecksMissingError as ex:
             last_exception = str(ex)
             print(f"Merge of https://github.com/{org}/{project}/pull/{pr_num} failed due to: {ex}. Retrying in 5 min")
