@@ -307,7 +307,7 @@ def replace_pattern(gm: GraphModule, pattern: Callable, replacement: Callable) -
     # as part of a pattern match
     replaced_nodes: Set[Node] = set()
     # As we progressively replace nodes, we'll need to keep track of how the match results should change
-    match_changed_node: Dict[Node, Node] = dict()
+    match_changed_node: Dict[Node, Node] = {}
 
     # Return True if one of the nodes in the current match has already
     # been used as part of another match
