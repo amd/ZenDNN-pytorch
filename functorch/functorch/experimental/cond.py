@@ -5,6 +5,7 @@ from torch.utils._pytree import tree_flatten
 from torch.fx.experimental.proxy_tensor import get_isolated_graphmodule, get_proxy_slot
 import torch.utils._pytree as pytree
 from torch.utils._python_dispatch import TorchDispatchMode
+from torch.fx.experimental.proxy_tensor import track_tensor_tree
 
 """
 We're going to define a `cond` operation.
@@ -89,9 +90,14 @@ def trace_cond(proxy_mode, func_overload, pred, true_fn, false_fn, operands):
     args = (pred, true_graph, false_graph, [operands])
 
     proxy_args = pytree.tree_map(_unwrap_proxy, args)
-
-    return proxy_mode.tracer.create_proxy('call_function', func_overload, proxy_args, {},
+    out_proxy = proxy_mode.tracer.create_proxy('call_function', func_overload, proxy_args, {},
         name="conditional")
+
+    if pred:
+        out = true_fn(*operands)
+    else:
+        out = false_fn(*operands)
+    return track_tensor_tree(out, out_proxy, constant=None, tracer=proxy_mode.tracer)
 
 
 def cond_dense(pred, true_fn, false_fn, operands):

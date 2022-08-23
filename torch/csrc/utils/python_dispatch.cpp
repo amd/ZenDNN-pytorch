@@ -378,7 +378,7 @@ void initDispatchBindings(PyObject* module) {
   // py::enum_<c10::DispatchKeySet::FullAfter>(m, "DispatchKeySetFullAfter")
   //   .value("FULL_AFTER", c10::DispatchKeySet::FullAfter::FULL_AFTER);
 
-  m.def("_dispatch_keyset_full_after", [](DispatchKey t) {
+  m.def("_dispatch_keyset_full_after", [](c10::DispatchKey t) {
     return c10::DispatchKeySet(c10::DispatchKeySet::FULL_AFTER, t);
   });
 
