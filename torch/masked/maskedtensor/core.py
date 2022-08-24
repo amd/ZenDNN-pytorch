@@ -362,6 +362,14 @@ class MaskedTensor(torch.Tensor):
     def __torch_function__(cls, func, types, args=(), kwargs=None):
         kwargs = kwargs or {}
 
+        if func is torch.nn.functional.multi_head_attention_forward:
+            from .functions import multi_head_attention_forward as mha_mt
+            return mha_mt(*args, **kwargs)
+
+        from .reductions import _apply_reduction, _is_reduction
+        if _is_reduction(func):
+            return _apply_reduction(func, *args, **kwargs)
+
         if func in [torch.Tensor.where, torch.where]:
             _check_args_kwargs_length(args, kwargs, "__torch_function__, torch.where", len_args=3, len_kwargs=0)
             return _MaskedWhere.apply(*args)
@@ -390,6 +398,11 @@ class MaskedTensor(torch.Tensor):
     def __torch_dispatch__(cls, func, types, args, kwargs):
         func = func.overloadpacket
 
+        from .reductions import _apply_reduction, _is_reduction
+
+        if _is_reduction(func):
+            return _apply_reduction(func, *args, **kwargs)
+
         from .passthrough import _apply_pass_through_fn, _is_pass_through_fn
 
         if _is_pass_through_fn(func):
@@ -404,6 +417,11 @@ class MaskedTensor(torch.Tensor):
 
         if _is_native_binary(func):
             return _apply_native_binary(func, *args, **kwargs)
+
+        from .matmul import _apply_native_matmul, _is_native_matmul
+
+        if _is_native_matmul(func):
+            return _apply_native_matmul(func, *args, **kwargs)
 
         if func in [torch.ops.aten.mm, torch.ops.aten.bmm]:
             _check_args_kwargs_length(args, kwargs, f"__torch_dispatch__, {func}", len_args=2, len_kwargs=0)
@@ -569,7 +587,16 @@ class MaskedTensor(torch.Tensor):
         return self.get_data().masked_fill(~self.get_mask(), value)
 
     def get_data(self):
-        return self._masked_data
+        class GetData(torch.autograd.Function):
+            @staticmethod
+            def forward(ctx, self):
+                return self._masked_data
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                return grad_output, None
+
+        return GetData.apply(self)
 
     def get_mask(self):
         return self._masked_mask
