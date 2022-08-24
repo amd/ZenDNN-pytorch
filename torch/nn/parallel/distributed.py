@@ -966,7 +966,7 @@ class DistributedDataParallel(Module, Joinable):
         """
         TorchDynamo needs to know whether DDP is currently active, and access the DDP module in order to cooperatively optimize it.
         """
-        if hasattr(cls._tls_ctx, '_active_ddp_module'):
+        if hasattr(cls._tls_ctx, '_active_ddp_module') and cls._tls_ctx._active_ddp_module is not None:
             return cls._tls_ctx._active_ddp_module
         return None
 
@@ -976,7 +976,7 @@ class DistributedDataParallel(Module, Joinable):
         try:
             yield
         finally:
-            del DistributedDataParallel._tls_ctx._active_ddp_module
+            DistributedDataParallel._tls_ctx._active_ddp_module = None
 
     def _run_ddp_forward(self, *inputs, **kwargs):
         module_to_run = self._replicated_tensor_module if self._use_replicated_tensor_module else self.module
