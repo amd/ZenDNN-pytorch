@@ -6,7 +6,6 @@ from enum import Enum, auto
 import inspect
 import itertools
 import logging
-import threading
 import os
 import warnings
 from contextlib import contextmanager
@@ -523,7 +522,7 @@ class DistributedDataParallel(Module, Joinable):
     """
 
     # used to track whether the given thread is inside ddp forward for torchdynamo purposes
-    _tls_ctx = threading.local()
+    _active_ddp_module = None
 
     def __init__(
         self,
@@ -962,21 +961,25 @@ class DistributedDataParallel(Module, Joinable):
             self.require_backward_grad_sync = old_require_backward_grad_sync
 
     @classmethod
-    def get_active_ddp_module(cls):
+    def _get_active_ddp_module(cls):
         """
         TorchDynamo needs to know whether DDP is currently active, and access the DDP module in order to cooperatively optimize it.
         """
-        if hasattr(cls._tls_ctx, '_active_ddp_module') and cls._tls_ctx._active_ddp_module is not None:
-            return cls._tls_ctx._active_ddp_module
-        return None
+        return cls._active_ddp_module
 
+    # note, this ctxmgr function is marked 'skip' in torchdynamo, so dynamo only kicks in
+    # for the 'module_to_run' underneath
+    # see torchdynamo/eval_frame.py TorchPatcher.patch for more details
     @contextmanager
     def _inside_ddp_forward(self):
-        DistributedDataParallel._tls_ctx._active_ddp_module = self
+        assert DistributedDataParallel._active_ddp_module is None, "Only one thread should be running DDP at a time"
+        DistributedDataParallel._active_ddp_module = self
         try:
             yield
+        except Exception:
+            raise
         finally:
-            DistributedDataParallel._tls_ctx._active_ddp_module = None
+            DistributedDataParallel._active_ddp_module = None
 
     def _run_ddp_forward(self, *inputs, **kwargs):
         module_to_run = self._replicated_tensor_module if self._use_replicated_tensor_module else self.module
