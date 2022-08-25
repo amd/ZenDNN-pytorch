@@ -261,6 +261,7 @@ class _MaskedWhere(torch.autograd.Function):
 class MaskedTensor(torch.Tensor):
     @staticmethod
     def __new__(cls, data, mask, requires_grad=False):
+        print ("new!")
         if not torch.is_tensor(data):
             raise TypeError("data must be a Tensor")
         if not torch.is_tensor(mask):
@@ -292,8 +293,8 @@ class MaskedTensor(torch.Tensor):
         self._masked_mask = mask
 
     def _validate_members(self):
-        data = self._masked_data
-        mask = self._masked_mask
+        data = self.get_data()
+        mask = self.get_mask()
         if type(data) != type(mask):
             raise TypeError(f"data and mask must have the same type. Got {type(data)} and {type(mask)}")
         if data.layout not in {torch.strided, torch.sparse_coo, torch.sparse_csr}:
@@ -327,8 +328,13 @@ class MaskedTensor(torch.Tensor):
             raise ValueError("mask cannot have requires_grad=True")
 
     def __init__(self, data, mask, requires_grad=False):
+        print ("init")
         self._preprocess_data(data, mask)
         self._validate_members()
+        if requires_grad:
+            print ("requires_grad = True!")
+            self.requires_grad_(True)
+        print ("done init", data)
 
     def _set_data_mask(self, data, mask):
         self._masked_data = data
@@ -360,6 +366,7 @@ class MaskedTensor(torch.Tensor):
     # Seems like this needs to be defined before torch_dispatch to work
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
+        print ("**func", func)
         kwargs = kwargs or {}
 
         if func is torch.nn.functional.multi_head_attention_forward:
@@ -396,7 +403,9 @@ class MaskedTensor(torch.Tensor):
 
     @classmethod
     def __torch_dispatch__(cls, func, types, args, kwargs):
+        print ("func 1", func)
         func = func.overloadpacket
+        print ("func 2", func)
 
         from .reductions import _apply_reduction, _is_reduction
 

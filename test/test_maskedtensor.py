@@ -487,7 +487,28 @@ class TestReductions(TestCase):
         m = torch.tensor([[True, False, False], [False, True, False]])
         mt = masked_tensor(d, m, requires_grad=True)
         mt.mean().backward()
-        _compare_mts(mt.grad, masked_tensor(torch.tensor(0.5).expand_as(m), m))
+        print ("d.grad", d.grad)
+        print ("mt.grad", mt.grad)
+        # _compare_mts(mt.grad, masked_tensor(torch.tensor(0.5).expand_as(m), m))
+
+    def test2_mean_grad(self):
+        d = torch.tensor([[0, 1, 2], [3, 4, 5.0]])
+        m = torch.tensor([[True, False, False], [False, True, False]])
+        mt = masked_tensor(d, m).requires_grad_(True)
+        # mt.mean().backward()
+        # print ("d.grad", d.grad)
+        # print ("mt.grad", mt.grad)
+        # _compare_mts(mt.grad, masked_tensor(torch.tensor(0.5).expand_as(m), m))
+
+#  /scratch/georgeqi/work/repos/pytorch | @64e354e1 !3                                                                                                                                                                                                     /scratch/georgeqi/work/env py | georgeqi@a100-st-p4d24xlarge-52 | 07:25:55 PM 
+# > python test/test_maskedtensor.py -k "test2_mean_grad"
+# Fail to import hypothesis in common_utils, tests are not derandomized
+# [WARNING] Fail to load None, no test will be skipped
+# new!
+# init
+# done init tensor([[0., 1., 2.],
+#         [3., 4., 5.]])
+# **func <method 'requires_grad_' of 'torch._C._TensorBase' objects>
 
     def test_amax(self):
         d = torch.tensor([[0, 1, 3, -3], [3, -4, 1.0, 3]])
