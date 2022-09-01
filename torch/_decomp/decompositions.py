@@ -1464,15 +1464,6 @@ def adaptive_avg_pool2d(input: Tensor, output_size: Tuple[int, int]):
     def end_index(a, b, c):
         return (((a + 1) * c) / b).ceil().to(a.dtype)
 
-    # Let's assume the reduction we want to apply is to sum all the elements (averaging from this is easy)
-    # Even more, let's assume that we want to just do the 1d case.
-    # The 2d case is recovered by applying the 1d case along two dimensions
-    # The issue here is that we may want to sum segments of different sizes.
-    # What we do is to get the largest segment, and select all the elements from the initial points
-    # up to the max length. Then we zero out the elements that we picked up and were not necessary if there were any such elements
-    # If all the elements have the same length, we compute the average already, otherwise, we return
-    # the sizes of each window, to compute the sizes of the rectrangles at the end.
-    # This function should recover the efficiency of avg_pool2d if the shape does not need the dynamic window shape
     def compute_idx(in_size, out_size):
         orange = torch.arange(out_size, device=device, dtype=torch.int64)
         i0 = start_index(orange, out_size, in_size)
