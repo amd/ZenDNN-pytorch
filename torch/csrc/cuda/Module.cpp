@@ -655,11 +655,29 @@ static void bindGetAllocFreeEvents(PyObject* module) {
       .def_readwrite(
           "ptr", &c10::cuda::CUDACachingAllocator::AllocFreeEvent::ptr)
       .def_readwrite(
-          "size", &c10::cuda::CUDACachingAllocator::AllocFreeEvent::size);
+          "size", &c10::cuda::CUDACachingAllocator::AllocFreeEvent::size)
+      .def_readwrite(
+          "raw_alloc",
+          &c10::cuda::CUDACachingAllocator::AllocFreeEvent::raw_alloc)
+      .def_readwrite(
+          "alloc_type",
+          &c10::cuda::CUDACachingAllocator::AllocFreeEvent::alloc_type);
   m.def(
       "_get_alloc_free_events",
       &c10::cuda::CUDACachingAllocator::getAllocFreeEvents,
       "Get allocation/free sequence");
+  m.def(
+      "_enable_memory_tracker",
+      &c10::cuda::CUDACachingAllocator::enableMemoryTracker,
+      "Enable memory tracker");
+  m.def(
+      "_disable_memory_tracker",
+      &c10::cuda::CUDACachingAllocator::disableMemoryTracker,
+      "Disable memory tracker");
+  m.def(
+      "_set_mem_plan",
+      &c10::cuda::CUDACachingAllocator::set_mem_plan,
+      "Set memory plan");
 }
 
 // Callback for python part. Used for additional initialization of python

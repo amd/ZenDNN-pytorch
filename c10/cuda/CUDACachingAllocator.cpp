@@ -1,4 +1,3 @@
-
 #include <c10/cuda/CUDACachingAllocator.h>
 
 #include <c10/cuda/CUDAException.h>
@@ -180,6 +179,7 @@ struct Block {
   int event_count; // number of outstanding CUDA events
   int gc_count; // counter for prioritizing older / less useful blocks for
                 // garbage collection
+  bool planned; // if block is assigned within a planned block
 
   Block(
       int device,
@@ -197,7 +197,8 @@ struct Block {
         prev(nullptr),
         next(nullptr),
         event_count(0),
-        gc_count(0) {}
+        gc_count(0),
+        planned(false) {}
 
   // constructor for search key
   Block(int device, cudaStream_t stream, size_t size)
@@ -482,23 +483,161 @@ class CachingAllocatorConfig {
   }
 };
 
+// create a custom memory plan
+class MemoryPlanner {
+ private:
+  std::vector<std::vector<AllocFreeEvent>>
+      mem_plan; // sequence of expected allocate events for each device
+  std::vector<Block*>
+      plan_blk_ptr; // ptr for block used to execute the plan for each device
+  std::vector<unsigned int>
+      plan_counter; // points to the next expected allocation
+  std::vector<std::map<intptr_t, bool>>
+      allocated_blocks; // stores start and end of each allocated block to avoid
+                        // overlaps
+  std::vector<size_t>
+      planning_size; // size of block used to execute the plan for each device
+  std::vector<uint32_t>
+      non_rec_length; // number of transient events in the beginning of the plan
+                      // that are not expected to be periodic
+  std::map<void*, Block*>
+      assigned_planned_blocks; // stores allocations done by the plan to call
+                               // the approperiate free
+  bool active = false; // if there is plan for at least one device
+  std::mutex mutex;
+
+ public:
+  void create_plan(
+      const std::vector<std::vector<AllocFreeEvent>>& plan,
+      std::vector<Block*> plan_ptrs,
+      std::vector<size_t> plan_size,
+      std::vector<uint32_t> non_rec_lengths) {
+    std::lock_guard<std::mutex> lock(mutex);
+    mem_plan = plan;
+    plan_blk_ptr.resize(plan.size(), nullptr);
+    plan_counter.resize(plan.size(), 1);
+    planning_size.resize(plan.size(), 0);
+    allocated_blocks.resize(plan.size());
+    non_rec_length.resize(plan.size(), 0);
+    plan_blk_ptr = std::move(plan_ptrs);
+    planning_size = std::move(plan_size);
+    non_rec_length = std::move(non_rec_lengths);
+    active = true;
+  }
+
+  void append_assigned_planned_blocks(void* ptr, Block* block) {
+    assigned_planned_blocks[ptr] = block;
+  }
+
+  bool is_active() {
+    return active;
+  }
+
+  Block* malloc(size_t size, int device, cudaStream_t stream) {
+    Block* block =
+        nullptr; // if block remains null, this indicates event not allocated by
+                 // plane, hence, use CudaCachingAllocator
+    // event is allocated according to plan if its size matches the expected
+    // allocation size
+    if ((plan_blk_ptr[device] != nullptr) &&
+        (size == (uint32_t)mem_plan[device][plan_counter[device]].size)) {
+      intptr_t planned_ptr = mem_plan[device][plan_counter[device]]
+                                 .ptr; // allocation offset according to plan
+      auto it_ptr_lower_bound = allocated_blocks[device].lower_bound(
+          planned_ptr); // find the closest start/end point of a previous
+                        // allocation after the current allocate ptr
+      // perform the allocation only if it fails inside the block assigned for
+      // plan execution and it does not overlap with previuosly allocated events
+      // if it_ptr_lower_bound points to an end point, this means the current
+      // allocation starts in the middle of a previous allocation; do not
+      // allocate. If it_ptr_lower_bound points to a start point, check if
+      // planned_ptr + size <= start point to ensure no overlap
+      if ((planned_ptr + size <= planning_size[device]) &&
+          ((it_ptr_lower_bound == allocated_blocks[device].end()) ||
+           (it_ptr_lower_bound->second &&
+            (planned_ptr + size) <= (uint32_t)it_ptr_lower_bound->first))) {
+        block = new Block(
+            device,
+            stream,
+            size,
+            nullptr,
+            reinterpret_cast<void*>(
+                reinterpret_cast<intptr_t>(plan_blk_ptr[device]->ptr) +
+                planned_ptr)); // allocation block ptr is planning block ptr +
+                               // allocation offset according to plan
+        block->planned = true; // marks the block as allocated by plan
+        allocated_blocks[device][planned_ptr] =
+            true; // store start point of allocation
+        allocated_blocks[device][planned_ptr + size - 1] =
+            false; // store end point of allocation
+      }
+      plan_counter[device] += 1; // wait for next allocation
+      // if we reach end of plan, restart by ignoring non-recurring events
+      if (plan_counter[device] == mem_plan[device].size()) {
+        plan_counter[device] = non_rec_length[device] + 1;
+      }
+    }
+    return block; // nullptr means allocation is not performed by plan, hence,
+                  // use CudaCachingAllocator
+  }
+  bool free(void* ptr) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it_planned_block = assigned_planned_blocks.find(ptr);
+    if (it_planned_block != assigned_planned_blocks.end()) {
+      Block* block = it_planned_block->second;
+      // remove event ptr from the set of events allocated by memory_planner
+      // remove start and end points of the event from tree
+      allocated_blocks[block->device].erase(
+          reinterpret_cast<intptr_t>(block->ptr) -
+          reinterpret_cast<intptr_t>(plan_blk_ptr[block->device]->ptr));
+      allocated_blocks[block->device].erase(
+          reinterpret_cast<intptr_t>(block->ptr) + block->size -
+          reinterpret_cast<intptr_t>(plan_blk_ptr[block->device]->ptr) - 1);
+      delete block;
+      assigned_planned_blocks.erase(ptr);
+      return true;
+    }
+    return false;
+  }
+};
+MemoryPlanner memory_planner;
+
 // records allocate/free events
 class MemoryEventTracker {
  private:
   mutable std::mutex mutex;
+  bool active = false;
 
  public:
   std::vector<std::vector<AllocFreeEvent>> alloc_free_events;
+
   void append_alloc_free_event(intptr_t ptr, int size, int device) {
     std::lock_guard<std::mutex> lock(mutex);
-    alloc_free_events[device].push_back(AllocFreeEvent{
-        ptr, // ptr
-        size, // size: of allocation in bytes
-    });
+    // if event is created by raw_alloc, do not create a new one
+    if ((alloc_free_events[device].size() > 0) &&
+        (alloc_free_events[device].back().ptr ==
+         reinterpret_cast<intptr_t>(nullptr))) {
+      alloc_free_events[device].back().ptr = ptr;
+      alloc_free_events[device].back().size = size;
+    } else {
+      alloc_free_events[device].emplace_back(AllocFreeEvent{
+          ptr, // ptr
+          size, // size: of allocation in bytes
+      });
+    };
   }
   std::vector<std::vector<AllocFreeEvent>> get_alloc_free_events() const {
     std::lock_guard<std::mutex> lock(mutex);
     return alloc_free_events;
+  }
+  bool is_active() {
+    return active;
+  }
+  void set_active() {
+    active = true;
+  }
+  void reset_active() {
+    active = false;
   }
 };
 MemoryEventTracker memory_tracker;
@@ -583,6 +722,15 @@ class DeviceCachingAllocator {
       process_events();
     }
 
+    // try to allocate according to plan
+    if (memory_planner.is_active()) {
+      Block* plan_block = memory_planner.malloc(size, device, stream);
+      // nullptr indicates event is not allocated according to plan
+      if (plan_block) {
+        return plan_block;
+      }
+    }
+
     size = round_size(size);
     auto& pool = get_pool(size, stream);
     const size_t alloc_size = get_allocation_size(size);
@@ -597,6 +745,11 @@ class DeviceCachingAllocator {
         // Trigger callbacks and retry search
         || (trigger_free_memory_callbacks(params) && get_free_block(params));
 
+    if (memory_tracker.is_active()) {
+      memory_tracker.alloc_free_events[device].back().alloc_type =
+          served_by_cached; // will be rewritten if not
+    }
+
     // Can't reuse an existing block; try to get a new one.
     if (!block_found) {
       // Do garbage collection if the flag is set.
@@ -606,14 +759,31 @@ class DeviceCachingAllocator {
         garbage_collect_cached_blocks();
       }
       // Attempt allocate
-      block_found = alloc_block(params, false)
-          // Free enough available cached blocks to satisfy alloc and retry
-          // alloc.
-          || (release_available_cached_blocks(params) &&
-              alloc_block(params, false))
-          // Free all non-split cached blocks and retry alloc.
-          || (C10_LIKELY(captures_underway == 0) && release_cached_blocks() &&
-              alloc_block(params, true));
+      block_found = alloc_block(params, false);
+      if (memory_tracker.is_active()) {
+        memory_tracker.alloc_free_events[device].back().alloc_type =
+            served_by_new_block;
+      }
+      if (!block_found) {
+        // Free enough available cached blocks to satisfy alloc and retry
+        // alloc.
+        block_found =
+            (release_available_cached_blocks(params) &&
+             alloc_block(params, false));
+        if (memory_tracker.is_active()) {
+          memory_tracker.alloc_free_events[device].back().alloc_type =
+              served_by_new_block_retry;
+        }
+      }
+      if (!block_found) {
+        // Free all non-split cached blocks and retry alloc.
+        block_found =
+            (C10_LIKELY(captures_underway == 0) && release_cached_blocks() &&
+             alloc_block(params, true));
+        if (memory_tracker.is_active()) {
+          memory_tracker.alloc_free_events[device].back().alloc_type = defrag;
+        }
+      }
     }
 
     if (!block_found) {
@@ -1077,10 +1247,12 @@ class DeviceCachingAllocator {
         !block->allocated && block->event_count == 0 &&
         block->stream_uses.empty());
 
-    memory_tracker.append_alloc_free_event(
-        reinterpret_cast<intptr_t>(block->ptr), // ptr
-        -block->size, // size: of allocation in bytes, negative for free
-        block->device);
+    if (memory_tracker.is_active()) {
+      memory_tracker.append_alloc_free_event(
+          reinterpret_cast<intptr_t>(block->ptr), // ptr
+          -block->size, // size: of allocation in bytes, negative for free
+          block->device);
+    }
 
     size_t original_block_size = block->size;
 
@@ -1638,21 +1810,34 @@ class THCCachingAllocator {
         "Allocator not initialized for device ",
         device,
         ": did you call init?");
-    // if allocation fails we still record the event with a nullptr. ptr is
-    // modified if allocation succeeds
-    memory_tracker.append_alloc_free_event(
-        reinterpret_cast<intptr_t>(nullptr), // ptr
-        size, // size: of allocation in bytes
-        device);
+    if (memory_tracker.is_active()) {
+      // if allocation fails we still record the event with a nullptr. ptr is
+      // modified if allocation succeeds
+      memory_tracker.append_alloc_free_event(
+          reinterpret_cast<intptr_t>(nullptr), // ptr
+          size, // size: of allocation in bytes
+          device);
+    }
     Block* block = device_allocator[device]->malloc(device, size, stream);
-    memory_tracker.alloc_free_events[device].back().ptr =
-        reinterpret_cast<intptr_t>(block->ptr);
-    add_allocated_block(block);
+    if (memory_tracker.is_active()) {
+      memory_tracker.alloc_free_events[device].back().ptr =
+          reinterpret_cast<intptr_t>(block->ptr);
+    }
     *devPtr = (void*)block->ptr;
+    if (memory_planner.is_active() && block->planned) {
+      memory_planner.append_assigned_planned_blocks(*devPtr, block);
+    } else {
+      add_allocated_block(block);
+    }
   }
 
   void free(void* ptr) {
     if (!ptr) {
+      return;
+    }
+    // check if event was allocated according to plan and call the approperiate
+    // free
+    if (memory_planner.is_active() && memory_planner.free(ptr)) {
       return;
     }
     Block* block = get_allocated_block(ptr, true /* remove */);
@@ -1920,6 +2105,13 @@ void* raw_alloc(size_t nbytes) {
   int device;
   C10_CUDA_CHECK(cudaGetDevice(&device));
   void* r = nullptr;
+  if (memory_tracker.is_active()) {
+    memory_tracker.append_alloc_free_event(
+        reinterpret_cast<intptr_t>(nullptr), // ptr
+        nbytes, // size: of allocation in bytes
+        device);
+    memory_tracker.alloc_free_events[device].back().raw_alloc = true;
+  }
   caching_allocator.malloc(
       &r, device, nbytes, cuda::getCurrentCUDAStream(device));
   return r;
@@ -1932,6 +2124,13 @@ void* raw_alloc_with_stream(size_t nbytes, cudaStream_t stream) {
   int device;
   C10_CUDA_CHECK(cudaGetDevice(&device));
   void* r = nullptr;
+  if (memory_tracker.is_active()) {
+    memory_tracker.append_alloc_free_event(
+        reinterpret_cast<intptr_t>(nullptr), // ptr
+        nbytes, // size: of allocation in bytes
+        device);
+    memory_tracker.alloc_free_events[device].back().raw_alloc = true;
+  }
   caching_allocator.malloc(&r, device, nbytes, stream);
   return r;
 }
@@ -1942,6 +2141,41 @@ void raw_delete(void* ptr) {
 
 std::vector<std::vector<AllocFreeEvent>> getAllocFreeEvents() {
   return memory_tracker.get_alloc_free_events();
+}
+
+void enableMemoryTracker() {
+  memory_tracker.set_active();
+}
+
+void disableMemoryTracker() {
+  memory_tracker.reset_active();
+}
+
+void set_mem_plan(const std::vector<std::vector<AllocFreeEvent>> plan) {
+  std::vector<Block*> plan_ptrs(
+      plan.size(),
+      nullptr); // ptr for block used to execute memory plan for each device
+  std::vector<size_t> plan_size(
+      plan.size(), 0); // size required for execution of plan for each device
+  std::vector<uint32_t> non_rec_lengths(
+      plan.size(), 0); // length of initial transient events that are not
+                       // expected to be periodic
+  void* r;
+  // allocate planning blocks with the required size
+  for (uint32_t device = 0; device < plan.size(); device++) {
+    r = nullptr; // if ptr remains null: this means no planning for this device
+                 // because device memory is not planned (indicated by size 0
+                 // given for that device)
+    if ((plan[device].size() > 0) && (plan[device][0].size > 0)) {
+      plan_size[device] = plan[device][0].size;
+      non_rec_lengths[device] = plan[device][0].ptr;
+      c10::cuda::CUDACachingAllocator::caching_allocator.malloc(
+          &r, device, plan[device][0].size, cuda::getCurrentCUDAStream(device));
+      plan_ptrs[device] = c10::cuda::CUDACachingAllocator::caching_allocator
+                              .get_allocated_block(r);
+    }
+  }
+  memory_planner.create_plan(plan, plan_ptrs, plan_size, non_rec_lengths);
 }
 
 } // namespace CUDACachingAllocator

@@ -294,19 +294,99 @@ class TestCuda(TestCase):
 
     def test_get_alloc_free_events(self):
         gc.collect()
+        torch.cuda.enable_memory_tracker()
         size = 1
         mem = torch.cuda.caching_allocator_alloc(size)
         current_device = torch.cuda.current_device()
         events = torch.cuda.get_alloc_free_events()[current_device]
         num_events = len(events)
         ptr = events[-1].ptr
-        self.assertTrue(events[-1].size == 1)
+        self.assertTrue(events[-1].size == size)
 
         torch.cuda.caching_allocator_delete(mem)
         events = torch.cuda.get_alloc_free_events()[current_device]
         self.assertTrue(len(events) == (num_events + 1))
         self.assertEqual(events[-1].ptr, ptr)
         self.assertTrue(events[-1].size < 0)
+
+    def test_set_disable_memory_tracker(self):
+        gc.collect()
+        torch.cuda.enable_memory_tracker()
+        size, size2 = 1, 2
+        current_device = torch.cuda.current_device()
+        mem = torch.cuda.caching_allocator_alloc(size)
+        events = torch.cuda.get_alloc_free_events()[current_device]
+        self.assertTrue(events[-1].size == size)
+
+        torch.cuda.disable_memory_tracker()
+        mem2 = torch.cuda.caching_allocator_alloc(size2)
+        events = torch.cuda.get_alloc_free_events()[current_device]
+        self.assertTrue(events[-1].size == size)
+
+        torch.cuda.enable_memory_tracker()
+        mem3 = torch.cuda.caching_allocator_alloc(size2)
+        events = torch.cuda.get_alloc_free_events()[current_device]
+        self.assertTrue(events[-1].size == size2)
+
+        torch.cuda.caching_allocator_delete(mem)
+        torch.cuda.caching_allocator_delete(mem2)
+        torch.cuda.caching_allocator_delete(mem3)
+
+    def test_set_memory_plan(self):
+        gc.collect()
+        torch.cuda.enable_memory_tracker()
+        size = 3
+        mem_plan = []
+        # event should be allocated according to plan
+        mem_plan.append(torch.cuda.createAllocFreeEvent(2, 3))
+        # event shouldn't be allocated according to plan because of overlap
+        mem_plan.append(torch.cuda.createAllocFreeEvent(0, 3))
+        # event shouldn't be allocated according to plan because of overlap
+        mem_plan.append(torch.cuda.createAllocFreeEvent(3, 3))
+        # event should be allocated according to plan after freeing previous planned events
+        mem_plan.append(torch.cuda.createAllocFreeEvent(0, 3))
+        # event should be allocated according to plan after freeing previous planned events
+        mem_plan.append(torch.cuda.createAllocFreeEvent(2, 3))
+        # event shouldn't be allocated according to plan because it exceeds planning memory limit
+        mem_plan.append(torch.cuda.createAllocFreeEvent(511, 3))
+        # get current device and set its plan
+        current_device = torch.cuda.current_device()
+        plans = [[]] * torch.cuda.device_count()
+        plans[current_device] = mem_plan
+        plan_sizes = [0] * torch.cuda.device_count()
+        plan_sizes[current_device] = 512
+        torch.cuda.set_memory_plan(plan=plans, plan_size=plan_sizes)
+        planning_ptr = torch.cuda.get_alloc_free_events()[current_device][-1].ptr
+        # following memory should be allocated according to plan
+        mem = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) == 2)
+        # following memory should not be allocated according to plan
+        mem2 = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) != 0)
+        # following memory should not be allocated according to plan
+        mem3 = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) != 3)
+        torch.cuda.caching_allocator_delete(mem)
+        # following memory should be allocated according to plan
+        mem4 = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) == 0)
+        torch.cuda.caching_allocator_delete(mem4)
+        # following memory should be allocated according to plan
+        mem5 = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) == 2)
+        # following memory should not be allocated according to plan
+        mem6 = torch.cuda.caching_allocator_alloc(size)
+        self.assertTrue((torch.cuda.get_alloc_free_events()[current_device][-1].ptr - planning_ptr) != 511)
+        # delete allocated memory
+        torch.cuda.caching_allocator_delete(mem2)
+        torch.cuda.caching_allocator_delete(mem3)
+        torch.cuda.caching_allocator_delete(mem5)
+        torch.cuda.caching_allocator_delete(mem6)
+        torch.cuda.caching_allocator_delete(planning_ptr)
+
+    def test_createAllocFreeEvent(self):
+        E = torch.cuda.createAllocFreeEvent(1, 2)
+        self.assertTrue((E.ptr == 1) & (E.size == 2))
 
     def test_check_error(self):
         # Assert this call doesn't raise.
