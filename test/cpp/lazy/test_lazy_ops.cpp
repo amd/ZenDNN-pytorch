@@ -84,6 +84,15 @@ static inline at::DeviceType DefaultDevice() {
 
 } // namespace
 
+TEST_F(LazyOpsTest, TestMemLeak) {
+  torch::Device device = torch::lazy::backendDeviceToAtenDevice(torch::lazy::BackendDevice());
+  torch::Tensor input = torch::rand(
+      {80000000}, torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
+  for (int i = 0; i < 1000; i++) {
+    torch::Tensor lazy_input = CopyToDevice(input, device);
+  }
+}
+
 TEST_F(LazyOpsTest, TestScalarTensor) {
   torch::Tensor scalar_tensor = torch::scalar_tensor(
       1., torch::TensorOptions(torch::kFloat).device(DefaultDevice()));
