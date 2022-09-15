@@ -7,7 +7,10 @@ import contextlib
 import functools
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
-import torch.utils._pytree as pytree
+# import torch.utils._pytree as pytree
+import torch._C._pytree as pytree
+from torch.utils._pytree import map_only as slow_map_only
+from torch.utils._pytree import tree_any_only as slow_tree_any_only
 from torch.fx import Tracer, GraphModule
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch._dispatch.python import enable_python_dispatcher
@@ -23,6 +26,11 @@ from torch._subclasses import FakeTensor
 from .symbolic_shapes import ShapeEnv, SymDispatchMode, PySymInt, PySymFloat
 import torch.fx.experimental.symbolic_shapes as symbolic_shapes
 from torch.fx import Proxy
+
+# Hacky recreation of pytree apis not yet ported to c++
+def tree_map_only(ty, fn, pt):
+    return pytree.tree_map(slow_map_only(ty)(fn), pt)
+
 
 __all__ = ["PythonKeyTracer", "dispatch_trace", "make_fx", "DecompositionInterpreter", "get_proxy", "has_proxy"]
 aten = torch.ops.aten
@@ -200,7 +208,7 @@ def proxy_call(proxy_mode, func, args, kwargs):
 
     # If there are any tensor subclasses, we need to handle those tensor subclasses first
     # TODO: we could use types to test this
-    if not pytree.tree_all_only(torch.Tensor, can_handle_tensor, (args, kwargs)):
+    if not torch.utils._pytree.tree_all_only(torch.Tensor, can_handle_tensor, (args, kwargs)):
         return NotImplemented
 
     if func in CURRENT_DECOMPOSITION_TABLE:
@@ -219,22 +227,22 @@ def proxy_call(proxy_mode, func, args, kwargs):
                 return r
 
     tracer = proxy_mode.tracer
-    f_args, f_kwargs = pytree.tree_map_only(torch.Tensor, fetch_tensor_proxy(tracer), (args, kwargs))
+    f_args, f_kwargs = pytree.tree_map(torch.utils._pytree.map_only(torch.Tensor)(fetch_tensor_proxy(tracer)), (args, kwargs))
 
     # If there are SymInts, we also should not consider this constant.
     # However, fake tensor handling of SymInts is sufficiently broken that
     # I couldn't write a test for this case
     all_constant = (
-        pytree.tree_all_only(_ProxyTensor, lambda t: t.constant is not None, (f_args, f_kwargs))
+        torch.utils._pytree.tree_all_only(_ProxyTensor, lambda t: t.constant is not None, (f_args, f_kwargs))
         # TODO: maybe constant SymInts should also be allowed?  Not sure if
         # this can happen
-        and pytree.tree_all_only((SymInt, SymFloat), lambda _: False, (args, kwargs))
+        and torch.utils._pytree.tree_all_only((SymInt, SymFloat), lambda _: False, (args, kwargs))
     )
 
     if torch.Tag.data_dependent_output in func.tags:  # type: ignore[attr-defined]
         # Check if all of the Tensor inputs are constants
         if all_constant:
-            const_args, const_kwargs = pytree.tree_map_only(
+            const_args, const_kwargs = tree_map_only(
                 _ProxyTensor, lambda t: t.constant, (f_args, f_kwargs)
             )
             with maybe_disable_fake_tensor_mode():
@@ -244,10 +252,10 @@ def proxy_call(proxy_mode, func, args, kwargs):
             "It's likely that this is caused by data-dependent control flow or similar."
         )
 
-    proxy_args, proxy_kwargs = pytree.tree_map_only(
+    proxy_args, proxy_kwargs = tree_map_only(
         (SymInt, SymFloat),
         fetch_sym_proxy(proxy_mode.tracer),
-        pytree.tree_map_only(_ProxyTensor, lambda e: e.proxy, (f_args, f_kwargs))
+        tree_map_only(_ProxyTensor, lambda e: e.proxy, (f_args, f_kwargs))
     )
 
     # When we trace through a torch.tensor invocation, you never actually
@@ -325,7 +333,7 @@ def proxy_call(proxy_mode, func, args, kwargs):
     # element constant computation by testing the numel of the result before
     # propagating const-ness.  Similarly, we don't require the constant to
     # live on CPU, but we could.
-    any_constant = pytree.tree_any_only(_ProxyTensor, lambda t: t.constant is not None, (f_args, f_kwargs))
+    any_constant = slow_tree_any_only(_ProxyTensor, lambda t: t.constant is not None, (f_args, f_kwargs))
 
     constant = None
 
@@ -339,11 +347,11 @@ def proxy_call(proxy_mode, func, args, kwargs):
         torch.Tag.nondeterministic_seeded not in func.tags  # type: ignore[attr-defined]
         and all_constant
         and any_constant
-        and pytree.tree_all_only(torch.Tensor, lambda t: t.numel() <= CONSTANT_NUMEL_LIMIT, out)
+        and slow_tree_all_only(torch.Tensor, lambda t: t.numel() <= CONSTANT_NUMEL_LIMIT, out)
     ):
         # NB: do NOT include factories as constants
         with maybe_disable_fake_tensor_mode():
-            const_args, const_kwargs = pytree.tree_map_only(
+            const_args, const_kwargs = tree_map_only(
                 _ProxyTensor, lambda t: t.constant, (f_args, f_kwargs)
             )
             constant = func(*const_args, **const_kwargs)
@@ -413,7 +421,7 @@ def wrap_key(f, tensors, tracer):
         track_tensor_tree(flat_tensors, flat_proxies, constant=None, tracer=tracer)
 
         out = f(*tensors)
-        return pytree.tree_map_only(
+        return tree_map_only(
             torch.Tensor,
             lambda t: get_proxy_slot(t, tracer, t, lambda x: x.proxy),
             out
@@ -459,7 +467,7 @@ class ProxyTorchDispatchMode(TorchDispatchMode):
         # When we trace factory functions, we expect that tensor outputs are *always* tracked.
         # (Except for torch.tensor() constants handled through lift(), which is handled
         # specially further up).
-        pytree.tree_map_only(torch.Tensor, assert_proxy_tensor, out)
+        tree_map_only(torch.Tensor, assert_proxy_tensor, out)
         return out
 
 
