@@ -126,7 +126,9 @@ def track_tensor(tensor, proxy, *, constant, tracer):
     # (so that if we have multiple tracers at the same time, they
     # don't clobber each other.)
     for i, s in enumerate(tensor.shape):
-        try_set_proxy_slot(s, lambda x, i: set_meta(torch.ops.aten.sym_size(proxy, i), x), i)
+        try_set_proxy_slot(s,
+                           lambda x, i: set_meta(torch.ops.aten.sym_size(proxy, i), x),
+                           i)
 
     for i, s in enumerate(tensor.stride()):
         try_set_proxy_slot(s, lambda x, i: set_meta(torch.ops.aten.sym_stride(proxy, i), x), i)
@@ -136,6 +138,8 @@ def track_tensor(tensor, proxy, *, constant, tracer):
     set_proxy_slot(tensor, tracer, _ProxyTensor(proxy, constant))
 
 def track_tensor_tree(inner_res, proxy_res, *, constant, tracer):
+    # inner_res is the 'real' output of func, maybe just a tensor
+    # proxy_res is the proxy version of inner_res
     def wrap_with_proxy(e, proxy, constant):
         if isinstance(e, torch.Tensor):
             track_tensor(e, proxy, tracer=tracer, constant=constant)
@@ -218,7 +222,7 @@ def proxy_call(proxy_mode, func, args, kwargs):
             r = func.decompose(*args, **kwargs)
             if r is not NotImplemented:
                 return r
-
+    
     tracer = proxy_mode.tracer
     f_args, f_kwargs = pytree.tree_map_only(torch.Tensor, fetch_tensor_proxy(tracer), (args, kwargs))
 
@@ -423,6 +427,19 @@ def wrap_key(f, tensors, tracer):
     return wrapped
 
 
+# def _wrap_torch_dispatch(f):
+#     @functools.wraps(f)
+#     def wrapped(self, *args, **kwargs):
+#         if isinstance(f, classmethod):
+#             raise RuntimeError("TorchDispatchMode's torch_dispatch function " +
+#                                "should be a normal method not a class method")
+#         inner = getattr(self, "inner", None)
+
+
+
+#         with enable_torch_dispatch_mode(inner):
+#             return f(self, *args, **kwargs)
+#     return wrapped
 class ProxyTorchDispatchMode(TorchDispatchMode):
     def __init__(self, tracer):
         self.tracer = tracer
@@ -430,9 +447,43 @@ class ProxyTorchDispatchMode(TorchDispatchMode):
         self.sym_mode = ProxySymDispatchMode(tracer)
         self.trace_state = {}
 
+    """ __enter__ basically does the following:
+
+    # assert self.inner doesn't exist --> we're using ourself for the first time
+    # set self.inner = _get_torch_dispatch_mode() -- which is probably 'None'
+    # track 'ancestors to include 'self.inner' which would be the old mode, not the self mode
+    # finally sets up torchdispatch key to point to our __torch_dispatch__ method
+    """
+
+    """ wrapped __torch_dispatch__ basically does the following:
+
+        # checks func isn't a classmethod
+
+        inner = getattr(self, "inner", None)
+        old = _get_torch_dispatch_mode()
+
+        # checks old isn't getting overwritten inappropriately
+
+        _set_torch_dispatch_mode(inner)
+        try:
+            yield inner
+        finally:
+            _set_torch_dispatch_mode(old)
+    """
     def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+        # sym_mode
         with self.sym_mode.enable(False):
+
+            # inner_torch_dispatch most often redirects to  `proxy_call(func, ...)`
+            # but it has an escape hatch for exceptions or !enable_tracing
             return self.inner_torch_dispatch(func, types, args, kwargs)
+
+    """ __exit__ basically does the  following
+
+    # returns the dispatch key to point to the old 'inner',
+    # which might be 'none' or a previous mode
+
+    """
 
     @contextmanager
     def restore(self):
