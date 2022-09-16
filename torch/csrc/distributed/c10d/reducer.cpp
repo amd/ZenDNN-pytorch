@@ -605,7 +605,9 @@ void Reducer::autograd_hook(size_t index) {
   // Ignore if we don't expect to be called.
   // This may be the case if the user wants to accumulate gradients
   // for number of iterations before reducing them.
+  std::cout << " ddp reducer: idx " << index << ", iteration " << num_iterations_ << std::endl;
   if (!expect_autograd_hooks_) {
+    std::cout << " ddp reducer: do not expect autograd hooks, exit early" << std::endl;
     return;
   }
 
@@ -633,6 +635,9 @@ void Reducer::autograd_hook(size_t index) {
 
   if (static_graph_first_iteration()) {
     numGradHooksTriggeredMap_[index] += 1;
+    if (ddp_debug_level_ == c10d::DebugLevel::Detail) {
+      std::cout << " ddp reducer: ++ numGradHooksTriggeredMap_[" << index << "], now " << numGradHooksTriggeredMap_[index] << std::endl;
+    }
     return;
   }
 
@@ -659,6 +664,9 @@ void Reducer::autograd_hook(size_t index) {
   // If it is static graph, after 1st iteration, check if a variable
   // is ready for communication based on numGradHooksTriggeredMap_.
   if (static_graph_after_first_iteration()) {
+    if (ddp_debug_level_ == c10d::DebugLevel::Detail) {
+      std::cout << " ddp reducer: checking numGradHooksTriggeredMapPerIteration_[" << index << "] as " << numGradHooksTriggeredMapPerIteration_[index] << std::endl;
+    }
     REDUCER_CHECK(
         numGradHooksTriggeredMapPerIteration_[index] > 0,
         logger_,
