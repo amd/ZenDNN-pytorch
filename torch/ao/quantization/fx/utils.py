@@ -736,12 +736,10 @@ def _insert_dequant_stubs_for_custom_module_lstm_output(
                |            v         v
                |      hidden0_dq  hidden1_dq
                |            \\       /
-               |              (tuple)
-               |              \\   /
-               |               v  v
+               |              v     v
                |             hidden_dq
                \\               /
-                \\   (tuple)   /
+                \\             /
                  v            v
                  lstm_output_dq
                        |
@@ -772,10 +770,7 @@ def _insert_dequant_stubs_for_custom_module_lstm_output(
         hidden1_dq = _insert_dequant_stub(hidden1, model, named_modules, graph)
 
     # (3) Recombine the DeQuantStubs into the same structure as before
-    with graph.inserting_after(hidden1_dq):
-        hidden_dq = graph.call_function(tuple, ([hidden0_dq, hidden1_dq],))
-    with graph.inserting_after(hidden_dq):
-        lstm_output_dq = graph.call_function(tuple, ([output_dq, hidden_dq],))
+    lstm_output_dq = (output_dq, (hidden0_dq, hidden1_dq))
 
     # (4) Reroute all consumers of the original LSTM node and its sub-nodes
     for user in list(node.users.keys()):
@@ -859,10 +854,10 @@ def _maybe_get_custom_module_lstm_from_node_arg(
 
 def _reroute_tuple_getitem_pattern(graph: Graph):
     """
-    Search for patterns where N consecutive `tuple` call_function nodes are followed by
-    N consecutive `getitem` call_function nodes that are "reverses" of the `tuple` nodes.
-    If we find this pattern, reroute the consumers of the last `getitem` to skip these
-    N `tuple` and `getitem` nodes.
+    Search for patterns where N consecutive `tuple` ops are followed by N consecutive
+    `getitem` call_function nodes that are "reverses" of the `tuple` nodes. If we find
+    this pattern, reroute the consumers of the last `getitem` to skip these N `tuple`
+    and `getitem` nodes.
 
     Before:
 
@@ -884,61 +879,35 @@ def _reroute_tuple_getitem_pattern(graph: Graph):
         |
         d
     """
+    print("GRAPH BEFORE", graph)
     def find_patterns(
             node: Node,
-            index_stack: List[int],
-            current_pattern: List[Node],
-            matched_patterns: List[List[Node]],
-            seen: Set[Tuple[Node, Tuple[int, ...]]]):
+            matched_patterns: List[Tuple],
+            parent_getitem: Optional[Node] = None,
+            current_match: Union[Tuple, Node, None] = None):
         """
-        Traverse the graph recursively to match for the N-tuple - N-getitem patterns,
-        starting at the given node.
-
-        We use a stack to keep track of the expected `getitem` indices, since these are
-        reversed from the `tuple` indices. In the above example, the stack after
-        (b -> tuple -> tuple) will be [0, 1], which will be popped by getitem(1) first
-        and then by getitem(0).
         """
-        if len(index_stack) == 0 and len(current_pattern) > 0:
-            matched_patterns.append(copy.copy(current_pattern))
-            current_pattern.clear()
-
-        # Avoid duplicating work
-        state = (node, tuple(index_stack))
-        if state in seen:
+        is_getitem = node.op == "call_function" or node.target == operator.getitem
+        if parent_getitem is not None and current_match is not None and (not is_getitem or isinstance(current_match, Node)):
+            print("HARARAHA", node, parent_getitem, current_match)
+            node.replace_input_with(parent_getitem, current_match)
             return
-        seen.add(state)
 
-        # Iterate through users of this node to find tuple/getitem nodes to match
-        for user in node.users:
-            if user.op == "call_function" and user.target == tuple:
-                for i, user_arg in enumerate(user.args[0]):  # type: ignore[arg-type]
-                    if user_arg == node:
-                        index_stack.append(i)
-                        current_pattern.append(user)
-                        find_patterns(user, index_stack, current_pattern, matched_patterns, seen)
-            elif user.op == "call_function" and user.target == operator.getitem:
-                if len(index_stack) > 0:
-                    if user.args[1] == index_stack[-1]:
-                        index_stack.pop()
-                        current_pattern.append(user)
-                        find_patterns(user, index_stack, current_pattern, matched_patterns, seen)
-        return matched_patterns
+        if not is_getitem:
+            return
+
+        assert len(node.args) == 2
+
+        if current_match is None:
+            current_match = node.args[0]
+        if isinstance(current_match, tuple):
+            index = node.args[1]
+            current_match = current_match[index]
+            for user in list(node.users.keys()):
+                find_patterns(user, matched_patterns, node, current_match)
 
     # Collect all matched patterns
-    matched_patterns: List[List[Node]] = []
-    seen: Set[Tuple[Node, Tuple[int, ...]]] = set()  # (node, index_stack)
-    for node in graph.nodes:
-        find_patterns(node, [], [], matched_patterns, seen)
-
-    # For each pattern, redirect all consumers of the last getitem node to the correct input
-    # of the first tuple node
-    for pattern in matched_patterns:
-        first_tuple = pattern[0]
-        last_getitem = pattern[-1]
-        assert first_tuple.op == "call_function" and first_tuple.target == tuple
-        assert last_getitem.op == "call_function" and last_getitem.target == operator.getitem
-        last_getitem_index = last_getitem.args[1]
-        new_input = first_tuple.args[0][last_getitem_index]  # type: ignore[index]
-        for user in list(last_getitem.users.keys()):
-            user.replace_input_with(last_getitem, new_input)
+    matched_patterns: List[Tuple] = []
+    for node in list(graph.nodes):
+        find_patterns(node, matched_patterns)
+    print("GRAPH AFTER", graph)
