@@ -5,7 +5,6 @@
 #include <torch/csrc/jit/codegen/cuda/lower_utils.h>
 
 #include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/torch.h>
 
 #include <unordered_map>
@@ -36,10 +35,6 @@ class NVFuserTest : public ::testing::Test {
     if (!deviceMajorMinorCheck(6)) {
       GTEST_SKIP() << "skipping tests on pre-PASCAL GPUs";
     }
-  }
-
-  void TearDown() override {
-    c10::cuda::CUDACachingAllocator::emptyCache();
   }
 };
 
@@ -248,8 +243,7 @@ class ReductionSizeMapper : private IterVisitor {
             id,
             " in ",
             tv);
-        reduction_elements =
-            reduction_elements * inferred_extent->as<int64_t>();
+        reduction_elements = reduction_elements * inferred_extent.value();
       }
     }
     return reduction_elements;
@@ -289,11 +283,7 @@ ExpressionEvaluator bindInputsAndLaunchParams(
     Fusion* fusion,
     const at::ArrayRef<IValue>& aten_inputs,
     const LaunchParams& launch_constraints) {
-  // index_mode is not important here
-  KernelArgumentHolder argument_holder(KernelIndexMode::INT64);
-  argument_holder.push(aten_inputs);
-
-  auto expr_eval = executor_utils::bindFusionInputs(argument_holder, fusion);
+  auto expr_eval = executor_utils::bindFusionInputs(aten_inputs, fusion);
   for (auto val : fusion->vals()) {
     if (!val->isA<TensorView>()) {
       continue;

@@ -88,10 +88,6 @@ void IrCloner::handle(const TensorView* tv) {
   clone_ = IrBuilder::clone(tv, this);
 }
 
-void IrCloner::handle(const ARangeOp* op) {
-  clone_ = IrBuilder::clone(op, this);
-}
-
 void IrCloner::handle(const UnaryOp* op) {
   clone_ = IrBuilder::clone(op, this);
 }
@@ -101,10 +97,6 @@ void IrCloner::handle(const BinaryOp* op) {
 }
 
 void IrCloner::handle(const TernaryOp* op) {
-  clone_ = IrBuilder::clone(op, this);
-}
-
-void IrCloner::handle(const RNGOp* op) {
   clone_ = IrBuilder::clone(op, this);
 }
 

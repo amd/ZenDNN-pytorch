@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Union
 
 # defined in torch/csrc/profiler/python/init.cpp
 
@@ -35,7 +35,6 @@ class _ExperimentalConfig:
         self,
         profiler_metrics: List[str] = ...,
         profiler_measure_per_kernel: bool = ...,
-        verbose: bool = ...,
     ) -> None: ...
     ...
 
@@ -91,12 +90,6 @@ class _EventType(Enum):
 class _Inputs:
     shapes: List[List[int]]
     dtypes: List[str]
-    tensor_metadata: List[Optional[_TensorMetadata]]
-
-class _TensorMetadata:
-    impl_ptr: Optional[int]
-    storage_data_ptr: Optional[int]
-    id: Optional[int]
 
 class _ExtraFields_TorchOp:
     allow_tf32_cublas: bool

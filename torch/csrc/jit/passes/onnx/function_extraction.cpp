@@ -1169,7 +1169,7 @@ void ONNXTrackScopeAttributes(
     } else if (v.isBool()) {
       attr_node->i_(k, v.toBool());
     } else if (v.isString()) {
-      attr_node->s_(k, v.toStringRef());
+      attr_node->s_(k, v.toString()->string());
     } else if (v.isIntList()) {
       attr_node->is_(k, v.toIntList().vec());
     } else if (v.isBoolList()) {

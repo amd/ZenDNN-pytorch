@@ -191,9 +191,11 @@ void GpuLower::collectPaddedParallelDims() {
 void assignRNGOffset(Fusion* fusion) {
   int counter = 0;
   for (auto expr : fusion->exprs()) {
-    if (expr->isA<RNGOp>()) {
-      auto rop = expr->as<RNGOp>();
-      rop->setRNGOffset(counter++);
+    if (expr->isA<UnaryOp>()) {
+      auto uop = expr->as<UnaryOp>();
+      if (uop->getUnaryOpType() == UnaryOpType::RandLike) {
+        uop->setRNGOffset(counter++);
+      }
     }
   }
 }

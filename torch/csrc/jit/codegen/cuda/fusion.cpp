@@ -51,9 +51,9 @@ void swap(Fusion& a, Fusion& b) noexcept {
 }
 
 std::unique_ptr<SegmentedFusion> Fusion::segment(
-    const KernelArgumentHolder& args) {
+    const at::ArrayRef<IValue>& inputs) {
   FUSER_PERF_SCOPE("Segment Fusion");
-  return SegmentCandidateFinder::segment(this, args);
+  return SegmentCandidateFinder::segment(this, inputs);
 }
 
 IrCloner Fusion::copy(const Fusion* from, Fusion* to) {
@@ -373,19 +373,6 @@ void Fusion::printMath(bool from_outputs_only) {
   std::cout << "}\n\n";
 }
 
-std::vector<Val*> Fusion::inputsAndCreated() {
-  auto result = inputs_;
-  for (auto expr : exprs()) {
-    auto tv_inputs = ir_utils::filterByType<TensorView>(expr->inputs());
-    if (tv_inputs.empty()) {
-      for (auto v : expr->outputs()) {
-        result.emplace_back(v);
-      }
-    }
-  }
-  return result;
-}
-
 void Fusion::printTransforms() {
   FUSER_PERF_SCOPE("Fusion::printTransforms");
 
@@ -544,15 +531,14 @@ Expr* Fusion::definition(const Val* val) const {
 
 // Indicate to kernel to set itself up to generate random numbers
 bool Fusion::isStochastic() {
-  for (auto expr : exprs()) {
-    if (expr->getExprType() == ExprType::RNGOp) {
-      return true;
-    }
-  }
+  for (auto expr : exprs())
+    if (expr->getExprType() == ExprType::UnaryOp)
+      if (expr->as<UnaryOp>()->getUnaryOpType() == UnaryOpType::RandLike)
+        return true;
   return false;
 }
 
-std::vector<Val*> Fusion::getTerminatingOutputs() const {
+std::vector<Val*> Fusion::getTerminatingOutputs() {
   FUSER_PERF_SCOPE("getTerminatingOutputs");
 
   auto is_reachable_to_output = [](Val* val) {

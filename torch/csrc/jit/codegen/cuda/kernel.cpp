@@ -80,9 +80,11 @@ class KernelIrScanner : private IrVisitor {
     }
   }
 
-  void handle(RNGOp* rng_op) final {
-    summary_.max_rng_offsets =
-        std::max<int>(summary_.max_rng_offsets, rng_op->getRNGOffset());
+  void handle(UnaryOp* unary_op) final {
+    if (unary_op->getUnaryOpType() == UnaryOpType::RandLike) {
+      summary_.max_rng_offsets =
+          std::max<int>(summary_.max_rng_offsets, unary_op->getRNGOffset());
+    }
   }
 
   void handle(TensorIndex* tensor_index) final {
@@ -131,15 +133,6 @@ class KernelIrScanner : private IrVisitor {
   void handle(GroupedGridReduction* grid_reduction) final {
     summary_.has_grid_reductions = true;
     if (grid_reduction->isAllreduce()) {
-      summary_.has_cooperative_grid_reduction = true;
-    }
-  }
-
-  void handle(GroupedGridWelford* grid_welford) final {
-    summary_.has_welford = true;
-    summary_.has_grid_welford = true;
-    summary_.has_grid_reductions = true;
-    if (grid_welford->isAllreduce()) {
       summary_.has_cooperative_grid_reduction = true;
     }
   }

@@ -878,7 +878,7 @@ TORCH_CUDA_CU_API std::shared_ptr<ReductionParams> getPersistentHeuristics(
           data_cache, [&first_red_tv]() {
             return std::make_unique<std::vector<TensorView*>>(
                 scheduler_utils::getInputsOutputsWithInnerDim(
-                    first_red_tv, true, true));
+                    first_red_tv, true));
           });
 
   auto& vectorizable_inputs_outputs = vectorizable_inputs_outputs_entry.get();
@@ -888,7 +888,7 @@ TORCH_CUDA_CU_API std::shared_ptr<ReductionParams> getPersistentHeuristics(
           data_cache, [&first_red_tv]() {
             return std::make_unique<std::vector<TensorView*>>(
                 scheduler_utils::getInputsOutputsWithInnerDim(
-                    first_red_tv, false, false));
+                    first_red_tv, false));
           });
 
   auto& unrollable_inputs_outputs = unrollable_inputs_outputs_entry.get();
