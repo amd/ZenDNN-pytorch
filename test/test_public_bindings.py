@@ -127,7 +127,6 @@ class TestPublicBindings(TestCase):
             "INSERT_FOLD_PREPACK_OPS",
             "InterfaceType",
             "IntType",
-            "SymFloatType",
             "SymIntType",
             "IODescriptor",
             "is_anomaly_enabled",

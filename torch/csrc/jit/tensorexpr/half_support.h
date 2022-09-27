@@ -101,22 +101,15 @@ class HalfRewriter : public IRMutator {
     // just don't allow half casts we didn't insert.
     if (isHalf(v)) {
       if (inserted_half_casts_.count(v) < 1) {
-        v->set_src_value(child);
-        v->set_dtype(v->dtype().cloneWithScalarType(c10::kFloat));
-        return v;
+        return child;
       }
     }
 
     // Remove Half(Float()) and friends.
     CastPtr cast_child = to<Cast>(child);
     if (cast_child) {
-      auto cast_to_double = v->dtype().scalar_type() == ScalarType::Double;
-      auto from_half = isHalf(cast_child->src_value());
-      // Cannot simplify the double(float(half)) to double(half) as NNC does
-      // not support cast BF16 to double directly.
-      auto not_cast_half_to_doulbe = !(cast_to_double && from_half);
       if (v->dtype().is_floating_point() &&
-          cast_child->dtype().is_floating_point() && not_cast_half_to_doulbe) {
+          cast_child->dtype().is_floating_point()) {
         return alloc<Cast>(v->dtype(), cast_child->src_value());
       }
     }

@@ -345,6 +345,7 @@ Tensor class reference
     Tensor.dot
     Tensor.double
     Tensor.dsplit
+    Tensor.eig
     Tensor.element_size
     Tensor.eq
     Tensor.eq_
@@ -483,6 +484,7 @@ Tensor class reference
     Tensor.logit
     Tensor.logit_
     Tensor.long
+    Tensor.lstsq
     Tensor.lt
     Tensor.lt_
     Tensor.less

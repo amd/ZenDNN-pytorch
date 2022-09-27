@@ -21,28 +21,13 @@ class TORCH_CUDA_CU_API IntOrDouble {
   IntOrDouble(size_t i) : value_((int64_t)i) {}
   IntOrDouble() : IntOrDouble(0) {}
 
-  // Avoid using copy constructor of c10::variant as it's
-  // deprecated.
-  IntOrDouble(const IntOrDouble& other) {
-    value_ = other.value_;
-  }
-
-  // Explicitly define copy assignment operator as its implicit definition is
-  // deprecated
-  IntOrDouble& operator=(const IntOrDouble& other) {
-    value_ = other.value_;
-    return *this;
-  }
-
   bool is_int() const {
     return c10::holds_alternative<int64_t>(value_);
   }
 
   template <typename T>
   T as() const {
-    TORCH_CHECK(
-        c10::holds_alternative<T>(value_),
-        "The expected dtype and the actual dtype does not match in IntOrDouble");
+    TORCH_CHECK(c10::holds_alternative<T>(value_), "wrong type");
     return c10::get<T>(value_);
   }
 
@@ -147,19 +132,8 @@ class TORCH_CUDA_CU_API IntOrDouble {
     }                                                   \
     TORCH_INTERNAL_ASSERT(false);                       \
   }                                                     \
-  bool operator op(double other) {                      \
-    if (is_int()) {                                     \
-      return as<int64_t>() op other;                    \
-    }                                                   \
-    return as<double>() op other;                       \
-  }                                                     \
-  bool operator op(int64_t other) {                     \
-    if (is_int()) {                                     \
-      return as<int64_t>() op other;                    \
-    }                                                   \
-    return as<double>() op other;                       \
-  }                                                     \
-  bool operator op(int other) {                         \
+  template <typename T>                                 \
+  bool operator op(T other) {                           \
     if (is_int()) {                                     \
       return as<int64_t>() op other;                    \
     }                                                   \
@@ -182,10 +156,21 @@ class TORCH_CUDA_CU_API IntOrDouble {
     return IntOrDouble(-as<double>());
   }
 
-  explicit operator double() const;
-  explicit operator int64_t() const;
-  explicit operator size_t() const;
-  explicit operator int() const;
+  template <typename T>
+  bool operator==(T val) const {
+    return operator==(IntOrDouble(val));
+  }
+
+  template <typename T>
+  bool operator!=(T val) const {
+    return operator!=(IntOrDouble(val));
+  }
+
+  operator double() const;
+
+  operator int64_t() const;
+  operator size_t() const;
+  operator int() const;
 };
 
 #define DEFINE_ARITHMETIC_OP(op)                           \
@@ -271,13 +256,7 @@ namespace IntOrDouble_functions {
 
 inline IntOrDouble ceildiv(const IntOrDouble& a, const IntOrDouble& b) {
   if (a.is_int() && b.is_int()) {
-    auto aa = a.as<int64_t>();
-    auto bb = b.as<int64_t>();
-    if (bb > 0) {
-      return (aa + bb - 1) / bb;
-    } else {
-      return (aa + bb + 1) / bb;
-    }
+    return (a.as<int64_t>() + b.as<int64_t>() - 1) / b.as<int64_t>();
   }
   return std::ceil((a / b).as<double>());
 }

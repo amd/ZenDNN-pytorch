@@ -9,6 +9,7 @@ from torchgen.api.types import (
     Expr,
     intArrayRefT,
     iOptTensorListRefT,
+    iTensorListRefT,
     layoutT,
     ListCType,
     longT,
@@ -26,6 +27,7 @@ from torchgen.api.types import (
     SpecialArgName,
     symIntArrayRefT,
     SymIntT,
+    tensorListT,
     tensorOptionsT,
     tensorT,
     VectorCType,
@@ -182,6 +184,12 @@ def translate(
                 NamedCType(t.name, BaseCType(opmath_t))
             ] = f"static_cast<opmath_t>({b.expr})"
 
+        # [Note: ITensorListRef]
+        if t.type == BaseCType(tensorListT):
+            ctx[
+                NamedCType(t.name, BaseCType(iTensorListRefT))
+            ] = f"at::ITensorListRef({b.expr})"
+
         # [Note: IOptTensorListRef]
         if t.type == ConstRefCType(ListCType(OptionalCType(BaseCType(tensorT)))):
             ctx[
@@ -331,7 +339,7 @@ Check this module for more information.
         elif goal.type == BaseCType(symIntArrayRefT):
             try:
                 r = direct_solve(NamedCType(goal.name, BaseCType(intArrayRefT)))
-                return f"c10::fromIntArrayRef({r})"
+                return f"c10::SymIntArrayRef::fromIntArrayRef({r})"
             except UnsatError:
                 return direct_solve(NamedCType(goal.name, longSymVec_ctype))
         elif goal.type == BaseCType(SymIntT):

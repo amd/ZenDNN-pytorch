@@ -389,93 +389,83 @@ impl::PyInterpreter& TensorImpl::load_pyobj_interpreter() const {
 }
 
 bool TensorImpl::is_contiguous_custom(at::MemoryFormat memory_format) const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomStrides))) {
-    // TODO: pass memory_format to is_contiguous call
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->is_contiguous(this);
   }
-  return is_contiguous_default(memory_format);
+  TORCH_CHECK(
+      false,
+      "Tensors of type ",
+      tensorimpl_type_name(),
+      " do not have is_contiguous");
 }
 
 IntArrayRef TensorImpl::sizes_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->sizes(this);
   }
-  return sizes_default();
+  TORCH_CHECK(
+      false, "Tensors of type ", tensorimpl_type_name(), " do not have sizes");
 }
 
 c10::SymIntArrayRef TensorImpl::sym_sizes_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
+  if (C10_UNLIKELY(is_python_dispatch())) {
     return load_pyobj_interpreter()->sym_sizes(this);
   }
   return sym_sizes_default();
 }
 
 c10::SymInt TensorImpl::sym_numel_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
+  if (C10_UNLIKELY(is_python_dispatch())) {
     return load_pyobj_interpreter()->sym_numel(this);
   }
   return sym_numel_default();
 }
 
 c10::SymIntArrayRef TensorImpl::sym_strides_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomStrides))) {
+  if (C10_UNLIKELY(is_python_dispatch())) {
     return load_pyobj_interpreter()->sym_strides(this);
   }
   return sym_strides_default();
 }
 
 c10::Device TensorImpl::device_custom() const {
-  if (C10_UNLIKELY(python_custom_device_)) {
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->device(this);
   }
-  return device_default();
+  TORCH_CHECK(
+      false, "Tensors of type ", tensorimpl_type_name(), " do not have device");
 }
 
 IntArrayRef TensorImpl::strides_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomStrides))) {
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->strides(this);
   }
-  return strides_default();
+  TORCH_CHECK(
+      false,
+      "Tensors of type ",
+      tensorimpl_type_name(),
+      " do not have strides");
 }
 
 int64_t TensorImpl::dim_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->dim(this);
   }
-  return dim_default();
+  TORCH_CHECK(
+      false, "Tensors of type ", tensorimpl_type_name(), " do not have dim");
 }
 
 int64_t TensorImpl::numel_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
-    // TODO: fix this
-    return load_pyobj_interpreter()->sym_numel(this).expect_int();
-  }
-  return numel_default();
+  TORCH_CHECK(
+      false, "Tensors of type ", tensorimpl_type_name(), " do not have numel");
 }
 
 c10::Layout TensorImpl::layout_custom() const {
-  if (C10_UNLIKELY(python_custom_layout_)) {
+  if (is_python_dispatch()) {
     return load_pyobj_interpreter()->layout(this);
   }
-  // TODO: fix this
   TORCH_CHECK(
-      0, "Tensors of type ", tensorimpl_type_name(), " do not have layout")
-  // return layout_default();
-}
-
-int64_t TensorImpl::storage_offset_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
-    // TODO: fix this
-    return load_pyobj_interpreter()->sym_storage_offset(this).expect_int();
-  }
-  return storage_offset_default();
-}
-
-c10::SymInt TensorImpl::sym_storage_offset_custom() const {
-  if (C10_UNLIKELY(matches_python_custom(SizesStridesPolicy::CustomSizes))) {
-    return load_pyobj_interpreter()->sym_storage_offset(this);
-  }
-  return sym_storage_offset_default();
+      false, "Tensors of type ", tensorimpl_type_name(), " do not have layout");
 }
 
 static void deletePlacementDeleteContext(void* ptr) {
@@ -633,15 +623,7 @@ void TensorImpl::copy_generic_tensor_metadata(
   if (src_impl->extra_meta_ != nullptr) {
     dest_impl->extra_meta_ = src_impl->extra_meta_->clone();
   }
-
-  // NB: symbolic sizes and strides are copied, but custom policy is
-  // NOT (you have no Python object to dispatch to!)
-  // NB: subclass relevant policy doesn't have to be copied; the
-  // constructor sets this up
-
-  dest_impl->refresh_sizes_strides_policy();
-  dest_impl->refresh_layout_policy();
-  dest_impl->refresh_device_policy();
+  dest_impl->sizes_strides_policy_ = src_impl->sizes_strides_policy_;
 }
 
 void TensorImpl::copy_tensor_metadata_except_version_counter(
@@ -885,74 +867,22 @@ void TensorImpl::ShareExternalPointer(
   }
 }
 
-bool _compute_contiguous(const ExtraMeta& extra_meta, std::vector<int> order) {
-  if (order.size() != extra_meta.sizes_.size())
-    return false;
-  bool is_contiguous = true;
-  if (extra_meta.numel_ == 0)
-    return is_contiguous;
-  SymInt z = 1;
-  for (auto d : order) {
-    const auto size_d = extra_meta.sizes_.at(d);
-    if (size_d != 1) {
-      if (extra_meta.strides_.at(d) == z) {
-        z *= size_d;
-      } else {
-        is_contiguous = false;
-        break;
-      }
-    }
-  }
-  return is_contiguous;
-}
-
-bool _compute_contiguous(const ExtraMeta& extra_meta) {
-  std::vector<int> order(extra_meta.sizes_.size());
-  std::iota(order.rbegin(), order.rend(), 0);
-  return _compute_contiguous(extra_meta, order);
-}
-
-// NB: this doesn't check that the sizes/strides/offset are in bound for the
-// storage, and furthermore, it CANNOT do so as in some cases we temporarily
-// violate invariants by first setting sizes/strides, and then updating the
-// storage
-void TensorImpl::set_sizes_and_strides(
+void TensorImpl::set_sym_sizes_and_strides(
     c10::SymIntArrayRef sizes,
-    c10::SymIntArrayRef strides,
-    c10::optional<c10::SymInt> storage_offset) {
-  auto int_sizes = asIntArrayRefSlowOpt(sizes);
-  auto int_strides = asIntArrayRefSlowOpt(strides);
-  if (int_sizes && int_strides &&
-      (!storage_offset.has_value() || !storage_offset->is_symbolic()) &&
-      !has_symbolic_sizes_strides_) {
-    set_sizes_and_strides(*int_sizes, *int_strides);
-    if (storage_offset.has_value())
-      set_storage_offset(storage_offset->as_int_unchecked());
-    return;
-  }
-
+    c10::SymIntArrayRef strides) {
   has_symbolic_sizes_strides_ = true;
-  refresh_sizes_strides_policy();
+  sizes_strides_policy_ = static_cast<uint8_t>(SizesStridesPolicy::CustomSizes);
   if (!extra_meta_) {
     extra_meta_ = std::make_unique<ExtraMeta>();
-    if (!storage_offset.has_value()) {
-      extra_meta_->storage_offset_ = storage_offset_;
-    }
   }
   extra_meta_->sizes_ = sizes;
   extra_meta_->strides_ = strides;
-  if (storage_offset.has_value())
-    extra_meta_->storage_offset_ = std::move(*storage_offset);
   SymInt numel = 1;
   for (const auto& s : sizes) {
     numel *= s;
   }
   extra_meta_->numel_ = numel;
-  extra_meta_->is_contiguous_ = _compute_contiguous(*extra_meta_);
-  extra_meta_->is_channels_last_contiguous_ =
-      _compute_contiguous(*extra_meta_, {1, 3, 2, 0});
-  extra_meta_->is_channels_last_3d_contiguous_ =
-      _compute_contiguous(*extra_meta_, {1, 4, 3, 2, 0});
+  // TODO: refresh the other entries
 }
 
 namespace impl {

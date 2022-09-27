@@ -56,7 +56,7 @@ void ParallelDimensionMap::registerConstantExtent(IterDomain* id) {
       id->toString(),
       " should have been constant, but could not be evaluated at compile time.");
 
-  auto const_extent = extent_int->as<int64_t>();
+  auto const_extent = extent_int.value();
 
   // Uses index map
   auto concrete_id = getCAMappedConcreteDomain(id);
