@@ -191,6 +191,11 @@ def hardswish(self: Tensor) -> Tensor:
     return self * torch.clamp(torch.clamp(self + 3, min=0), max=6) / 6
 
 
+@register_decomposition(aten.hardswish_)
+@pw_cast_for_opmath
+def hardswish_(x):
+    return x.copy_(torch.nn.functional.hardswish(x))
+
 @register_decomposition(aten.hardswish_backward)
 @pw_cast_for_opmath
 def hardswish_backward(grad_output: Tensor, self: Tensor) -> Tensor:
