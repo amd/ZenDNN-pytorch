@@ -86,4 +86,79 @@ struct TORCH_API TensorGeometry {
   int64_t numel_;
 };
 
+
+struct TORCH_API SymTensorGeometry {
+  TensorGeometry() : storage_offset_(0) {}
+
+  explicit TensorGeometry(SymIntArrayRef sizes)
+      : sizes_(sizes.vec()), strides_(sizes.size()), storage_offset_(0) {
+    int64_t dim = sizes.size();
+    SymInt expected_stride = 1;
+    for (int64_t i = dim - 1; i >= 0; i--) {
+      strides_[i] = expected_stride;
+      expected_stride *= sizes_[i];
+    }
+    numel_ = expected_stride;
+  }
+
+  explicit TensorGeometry(const TensorBase& t)
+      : sizes_(t.sym_sizes().vec()),
+        strides_(t.sym_strides().vec()),
+        storage_offset_(t.sym_storage_offset()),
+        numel_(t.sym_numel()) {}
+
+  // true if the tensor is contiguous
+  bool is_contiguous() const;
+
+  int64_t dim() const {
+    return sizes_.size();
+  }
+  SymInt size(int64_t dim) const {
+    dim = c10::maybe_wrap_dim(dim, this->dim());
+    return sizes_.at(static_cast<size_t>(dim));
+  }
+  SymIntArrayRef sizes() const {
+    return SymIntArrayRef{sizes_};
+  }
+  SymInt stride(int64_t dim) const {
+    dim = c10::maybe_wrap_dim(dim, this->dim());
+    return strides_.at(static_cast<size_t>(dim));
+  }
+  SymIntArrayRef strides() const {
+    return SymIntArrayRef{strides_};
+  }
+  SymInt storage_offset() const {
+    return storage_offset_;
+  }
+  SymInt numel() const {
+    return numel_;
+  }
+
+  TensorGeometry transpose(int64_t dim0, int64_t dim1) {
+    TensorGeometry r = *this; // copy
+    TORCH_CHECK(
+        dim0 < dim(),
+        "transpose: dim0=",
+        dim0,
+        " out of range (dim=",
+        dim(),
+        ")")
+    TORCH_CHECK(
+        dim1 < dim(),
+        "transpose: dim1=",
+        dim1,
+        " out of range (dim=",
+        dim(),
+        ")")
+    std::swap(r.sizes_[dim0], r.sizes_[dim1]);
+    std::swap(r.strides_[dim0], r.strides_[dim1]);
+    return r;
+  }
+
+  std::vector<SymInt> sizes_;
+  std::vector<SymInt> strides_;
+  SymInt storage_offset_;
+  SymInt numel_;
+};
+
 } // namespace at

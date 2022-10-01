@@ -25,6 +25,8 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include <iostream>
+#include <string.h>
 
 namespace torch {
 namespace autograd {
@@ -81,11 +83,11 @@ ViewInfo ViewInfo::chain(
     } else {
       // current_view has a view_func and but it's parent doesn't have one
       if (base.unsafeGetTensorImpl()->support_as_strided()) {
-        auto size = base.sizes().vec();
-        auto stride = base.strides().vec();
-        auto storage_offset = base.storage_offset();
+        auto size = base.sym_sizes().vec();
+        auto stride = base.sym_strides().vec();
+        auto storage_offset = base.sym_storage_offset();
         view_func = [=](const at::Tensor& root_base) {
-          auto temp = root_base.as_strided(size, stride, storage_offset);
+          auto temp = root_base.as_strided_symint(size, stride, storage_offset);
           return view_func(temp);
         };
       } else {
@@ -111,12 +113,12 @@ ViewInfo ViewInfo::chain(
     // if current_view doesn't have a view_func but it's parent has one
     // Copy parent view function to gain ownership
     auto prev_view_fn = view_fn_;
-    auto size = tensor.sizes().vec();
-    auto stride = tensor.strides().vec();
-    auto storage_offset = tensor.storage_offset();
+    auto size = tensor.sym_sizes().vec();
+    auto stride = tensor.sym_strides().vec();
+    auto storage_offset = tensor.sym_storage_offset();
     view_func = [=](const at::Tensor& root_base) {
       auto temp = prev_view_fn(root_base);
-      return temp.as_strided(size, stride, storage_offset);
+      return temp.as_strided_symint(size, stride, storage_offset);
     };
   }
 
@@ -189,11 +191,18 @@ void update_cpp_hooks_on_new_gradfn(
       new CppFunctionPreHook(meta->cpp_hooks_list_, self.output_nr()));
   new_fn->add_pre_hook(std::move(hook_ptr));
 }
+void LOGG(std::string msg) {
+  std::cout << msg << std::endl;
+}
 
 void rebase_history(const Variable& self, Edge gradient_edge) {
+  LOGG("rebase_history 1");
   TORCH_INTERNAL_ASSERT(gradient_edge.function != nullptr);
+  LOGG("rebase_history 2");
   auto diff_view_meta = get_view_autograd_meta(self);
+  LOGG("rebase_history 3");
   if (diff_view_meta && diff_view_meta->has_bw_view()) {
+    LOGG("rebase_history 4");
     // See NOTE [ View + Inplace detection ]
     auto creation_meta = diff_view_meta->get_creation_meta();
     // Do not use handle_view_on_rebase here as check_inplace should have been
@@ -201,22 +210,27 @@ void rebase_history(const Variable& self, Edge gradient_edge) {
     TORCH_INTERNAL_ASSERT(creation_meta == CreationMeta::DEFAULT);
     TORCH_INTERNAL_ASSERT(gradient_edge.input_nr == 0);
     TORCH_INTERNAL_ASSERT(gradient_edge.function);
+    LOGG("rebase_history 5");
     TORCH_CHECK(
         gradient_edge.function->num_inputs() == 1,
         "Functions which modify views in-place must return a single Variable");
     auto view_info = diff_view_meta->get_backward_view();
     diff_view_meta->output_nr_ = gradient_edge.input_nr;
+    LOGG("rebase_history 6");
     auto copy_slices = std::make_shared<CopySlices>(
         view_info.base_,
         at::TensorGeometry(self),
         view_info.view_fn_,
         std::move(gradient_edge.function));
     set_gradient_edge(view_info.base_, {std::move(copy_slices), 0});
+    LOGG("rebase_history 7");
     self.grad_fn(); // trigger an update to the view's grad_fn
     return;
   }
+  LOGG("rebase_history 8");
 
   set_gradient_edge(self, std::move(gradient_edge));
+  LOGG("rebase_history 9");
   // Pass both self and its grad_fn to avoid calling into grad_fn reentrantly
   torch::autograd::impl::update_cpp_hooks_on_new_gradfn(self, self.grad_fn());
 }
