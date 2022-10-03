@@ -8,7 +8,7 @@ import itertools
 import logging
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 import torch
 import torch.distributed as dist
@@ -1003,7 +1003,8 @@ class DistributedDataParallel(Module, Joinable):
                 return module_to_run(*inputs, **kwargs)
 
     def forward(self, *inputs, **kwargs):
-        with torch.autograd.profiler.record_function("DistributedDataParallel.forward"):
+        # with torch.autograd.profiler.record_function("DistributedDataParallel.forward"):
+        with nullcontext():
             if torch.is_grad_enabled() and self.require_backward_grad_sync:
                 self.logger.set_runtime_stats_and_log()
                 self.num_iterations += 1
