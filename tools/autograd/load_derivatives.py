@@ -29,11 +29,11 @@ from torchgen.api.types import (
     SpecialArgName,
     stringT,
     symIntArrayRefT,
+    SymIntT,
     tensorGeometryT,
     tensorOptionsT,
     typeAndSizeT,
     VectorCType,
-    SymIntT,
 )
 from torchgen.context import with_native_function
 from torchgen.gen import get_grouped_by_view_native_functions, parse_native_yaml
@@ -816,7 +816,9 @@ def saved_variables(
         (
             r"{}.size\((-?\w+)\)",
             {
-                "suffix": lambda m: "_argsize_{}".format(m.groups()[0].replace("-", "minus_")),
+                "suffix": lambda m: "_argsize_{}".format(
+                    m.groups()[0].replace("-", "minus_")
+                ),
                 "nctype": lambda name: NamedCType(name, BaseCType(longT)),
             },
         ),
@@ -824,7 +826,9 @@ def saved_variables(
         (
             r"{}.sym_size\((-?\w+)\)",
             {
-                "suffix": lambda m: "_sym_argsize_{}".format(m.groups()[0].replace("-", "minus_")),
+                "suffix": lambda m: "_sym_argsize_{}".format(
+                    m.groups()[0].replace("-", "minus_")
+                ),
                 "nctype": lambda name: NamedCType(name, BaseCType(SymIntT)),
             },
         ),
