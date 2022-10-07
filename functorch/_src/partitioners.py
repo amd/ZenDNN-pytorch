@@ -171,8 +171,10 @@ def default_partition(
         else:
             saved_values.append(node)
     saved_values = list(set(saved_values))
+    saved_sym_nodes = list(filter(lambda n: is_sym_node(n), saved_values))
+    saved_values = list(filter(lambda n: not is_sym_node(n), saved_values))
 
-    return _extract_fwd_bwd_modules(joint_module, saved_values)
+    return _extract_fwd_bwd_modules(joint_module, saved_values, saved_sym_nodes=saved_sym_nodes)
 
 
 def _prod(x):
@@ -412,7 +414,6 @@ def min_cut_rematerialization_partition(
     # To make this stuff deterministic
     node_idx = {node: idx for idx, node in enumerate(joint_module.graph.nodes)}
     saved_values = sorted((name_to_node[node] for node in cut_nodes), key=lambda x: node_idx[x])
-    # saved_values = sorted(saved_values, key=lambda n: is_sym_node(n))
     saved_sym_nodes = list(filter(lambda n: is_sym_node(n), saved_values))
     saved_values = list(filter(lambda n: not is_sym_node(n), saved_values))
     fw_module, bw_module = _extract_fwd_bwd_modules(joint_module, saved_values, saved_sym_nodes=saved_sym_nodes)

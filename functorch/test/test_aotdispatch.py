@@ -598,6 +598,59 @@ class TestPartitioning(AOTTestCase):
 
     @patch("functorch.compile.config.use_dynamic_shapes", True)
     @patch("functorch.compile.config.use_fake_tensor", True)
+    @skipIfNoSympy
+    def test_default_partitioner_output_tensor_shape_tensor(self):
+
+        inp = [
+            torch.randn(10, requires_grad=True),
+            torch.randn((3, 10), requires_grad=True),
+            torch.randn((2, 10), requires_grad=True),
+            torch.randn((10, 1), requires_grad=True),
+        ]
+
+        def f(a, b, c, d):
+            # Try to force symints intermixed with outputs in the function's returns
+            sb = b.size()
+            sc = c.size()
+            x = sb[0] + sc[0]
+            a_sz = (x, a.size(0))
+            cat = torch.cat([a.expand(a_sz), b, c])
+            mm = torch.mm(cat, d)
+            mm2 = torch.mm(mm, a.view(mm.size(1), a.size(0)))  # this saves 4 new ints for backward. why?
+            # and what do i have to do to make it save a tensor for backward?
+            return cat, sb, c, mm2
+
+        fw_graph_cell = [None]
+        bw_graph_cell = [None]
+        compiled_outs = aot_function(
+            f,
+            fw_compiler=partial(extract_graph, graph_cell=fw_graph_cell),
+            bw_compiler=partial(extract_graph, graph_cell=bw_graph_cell),
+            partition_fn=default_partition,
+            decompositions=default_decompositions)(*inp)
+        fw_graph = fw_graph_cell[0]
+        (compiled_outs[0].sum() + compiled_outs[2].sum()).backward()
+        bw_graph = bw_graph_cell[0]
+
+        self.assertEqual(get_num_ins_outs(fw_graph), (4, 13))
+        self.assertEqual(get_num_ins_outs(bw_graph), (13, 4))
+        _, fw_graph_out_nodes = get_ins_outs(fw_graph)
+        self.assertEqual(
+            # fw outputs include b.size() which expands to 2 symints,
+            # then 4 tensors (transposes of matricies used for mm) are saved
+            # finally 4 symints are saved
+            [False, True, True, False, False] + [False] * 4 + [True] * 4,
+            [is_sym_node(n) for n in fw_graph_out_nodes]
+        )
+
+        real_outs = f(*inp)
+        self.assertEqual(compiled_outs, real_outs)
+        self.assertTrue(isinstance(real_outs[1], torch.Size))
+
+        # TODO(whc) we should learn to return torch.Sizes
+        self.assertFalse(isinstance(compiled_outs[1], torch.Size))
+    @patch("functorch.compile.config.use_dynamic_shapes", True)
+    @patch("functorch.compile.config.use_fake_tensor", True)
     @unittest.skipIf(not USE_NETWORKX, "networkx not available")
     @skipIfNoSympy
     def test_min_cut_partitioner_output_tensor_shape_tensor(self):
