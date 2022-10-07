@@ -633,20 +633,16 @@ class TestPartitioning(AOTTestCase):
         (compiled_outs[0].sum() + compiled_outs[2].sum()).backward()
         bw_graph = bw_graph_cell[0]
 
-        # TODO(whc) 8 outputs from forward
-        # 2 are user-output tensors
-        # 2 more are individual symints from single user-output 'sizes'
-        # 4 are save-for-backward sizes values
-        #   one of these saved symint sizes duplicates a returned user output
-        # what behavior do we want here?
-        self.assertEqual(get_num_ins_outs(fw_graph), (4, 7))
-        self.assertEqual(get_num_ins_outs(bw_graph), (7, 4))
+        self.assertEqual(get_num_ins_outs(fw_graph), (4, 13))
+        self.assertEqual(get_num_ins_outs(bw_graph), (13, 4))
         _, fw_graph_out_nodes = get_ins_outs(fw_graph)
-        # self.assertTrue(is_tensor_node(outs[0])) # helper doesn't exist
-        self.assertTrue(is_sym_node(fw_graph_out_nodes[1]))
-        self.assertTrue(is_sym_node(fw_graph_out_nodes[2]))
-        # self.assertTrue(is_tensor_node(outs[3]))
-        self.assertTrue(all([is_sym_node(n) for n in fw_graph_out_nodes[4:]]))
+        self.assertEqual(
+            # fw outputs include b.size() which expands to 2 symints,
+            # then 4 tensors (transposes of matricies used for mm) are saved
+            # finally 4 symints are saved
+            [False, True, True, False, False] + [False] * 4 + [True] * 4,
+            [is_sym_node(n) for n in fw_graph_out_nodes]
+        )
 
         real_outs = f(*inp)
         self.assertEqual(compiled_outs, real_outs)

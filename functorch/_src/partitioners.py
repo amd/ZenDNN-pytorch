@@ -12,8 +12,7 @@ from typing import Tuple
 from .compile_utils import fx_graph_cse, get_aten_target
 from . import config
 
-# AOT_PARTITIONER_DEBUG = config.debug_partitioner
-AOT_PARTITIONER_DEBUG = True
+AOT_PARTITIONER_DEBUG = config.debug_partitioner
 
 
 
@@ -416,7 +415,6 @@ def min_cut_rematerialization_partition(
     # saved_values = sorted(saved_values, key=lambda n: is_sym_node(n))
     saved_sym_nodes = list(filter(lambda n: is_sym_node(n), saved_values))
     saved_values = list(filter(lambda n: not is_sym_node(n), saved_values))
-    import pdb; pdb.set_trace()
     fw_module, bw_module = _extract_fwd_bwd_modules(joint_module, saved_values, saved_sym_nodes=saved_sym_nodes)
     if AOT_PARTITIONER_DEBUG:
         def node_size(node):
