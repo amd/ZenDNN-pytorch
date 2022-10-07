@@ -12,7 +12,8 @@ from typing import Tuple
 from .compile_utils import fx_graph_cse, get_aten_target
 from . import config
 
-AOT_PARTITIONER_DEBUG = config.debug_partitioner
+# AOT_PARTITIONER_DEBUG = config.debug_partitioner
+AOT_PARTITIONER_DEBUG = True
 
 
 
@@ -92,13 +93,13 @@ def _extract_fwd_bwd_outputs(joint_module: fx.GraphModule):
     return fwd_outputs, bwd_outputs
 
 
-def _extract_fwd_bwd_modules(joint_module: fx.GraphModule, saved_values):
+def _extract_fwd_bwd_modules(joint_module: fx.GraphModule, saved_values, saved_sym_nodes=[]):
     fwd_outputs, bwd_outputs = _extract_fwd_bwd_outputs(joint_module)
     primal_inputs = list(filter(_is_primal, joint_module.graph.nodes))
     tangent_inputs = list(filter(_is_tangent, joint_module.graph.nodes))
     # Construct the forward module
-    fwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, primal_inputs, fwd_outputs + saved_values)
-    bwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, saved_values + tangent_inputs, bwd_outputs)
+    fwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, primal_inputs, fwd_outputs + saved_values + saved_sym_nodes)
+    bwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, saved_sym_nodes + saved_values + tangent_inputs, bwd_outputs)
 
     # This is to filter out saved values that don't actually end up being used by the backwards pass
     for node in bwd_graph.nodes:
@@ -107,11 +108,16 @@ def _extract_fwd_bwd_modules(joint_module: fx.GraphModule, saved_values):
                 if saved_value.name == node.name:
                     saved_values.remove(saved_value)
                     break
+            
+            for saved_sym in saved_sym_nodes:
+                if saved_sym.name == node.name:
+                    saved_sym_nodes.remove(saved_sym)
+                    break
 
     # Now, we re-generate the fwd/bwd graphs.
     # NB: This might increase compilation time, but I doubt it matters
-    fwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, primal_inputs, fwd_outputs + saved_values)
-    bwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, saved_values + tangent_inputs, bwd_outputs)
+    fwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, primal_inputs, fwd_outputs + saved_values + saved_sym_nodes)
+    bwd_graph = _extract_graph_with_inputs_outputs(joint_module.graph, saved_sym_nodes + saved_values + tangent_inputs, bwd_outputs)
 
     fwd_module = fx.GraphModule(joint_module, fwd_graph)
     bwd_module = fx.GraphModule(joint_module, bwd_graph)
@@ -407,9 +413,19 @@ def min_cut_rematerialization_partition(
     # To make this stuff deterministic
     node_idx = {node: idx for idx, node in enumerate(joint_module.graph.nodes)}
     saved_values = sorted((name_to_node[node] for node in cut_nodes), key=lambda x: node_idx[x])
-    fw_module, bw_module = _extract_fwd_bwd_modules(joint_module, saved_values)
+    # saved_values = sorted(saved_values, key=lambda n: is_sym_node(n))
+    saved_sym_nodes = list(filter(lambda n: is_sym_node(n), saved_values))
+    saved_values = list(filter(lambda n: not is_sym_node(n), saved_values))
+    import pdb; pdb.set_trace()
+    fw_module, bw_module = _extract_fwd_bwd_modules(joint_module, saved_values, saved_sym_nodes=saved_sym_nodes)
     if AOT_PARTITIONER_DEBUG:
-        print("Theoretical Activations Stored: ", sum([_size_of(i.meta['tensor_meta']) for i in saved_values]) / 1e9)
+        def node_size(node):
+            if 'tensor_meta' in node.meta:
+                return _size_of(node.meta['tensor_meta'])
+            else:
+                assert is_sym_node(node)
+                return 1
+        print("Theoretical Activations Stored: ", sum([node_size(i) for i in saved_values]) / 1e9)
         fw_module_nodes = set([node.name for node in fw_module.graph.nodes if node.op == 'call_function'])
         bw_module_nodes = set([node.name for node in bw_module.graph.nodes if node.op == 'call_function'])
         remat_nodes = fw_module_nodes & bw_module_nodes

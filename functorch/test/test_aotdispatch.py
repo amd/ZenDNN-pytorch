@@ -606,16 +606,20 @@ class TestPartitioning(AOTTestCase):
             torch.randn(10, requires_grad=True),
             torch.randn((3, 10), requires_grad=True),
             torch.randn((2, 10), requires_grad=True),
+            torch.randn((10, 1), requires_grad=True),
         ]
 
-        def f(a, b, c):
+        def f(a, b, c, d):
             # Try to force symints intermixed with outputs in the function's returns
             sb = b.size()
             sc = c.size()
             x = sb[0] + sc[0]
             a_sz = (x, a.size(0))
             cat = torch.cat([a.expand(a_sz), b, c])
-            return cat, sb, c
+            mm = torch.mm(cat, d)
+            mm2 = torch.mm(mm, a.view(mm.size(1), a.size(0)))  # this saves 4 new ints for backward. why?
+            # and what do i have to do to make it save a tensor for backward?
+            return cat, sb, c, mm2
 
         fw_graph_cell = [None]
         bw_graph_cell = [None]
@@ -635,8 +639,8 @@ class TestPartitioning(AOTTestCase):
         # 4 are save-for-backward sizes values
         #   one of these saved symint sizes duplicates a returned user output
         # what behavior do we want here?
-        self.assertEqual(get_num_ins_outs(fw_graph), (3, 8))
-        self.assertEqual(get_num_ins_outs(bw_graph), (8, 3))
+        self.assertEqual(get_num_ins_outs(fw_graph), (4, 7))
+        self.assertEqual(get_num_ins_outs(bw_graph), (7, 4))
         _, fw_graph_out_nodes = get_ins_outs(fw_graph)
         # self.assertTrue(is_tensor_node(outs[0])) # helper doesn't exist
         self.assertTrue(is_sym_node(fw_graph_out_nodes[1]))
