@@ -27,6 +27,10 @@ three = 3
 
 log = logging.getLogger(__name__)
 
+from torch.testing._internal.common_utils import IS_WINDOWS
+if IS_WINDOWS:
+    raise unittest.SkipTest("Dynamo tests are not enabled on windows.")
+
 
 def run_tests(needs=()):
     from torch.testing._internal.common_utils import (
