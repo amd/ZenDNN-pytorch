@@ -1671,7 +1671,8 @@ def check_if_enable(test: unittest.TestCase):
                         "windows": IS_WINDOWS,
                         "linux": IS_LINUX,
                         "rocm": TEST_WITH_ROCM,
-                        "asan": TEST_WITH_ASAN
+                        "asan": TEST_WITH_ASAN,
+                        "dynamo": TEST_WITH_TORCHDYNAMO,
                     }
                     if platforms == [] or any([platform_to_conditional[platform] for platform in platforms]):
                         skip_msg = f"Test is disabled because an issue exists disabling it: {issue_url}" \
