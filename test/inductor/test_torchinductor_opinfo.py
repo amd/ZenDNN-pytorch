@@ -442,6 +442,21 @@ class TestInductorOpInfo(TestCase):
     @_ops(op_db[START:END])
     @patch("torch._dynamo.config.raise_on_unsafe_aot_autograd", True)
     def test_comprehensive(self, device, dtype, op):
+        from torch.testing._internal.common_utils import (
+            IS_WINDOWS,
+            run_tests,
+            TEST_WITH_CROSSREF,
+            TEST_WITH_TORCHDYNAMO,
+        )
+
+        if (
+            TEST_WITH_TORCHDYNAMO
+            or IS_WINDOWS
+            or TEST_WITH_CROSSREF
+            or sys.version_info >= (3, 11)
+        ):
+            return  # skip testing
+
         torch._dynamo.reset()
         with torch.no_grad():
             torch.cuda.empty_cache()
