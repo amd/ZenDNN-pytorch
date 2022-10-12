@@ -6507,6 +6507,71 @@ TEST_F(NVFuserTest, FusionSimpleAmperePipeline_CUDA) {
   testValidate(&fusion, cg_outputs, {input1}, {input1}, __LINE__, __FILE__);
 }
 
+TEST_F(NVFuserTest, FusionPWSchedulerIssue_CUDA) {
+  std::unique_ptr<Fusion> fusion_ptr = std::make_unique<Fusion>();
+  auto fusion = fusion_ptr.get();
+  FusionGuard fg(fusion);
+
+  auto tv0 = TensorViewBuilder()
+                 .ndims(4)
+                 .contiguity(std::vector<bool>(4, true))
+                 .shape({1, -1, -1, -1})
+                 .build();
+  auto tv1 = TensorViewBuilder()
+                 .ndims(4)
+                 .contiguity(std::vector<bool>(4, true))
+                 .shape({1, -1, -1, -1})
+                 .build();
+
+  std::vector<IterDomain*> domain1(4, nullptr);
+  for (const auto i : c10::irange(4)) {
+    if (i == 0) {
+      domain1[i] =
+          IterDomainBuilder(
+              FusionGuard::getCurFusion()->zeroVal(), IrBuilder::create<Int>(1))
+              .iter_type(IterType::Broadcast)
+              .build();
+    } else if (i == 3) {
+      domain1[i] =
+          IterDomainBuilder(
+              FusionGuard::getCurFusion()->zeroVal(), IrBuilder::create<Int>(1))
+              .expanded_extent(IrBuilder::create<Int>(513))
+              .iter_type(IterType::Broadcast)
+              .build();
+    } else {
+      domain1[i] =
+          IterDomainBuilder(
+              FusionGuard::getCurFusion()->zeroVal(), IrBuilder::create<Int>())
+              .build();
+    }
+  }
+
+  std::vector<bool> contiguity{true, true, true, false};
+  TensorView* tv2 = IrBuilder::create<TensorView>(
+      IrBuilder::create<TensorDomain>(domain1, contiguity), DataType::Float);
+
+  fusion->addInput(tv0);
+  fusion->addInput(tv1);
+  fusion->addInput(tv2);
+  auto tv3 = mul(tv0, tv2);
+  auto tv4 = sub(tv1, tv3);
+  auto tv5 = sum(tv4, {0});
+  fusion->addOutput(tv5);
+
+
+  auto options = at::TensorOptions().dtype(kFloat).device(at::kCUDA, 0);
+
+  at::Tensor t0 = at::randn({1, 4, 8, 513}, options);
+  at::Tensor t1 = at::randn({1, 4, 8, 513}, options);
+  at::Tensor t2 = at::randn({1, 4, 8}, options).unsqueeze(-1).expand({1, 4, 8, 513});
+  at::Tensor ref = (t1-t0*t2).sum({0});
+
+  FusionExecutor fe;
+  fe.compileFusion(fusion, {t0, t1, t2});
+  auto cg_outputs = fe.runFusion({t0, t1, t2});
+
+  testValidate(fusion, cg_outputs, {t0, t1, t2}, {ref}, __LINE__, __FILE__);
+}
 // Test file size should be up to 10K LoC. Create a new file for more tests.
 
 } // namespace jit
