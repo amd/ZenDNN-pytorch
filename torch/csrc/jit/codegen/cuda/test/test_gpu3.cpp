@@ -6558,6 +6558,7 @@ TEST_F(NVFuserTest, FusionPWSchedulerIssue_CUDA) {
   auto tv5 = sum(tv4, {0});
   fusion->addOutput(tv5);
 
+  fusion->print();
 
   auto options = at::TensorOptions().dtype(kFloat).device(at::kCUDA, 0);
 
