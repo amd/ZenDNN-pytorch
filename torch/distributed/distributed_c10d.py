@@ -183,8 +183,6 @@ class Backend(object):
                 "Gloo or MPI backend for collective operations "
                 "on CPU tensors."
             )
-        elif value == Backend.UNDEFINED:
-            raise ValueError("Invalid backend: '{}'".format(name))
         elif value != Backend.GLOO and value != Backend.NCCL and value != Backend.UCC and value != Backend.MPI:
             value = name.lower()
         return value
@@ -225,6 +223,9 @@ class Backend(object):
         setattr(Backend, name.upper(), name.upper())
         Backend._plugins[name.upper()] = Backend._BackendPlugin(func, extended_api)
 
+class BackendConfig(object):
+    def __new__(cls, backend_list: str):
+        return backend_list
 
 # `_backend`, `dist_backend`, and `reduce_op` are here to maintain backward
 # compatibility with pre-c10d distributed package.
@@ -720,7 +721,13 @@ def init_process_group(
     elif init_method is None:
         init_method = "env://"
 
-    backend = Backend(backend)
+    if backend:
+        backend = Backend(backend)
+    else:
+        backend = Backend("undefined")
+    print(backend)
+    # print(backend)
+    # backendConfig = BackendConfig()
 
     if backend == Backend.MPI:
         if world_size != -1 or rank != -1:
@@ -800,6 +807,8 @@ def _new_process_group_helper(
     global _pg_map
     global _group_count
     global _pg_names
+
+    print("group_size", group_size)
 
     if not group_name:
         group_name = str(_group_count)
@@ -931,6 +940,10 @@ def _new_process_group_helper(
                         timeout=timeout,
                     )
             _pg_map[pg] = (Backend.UCC, store)
+            _pg_names[pg] = group_name
+        elif backend == Backend.UNDEFINED:
+            pg = ProcessGroup(prefix_store, group_rank, group_size, timeout=timeout)
+            _pg_map[pg] = (Backend.UNDEFINED, store)
             _pg_names[pg] = group_name
         else:
             assert backend.upper() in Backend._plugins, (

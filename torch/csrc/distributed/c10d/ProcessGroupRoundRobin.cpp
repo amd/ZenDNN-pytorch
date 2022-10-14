@@ -6,7 +6,7 @@ ProcessGroupRoundRobin::ProcessGroupRoundRobin(
     int rank,
     int size,
     std::vector<c10::intrusive_ptr<ProcessGroup>> processGroups)
-    : ProcessGroup(rank, size), processGroups_(std::move(processGroups)) {
+    : Backend(rank, size), processGroups_(std::move(processGroups)) {
   TORCH_WARN(
       "ProcessGroupRoundRobin is deprecated and scheduled to be removed after this current release (1.13). ",
       "Please file an issue on https://github.com/pytorch/pytorch/issues if there are any concerns or issues with this deprecation.");

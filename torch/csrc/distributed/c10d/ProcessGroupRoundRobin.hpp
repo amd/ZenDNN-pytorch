@@ -18,7 +18,7 @@ constexpr const char* ROUND_ROBIN_BACKEND_NAME = "round_robin";
 // across all processes in the process group. This is the only way that we
 // can guarantee to match up the same calls among all processes.
 //
-class TORCH_API ProcessGroupRoundRobin final : public ProcessGroup {
+class TORCH_API ProcessGroupRoundRobin final : public Backend {
  public:
   explicit ProcessGroupRoundRobin(
       int rank,

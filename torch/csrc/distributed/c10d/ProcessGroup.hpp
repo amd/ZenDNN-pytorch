@@ -1,5 +1,6 @@
 #pragma once
 
+#include <torch/csrc/distributed/c10d/Backend.hpp>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -10,9 +11,9 @@
 #include <ATen/ATen.h>
 #include <c10/macros/Macros.h>
 
+#include <torch/csrc/distributed/c10d/Work.hpp>
 #include <torch/csrc/distributed/c10d/Types.hpp>
 #include <torch/csrc/distributed/c10d/Utils.hpp>
-#include <torch/csrc/distributed/c10d/Work.hpp>
 #include <torch/csrc/distributed/c10d/debug.h>
 #include <torch/csrc/distributed/c10d/sequence_num.hpp>
 
@@ -67,7 +68,7 @@ class TORCH_API ProcessGroup : public torch::CustomClassHolder {
     const std::string backend;
   };
 
-  explicit ProcessGroup(int rank, int size);
+  explicit ProcessGroup(const c10::intrusive_ptr<::c10d::Store>& store, int rank, int size, c10::intrusive_ptr<Options> options);
   virtual ~ProcessGroup();
 
   int getRank() const {
