@@ -751,7 +751,9 @@ def as_strided(x, size, stride, storage_offset=None):
         x = x.data.unwrap_view()
     x.realize()
     if not ir.is_contiguous_storage_and_layout(x):
-        raise NotImplementedError(f"unrealized as_strided({x}, ...)")
+        log.warning("calling contiguous for as_strided op, can affect performance speedup")
+        x = ir.ExternKernel.require_contiguous(x)
+
     storage, old_layout = ir.as_contiguous_storage_and_layout(x)
     new_layout = ir.FixedLayout(
         old_layout.device,
