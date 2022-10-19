@@ -51,7 +51,7 @@ unroll_reductions_threshold = 8
 
 comment_origin = False
 
-compile_threads = min(32, os.cpu_count())
+compile_threads = 1 # TODO: re-enable to `min(32, os.cpu_count())` after figuring out https://github.com/pytorch/torchdynamo/issues/1709
 
 # How to import torchinductor, either torchinductor or torch.inductor
 inductor_import = __name__.replace(".config", "")
