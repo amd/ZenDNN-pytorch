@@ -46,6 +46,8 @@ def setup_torchbench_cwd():
     return original_dir
 
 
+original_dir = setup_torchbench_cwd()
+
 # Some models have large dataset that doesn't fit in memory. Lower the batch
 # size to test the accuracy.
 USE_SMALL_BATCH_SIZE = {
