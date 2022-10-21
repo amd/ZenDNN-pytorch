@@ -118,7 +118,7 @@ class PySymInt(object):
     our program. They're what sit under FakeTensor, and contains our primary
     implementation of symbolic shapes.
     """
-    def __init__(self, expr, shape_env, constant=None):
+    def __init__(self, expr, shape_env, constant=None, ref_id=None, kind=None, idx=None):
         self._expr = expr
         self.shape_env = shape_env
         self.constant = constant
