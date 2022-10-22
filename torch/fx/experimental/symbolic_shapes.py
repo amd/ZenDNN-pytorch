@@ -142,14 +142,14 @@ class PySymInt(object):
 
     def _update_expr(self):
         self._expr = self.shape_env.replace(self._expr)
-        if self.ref_id and str(self.expr) not in ('False', 'True'):
-            if self.expr not in self.shape_env.expr_to_id:
-                self.shape_env.expr_to_id[self.expr] = set()
-            self.shape_env.expr_to_id[self.expr].add((self.ref_id, self.kind, self.idx))
+        if self.ref_id and str(self._expr) not in ('False', 'True'):
+            if self._expr not in self.shape_env.expr_to_id:
+                self.shape_env.expr_to_id[self._expr] = set()
+            self.shape_env.expr_to_id[self._expr].add((self.ref_id, self.kind, self.idx))
 
             if self.ref_id not in self.shape_env.expr_to_id:
                 self.shape_env.expr_to_id[self.ref_id] = set()
-            self.shape_env.expr_to_id[self.ref_id].add((self.expr, self.kind, self.idx))
+            self.shape_env.expr_to_id[self.ref_id].add((self._expr, self.kind, self.idx))
 
 
     @property
