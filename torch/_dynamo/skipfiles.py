@@ -151,16 +151,28 @@ def add(import_name: str):
     SKIP_DIRS.append(_strip_init_py(origin))
     _recompile_re()
 
+def log_check(filename, key, value):
+    watchlist = (
+        "distributed",
+        "fsdp",
+        "checkpoint"
+    )
+    # if any([k in filename for k in watchlist]):
+        # print(f"dynamo check {filename}:{key} -> should_skip={value}")
+    return value
+
 
 def check(filename, allow_torch=False):
     """Should skip this file?"""
+    if "checkpoint" in filename:
+        return log_check(filename, "is checkpoint", True)
     if filename is None:
-        return True
+        return log_check(filename, "fn=none", True)
     if filename in FILENAME_ALLOWLIST:
-        return False
+        return log_check(filename, "allowlist", False)
     if allow_torch and is_torch(filename):
-        return False
-    return bool(SKIP_DIRS_RE.match(filename))
+        return log_check(filename, "is_torch", False)
+    return log_check(filename, "skip_dirs", bool(SKIP_DIRS_RE.match(filename)))
 
 
 # skip common third party libs

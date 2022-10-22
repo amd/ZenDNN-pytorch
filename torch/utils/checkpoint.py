@@ -379,11 +379,13 @@ def _checkpoint_without_reentrant(function, preserve_rng_state=True, *args, **kw
         # TODO(varal7): Instead of returning abstract object, we can return things metadata (such as
         # size, device, ...) to catch certain cases of undeterministic behavior of the forward
         res = Holder()
+        print(f"pack {x.shape}, {id(res)}")
         weak_holder_list.append(weakref.ref(res))
         return res
 
 
     def unpack(x):
+        print(f"unpack {id(x)}")
         unpack_counter = 0
         if len(storage) == 0:
             def inner_pack(inner):
@@ -392,10 +394,12 @@ def _checkpoint_without_reentrant(function, preserve_rng_state=True, *args, **kw
                 # If the holder went out of scope, the SavedVariable is dead and so
                 # the value will never be read from the storage. Skip filling it.
                 if weak_holder_list[unpack_counter - 1]() is None:
+                    print(f"inner_pack {inner.shape}, holder out of scope")
                     return
                 # Use detach here to ensure we don't keep the temporary autograd
                 # graph created during the second forward
                 storage[weak_holder_list[unpack_counter - 1]()] = inner.detach()
+                print(f"inner_pack {inner.shape}, {id(weak_holder_list[unpack_counter - 1]())} ")
                 return
 
             def inner_unpack(packed):
@@ -420,6 +424,7 @@ def _checkpoint_without_reentrant(function, preserve_rng_state=True, *args, **kw
                     _unused = function(*args, **kwargs)
 
         if x not in storage:
+            import pdb; pdb.set_trace()
             raise RuntimeError(
                 "Attempt to retrieve a tensor saved by autograd multiple times without checkpoint"
                 " recomputation being triggered in between, this is not currently supported. Please"
