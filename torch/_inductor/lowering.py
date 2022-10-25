@@ -2417,7 +2417,15 @@ def max_pool2d_with_indices(
 
 @register_lowering(aten.max_pool2d_with_indices_backward, type_promotion_kind=None)
 def max_pool2d_with_indices_backward(
-    grad_output, x, kernel_size, stride, padding, dilation, ceil_mode, indices
+    grad_output,
+    input_sizes,
+    memory_format,
+    kernel_size,
+    stride,
+    padding,
+    dilation,
+    ceil_mode,
+    indices,
 ):
     if padding == 0:
         padding = [0, 0]
@@ -2425,22 +2433,21 @@ def max_pool2d_with_indices_backward(
         stride = kernel_size
 
     assert dilation == 1 or all(d == 1 for d in dilation)
-    assert isinstance(x, TensorBox)
     assert len(kernel_size) == 2
     assert len(stride) == 2
     assert len(padding) == 2
-    assert len(x.get_size()) in (3, 4)
+    assert len(input_sizes) in (3, 4)
 
     # we will read this many times, so make sure it is computed
     grad_output.realize_hint()
     indices.realize_hint()
 
-    *batch, height, width = x.get_size()
+    *batch, height, width = input_sizes
     *_, pooled_height, pooled_width = grad_output.get_size()
 
     indices_loader = indices.make_loader()
     grad_loader = grad_output.make_loader()
-    new_size = list(x.get_size())
+    new_size = list(input_sizes)
 
     h_window_size = max(
         [
