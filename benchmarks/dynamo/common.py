@@ -1038,9 +1038,9 @@ class BenchmarkRunner:
             reset_rng_state()
             torch._dynamo.reset()
             try:
-                self.init_optimizer(current_device, model.parameters())
-                optimized_model_iter_fn = optimize_ctx(self.run_n_iterations)
-                new_result = optimized_model_iter_fn(model, example_inputs)
+                opt_model = optimize_ctx(model)
+                self.init_optimizer(current_device, opt_model.parameters())
+                new_result = self.run_n_iterations(opt_model, example_inputs)
             except Exception as e:
                 accuracy_status = "fail_to_run"
                 print(
@@ -1088,18 +1088,20 @@ class BenchmarkRunner:
 
         # Cast the model to float16/float32 as necessary
         model, example_inputs = self.maybe_cast(model, example_inputs)
-        self.init_optimizer(current_device, model.parameters())
         with self.pick_grad(name, self.args.training):
             ok, total = Stats.reset_counters()
             experiment_kwargs = {}
             results = []
 
+            self.init_optimizer(current_device, model.parameters())
             eager_latency, eager_peak_mem = warmup(
                 self.model_iter_fn, model, example_inputs, "eager"
             )
-            optimized_model_iter_fn = optimize_ctx(self.model_iter_fn)
+
+            opt_model = optimize_ctx(model)
+            self.init_optimizer(current_device, opt_model.parameters())
             dynamo_latency, dynamo_peak_mem = warmup(
-                optimized_model_iter_fn, model, example_inputs, "dynamo"
+                self.model_iter_fn, opt_model, example_inputs, "dynamo"
             )
 
             compilation_time = dynamo_latency - eager_latency
