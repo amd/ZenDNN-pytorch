@@ -147,6 +147,7 @@ class TritonOverrides(OpOverrides):
 
     @staticmethod
     def relu(x):
+        raise NotImplementedError("Unhelpful exception")
         return ops.maximum("0", x)
 
     @staticmethod
@@ -227,7 +228,7 @@ class TritonOverrides(OpOverrides):
 
     @staticmethod
     def sigmoid(x):
-        return f"tl.sigmoid({x})"
+        return f"1 + tl.sigmoid({x})"
 
     @staticmethod
     def libdevice_sigmoid(x):
