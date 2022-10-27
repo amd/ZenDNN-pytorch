@@ -19,7 +19,7 @@ from torch.nn.parallel.distributed import DistributedDataParallel
 
 from . import config, convert_frame, skipfiles, utils
 from .exc import ResetRequired
-from .mutation_guard import install_generation_tagging_init
+from .mutation_guard import install_generation_tagging_new
 from .optimizations.distributed import DDPOptimizer
 from .utils import checkpoint_params, clone_inputs, compile_times, same
 
@@ -187,7 +187,7 @@ class OptimizeContext(_TorchDynamoContext):
             ):
                 raise ResetRequired()
             most_recent_backend = compiler_fn
-            install_generation_tagging_init()
+            install_generation_tagging_new()
 
         compiler_fn = innermost_fn(callback)
         super().__init__(
