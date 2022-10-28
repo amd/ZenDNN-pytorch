@@ -257,6 +257,19 @@ test_inductor() {
   # pytest test/test_ops_gradients.py --verbose -k "not _complex and not test_inplace_grad_acos_cuda_float64"
 }
 
+test_inductor_distributed() {
+  # this runs on multi-gpu instance. limit it to multi-gpu tests to reduce cost
+
+  # TODO: generate some parseable output
+  TEST_REPORTS_DIR=/tmp/test-reports
+  mkdir -p "$TEST_REPORTS_DIR"
+
+  # TODO: don't require tabluate for this benchmark...
+  pip install --user tabulate
+  # TODO: set world-size = num gpus in the machine (assume 4 for now)
+  python benchmarks/dynamo/distributed.py --toy_model --ddp --dynamo inductor --dynamo_optimize_ddp --world_size 4
+}
+
 test_inductor_huggingface_shard() {
   if [[ -z "$NUM_TEST_SHARDS" ]]; then
     echo "NUM_TEST_SHARDS must be defined to run a Python test shard"
@@ -724,6 +737,11 @@ elif [[ "$TEST_CONFIG" == distributed ]]; then
 elif [[ "$TEST_CONFIG" == deploy ]]; then
   checkout_install_torchdeploy
   test_torch_deploy
+elif [[ "${TEST_CONFIG}" == *inductor_distributed* ]]; then
+  # install_torchvision
+  install_filelock
+  install_triton
+  test_inductor_distributed
 elif [[ "${TEST_CONFIG}" == *dynamo* && "${SHARD_NUMBER}" == 1 && $NUM_TEST_SHARDS -gt 1 ]]; then
   test_without_numpy
   install_torchvision
