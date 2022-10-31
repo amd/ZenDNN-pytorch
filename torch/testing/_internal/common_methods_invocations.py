@@ -4420,7 +4420,7 @@ def sample_inputs_narrow_narrow_copy(op_info, device, dtype, requires_grad, *, i
 
 def sample_inputs_view_copy(op_info, device, dtype, requires_grad, **kwargs):
     shapes_and_args = (
-        ((S, S, S), [S*S, S]),
+        ((S, S, S), [S * S, S]),
     )
 
     for shape, size in shapes_and_args:
@@ -12613,8 +12613,7 @@ op_db: List[OpInfo] = [
                # The size of tensor a (0) must match the size of tensor b (5) at non-singleton dimension 1
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out'),
                DecorateInfo(unittest.expectedFailure, 'TestCommon', 'test_out_warning'),
-           ),
-    ),
+           )),
     UnaryUfuncInfo('neg',
                    aliases=('negative', ),
                    ref=np.negative,
