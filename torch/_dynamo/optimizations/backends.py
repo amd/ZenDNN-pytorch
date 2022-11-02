@@ -801,14 +801,25 @@ def torchxla_trivial(subgraph):
 
     xla_dev = xm.xla_device()
 
-    xla_model = copy.deepcopy(subgraph.model).to(device=xla_dev)
+    if next(subgraph.model.parameters()).device.type != 'xla':
+        xla_model = copy.deepcopy(subgraph.model).to(device=xla_dev)
+    else:
+        xla_model = subgraph.model
 
     def xla_model_wrapper(*inputs):
-        orig_device = inputs[0].device if len(inputs) > 0 else "cpu"
-        xla_inputs = tuple(inp.to(device=xla_dev) for inp in inputs)
+        already_on_xla = inputs[0].device.type == 'xla'
+        if not already_on_xla:
+            orig_device = inputs[0].device if len(inputs) > 0 else "cpu"
+            xla_inputs = tuple(inp.to(device=xla_dev) for inp in inputs)
+        else:
+            xla_inputs = inputs
 
         xla_out = xla_model(*xla_inputs)
-        result = tuple(out.to(device=orig_device) for out in xla_out)
+
+        if not already_on_xla:
+            result = tuple(out.to(device=orig_device) for out in xla_out)
+        else:
+            result = xla_out
         return result
 
     return xla_model_wrapper
@@ -820,7 +831,7 @@ def torchxla_trace_once(subgraph):
 
     model = subgraph.model
     example_inputs = subgraph.example_inputs
-    return integration.extract_compiled_graph(model, example_inputs)
+    return integration.extract_compiled_graph(model, example_inputs, check_inplace_update=True)
 
 
 def ipex_fp32(gm: torch.fx.GraphModule, example_inputs):

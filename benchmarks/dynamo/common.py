@@ -17,6 +17,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import torch
+from torch import nn
 
 import torch._dynamo
 import torch._dynamo.utils
@@ -31,6 +32,7 @@ from torch._inductor import config as inductor_config
 from torch._inductor.utils import fresh_inductor_cache
 from torch._subclasses.fake_tensor import FakeTensorMode
 from torch.utils._pytree import tree_map
+import torch._dynamo.optimizations.torchxla_integration as integration
 
 try:
     from functorch._src.aot_autograd import set_model_name
@@ -366,8 +368,10 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     should_check_result = should_randomize_input = args.randomize_input
     is_correct = True
 
-    baseline_model_iter_fn = get_baseline_model_iter_fn(args, model_iter_fn)
-    baseline_model = get_baseline_model(args, model)
+    # baseline_model_iter_fn = get_baseline_model_iter_fn(args, model_iter_fn)
+    # baseline_model = get_baseline_model(args, model)
+    baseline_model = model
+    baseline_model_iter_fn = model_iter_fn
 
     import contextlib
 
@@ -817,6 +821,8 @@ def xla_wrapper(model_iter_fn):
                     lambda x: x.to(device=eager_dev), xla_out.__dict__[k]
                 )
             return xla_out
+        elif xla_out is None:
+            return None
         else:
             raise RuntimeError(f"Can not handle type {type(xla_out)}")
 
@@ -1533,6 +1539,17 @@ def main(runner, original_dir=None):
         runner, args, original_dir
     )
 
+class LinearModule(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear = nn.Linear(10, 5)
+
+    def forward(self, x):
+        return self.linear(x)
+
+    def get_random_inputs(self):
+        return (torch.randn(2, 10),)
+
 
 def run(runner, args, original_dir=None):
     # Pass the parsed args object to benchmark runner object
@@ -1812,6 +1829,10 @@ def run(runner, args, original_dir=None):
                 batch_size = read_batch_size_from_file(
                     args, args.batch_size_file, model_name
                 )
+            # TODO: it's super weird that a calling simp_xla_backward can avoid
+            # the issue below:
+            # RuntimeError: 0 <= device.index() && device.index() < static_cast<c10::DeviceIndex>(device_ready_queues_.size()) INTERNAL ASSERT FAILED at "/pytorch/torch/csrc/autograd/engine.cpp":1342, please report a bug to PyTorch.
+            integration.simp_xla_backward()
             try:
                 device, name, model, example_inputs, batch_size = runner.load_model(
                     device,
@@ -1825,6 +1846,10 @@ def run(runner, args, original_dir=None):
                 print(traceback.format_exc())
                 logging.warn(f"{args.only} failed to load")
                 continue  # bad benchmark implementation
+
+            if os.environ.get("force_linear_model", "0") == "1":
+                model = LinearModule()
+                example_inputs = model.get_random_inputs()
 
             current_name = name
             current_device = device
@@ -1841,6 +1866,13 @@ def run(runner, args, original_dir=None):
                     model, example_inputs, runner.model_iter_fn, name, args
                 )
                 continue
+           
+            # TODO: this cause --torchxla_trivial fail for resnet
+            if args.use_xla_baseline:
+                import torch_xla.core.xla_model as xm
+                xla_dev = xm.xla_device()
+                model = model.to(device=xla_dev)
+                example_inputs = tuple(inp.to(device=xla_dev) for inp in example_inputs)
 
             runner.run_one_model(
                 name,

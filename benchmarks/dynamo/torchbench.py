@@ -17,6 +17,7 @@ except ImportError:
 
 from torch._dynamo.testing import collect_results, reduce_to_scalar_loss
 from torch._dynamo.utils import clone_inputs
+import torch._dynamo.optimizations.torchxla_integration as integration
 
 # We are primarily interested in tf32 datatype
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -227,7 +228,6 @@ class TorchBenchmarkRunner(BenchmarkRunner):
         model_name,
         batch_size=None,
     ):
-
         is_training = self.args.training
         use_eval_mode = self.args.use_eval_mode
         dynamic_shapes = self.args.dynamic_shapes
