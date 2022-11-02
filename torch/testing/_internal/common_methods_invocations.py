@@ -4436,7 +4436,7 @@ def error_inputs_view_copy(op_info, device):
     tensor = make_tensor([S, S], dtype=torch.float32, device=device)
     # Size is too big
     s0 = SampleInput(tensor, [S * S * 10])
-    yield ErrorInput(s0, error_regex="shape '\[250\]' is invalid for input of size 25", error_type=RuntimeError)
+    yield ErrorInput(s0, error_regex=r"shape '\[250\]' is invalid for input of size 25", error_type=RuntimeError)
 
 
 def sample_inputs_narrow(op_info, device, dtype, requires_grad, **kwargs):
