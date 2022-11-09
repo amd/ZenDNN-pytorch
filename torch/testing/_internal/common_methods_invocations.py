@@ -4438,6 +4438,10 @@ def error_inputs_view_copy(op_info, device):
     s0 = SampleInput(tensor, [S * S * 10])
     yield ErrorInput(s0, error_regex=r"shape '\[250\]' is invalid for input of size 25", error_type=RuntimeError)
 
+    # only one dimension can be inferred
+    s0 = SampleInput(tensor, [-1, S, -1])
+    yield ErrorInput(s0, error_regex=r"only one dimension can be inferred", error_type=RuntimeError)
+
 
 def sample_inputs_narrow(op_info, device, dtype, requires_grad, **kwargs):
     '''
