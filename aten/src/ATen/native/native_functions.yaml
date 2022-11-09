@@ -3796,6 +3796,21 @@
     CUDA: batch_norm_cuda_out
     MPS: batch_norm_mps_out
 
+- func: native_batch_norm_legit(Tensor input, Tensor? weight, Tensor? bias, bool training, float momentum, float eps, *, Tensor(a!) out, Tensor(b!) save_mean, Tensor(c!) save_invstd) -> (Tensor(a!), Tensor(b!), Tensor(c!))
+  dispatch:
+    CUDA: batch_norm_cuda_out
+    MPS: batch_norm_mps_out
+  # dispatch:
+  #   CompositeExplicitAutograd: batch_norm_no_stats
+
+- func: native_batch_norm_legit.stats(Tensor input, Tensor? weight, Tensor? bias, Tensor(a!) running_mean, Tensor(b!) running_var, bool training, float momentum, float eps, *, Tensor(c!) out, Tensor(d!) save_mean, Tensor(e!) save_invstd) -> (Tensor(c!), Tensor(d!), Tensor(e!))
+  dispatch:
+    CUDA: batch_norm_cuda_out
+    MPS: batch_norm_mps_out
+  # dispatch:
+  #   CompositeExplicitAutograd: batch_norm_eval
+
+
 - func: batch_norm_stats(Tensor input, float eps) -> (Tensor, Tensor)
   dispatch:
     CUDA: batch_norm_stats_cuda
