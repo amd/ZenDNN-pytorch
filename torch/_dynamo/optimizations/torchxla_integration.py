@@ -5,11 +5,37 @@ import functools
 import os
 import time
 from typing import Any, Dict, List
+import numpy as np
 
 import torch
+import time
+from torch.utils._pytree import tree_map
 
 debug = os.environ.get("debug_extract_compiled_graph") == "1"
 
+def timed(fn):
+    t0 = time.perf_counter()
+    out = fn()
+    t1 = time.perf_counter()
+    return t1 - t0, out
+
+def measure_time_variance(model=None, inputs=None, repeat=30):
+    import torch_xla.core.xla_model as xm
+    xla_dev = xm.xla_device()
+    if model is None:
+        from test_model import LinearModel
+        model = LinearModel(50).to(device=xla_dev)
+        inputs = tree_map(lambda x: x.to(device=xla_dev), model.get_example_inputs())
+    model(*inputs) # warm up
+    timings = np.zeros((repeat, 2), np.float64)
+    for rep in range(repeat):
+        timings[rep, 0], _ = timed(lambda: model(*inputs))
+        timings[rep, 1], _ = timed(lambda: model(*inputs))
+
+    median = np.median(timings, axis=0)
+    speedup = median[0] / median[1]
+    print(timings)
+    print(f"Speedup {speedup} x")
 
 @dataclasses.dataclass
 class GraphInputMatcher:
@@ -73,12 +99,11 @@ def import_torchxla():
     import torch_xla.debug.metrics as metrics
 
 
-def extract_compiled_graph(model: torch.fx.GraphModule, example_inputs):
+def extract_compiled_graph(xla_model: torch.fx.GraphModule, xla_args):
     import_torchxla()
-    orig_device = example_inputs[0].device
-    xla_dev = xm.xla_device()
-    xla_model = copy.deepcopy(model).to(device=xla_dev)
-    xla_args = [arg.to(device=xla_dev) for arg in example_inputs]
+
+    # This call is critical to make sure xla_args' tensor id show up in graph_input_tensor_ids
+    xm.mark_step()
     args_tensor_ids = [
         torch_xla._XLAC._xla_get_tensor_id(xla_arg) for xla_arg in xla_args
     ]
@@ -88,6 +113,7 @@ def extract_compiled_graph(model: torch.fx.GraphModule, example_inputs):
 
     tensor_id_to_arg_idx = {tensor_id: i for i, tensor_id in enumerate(args_tensor_ids)}
     xla_out = xla_model(*xla_args)
+
     fallback_ops = get_fallback_ops()
     if len(fallback_ops) > 0:
         raise RuntimeError(
@@ -137,12 +163,12 @@ def extract_compiled_graph(model: torch.fx.GraphModule, example_inputs):
 
     # input all cpu tensors
     def optimized_mod(*args):
+        torch_xla._XLAC._xla_sync_multi(args, [])
         enter_ts = time.time()
         if len(args_and_out) == 0:
             return ()
 
         assert len(args) > 0  # can not handle no args case for now
-        eager_device = args[0].device
         graph_input = graph_input_matcher(args)
         start_ts = time.time()
         res = torch_xla._XLAC._run_cached_graph(graph_hash, graph_input)
@@ -151,7 +177,6 @@ def extract_compiled_graph(model: torch.fx.GraphModule, example_inputs):
                 f"torchxla reuse compiled graph run_cached_graph takes {time.time() - start_ts} seconds"
             )
 
-        prepare_output_ts = time.time()
 
         copy_args_ts = time.time()
         assert len(res) == len(args_and_out)
@@ -166,12 +191,12 @@ def extract_compiled_graph(model: torch.fx.GraphModule, example_inputs):
         # need to convert xla tensor back to eager tensor
         copy_res_ts = time.time()
         # First few elements might be xla_args that needs to be in place updated
-        result = [x.to(device=eager_device) for x in res[len(xla_args_need_update) :]]
+        result = res[len(xla_args_need_update) :]
         if debug:
             print(f"Copy results takes {time.time() - copy_res_ts} seconds")
-            print(f"prepare output takes {time.time() - prepare_output_ts} seconds")
             print(f"optimized_mod takes {time.time() - enter_ts} seconds overall")
 
+        xm.mark_step()
         return result
 
     return optimized_mod
