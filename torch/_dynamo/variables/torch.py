@@ -172,6 +172,9 @@ class TorchVariable(VariableTracker):
     ) -> "VariableTracker":
         from . import ConstantVariable, GradModeVariable, TensorVariable
 
+        if self.value in (torch.ones, torch.zeros, torch.rand):
+            raise Unsupported(f"constructor function {self.value} isn't supported")
+
         constant_args = check_constant_args(args, kwargs)
         unspec_python_args = check_unspec_python_args(args, kwargs)
         options = VariableTracker.propagate(self, args, kwargs.values())
