@@ -1,5 +1,6 @@
 import argparse
 from functools import partial
+import os
 
 import numpy as np
 import tabulate
@@ -32,7 +33,11 @@ def profile_model(args, model, inputs, rank):
         prof.export_chrome_trace(args.trace_file)
 
 
-def run_model(args, model, inputs, rank, world_size, key, result_q):
+def run_model(args, model, inputs, key):
+    rank = int(os.getenv("RANK", 0))
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+    # result_q = []
+
     setup(rank, world_size)
     if args.device == "cuda":
         # needed for FSDP
@@ -63,6 +68,8 @@ def run_model(args, model, inputs, rank, world_size, key, result_q):
     if args.dynamo:
         if args.verbose:
             dynamo.config.verbose = True
+            import logging
+            dynamo.config.log_level = logging.DEBUG
         if args.dynamo_optimize_ddp:
             dynamo.config.optimize_ddp = True
 
@@ -86,7 +93,8 @@ def run_model(args, model, inputs, rank, world_size, key, result_q):
     times.append(t_total / args.repeat)
 
     if rank == 0:
-        result_q.put(times)
+        # result_q.put(times)
+        print(f"rank 0: times {times}")
 
     if args.profile:
         profile_model(args, model, inputs, rank)
@@ -94,25 +102,25 @@ def run_model(args, model, inputs, rank, world_size, key, result_q):
     cleanup()
 
 
-def experiment(fn, key, world_size, results):
-    key = f"{key}_{world_size}"
-    dynamo.reset()
-    ctx = mp.get_context("spawn")
-    result_q = ctx.SimpleQueue()
-    f_args = (world_size, key, result_q)
-    if world_size > 1:
-        mp.spawn(
-            fn,
-            args=f_args,
-            nprocs=world_size,
-            join=True,
-        )
-    else:
-        # rank 0
-        fn(0, *f_args)
-    times = result_q.get()
+# def experiment(fn, key, world_size, results):
+#     key = f"{key}_{world_size}"
+#     dynamo.reset()
+#     ctx = mp.get_context("spawn")
+#     result_q = ctx.SimpleQueue()
+#     f_args = (world_size, key, result_q)
+#     if world_size > 1:
+#         mp.spawn(
+#             fn,
+#             args=f_args,
+#             nprocs=world_size,
+#             join=True,
+#         )
+#     else:
+#         # rank 0
+#         fn(0, *f_args)
+#     times = result_q.get()
 
-    results.append((key, np.median(times)))
+#     results.append((key, np.median(times)))
 
 
 if __name__ == "__main__":
@@ -128,9 +136,9 @@ if __name__ == "__main__":
     parser.add_argument("--profile", action="store_true", help="Run the profiler")
     parser.add_argument("--trace_file", default="profile.json", help="Run the profiler")
     parser.add_argument("--repeat", default=10, help="Repeats for timing run")
-    parser.add_argument(
-        "--world_size", type=int, default=2, help="Number of ranks/gpus for experiments"
-    )
+    # parser.add_argument(
+    #     "--world_size", type=int, default=2, help="Number of ranks/gpus for experiments"
+    # )
     parser.add_argument(
         "--dynamo_optimize_ddp",
         action="store_true",
@@ -159,13 +167,15 @@ if __name__ == "__main__":
         "--toy_model", action="store_true", help="use toy model instead"
     )
     args = parser.parse_args()
-
+    print(args)
     model_name = "ToyModel" if args.toy_model else args.torchbench_model
     model, inputs = get_model(args)
 
     fn = partial(run_model, args, model, inputs)
 
-    times = []
-    experiment(fn, model_name, args.world_size, times)
-    print("\nExperiment Results:")
-    print(tabulate.tabulate(times, headers=("key", "time")))
+    # times = []
+    # experiment(fn, model_name, args.world_size, times)
+    world_size = os.getenv('WORLD_SIZE', 1)
+    fn(f"{model_name}_{world_size}")
+    # print("\nExperiment Results:")
+    # print(tabulate.tabulate(times, headers=("key", "time")))
