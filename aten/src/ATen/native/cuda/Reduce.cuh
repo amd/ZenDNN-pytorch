@@ -19,6 +19,7 @@
 #include <thrust/pair.h>
 
 #include <ATen/native/cuda/jit_utils.h>
+#include <iostream>
 
 namespace at { namespace native {
 
@@ -885,6 +886,10 @@ static void launch_reduce_kernel(const ReduceConfig& config, const R& reduction)
   auto stream = at::cuda::getCurrentCUDAStream();
   int shared_memory = config.shared_memory_size();
 
+  std::cout << "Block: " << block.x << ", " << block.y << std::endl;
+  std::cout << "Grid: " << grid.x << ", " << grid.y << std::endl;
+  std::cout << "shared_memory: " << shared_memory << std::endl;
+
   switch(config.output_vec_size) {
   case 4:
     reduce_kernel<max_threads / 4, 4, R><<<grid, block, shared_memory, stream>>>(reduction);
@@ -1092,7 +1097,10 @@ ReduceConfig setReduceConfig(const TensorIterator& iter){
     config.output_mult[0] = config.split_output(block_width);
   }
 
-  if (config.values_per_thread() >= block_height * 16 || config.values_per_thread() >= 256) {
+  constexpr int min_values_per_thread = 16;
+  constexpr int max_values_per_thread = 256;
+
+  if (config.values_per_thread() >= block_height * 16 || config.values_per_thread() >= max_values_per_thread) {
     // Divide the input across warps in a thread-block, if that leaves at least
     // 16 elements to be summed by each thread. This will require inter-warp
     // reduction using shared memory.
@@ -1102,12 +1110,6 @@ ReduceConfig setReduceConfig(const TensorIterator& iter){
     config.output_mult[1] = config.split_output(block_height);
   }
 
-  int min_values_per_thread = 16;
-  int max_values_per_thread = 256;
-  if (config.vectorize_input) {
-    min_values_per_thread *= config.input_vec_size;
-    max_values_per_thread *= config.input_vec_size;
-  }
   const int blocks_per_sm = at::cuda::getCurrentDeviceProperties()->maxThreadsPerMultiProcessor / config.num_threads;
   const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
   const int target_grid_size = num_mp * blocks_per_sm;
@@ -1119,9 +1121,13 @@ ReduceConfig setReduceConfig(const TensorIterator& iter){
     // If we decide to split input across blocks, as long as we can get enough
     // number of blocks (`target_grid_size`) to balance SM, we should still
     // make the number of values per thread large for best performance.
+    // ctas_per_output = clamp(div_up(target_grid_size, grid), min=vpth / max_vpth, max=vpth / min_vpth)
     int ctas_per_output1 = div_up(target_grid_size, grid);
     int ctas_per_output2 = div_up(config.values_per_thread(), min_values_per_thread);
     int ctas_per_output3 = div_up(config.values_per_thread(), max_values_per_thread);
+    std::cout << "CTAS per output 1" << ctas_per_output1 << std::endl;
+    std::cout << "CTAS per output 2" << ctas_per_output2 << std::endl;
+    std::cout << "CTAS per output 3" << ctas_per_output3 << std::endl;
     // We want the minimum of ctas_per_output1 and ctas_per_output2, so that each thread can have
     // a large number of values to deal with. But we don't want values_per_thread to be larger than
     // max_values_per_thread
@@ -1203,6 +1209,9 @@ inline void gpu_reduce_kernel(TensorIterator& iter, const ops_t& ops, ident_t id
   char* acc_data = acc_buf_ptr->get_acc_slice(out_data);
 
   ReduceConfig config = setReduceConfig<arg_t, scalar_t, vt0>(iter);
+
+  std::cout << config << std::endl;
+
   at::DataPtr buffer;
   at::DataPtr semaphores;
   if (config.should_global_reduce()) {
