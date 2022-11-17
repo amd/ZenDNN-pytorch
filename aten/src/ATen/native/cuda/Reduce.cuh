@@ -19,7 +19,6 @@
 #include <thrust/pair.h>
 
 #include <ATen/native/cuda/jit_utils.h>
-#include <iostream>
 
 namespace at { namespace native {
 
@@ -102,7 +101,8 @@ struct ReduceConfig {
 
   template <typename T>
   void set_block_dimension(int64_t dim0, int64_t dim1) {
-    const int max_num_threads = mnt_wrapper<T>::MAX_NUM_THREADS / output_vec_size;
+    auto vec_size = vectorize_input ? input_vec_size : output_vec_size;
+    const int max_num_threads = mnt_wrapper<T>::MAX_NUM_THREADS / vec_size;
     int dim0_pow2 = dim0 < max_num_threads ? static_cast<int>(last_pow2(dim0)) : max_num_threads;
     int dim1_pow2 = dim1 < max_num_threads ? static_cast<int>(last_pow2(dim1)) : max_num_threads;
     block_width = std::min(dim0_pow2, int(at::cuda::warp_size()));
@@ -1068,6 +1068,7 @@ ReduceConfig setReduceConfig(const TensorIterator& iter){
       // Note that if vt0 < ReduceConfig::vec_size, then this means the register pressure could be high, in such case,
       // we should avoid vectorization.
       config.vectorize_input = true;
+      dim0 /= config.input_vec_size;
     } else if (!reduction_on_fastest_striding_dimension) {
       // Case 2: "vectorize along output"
       config.output_vec_size = get_output_vec_size<scalar_t>(iter);
@@ -1101,9 +1102,13 @@ ReduceConfig setReduceConfig(const TensorIterator& iter){
     config.output_mult[1] = config.split_output(block_height);
   }
 
-  constexpr int min_values_per_thread = 16;
-  constexpr int max_values_per_thread = 256;
-  const int blocks_per_sm = at::cuda::getCurrentDeviceProperties()->maxThreadsPerMultiProcessor / (block_width * block_height);
+  int min_values_per_thread = 16;
+  int max_values_per_thread = 256;
+  if (config.vectorize_input) {
+    min_values_per_thread *= config.input_vec_size;
+    max_values_per_thread *= config.input_vec_size;
+  }
+  const int blocks_per_sm = at::cuda::getCurrentDeviceProperties()->maxThreadsPerMultiProcessor / config.num_threads;
   const int num_mp = at::cuda::getCurrentDeviceProperties()->multiProcessorCount;
   const int target_grid_size = num_mp * blocks_per_sm;
   int grid = config.grid().x;
