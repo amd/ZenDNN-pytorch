@@ -18,7 +18,7 @@ on:
 jobs:
   run_mps_test:
     name: "Run MPS tests"
-    runs-on: macos-m1-12
+    runs-on: macos-m1-13
     steps:
       - name: Checkout PyTorch
         uses: malfet/checkout@silent-checkout
