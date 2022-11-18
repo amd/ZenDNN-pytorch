@@ -22,6 +22,35 @@ from .normalize import normalize_ir
 log = logging.getLogger(__name__)
 
 
+def canonicalize(gm):
+    # Collect the outputs with view
+    view_outputs = []
+    for node in gm.graph.nodes:
+        if node.op == "output":
+            outputs = node.args[0]
+            for output in outputs:
+                if output.op == "call_method" and output.target == "view":
+                    view_outputs.append(output)
+
+    if len(view_outputs) == 0:
+        return gm
+
+    new_graph = torch.fx.Graph()
+    env = {}
+    for node in gm.graph.nodes:
+        if node.op == "placeholder":
+            env[node] = new_graph.placeholder(node.name)
+        elif node not in view_outputs:
+            env[node] = new_graph.node_copy(node, lambda x: env[x])
+        else:
+            view_node = new_graph.node_copy(node, lambda x: env[x])
+            env[node] = new_graph.call_function(torch.clone, args=(view_node,))
+
+    new_graph.lint()
+    new_gm = torch.fx.GraphModule(gm, new_graph)
+    return new_gm
+
+
 def is_aot_autograd_safe_to_run(gm, example_inputs):
     """
     There are some known issues with Aot Autograd. This is a workaround to catch
@@ -95,6 +124,8 @@ class AotAutogradStrategy(object):
 
     def __init__(self, gm: torch.fx.GraphModule, example_inputs):
         import functorch.compile
+
+        gm = canonicalize(gm)
 
         functorch.compile.config.use_functionalize = True
         functorch.compile.config.use_fake_tensor = True

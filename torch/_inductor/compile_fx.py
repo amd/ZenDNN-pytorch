@@ -30,6 +30,7 @@ ALIGNMENT = 16
 aot_autograd = dynamo_optimizations.backends.aot_autograd
 normalize_ir = dynamo_optimizations.normalize.normalize_ir
 is_aot_autograd_safe_to_run = dynamo_optimizations.training.is_aot_autograd_safe_to_run
+canonicalize = dynamo_optimizations.training.canonicalize
 count_calls = dynamo_utils.count_calls
 
 
@@ -329,10 +330,12 @@ _graph_counter = itertools.count(0)
 def compile_fx(model_: torch.fx.GraphModule, example_inputs_: List[torch.Tensor]):
     """Main entrypoint to a compile given FX graph"""
 
+    model_ = canonicalize(model_)
     if not is_aot_autograd_safe_to_run(model_, example_inputs_):
         log.warning("Aot Autograd is not safe to run, so falling back to eager")
         return model_
 
+    print(model_)
     functorch.compile.config.use_functionalize = True
     functorch.compile.config.use_fake_tensor = True
 
