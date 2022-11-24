@@ -1150,7 +1150,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply(
     const at::Tensor& input,
     double output_scale,
     int64_t output_zero_point) {
-  return apply_impl<false>(input, output_scale, output_zero_point);
+  return apply_impl<false>(input, c10::nullopt, output_scale, output_zero_point);
 }
 
 template <int kSpatialDim>
@@ -1158,13 +1158,23 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_relu(
     const at::Tensor& input,
     double output_scale,
     int64_t output_zero_point) {
-  return apply_impl<true>(input, output_scale, output_zero_point);
+  return apply_impl<true>(input, c10::nullopt, output_scale, output_zero_point);
+}
+
+template <int kSpatialDim>
+at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_add(
+    const at::Tensor& input,
+    const at::Tensor& accum,
+    double output_scale,
+    int64_t output_zero_point) {
+  return apply_impl<true>(input, accum, output_scale, output_zero_point);
 }
 
 template <int kSpatialDim>
 template <bool kReluFused>
 at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     const at::Tensor& act,
+    const c10::optional<at::Tensor>& accum,
     double output_scale,
     int64_t output_zero_point) {
   std::string func_name = "quantized::conv";
@@ -1413,6 +1423,33 @@ class QConvInt8 final {
   }
 };
 
+template <int kSpatialDim, bool kReluFused>
+class QConvAddInt8 final {
+ public:
+  static Tensor run(
+      Tensor act,
+      Tensor accum,
+      const c10::intrusive_ptr<ConvPackedParamsBase<kSpatialDim>>& packed_weight,
+      double output_scale,
+      int64_t output_zero_point) {
+    auto& ctx = at::globalContext();
+#if AT_MKLDNN_ENABLED()
+    if (ctx.qEngine() == at::QEngine::ONEDNN) {
+      if (kReluFused) {
+        TORCH_INTERNAL_ASSERT(false, "Qconv_add with relu is not supported yet");
+      } else {
+        return dynamic_cast<PackedConvWeightsOnednn<kSpatialDim>*>(packed_weight.get())->apply_add(
+          act, accum, output_scale, output_zero_point);
+      }
+    }
+#endif
+    TORCH_CHECK(
+    false,
+    "Didn't find engine for operation quantized::conv2d_add_relu ",
+    toString(ctx.qEngine()));
+  }
+};
+
 template <bool kReluFused>
 class QConv1dInt8 final {
  public:
@@ -1468,6 +1505,7 @@ TORCH_LIBRARY_IMPL(quantized, QuantizedCPU, m) {
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv1d_relu"),     QConv1dInt8<true>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d.new"),      QConvInt8<2, false>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d_relu.new"), QConvInt8<2, true>::run);
+  m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d_add"),      QConvAddInt8<2, false>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv3d.new"),      QConvInt8<3, false>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv3d_relu.new"), QConvInt8<3, true>::run);
   // for backward compatibility

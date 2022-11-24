@@ -288,6 +288,12 @@ struct PackedConvWeightsOnednn : public ConvPackedParamsBase<kSpatialDim> {
       const at::Tensor& input,
       bool reduce_range) override;
 
+  at::Tensor apply_add(
+      const at::Tensor& input,
+      const at::Tensor& accum,
+      double output_scale,
+      int64_t output_zero_point);
+
   std::tuple<at::Tensor, c10::optional<at::Tensor>> unpack() override;
 
   static c10::intrusive_ptr<ConvPackedParamsBase<kSpatialDim>> prepack(
@@ -332,6 +338,7 @@ struct PackedConvWeightsOnednn : public ConvPackedParamsBase<kSpatialDim> {
   template <bool ReluFused>
   at::Tensor apply_impl(
       const at::Tensor& input,
+      const c10::optional<at::Tensor>& accum,
       double output_scale,
       int64_t output_zero_point);
 
