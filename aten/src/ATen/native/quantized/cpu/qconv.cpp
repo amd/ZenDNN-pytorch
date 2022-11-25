@@ -1167,6 +1167,15 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_add(
     const at::Tensor& accum,
     double output_scale,
     int64_t output_zero_point) {
+  return apply_impl<false>(input, accum, output_scale, output_zero_point);
+}
+
+template <int kSpatialDim>
+at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_add_relu(
+    const at::Tensor& input,
+    const at::Tensor& accum,
+    double output_scale,
+    int64_t output_zero_point) {
   return apply_impl<true>(input, accum, output_scale, output_zero_point);
 }
 
@@ -1190,10 +1199,6 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     TORCH_CHECK(
       !transpose(),
       "Didn't support transposed for conv with add ",
-      c10::toString(ctx.qEngine()));
-    TORCH_CHECK(
-      kReluFused,
-      "Didn't support without relu for conv with add",
       c10::toString(ctx.qEngine()));
   }
 
@@ -1267,14 +1272,14 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
   ideep::tensor dst;
   at::Tensor accum_contig;
   if (has_accum) {
-    std::cout<<"create ideep dst with accum"<<std::endl;
+    // std::cout<<"create ideep dst with accum"<<std::endl;
     auto dst_desc = ideep::tensor::desc(dst_dims, src_data_type,
         kSpatialDim == 2 ? ideep::format_tag::nhwc : ideep::format_tag::ndhwc);
     accum_contig = accum.value().contiguous(kSpatialDim == 2 ? c10::MemoryFormat::ChannelsLast : c10::MemoryFormat::ChannelsLast3d);
 
-    std::cout<<"Before the calculation"<<std::endl;
-    std::cout<<"accum.int_repr() is: "<<accum.value().int_repr()<<std::endl;
-    std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
+    // std::cout<<"Before the calculation"<<std::endl;
+    // std::cout<<"accum.int_repr() is: "<<accum.value().int_repr()<<std::endl;
+    // std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
 
     dst.init(dst_desc, accum_contig.data_ptr());
     //dst.set_scale();
@@ -1284,7 +1289,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     dst = dst2;
   }
 
-  std::cout<<"---- dst.has_scale() is: "<<dst.has_scale()<<std::endl;
+  // std::cout<<"---- dst.has_scale() is: "<<dst.has_scale()<<std::endl;
 
   
   // Parameters
@@ -1298,8 +1303,8 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
   const ideep::scale_t& src_scales = ideep::scale_t(1, 1.0/input_scale);
   const ideep::scale_t& weights_scales = weights.get_scale();
   int64_t scale_size = weights_scales.size();
-  std::cout<<"input_scale is: "<<input_scale<<std::endl;
-  std::cout<<"scale_size is: "<<scale_size<<std::endl;
+  // std::cout<<"input_scale is: "<<input_scale<<std::endl;
+  // std::cout<<"scale_size is: "<<scale_size<<std::endl;
   double inv_output_scale = 1.0/output_scale;
   const ideep::zero_point_t src_zero_points = ideep::zero_point_t(1, input_zp);
   const ideep::zero_point_t dst_zero_points = ideep::zero_point_t(1, output_zero_point);
@@ -1309,18 +1314,21 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
   ideep::attr_t op_attr;
 
   if (has_accum) {
-    std::cout<<"Create the sum relu post ops"<<std::endl;
+    // std::cout<<"Create the sum relu post ops"<<std::endl;
     float sum_scale = accum.value().q_scale();
     int32_t sum_zero_point = accum.value().q_zero_point();
-    std::cout<<"sum_scale is: "<<sum_scale<<std::endl;
-    std::cout<<"output_scale is: "<<output_scale<<std::endl;
-    std::cout<<"sum_scale/output_scale is: "<<sum_scale/output_scale<<std::endl;
-    std::cout<<"sum_zero_point is: "<<sum_zero_point<<std::endl;
+    // std::cout<<"sum_scale is: "<<sum_scale<<std::endl;
+    // std::cout<<"output_scale is: "<<output_scale<<std::endl;
+    // std::cout<<"sum_scale/output_scale is: "<<sum_scale/output_scale<<std::endl;
+    // std::cout<<"sum_zero_point is: "<<sum_zero_point<<std::endl;
     // op_attr = ideep::attr_t::residual(sum_scale=1.0/sum_scale, sum_zero_point=sum_zero_point);
     // op_attr = ideep::attr_t::residual(sum_scale=sum_scale/output_scale, sum_zero_point=sum_zero_point);
     
     // op_attr = ideep::attr_t::fuse_sum(1.0/sum_scale, 128);
-    op_attr = ideep::attr_t::fuse_sum(1.0/sum_scale);
+
+    // Just use the default parameter here.
+    // Since we will set the true parameters inside ideep parameter_parameter functions.
+    op_attr = kReluFused ? ideep::attr_t::residual() : ideep::attr_t::fuse_sum();
 
     // Set the dst scale for the scale's convert inside ideep prepare parameters
     const ideep::scale_t& accum_scale = ideep::scale_t(1, 1.0/sum_scale);
@@ -1389,6 +1397,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     PrimitiveCacheKey cache_key = std::make_tuple(
         input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads);
     c10::call_once(*cache_initialized_flag, [&](){
+        // std::cout<<"---- create cache entry----"<<std::endl;
         src.set_zero_point(src_zero_points);
         dst.set_zero_point(dst_zero_points);
         ConvParams params;
@@ -1405,6 +1414,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     });
     // If hit, use cached data. If miss, fall back to normal path.
     if (get_conv_cache().hit(cache_key)) {
+      // std::cout<<"---- hit cache----"<<std::endl;
       ConvDesc& pd = get_conv_cache().get_primitive_desc();
       Conv& primitive = get_conv_cache().get_primitive();
       auto& src_zp_tensor = get_conv_cache().get_src_zp_tensor();
@@ -1412,7 +1422,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
       ideep::convolution_forward::compute(
           pd, primitive, src, weights, expected_bias, dst, src_zp_tensor, groups());
     } else {
-      std::cout<<"inv_output_scale is: "<<inv_output_scale<<std::endl;
+      // std::cout<<"inv_output_scale is: "<<inv_output_scale<<std::endl;
       ideep::convolution_forward::compute_v2(
           src, weights, b, dst_dims, dst,
           strides, dilates, padding_l, padding_r, groups(),
@@ -1424,7 +1434,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     }
   }
   if (has_accum) {
-    std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
+    // std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
     return accum_contig;
   } else {
     return output;
@@ -1515,7 +1525,8 @@ class QConvAddInt8 final {
 #if AT_MKLDNN_ENABLED()
     if (ctx.qEngine() == at::QEngine::ONEDNN) {
       if (kReluFused) {
-        TORCH_INTERNAL_ASSERT(false, "Qconv_add with relu is not supported yet");
+        return dynamic_cast<PackedConvWeightsOnednn<kSpatialDim>*>(packed_weight.get())->apply_add_relu(
+          act, accum, output_scale, output_zero_point);
       } else {
         return dynamic_cast<PackedConvWeightsOnednn<kSpatialDim>*>(packed_weight.get())->apply_add(
           act, accum, output_scale, output_zero_point);
@@ -1585,6 +1596,7 @@ TORCH_LIBRARY_IMPL(quantized, QuantizedCPU, m) {
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d.new"),      QConvInt8<2, false>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d_relu.new"), QConvInt8<2, true>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d_add"),      QConvAddInt8<2, false>::run);
+  m.impl(TORCH_SELECTIVE_NAME("quantized::conv2d_add_relu"),      QConvAddInt8<2, true>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv3d.new"),      QConvInt8<3, false>::run);
   m.impl(TORCH_SELECTIVE_NAME("quantized::conv3d_relu.new"), QConvInt8<3, true>::run);
   // for backward compatibility
