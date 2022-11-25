@@ -128,18 +128,28 @@ def conv_add_extra_inputs_getter(pattern):
     _, extra_input, conv = pattern
     return [extra_input]
 
+observation_type = ObservationType.OUTPUT_USE_DIFFERENT_OBSERVER_AS_INPUT
+
 conv_configs = _get_conv_configs(conv_dtype_configs)
 conv_configs.append(
     BackendPatternConfig((torch.add, MatchAllNode, nn.Conv2d))
+        .set_observation_type(observation_type)
+        .set_dtype_configs(conv_dtype_configs)
         .set_fuser_method(fuse_conv_add)
         ._set_root_node_getter(conv_add_root_node_getter)
-        ._set_extra_inputs_getter(conv_add_extra_inputs_getter))
+        ._set_extra_inputs_getter(conv_add_extra_inputs_getter)
+        .set_fused_module(nni.Conv2dAdd))
 
+conv_configs.append(
+    BackendPatternConfig(nni.Conv2dAdd)
+        .set_observation_type(observation_type)  # noqa: E131
+        .set_dtype_configs(conv_dtype_configs)
+        .set_root_module(nn.Conv2d)
+        .set_reference_quantized_module(nnqr.Conv2d))
 # ========================
 # |  CONFIGS FOR LINEAR  |
 # ========================
 
-observation_type = ObservationType.OUTPUT_USE_DIFFERENT_OBSERVER_AS_INPUT
 linear_configs = _get_linear_configs(linear_dtype_configs)
 
 # (1) Linear + leaky_relu

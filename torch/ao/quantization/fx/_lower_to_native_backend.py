@@ -257,6 +257,7 @@ STATIC_LOWER_FUSED_MODULE_MAP: Dict[Type[nn.Module], Tuple[Type[nn.Module], Type
     nni.ConvReLU1d: (nnqr.Conv1d, nniq.ConvReLU1d),
     nni.ConvReLU2d: (nnqr.Conv2d, nniq.ConvReLU2d),
     nni.ConvReLU3d: (nnqr.Conv3d, nniq.ConvReLU3d),
+    nni.Conv2dAdd: (nnqr.Conv2d, nniq.Conv2dAdd),
 }
 
 # Mapping from fused module class to a 2-tuple of:

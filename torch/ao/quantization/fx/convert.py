@@ -744,6 +744,7 @@ def convert(
                     root_module_classes).union(qat_module_classes).union(fused_module_classes):
                 # extra check for fused module classes to make sure they are fused module classes
                 # of target modules
+                print("fused_module_classes is: {}".format(fused_module_classes))
                 if type_before_parametrizations(mod) in fused_module_classes and \
                    type_before_parametrizations(mod[0]) not in root_module_classes:  # type: ignore[index]
                     continue
@@ -760,6 +761,8 @@ def convert(
     # remove deadcode after converting observers to quant/dequant ops
     model.graph.eliminate_dead_code()
     model.recompile()
+
+    print("model before lower_to_fbgemm is: {}".format(model))
 
     # TODO: maybe move this to quantize_fx.py
     if not is_reference:
