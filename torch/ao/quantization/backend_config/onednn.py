@@ -26,7 +26,7 @@ from ..fuser_method_mappings import (
     reverse3,
 )
 
-
+from torch.ao.quantization.utils import MatchAllNode
 # ===================
 # |  DTYPE CONFIGS  |
 # ===================
@@ -112,8 +112,28 @@ def _fuse_linear_bn_leaky_relu(is_qat, linear, bn, leaky_relu):
 # |  CONFIGS FOR CONV  |
 # ======================
 
-conv_configs = _get_conv_configs(conv_dtype_configs)
+def fuse_conv_add(is_qat, add, _, conv):
+    # add, _, conv = add_pattern
+    return nni.Conv2dAdd(add, conv)
+    #return conv
 
+def conv_add_root_node_getter(pattern):
+    _, _, conv = pattern
+    return conv
+
+def conv_add_extra_inputs_getter(pattern):
+    """ get inputs pattern for extra inputs, inputs for root node
+    are assumed to be copied over from root node to the fused node
+    """
+    _, extra_input, conv = pattern
+    return [extra_input]
+
+conv_configs = _get_conv_configs(conv_dtype_configs)
+conv_configs.append(
+    BackendPatternConfig((torch.add, MatchAllNode, nn.Conv2d))
+        .set_fuser_method(fuse_conv_add)
+        ._set_root_node_getter(conv_add_root_node_getter)
+        ._set_extra_inputs_getter(conv_add_extra_inputs_getter))
 
 # ========================
 # |  CONFIGS FOR LINEAR  |
