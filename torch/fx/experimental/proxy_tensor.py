@@ -424,6 +424,8 @@ class PythonKeyTracer(Tracer):
                     if not hasattr(self.root, qualname):
                         break
                     i += 1
+                import traceback
+                assert not isinstance(a, torch._subclasses.FakeTensor), f"Oh no, {''.join(traceback.format_list(self.a))}"
                 setattr(self.root, qualname, a)
 
             return self.create_node('get_attr', qualname, (), {})

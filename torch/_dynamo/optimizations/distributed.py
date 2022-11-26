@@ -140,6 +140,7 @@ class DDPOptimizer:
         to compile each subgraph. Finally, stiches compiled graphs into one graphmodule
         and returns its callable.
         """
+        compiling = True
         fake_mode = fake_mode_from_tensors(example_inputs)
         assert fake_mode is not None
 
@@ -247,6 +248,7 @@ class DDPOptimizer:
                             sn.args = (sn.args,)
 
                 input_mod.recompile()
+                print("DISTRIBUTED BUFFERS", [type(t) for t in input_mod.buffers()])
                 wrapper = WrapperModule(
                     self.compiler(input_mod, args),
                     unwrap_singleton_tuple,
@@ -282,19 +284,28 @@ class DDPOptimizer:
                         log.debug(
                             f"\n---{n.target} graph---\n" + str(fake_submod.graph)
                         )
+                        print()
                         compiled_submod_real = self.compile_submod(
                             real_mod, new_args, kwargs
                         )
                         self.module.delete_submodule(n.target)
                         n.target = "compiled_" + n.target
                         self.module.add_submodule(n.target, compiled_submod_real)
-                        return fake_submod(*new_args, **kwargs)
+                        if compiling:
+                            return fake_submod(*new_args, **kwargs)
+                        else:
+                            print("NOT COMPILING BUT STILL HERE")
                     # then we execute the modified node using the usual logic
                     return getattr(self, n.op)(n.target, new_args, kwargs)
 
-        submod_compiler = SubmodCompiler(split_gm, self.backend_compile_fn)
-        submod_compiler.run(*example_inputs)
-        split_gm.recompile()
+        print("LOWERING GM", split_gm.submod_2)
+        print("BUFFERS:", [(name, type(t)) for name, t in split_gm.named_buffers()])
+        print("PARAMETERS:", [(name, type(t)) for name, t in split_gm.named_parameters()])
+        with torch.autograd.set_multithreading_enabled(False):
+            submod_compiler = SubmodCompiler(split_gm, self.backend_compile_fn)
+            submod_compiler.run(*example_inputs)
+            split_gm.recompile()
 
         log.debug("\n---final graph---\n" + str(split_gm.graph) + "\n---------------\n")
+        compiling = False
         return split_gm

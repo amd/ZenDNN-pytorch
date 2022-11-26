@@ -553,6 +553,8 @@ class FakeTensor(torch.Tensor):
         self.fake_device = device
         self.fake_mode = fake_mode
         self.constant = constant
+        import traceback
+        self.trace = traceback.extract_stack()
 
     @staticmethod
     def from_tensor(t, fake_mode):

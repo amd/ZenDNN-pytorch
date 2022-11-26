@@ -322,6 +322,8 @@ class Tracer(TracerBase):
                         break
                     i += 1
                 self.tensor_attrs[a] = qualname
+                import traceback
+                assert not isinstance(a, torch._subclasses.FakeTensor), f"Oh no, {''.join(traceback.format_list(a.trace))}"
                 setattr(self.root, qualname, a)
 
             return self.create_node("get_attr", qualname, (), {})

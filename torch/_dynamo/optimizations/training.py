@@ -120,7 +120,7 @@ class AotAutogradStrategy(object):
 
     @property
     def example_inputs(self):
-        return clone_inputs(self.original_example_inputs)
+        return self.original_example_inputs
 
     def verified_candidate(self):
         if self.use_fallback:

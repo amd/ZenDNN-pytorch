@@ -81,7 +81,7 @@ class WrapperBackend:
 
     @property
     def example_inputs(self):
-        return clone_inputs(self.original_example_inputs)
+        return self.original_example_inputs
 
     def __call__(self, gm: torch.fx.GraphModule, example_inputs):
 
@@ -470,6 +470,7 @@ class OutputGraph(fx.Tracer):
         gm.compile_subgraph_reason = self.compile_subgraph_reason
         name = unique_id("__compiled_fn")
 
+        # print("LOWERING GM", gm)
         compiled_fn = self.call_user_compiler(gm)
         compiled_fn = disable(compiled_fn)
 

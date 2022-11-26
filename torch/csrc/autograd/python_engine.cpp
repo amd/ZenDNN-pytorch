@@ -331,6 +331,9 @@ PyObject* THPEngine_run_backward(
     auto& engine = python::PythonEngine::get_python_engine();
     outputs = engine.execute(
         roots, grads, keep_graph, create_graph, accumulate_grad, output_edges);
+    // for (const auto& output : outputs) {
+    //   std::cout << "Output: " << output << std::endl;
+    // }
   }
 
   if (!backward_api_called && inputs != nullptr) {

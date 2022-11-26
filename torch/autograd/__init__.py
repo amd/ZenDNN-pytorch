@@ -194,6 +194,11 @@ def backward(
     # The reason we repeat same the comment below is that
     # some Python versions print out the first line of a multi-line function
     # calls in the traceback and some print out the last line
+    print("tensors to C++ side?", [type(t) for t in tensors] if tensors is not None else "None")
+    print("grad_tensors to C++ side?", [type(g) for g in grad_tensors] if grad_tensors is not None else "None")
+    print("inputs to C++ side?", [type(i) for i in inputs] if inputs is not None else "None")
+    print("Retain graph?", retain_graph)
+    print("Create graph?", create_graph)
     Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
         tensors, grad_tensors_, retain_graph, create_graph, inputs,
         allow_unreachable=True, accumulate_grad=True)  # Calls into the C++ engine to run the backward pass

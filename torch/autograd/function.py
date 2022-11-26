@@ -267,6 +267,7 @@ class BackwardCFunction(_C._FunctionBase, FunctionCtx, _HookMixin):
                                "Function is not allowed. You should only implement one "
                                "of them.")
         user_fn = vjp_fn if vjp_fn is not Function.vjp else backward_fn
+        print("Apply invoked with args", [type(arg) for arg in args])
         return user_fn(self, *args)
 
     def apply_jvp(self, *args):
