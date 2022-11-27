@@ -292,7 +292,15 @@ class DDPOptimizer:
                         n.target = "compiled_" + n.target
                         self.module.add_submodule(n.target, compiled_submod_real)
                         if compiling:
-                            return fake_submod(*new_args, **kwargs)
+                            from torch.utils._pytree import tree_map_only
+                            def simmy(x):
+                                if x.is_leaf:
+                                    return x.detach().requires_grad_(x.requires_grad)
+                                else:
+                                    #return x.detach().requires_grad_(x.requires_grad).clone()
+                                    return x
+                            return tree_map_only(torch.Tensor, simmy, fake_submod(*new_args, **kwargs))
+                            #return fake_submod(*new_args, **kwargs)
                         else:
                             print("NOT COMPILING BUT STILL HERE")
                     # then we execute the modified node using the usual logic

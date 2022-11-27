@@ -247,6 +247,12 @@ def proxy_call(proxy_mode, func, args, kwargs):
     # If there are any tensor subclasses, we need to handle those tensor subclasses first
     # TODO: we could use types to test this
     if not pytree.tree_all_only(torch.Tensor, can_handle_tensor, (args, kwargs)):
+        rs, _ = pytree.tree_flatten((args, kwargs))
+        for r in rs:
+            if isinstance(r, torch.Tensor) and not can_handle_tensor(r):
+                import traceback
+                print("WAWA", ''.join(traceback.format_list(r.trace)))
+                assert False
         return NotImplemented
 
     if func in CURRENT_DECOMPOSITION_TABLE:
@@ -481,8 +487,16 @@ class ProxyTorchDispatchMode(TorchDispatchMode):
         self._managers = []
 
     def __torch_dispatch__(self, func, types, args=(), kwargs=None):
-        with self.sym_mode.enable(False):
-            return self.inner_torch_dispatch(func, types, args, kwargs)
+        try:
+            with self.sym_mode.enable(False):
+                r = self.inner_torch_dispatch(func, types, args, kwargs)
+                if r is NotImplemented:
+                    assert False
+                return r
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise
 
     def __enter__(self):
         # sym mode first, then us...
