@@ -74,6 +74,15 @@ class AOTTestCase(TestCase):
     def setUp(self):
         super().setUp()
 
+class F(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x):
+        return x.clone()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        assert False
+
 class TestPythonKey(AOTTestCase):
     def test_make_fx(self, device):
         def f(x):
@@ -425,6 +434,30 @@ def forward(self, primals_1, primals_2, primals_3):
         ]
 
         self.verify_aot_autograd(f, inp, test_mutation=True, return_fw_graph=True)
+
+    def test_simplified_input_output_view_simple(self):
+        class MockModule(torch.nn.Module):
+            def forward(self, a):
+                return (a.mul(a),)
+                r = torch.matmul(a.view(3, 2).permute(1, 0), a.view(3, 2))
+                return (r,)
+
+        inp = torch.randn(2, 2)
+        linear = torch.nn.modules.Linear(2, 3, bias=True)
+        from torch._dynamo.utils import deepcopy_to_fake_tensor
+        fake_mode = FakeTensorMode()
+        fake_linear = deepcopy_to_fake_tensor(linear, fake_mode)
+        fake_inp = fake_mode.from_tensor(inp)
+        fake_inp2 = torch.ops.aten.native_dropout(fake_linear(fake_inp), 0.5, False)[0]
+        inp2 = torch.ops.aten.native_dropout(linear(inp), 0.5, False)[0]
+        print(fake_inp2.grad_fn)
+
+        mod = MockModule()
+        compiled_f = aot_module_simplified(mod, [fake_inp2], nop)
+
+        outs = compiled_f(inp2)
+        loss = sum(out.sum() for out in outs)
+        loss.backward()
 
     def test_input_output_view_simple(self):
         def f(a):

@@ -331,8 +331,10 @@ def run_functionalized_fw_and_collect_metadata(f):
                 if StorageWeakRef(arg.storage()) == StorageWeakRef(new_arg.storage()):
                     # We can use the storage aliasing of the inputs and updated inputs
                     # to detect when an input was actually updated, or just inplace-viewed.
+                    assert False
                     collect_mutated_input_info.append(MutationType.metadata_only)
                 else:
+                    assert False
                     collect_mutated_input_info.append(MutationType.data)
                     # Only return mutated inputs that mutate *data*, not metadata
                     # Note [Input mutation handling in aot autograd]
@@ -593,10 +595,12 @@ def create_joint_forward_backward_functionalized(
         if any(meta.mutated_input_info[i] == MutationType.data for i in outer_aliased_indices_of_current_base_arg):
             # Make sure the primal we pass to autograd.grad()
             # seees the tensor before the mutation
+            assert False
             out = t.clone()
         elif any(meta.mutated_input_info[i] == MutationType.metadata_only for i in outer_aliased_indices_of_current_base_arg):
             # Make sure the primal we pass to autograd.grad()
             # seees the tensor before the metadata mutation
+            assert False
             out = t.view(t.shape)
         else:
             out = t
@@ -607,6 +611,7 @@ def create_joint_forward_backward_functionalized(
         if synthetic_base_info is None:
             return primals
 
+        assert False, "dowop dowop"
         f_args_inner = []
         for outer_idx_or_lambda in synthetic_base_info:
             if isinstance(outer_idx_or_lambda, int):
@@ -661,6 +666,7 @@ def create_joint_forward_backward_functionalized(
                         and meta.aliased_output_info[i].tensor_meta is not None]
         output_metadata_for_fw = []
         for curr_alias in metadata_mutated_inps + aliased_outs:
+            assert False, "hrrrr"
             size_ = curr_alias.size()
             stride_ = curr_alias.stride()
             storage_offset_ = curr_alias.storage_offset()
@@ -694,6 +700,8 @@ def create_joint_forward_backward_functionalized(
                 # A bit sketchy, but fixes e.g. test_aot_autograd_exhaustive_matmul_cpu_float32
                 # The issue is that we are sensitive to decomps that don't accurately maintain
                 # their output's _base.shape compared to eager mode, and this helps mitigate a bit.
+                if out.shape != tangent.shape:
+                    assert False, "hrrrr"
                 needed_outs.append(out if out.shape == tangent.shape else out.view(tangent.shape))
                 needed_tangents.append(tangent.requires_grad_(True))
 

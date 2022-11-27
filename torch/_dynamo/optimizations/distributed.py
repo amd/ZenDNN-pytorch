@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
+import torch.distributed
 import torch
 import torch.fx.traceback as fx_traceback
 from torch import fx
@@ -284,7 +285,8 @@ class DDPOptimizer:
                         log.debug(
                             f"\n---{n.target} graph---\n" + str(fake_submod.graph)
                         )
-                        print()
+                        if (n.target == "submod_1" or n.target == "submod_2") and torch.distributed.get_rank() == 0:
+                            print(n.target, real_mod)
                         compiled_submod_real = self.compile_submod(
                             real_mod, new_args, kwargs
                         )
@@ -298,11 +300,15 @@ class DDPOptimizer:
                                     return x.detach().requires_grad_(x.requires_grad)
                                 else:
                                     #return x.detach().requires_grad_(x.requires_grad).clone()
+                                    print(n.target, "GRAD FN", x.grad_fn)
+                                    # if "ViewBackward" not in repr(x.grad_fn):
+                                    #     return x.clone()
                                     return x
+                            assert not kwargs
                             return tree_map_only(torch.Tensor, simmy, fake_submod(*new_args, **kwargs))
                             #return fake_submod(*new_args, **kwargs)
                         else:
-                            print("NOT COMPILING BUT STILL HERE")
+                            assert False
                     # then we execute the modified node using the usual logic
                     return getattr(self, n.op)(n.target, new_args, kwargs)
 
