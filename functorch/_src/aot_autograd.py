@@ -630,6 +630,9 @@ def create_joint_forward_backward_functionalized(
     def joint_forward_backward(
         primals: List[Any], tangents: List[Any]
     ) -> Tuple[List[Any], List[Any]]:
+        #import pdb
+        #pdb.set_trace()
+
         # Call the forward pass, making sure to clone any inputs that are mutated first.
         # We need to ensure that the inputs we pass to autograd.grad() are the *original*
         # inputs, and not their mutated values.
