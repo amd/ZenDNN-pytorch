@@ -285,7 +285,7 @@ class DDPOptimizer:
                         log.debug(
                             f"\n---{n.target} graph---\n" + str(fake_submod.graph)
                         )
-                        if (n.target == "submod_1" or n.target == "submod_2") and torch.distributed.get_rank() == 0:
+                        if (n.target == "submod_1" or n.target == "submod_2"):
                             print(n.target, real_mod)
                         compiled_submod_real = self.compile_submod(
                             real_mod, new_args, kwargs

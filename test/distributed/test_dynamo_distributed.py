@@ -21,6 +21,7 @@ from torch._inductor.utils import has_triton
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.testing._internal.common_utils import TestCase
 from torch.testing._internal.common_distributed import (
     MultiProcessTestCase,
     import_transformers_or_skip,
@@ -134,6 +135,52 @@ def _per_rank_init(rank, world_size):
     torch._dynamo.reset()
     torch._dynamo.utils.counters.clear()
     dist.destroy_process_group()
+
+
+class FakeDDP(nn.Module):
+    def __init__(self, module):
+        super().__init__()
+        self.module = module
+        bucket_cap_mb=25
+        self.bucket_bytes_cap = int(bucket_cap_mb * 1024 * 1024)
+
+    @contextmanager
+    def _inside_ddp_forward(self):
+        DDP._active_ddp_module = self
+        try:
+            yield
+        except Exception:
+            raise
+        finally:
+            DDP._active_ddp_module = None
+
+    def forward(self, *inputs, **kwargs):
+        with self._inside_ddp_forward():
+            return self.module.forward(*inputs, **kwargs)
+
+class MyDistributedTest(TestCase):
+    @import_transformers_or_skip()
+    @patch.object(config, "optimize_ddp", True)
+    def test_hf_bert_ddp_single_rank_aot(self):
+        model, inputs = get_hf_bert(0)
+        model = FakeDDP(model)
+
+        reset_rng_state()
+        correct_outputs = model(**inputs)
+        correct_loss = correct_outputs.loss
+        correct_loss.backward()
+
+        reset_rng_state()
+        opt_model = torch._dynamo.optimize("aot_eager")(model)
+        opt_outputs = opt_model(**inputs)
+        opt_loss = opt_outputs.loss
+        opt_loss.backward()
+
+        inputs_flat = [inputs[k] for k in inputs]
+        correct_results = collect_results(model, correct_outputs.logits, correct_loss, inputs_flat)
+        opt_results = collect_results(opt_model, opt_outputs.logits, opt_loss, inputs_flat)
+        self.assertTrue(same(correct_results, opt_results))
+
 
 
 @requires_nccl()
