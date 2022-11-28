@@ -204,6 +204,10 @@ COMPILER_REPRO_OPTIONS = {
 
 
 def dump_compiler_graph_state(gm, args, compiler_name):
+    for idx, a in enumerate(args):
+        torch.save(a, f"/scratch/anijain/work/pytorch/bad_module/tensor{idx}.pt")
+    print("# Tensors already printed")
+
     subdir = os.path.join(minifier_dir(), "checkpoints")
     if not os.path.exists(subdir):
         os.makedirs(subdir, exist_ok=True)
@@ -428,16 +432,37 @@ def wrap_compiler_debug(compiler_fn, compiler_name: str):
                     inner_compiled_fn = compiler_fn(gm, example_inputs, **kwargs)
                 if backend_aot_accuracy_fails(gm, real_inputs, compiler_fn):
                     log.warning("Accuracy failed for the AOT Autograd graph")
-                    dump_compiler_graph_state(
-                        fx.GraphModule(gm, orig_graph),
-                        copy_tensor_attrs,
-                        f"{compiler_name}_accuracy",
+                    from functools import partial
+
+                    from functorch.compile import minifier
+
+                    # dump_compiler_graph_state(
+                    #     fx.GraphModule(gm, orig_graph),
+                    #     copy_tensor_attrs,
+                    #     f"{compiler_name}_accuracy",
+                    # )
+                    # dump_to_minify(
+                    #     fx.GraphModule(gm, orig_graph),
+                    #     copy_tensor_attrs,
+                    #     f"{compiler_name}_accuracy",
+                    # )
+                    print("------------------")
+
+                    fails_fn = functools.partial(
+                        backend_aot_accuracy_fails,
+                        compiler_fn=compiler_fn,
                     )
-                    dump_to_minify(
+
+                    minifier(
                         fx.GraphModule(gm, orig_graph),
-                        copy_tensor_attrs,
-                        f"{compiler_name}_accuracy",
+                        real_inputs,
+                        module_fails=fails_fn,
+                        dump_state=partial(
+                            dump_compiler_graph_state,
+                            compiler_name=f"{compiler_name}_accuracy",
+                        ),
                     )
+
                     raise AccuracyError("Bad accuracy detected")
                 else:
                     # Call the compiled function with real inputs
@@ -532,7 +557,8 @@ def same_two_models(gm, opt_gm, example_inputs, only_fwd=False):
             copy.deepcopy(gm), clone_inputs(example_inputs)
         )
         fp64_ref = run_fwd_maybe_bwd(fp64_model, fp64_examples, only_fwd)
-    except Exception:
+    except Exception as e:
+        # print(e)
         log.warning("Could not generate fp64 outputs")
         fp64_ref = None
 
