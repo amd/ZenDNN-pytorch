@@ -48,6 +48,7 @@ def collect_results(model, prediction, loss, example_inputs):
     results = []
     results.append(prediction)
     results.append(loss)
+    print("Loss value = ", loss, flush=True)
     # if isinstance(loss, torch.Tensor) and loss.item() > 1:
     #     log.warning(
     #         f"High loss value alert - {loss:.2f}. Can result in unstable gradients."

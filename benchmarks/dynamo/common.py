@@ -877,7 +877,7 @@ class BenchmarkRunner:
             # Since we are not running a long iteration, default value of
             # init_scale 65536 is going to turn all gradients to inf. Therefore,
             # we just use a init_scale of 2.0 for benchmarking purpose.
-            self.grad_scaler = torch.cuda.amp.GradScaler(init_scale=2.0)
+            # self.grad_scaler = torch.cuda.amp.GradScaler(init_scale=2.0)
             self.autocast = torch.cuda.amp.autocast
 
     def init_optimizer(self, device, params):
@@ -1010,7 +1010,7 @@ class BenchmarkRunner:
             batch_size = self.decay_batch_exp(batch_size)
         return 1
 
-    def run_n_iterations(self, mod, inputs, n=2):
+    def run_n_iterations(self, mod, inputs, n=1):
         for _ in range(n - 1):
             self.model_iter_fn(mod, inputs, collect_outputs=False)
         return self.model_iter_fn(mod, inputs, collect_outputs=True)
