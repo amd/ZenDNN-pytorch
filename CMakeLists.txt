@@ -848,6 +848,13 @@ if(NOT MSVC)
   if(CMAKE_COMPILER_IS_GNUCXX)
     # Suppress "The ABI for passing parameters with 64-byte alignment has changed in GCC 4.6"
     string(APPEND CMAKE_CXX_FLAGS " -Wno-psabi")
+
+    if(GCC_VERSION VERSION_GREATER_EQUAL 9.2)
+      # Prior to GCC 9.2, this warning misfires when a method is
+      # labeled "final".
+      # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010
+      string(APPEND CMAKE_CXX_FLAGS " -Wsuggest-override")
+    endif()
   endif()
 
   # Use ld.gold if available, fall back to ld.bfd (the default ld) if not
