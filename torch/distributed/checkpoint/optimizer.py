@@ -28,7 +28,7 @@ from torch.distributed.checkpoint.planner_helpers import (
 )
 from torch.distributed.remote_device import _remote_device
 
-from spmd.tensor import DTensor as DT
+from torch.distributed._tensor import DTensor
 from torch.distributed.checkpoint.default_planner import (
     DefaultLoadPlanner,
 )
@@ -43,7 +43,7 @@ from torch.distributed.checkpoint.utils import (
 STATE_DICT_2D_LAYOUT = Dict[str, Tuple[Optional[Sequence[int]], Sequence[int]]]
 
 
-#TODO: Update docstrings for optimizer.py
+# TODO: Update docstrings for optimizer.py
 def _gen_rank_device(global_rank: int) -> str:
     if torch.cuda.is_available():
         return f"cuda:{global_rank % torch.cuda.device_count()}"
@@ -75,21 +75,19 @@ def _is_nested_tensor(val: torch.Tensor) -> bool:
             return False
         if type(val.local_shards()[0].tensor) is ShardedTensor:
             return True
-        if type(val.local_shards()[0].tensor) is DT:
+        if type(val.local_shards()[0].tensor) is DTensor:
             raise ValueError(
                 "Cannot handle DTensor nested insided ShardedTensor"
             )
-    elif type(val) is DT and (
-        type(val._local_tensor) is DT
+    elif type(val) is DTensor and (
+        type(val._local_tensor) is DTensor
         or type(val._local_tensor) is ShardedTensor
     ):
         raise ValueError("Cannot handle nested DTensor")
     return False
 
 
-def _alloc_tensor(
-    props: TensorProperties, size: Sequence[int]
-) -> torch.Tensor:
+def _alloc_tensor(props: TensorProperties, size: Sequence[int]) -> torch.Tensor:
     return torch.empty(
         size=size,
         dtype=props.dtype,
