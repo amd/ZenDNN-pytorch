@@ -412,7 +412,7 @@ C10_API std::string GetExceptionString(const std::exception& e);
 
 #ifdef STRIP_ERROR_MESSAGES
 #define TORCH_CHECK_MSG(cond, type, ...) \
-  (#cond #type " CHECK FAILED at " C10_STRINGIZE(__FILE__))
+  (c10::detail::unused(__VA_ARGS__), #cond #type " CHECK FAILED at " C10_STRINGIZE(__FILE__))
 #define TORCH_CHECK_WITH_MSG(error_t, cond, type, ...)                \
   if (C10_UNLIKELY_OR_CONST(!(cond))) {                               \
     C10_THROW_ERROR(Error, TORCH_CHECK_MSG(cond, type, __VA_ARGS__)); \
@@ -488,6 +488,11 @@ namespace detail {
     uint32_t line,
     const char* condMsg,
     const std::string& userMsg);
+
+template <typename... Args>
+void unused(Args const&... args) {
+  (void)sizeof...(args);
+}
 
 } // namespace detail
 } // namespace c10
