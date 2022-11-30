@@ -1399,9 +1399,12 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     PrimitiveCacheKey cache_key = std::make_tuple(
         input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads);
     c10::call_once(*cache_initialized_flag, [&](){
-        // std::cout<<"---- create cache entry----"<<std::endl;
+        std::cout<<"---- create cache entry----"<<std::endl;
         src.set_zero_point(src_zero_points);
-        dst.set_zero_point(dst_zero_points);
+        if (!has_accum) {
+          // For the conv add case, the dst will use the zero point as accm
+          dst.set_zero_point(dst_zero_points);
+        }
         ConvParams params;
         ideep::convolution_forward::prepare(
             params, src, weights, b, dst_dims, dst,
@@ -1409,7 +1412,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
             src_scales, weights_scales, ideep::scale_t(scale_size, inv_output_scale),
             op_attr, dnnl::algorithm::convolution_direct,
             dnnl::prop_kind::forward_inference,
-            ideep::u8s8, ideep::engine::cpu_engine());
+            ideep::u8s8, ideep::engine::cpu_engine(), ideep::zero_point_t(), ideep::zero_point_t(), dst_zero_points);
         get_conv_cache() = ConvPrimitiveCache(cache_key, params.pd, b, params.bias_attr);
         onednn_utils::try_reorder(
             weights, (ideep::tensor::desc)params.pd.weights_desc(), weights_scales);
@@ -1417,6 +1420,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     // If hit, use cached data. If miss, fall back to normal path.
     if (get_conv_cache().hit(cache_key)) {
       // std::cout<<"---- hit cache----"<<std::endl;
+      std::cout<<"---- Go through the cache path ----"<<std::endl;
       ConvDesc& pd = get_conv_cache().get_primitive_desc();
       Conv& primitive = get_conv_cache().get_primitive();
       auto& src_zp_tensor = get_conv_cache().get_src_zp_tensor();
@@ -1425,6 +1429,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
           pd, primitive, src, weights, expected_bias, dst, src_zp_tensor, groups());
     } else {
       // std::cout<<"inv_output_scale is: "<<inv_output_scale<<std::endl;
+      std::cout<<"---- Go through the uncache path ----"<<std::endl;
       ideep::convolution_forward::compute_v2(
           src, weights, b, dst_dims, dst,
           strides, dilates, padding_l, padding_r, groups(),
