@@ -489,6 +489,11 @@ namespace detail {
     const char* condMsg,
     const std::string& userMsg);
 
+template <typename... Args>
+void unused(Args const&... args) {
+  (void)sizeof...(args);
+}
+
 } // namespace detail
 } // namespace c10
 
@@ -500,6 +505,9 @@ namespace detail {
         __FILE__,                                \
         static_cast<uint32_t>(__LINE__),         \
         TORCH_CHECK_MSG(cond, "", __VA_ARGS__)); \
+  } else {                                       \
+    /* suppress -Wunused-variable */             \
+    unused(__VA_ARGS__);                         \
   }
 #else
 #define TORCH_CHECK(cond, ...)                     \
