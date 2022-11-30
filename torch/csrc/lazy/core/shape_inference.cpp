@@ -513,9 +513,7 @@ std::vector<Shape> compute_shape_cat(at::TensorList tensors, int64_t dim) {
     extended_dim_shape += tensor.sizes()[dim];
   }
   TORCH_CHECK(out_shape.size() > 0, "Scalar tensors are not supported in cat.");
-  TORCH_CHECK(
-      extended_dim_shape <= std::numeric_limits<int64_t>::max(),
-      "Size overflow");
+  TORCH_CHECK(!c10::greater_than_max<int64_t>(extended_dim_shape), "Size overflow");
   out_shape[dim] = extended_dim_shape;
   return {Shape(tensors[0].scalar_type(), out_shape)};
 }

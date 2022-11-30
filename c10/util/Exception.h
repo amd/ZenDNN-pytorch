@@ -387,6 +387,15 @@ C10_API std::string GetExceptionString(const std::exception& e);
   }
 #endif
 
+namespace c10 {
+namespace detail {
+template <typename... Args>
+void unused(Args const&... args) {
+  (void)sizeof...(args);
+}
+} // namespace detail
+} // namespace c10
+
 // A utility macro to make it easier to test for error conditions from user
 // input.  Like TORCH_INTERNAL_ASSERT, it supports an arbitrary number of extra
 // arguments (evaluated only on failure), which will be printed in the error
@@ -412,7 +421,8 @@ C10_API std::string GetExceptionString(const std::exception& e);
 
 #ifdef STRIP_ERROR_MESSAGES
 #define TORCH_CHECK_MSG(cond, type, ...) \
-  (#cond #type " CHECK FAILED at " C10_STRINGIZE(__FILE__))
+  (c10::detail::unused(__VA_ARGS__),     \
+  #cond #type " CHECK FAILED at " C10_STRINGIZE(__FILE__))
 #define TORCH_CHECK_WITH_MSG(error_t, cond, type, ...)                \
   if (C10_UNLIKELY_OR_CONST(!(cond))) {                               \
     C10_THROW_ERROR(Error, TORCH_CHECK_MSG(cond, type, __VA_ARGS__)); \
@@ -569,7 +579,7 @@ namespace detail {
 // arguments which are concatenated into the warning message using operator<<
 //
 #ifdef DISABLE_WARN
-#define _TORCH_WARN_WITH(...) ((void)0);
+#define _TORCH_WARN_WITH(...) ::c10::detail::unused(__VA_ARGS__);
 #else
 #define _TORCH_WARN_WITH(warning_t, ...)                     \
   ::c10::warn(::c10::Warning(                                \
