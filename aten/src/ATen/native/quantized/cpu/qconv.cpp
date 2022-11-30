@@ -18,6 +18,7 @@
 #include <ATen/native/quantized/cpu/QuantUtils.h>
 #include <caffe2/utils/threadpool/pthreadpool-cpp.h>
 #include <torch/library.h>
+#include <ATen/quantized/Quantizer.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -1276,7 +1277,8 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     auto dst_desc = ideep::tensor::desc(dst_dims, src_data_type,
         kSpatialDim == 2 ? ideep::format_tag::nhwc : ideep::format_tag::ndhwc);
     accum_contig = accum.value().contiguous(kSpatialDim == 2 ? c10::MemoryFormat::ChannelsLast : c10::MemoryFormat::ChannelsLast3d);
-
+    TORCH_CHECK(accum_contig.dtype() == output.dtype(), "The output tensor should have same dtype as extra add tensor.");
+    
     // std::cout<<"Before the calculation"<<std::endl;
     // std::cout<<"accum.int_repr() is: "<<accum.value().int_repr()<<std::endl;
     // std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
@@ -1434,7 +1436,9 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     }
   }
   if (has_accum) {
-    // std::cout<<"accum_contig.int_repr() is: "<<accum_contig.int_repr()<<std::endl;
+    // reset output's scale and zero point into accum_contig
+    set_quantizer_(accum_contig, at::make_per_tensor_affine_quantizer(
+        output_scale, output_zero_point, accum_contig.scalar_type()));
     return accum_contig;
   } else {
     return output;
