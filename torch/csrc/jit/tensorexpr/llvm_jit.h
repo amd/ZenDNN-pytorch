@@ -5,7 +5,13 @@
 #include <c10/util/Optional.h>
 #include <torch/csrc/Export.h>
 
+#if defined(__has_warning)
+#if __has_warning("-Wsuggest-override")
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif // _has_warning("-Wsuggest-override")
+#endif // defined(__has_warning)
 #include <llvm/ExecutionEngine/JITSymbol.h>
+#pragma GCC diagnostic pop
 #include <llvm/ExecutionEngine/Orc/Core.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/Target/TargetMachine.h>
