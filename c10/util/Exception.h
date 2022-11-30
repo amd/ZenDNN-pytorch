@@ -505,6 +505,9 @@ namespace detail {
         __FILE__,                                \
         static_cast<uint32_t>(__LINE__),         \
         TORCH_CHECK_MSG(cond, "", __VA_ARGS__)); \
+  } else {                                       \
+    /* suppress -Wunused-variable */             \
+    (void)sizeof(__VA_ARGS__);                   \
   }
 #else
 #define TORCH_CHECK(cond, ...)                     \
