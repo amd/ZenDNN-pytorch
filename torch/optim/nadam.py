@@ -222,6 +222,7 @@ def nadam(
     See :class:`~torch.optim.NAdam` for details.
     """
 
+
     if not all(isinstance(t, torch.Tensor) for t in state_steps):
         raise RuntimeError(
             "API has changed, `state_steps` argument must contain a list of singleton tensors"

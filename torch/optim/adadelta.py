@@ -181,8 +181,7 @@ def adadelta(
     weight_decay: float,
     maximize: bool,
 ):
-
-    """
+    r"""Functional API that performs Adadelta algorithm computation.
     See :class:`~torch.optim.Adadelta` for details.
     """
 
@@ -192,7 +191,7 @@ def adadelta(
 
     if foreach and torch.jit.is_scripting():
         raise RuntimeError("torch.jit.script not supported with foreach optimizers")
-        raise RuntimeError("torch.jit.script not supported with foreach optimizers")
+
     if foreach and not torch.jit.is_scripting():
         func = _multi_tensor_adadelta
     else:
@@ -229,6 +228,7 @@ def _single_tensor_adadelta(
     for (param, grad, square_avg, acc_delta) in zip(
         params, grads, square_avgs, acc_deltas
     ):
+        grad = grad if not maximize else -grad
 
         if weight_decay != 0:
             grad = grad.add(param, alpha=weight_decay)

@@ -227,7 +227,7 @@ def rmsprop(
     momentum: float,
     centered: bool,
 ):
-    """
+    r"""Functional API that performs rmsprop algorithm computation.
     See :class:`~torch.optim.RMSProp` for details.
     """
 
@@ -237,7 +237,7 @@ def rmsprop(
 
     if foreach and torch.jit.is_scripting():
         raise RuntimeError("torch.jit.script not supported with foreach optimizers")
-        raise RuntimeError("torch.jit.script not supported with foreach optimizers")
+
     if foreach and not torch.jit.is_scripting():
         func = _multi_tensor_rmsprop
     else:
@@ -344,9 +344,6 @@ def _multi_tensor_rmsprop(
         torch._foreach_add_(grads, params, alpha=weight_decay)
 
     def _view_complex_as_real(tensor_list):
-        return [
-            torch.view_as_real(t) if torch.is_complex(t) else t for t in tensor_list
-        ]
         return [
             torch.view_as_real(t) if torch.is_complex(t) else t for t in tensor_list
         ]
