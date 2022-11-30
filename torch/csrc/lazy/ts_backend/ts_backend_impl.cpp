@@ -114,7 +114,7 @@ class TSBackendImpl : public torch::lazy::BackendImplInterface {
   }
 
   torch::lazy::BackendDataPtr GetComputationDataFromNode(
-      const Node* node) const {
+      const Node* node) const override {
     auto* device_data_node = DeviceData::Cast(node);
     if (!device_data_node) {
       return nullptr;
