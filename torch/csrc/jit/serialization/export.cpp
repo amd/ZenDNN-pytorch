@@ -23,7 +23,12 @@
 #include <onnx/checker.h>
 #include <onnx/onnx_pb.h>
 #include <onnx/proto_utils.h>
+#if defined(__has_warning)
+#if __has_warning("-Wsuggest-override")
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include <onnx/shape_inference/implementation.h>
+#endif // _has_warning("-Wsuggest-override")
+#endif // defined(__has_warning)
 
 #include <fstream>
 #include <memory>
