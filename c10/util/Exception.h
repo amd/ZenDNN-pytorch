@@ -387,6 +387,15 @@ C10_API std::string GetExceptionString(const std::exception& e);
   }
 #endif
 
+namespace c10 {
+namespace detail {
+template <typename... Args>
+void unused(Args const&... args) {
+  (void)sizeof...(args);
+}
+} // namespace detail
+} // namespace c10
+
 // A utility macro to make it easier to test for error conditions from user
 // input.  Like TORCH_INTERNAL_ASSERT, it supports an arbitrary number of extra
 // arguments (evaluated only on failure), which will be printed in the error
