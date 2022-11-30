@@ -15,7 +15,9 @@ using PrimitiveCacheKey = std::tuple<
     std::vector<int64_t>, // input_shape
     double, // output_scale
     int64_t, // output_zero_point
-    int64_t>; // OMP_number_of_threads
+    int64_t, // OMP_number_of_threads
+    double, // accum_scale
+    int64_t>; // accum_zero_point
 
 enum CacheKeyIndex {
   InputScale,

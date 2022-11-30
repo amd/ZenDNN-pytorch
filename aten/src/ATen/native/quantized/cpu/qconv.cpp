@@ -1306,7 +1306,6 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
   const ideep::scale_t& weights_scales = weights.get_scale();
   int64_t scale_size = weights_scales.size();
   // std::cout<<"input_scale is: "<<input_scale<<std::endl;
-  // std::cout<<"scale_size is: "<<scale_size<<std::endl;
   double inv_output_scale = 1.0/output_scale;
   const ideep::zero_point_t src_zero_points = ideep::zero_point_t(1, input_zp);
   const ideep::zero_point_t dst_zero_points = ideep::zero_point_t(1, output_zero_point);
@@ -1315,34 +1314,18 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
 
   ideep::attr_t op_attr;
 
+  float sum_scale = has_accum ? accum.value().q_scale() : 1.0;
+  int32_t sum_zero_point = has_accum ? accum.value().q_zero_point() : 0;
   if (has_accum) {
-    // std::cout<<"Create the sum relu post ops"<<std::endl;
-    float sum_scale = accum.value().q_scale();
-    int32_t sum_zero_point = accum.value().q_zero_point();
-    // std::cout<<"sum_scale is: "<<sum_scale<<std::endl;
-    // std::cout<<"output_scale is: "<<output_scale<<std::endl;
-    // std::cout<<"sum_scale/output_scale is: "<<sum_scale/output_scale<<std::endl;
-    // std::cout<<"sum_zero_point is: "<<sum_zero_point<<std::endl;
-    // op_attr = ideep::attr_t::residual(sum_scale=1.0/sum_scale, sum_zero_point=sum_zero_point);
-    // op_attr = ideep::attr_t::residual(sum_scale=sum_scale/output_scale, sum_zero_point=sum_zero_point);
-    
-    // op_attr = ideep::attr_t::fuse_sum(1.0/sum_scale, 128);
-
-    // Just use the default parameter here.
-    // Since we will set the true parameters inside ideep parameter_parameter functions.
     op_attr = kReluFused ? ideep::attr_t::residual() : ideep::attr_t::fuse_sum();
 
-    // Set the dst scale for the scale's convert inside ideep prepare parameters
-    const ideep::scale_t& accum_scale = ideep::scale_t(1, 1.0/sum_scale);
-    dst.set_scale(accum_scale);
-
+    const ideep::scale_t accum_scale = ideep::scale_t(1, 1.0/sum_scale);
     const ideep::zero_point_t accum_zero_points = ideep::zero_point_t(1, sum_zero_point);
+    // Set the dst scale and zero point with the value of accum.
+    // The true scale and zero point is stored in ideep::scale_t(scale_size, inv_output_scale) and dst_zero_points.
+    dst.set_scale(accum_scale);
     dst.set_zero_point(accum_zero_points);
 
-    // output_scale = sum_scale;
-    // inv_output_scale = 1.0/output_scale;
-    
-    //continue;
   } else {
     op_attr = kReluFused ? ideep::attr_t::fuse_relu() : ideep::attr_t();
   }
@@ -1361,7 +1344,7 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     // Primitive cache is initialized when called for the first time
     // and won't be updated afterwards.
     PrimitiveCacheKey cache_key = std::make_tuple(
-        input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads);
+        input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads, sum_scale, sum_zero_point);
     c10::call_once(*cache_initialized_flag, [&](){
         DeconvParams params;
         ideep::convolution_transpose_forward::prepare(
@@ -1397,12 +1380,12 @@ at::Tensor PackedConvWeightsOnednn<kSpatialDim>::apply_impl(
     }
   } else {  // not transposed
     PrimitiveCacheKey cache_key = std::make_tuple(
-        input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads);
+        input_scale, input_zp, src_dims, output_scale, output_zero_point, num_threads, sum_scale, sum_zero_point);
     c10::call_once(*cache_initialized_flag, [&](){
         std::cout<<"---- create cache entry----"<<std::endl;
         src.set_zero_point(src_zero_points);
         if (!has_accum) {
-          // For the conv add case, the dst will use the zero point as accm
+          // For the conv add case, the dst will use the zero point as accm, which has been set previously.
           dst.set_zero_point(dst_zero_points);
         }
         ConvParams params;
