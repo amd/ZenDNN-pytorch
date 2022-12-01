@@ -78,6 +78,7 @@ if(USE_ROCM)
   set(AT_CUDA_ENABLED 1)
   add_subdirectory(src/THH)
   message("ROCm is enabled.")
+  set(WERROR OFF) # ROCm has issues with -Werror.
 elseif(USE_CUDA)
   set(AT_CUDA_ENABLED 1)
   add_subdirectory(src/THC)
