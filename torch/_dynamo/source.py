@@ -148,6 +148,18 @@ class AttrSource(Source):
 
 
 @dataclasses.dataclass
+class RangeIteratorAttrSource(AttrSource):
+    def reconstruct(self, codegen):
+        codegen.load_import_from(utils.__name__, "range_iterator_getattr")
+        insts = self.base.reconstruct(codegen)
+        insts.append(codegen.create_load_const(self.member))
+        insts.append(create_instruction("CALL_FUNCTION", 2))
+        return insts
+
+    def name(self):
+        return f"___range_iterator_getattr({self.base.name()}, {self.member!r})"
+
+@dataclasses.dataclass
 class GetItemSource(Source):
     base: Source
     index: Any

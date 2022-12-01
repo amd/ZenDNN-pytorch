@@ -63,6 +63,7 @@ from .variables.lists import (
     BaseListVariable,
     ListIteratorVariable,
     ListVariable,
+    RangeIteratorVariable,
     SliceVariable,
     TupleVariable,
 )
@@ -343,6 +344,7 @@ def break_graph_if_unsupported(*, push):
 
 class InstructionTranslatorBase(object):
     def has_backedge(self):
+        return False
         cur_offset = self.current_instruction.offset
         for inst in self.instructions[self.instruction_pointer :]:
             if inst.opname in (
@@ -792,7 +794,7 @@ class InstructionTranslatorBase(object):
 
     def FOR_ITER(self, inst):
         it = self.pop()
-        if isinstance(it, ListIteratorVariable):
+        if isinstance(it, (ListIteratorVariable, RangeIteratorVariable)):
             self.output.guards.update(it.guards)
             try:
                 val, next_iter = it.next_variables()

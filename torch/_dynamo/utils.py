@@ -652,11 +652,19 @@ dict_values = type(dict().values())
 odict_values = type(collections.OrderedDict().values())
 tuple_iterator = type(iter(tuple()))
 tuple_iterator_len = tuple_iterator.__length_hint__
+range_iterator = type(iter(range(0)))
+range_iterator_len = range_iterator.__length_hint__
 object_new = object.__new__
+debug_print = print
 
 
 def product(it):
     return functools.reduce(operator.mul, it, 1)
+
+
+def range_iterator_getattr(it, name):
+    _, (obj,), start = it.__reduce__()
+    return getattr(obj, name)
 
 
 def tuple_iterator_getitem(it, index):

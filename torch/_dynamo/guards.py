@@ -28,7 +28,9 @@ from .utils import (
     orig_code_map,
     rename_implicit,
     tuple_iterator_getitem,
+    range_iterator_getattr,
     tuple_iterator_len,
+    range_iterator_len,
 )
 
 log = logging.getLogger(__name__)
@@ -47,6 +49,7 @@ CLOSURE_VARS = collections.OrderedDict(
         ("___dict_const_keys", dict_const_keys),
         ("___tuple_iterator_len", tuple_iterator_len),
         ("___tuple_iterator_getitem", tuple_iterator_getitem),
+        ("___range_iterator_getattr", range_iterator_getattr),
         ("__math_isnan", math.isnan),
         ("inf", float("inf")),
     ]
@@ -379,6 +382,16 @@ class GuardBuilder:
         code.append(f"___check_type_id({ref}, {self.id_ref(t)})")
         code.append(f"___tuple_iterator_len({ref}) == {tuple_iterator_len(value)}")
 
+        self._produce_guard_code(guard, code)
+
+    def RANGE_ITERATOR_LEN(self, guard):
+        ref = self.arg_ref(guard)
+        value = self.get(guard.name)
+        t = type(value)
+
+        code = list()
+        code.append(f"___check_type_id({ref}, {self.id_ref(t)})")
+        code.append(f"___range_iterator_len({ref}) == {range_iterator_len(value)}")
         self._produce_guard_code(guard, code)
 
     def DICT_KEYS(self, guard):

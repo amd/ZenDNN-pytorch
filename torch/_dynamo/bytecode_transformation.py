@@ -56,7 +56,6 @@ def create_instruction(name, arg=None, argval=_NotProvided, target=None):
         opcode=dis.opmap[name], opname=name, arg=arg, argval=argval, target=target
     )
 
-
 def lnotab_writer(lineno, byteno=0):
     """
     Used to create typing.CodeType.co_lnotab

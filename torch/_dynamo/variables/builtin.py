@@ -512,7 +512,7 @@ class BuiltinVariable(VariableTracker):
     def _call_iter_tuple_list(self, tx, obj=None, *args, **kwargs):
         if self._dynamic_args(*args, **kwargs):
             return self._dyn_proxy(tx, *args, **kwargs)
-        cls = variables.BaseListVariable.cls_for(self.fn)
+        cls = variables.BaseListVariable.cls_for(self.fn, obj)
         if obj is None:
             return cls(
                 [],
@@ -522,6 +522,12 @@ class BuiltinVariable(VariableTracker):
             guards = set()
             if obj.source and not is_constant_source(obj.source):
                 guards.add(obj.source.make_guard(GuardBuilder.LIST_LENGTH))
+            if cls is variables.RangeIteratorVariable:
+                return cls(
+                    items=obj.items,
+                    mutable_local=MutableLocal(),
+                    guards=guards,
+                ).add_options(self, obj)
             return cls(
                 list(obj.unpack_var_sequence(tx)),
                 mutable_local=MutableLocal(),

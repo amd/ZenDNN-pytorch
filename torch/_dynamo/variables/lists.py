@@ -14,14 +14,16 @@ from .constant import ConstantVariable
 
 class BaseListVariable(VariableTracker):
     @staticmethod
-    def cls_for(obj):
+    def cls_for(fn, obj):
+        if fn is iter and isinstance(obj, RangeVariable):
+            return RangeIteratorVariable
         return {
             iter: ListIteratorVariable,
             list: ListVariable,
             slice: SliceVariable,
             torch.Size: SizeVariable,
             tuple: TupleVariable,
-        }[obj]
+        }[fn]
 
     def __init__(
         self, items: List[VariableTracker], recursively_contains=None, **kwargs
@@ -507,5 +509,48 @@ class ListIteratorVariable(VariableTracker):
         codegen.foreach(remaining_items)
         return [
             create_instruction("BUILD_TUPLE", len(remaining_items)),
+            create_instruction("GET_ITER"),
+        ]
+
+
+class RangeIteratorVariable(VariableTracker):
+    def __init__(self, items, recursively_contains=None, **kwargs):
+        super(RangeIteratorVariable, self).__init__(
+            recursively_contains=recursively_contains, **kwargs
+        )
+        self.items = items
+
+    def next_variables(self):
+        assert self.mutable_local
+        start, stop, step = self.items
+        if start.value + step.value >= stop.value:
+            raise StopIteration()
+        return start.add_options(self), RangeIteratorVariable(
+            [ConstantVariable(start.value + step.value), stop, step],
+            mutable_local=MutableLocal(),
+            **VariableTracker.propagate([self]),
+        )
+        # return self.items[self.index].add_options(self), ListIteratorVariable(
+        #     self.items,
+        #     self.index + 1,
+        #     mutable_local=MutableLocal(),
+        #     **VariableTracker.propagate([self]),
+        # )
+
+    def as_python_constant(self):
+        return iter(range(*[x.as_python_constant() for x in self.items]))
+
+    def unpack_var_sequence(self, tx):
+        return [
+            variables.ConstantVariable(x).add_options(self)
+            for x in self.as_python_constant()
+        ]
+
+    def reconstruct(self, codegen):
+        assert "range" not in codegen.tx.f_globals
+        codegen.append_output(codegen.create_load_python_module(range))
+        codegen.foreach(self.items)
+        return [
+            create_instruction("CALL_FUNCTION", 3),
             create_instruction("GET_ITER"),
         ]

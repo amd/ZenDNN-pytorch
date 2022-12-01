@@ -33,6 +33,7 @@ from ..source import (
     RandomValueSource,
     Source,
     TupleIteratorGetItemSource,
+    RangeIteratorAttrSource,
 )
 from ..utils import (
     clone_input,
@@ -46,8 +47,11 @@ from ..utils import (
     istype,
     odict_values,
     preserve_rng_state,
+    range_iterator,
+    range_iterator_len,
     tuple_iterator,
     tuple_iterator_getitem,
+    range_iterator_getattr,
     tuple_iterator_len,
     wrap_to_fake_tensor_and_record,
 )
@@ -66,6 +70,7 @@ from .lists import (
     ListIteratorVariable,
     ListVariable,
     NamedTupleVariable,
+    RangeIteratorVariable,
     RangeVariable,
     SizeVariable,
     SliceVariable,
@@ -239,6 +244,18 @@ class VariableBuilder:
             ]
             return ListIteratorVariable(
                 output, mutable_local=MutableLocal(), guards=guards
+            )
+        elif istype(value, range_iterator):
+            # guards = self.make_guards(GuardBuilder.RANGE_ITERATOR_LEN)
+            # breakpoint()
+            items = [
+                VariableBuilder(self.tx, RangeIteratorAttrSource(self.get_source(), k))(
+                    range_iterator_getattr(value, k)
+                )
+                for k in ("start", "stop", "step")
+            ]
+            return RangeIteratorVariable(
+                items, mutable_local=MutableLocal(),#guards=guards
             )
         elif istype(value, (slice, range)):
             items = [

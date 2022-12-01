@@ -2957,6 +2957,20 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         res = opt_fn(x, y)
         self.assertTrue(same(ref, res))
 
+    def test_for_break(self):
+        def fn(x):
+            for i in range(0, 10, 1):
+                x = torch.sin(x)
+                torch._dynamo.graph_break()
+            return x
+
+
+        x = torch.randn(4)
+        ref = fn(x)
+        opt_fn = torch._dynamo.optimize("eager")(fn)
+        res = opt_fn(x)
+        assert torch.allclose(ref, res)
+
     @unittest.skipIf(not torch.cuda.is_available(), "requires cuda")
     def test_get_device_index(self):
         def fn(x):
