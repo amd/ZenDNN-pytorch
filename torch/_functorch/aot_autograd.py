@@ -1260,6 +1260,8 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
         return [args[add_dupe_map[i]] for i in range(duped_arg_len)]
 
     deduped_flat_args = remove_dupe_args(flat_args)
+    breakpoint()
+    from torch.fx.experimental.guard_env import GUARD_ENV
 
     @wraps(flat_fn)
     def wrapped_flat_fn(*args):
@@ -1310,6 +1312,7 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
         return wrapped_compiled_fn(args)
     debugged_compiled_fn._boxed_call = True
 
+    breakpoint()
     return debugged_compiled_fn
 
 

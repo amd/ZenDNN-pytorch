@@ -32,12 +32,13 @@ from .utils import (
     tuple_iterator_getitem,
     tuple_iterator_len,
 )
+from torch.fx.experimental.guard_env import GUARD_ENV
+
 
 log = logging.getLogger(__name__)
 TensorGuards = torch._C._dynamo.guards.TensorGuards
 check_obj_id = torch._C._dynamo.guards.check_obj_id
 check_type_id = torch._C._dynamo.guards.check_type_id
-
 
 CLOSURE_VARS = collections.OrderedDict(
     [

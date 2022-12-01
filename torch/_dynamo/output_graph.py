@@ -128,7 +128,6 @@ class WrapperBackend:
         finally:
             self.restore()
 
-
 class OutputGraph(fx.Tracer):
     """
     Wrapper class to hold outputs of InstructionTranslator.  Mainly the
@@ -496,6 +495,7 @@ class OutputGraph(fx.Tracer):
         name = unique_id("__compiled_fn")
 
         assert_no_fake_params_or_buffers(gm)
+        # breakpoint()
         compiled_fn = self.call_user_compiler(gm)
         compiled_fn = disable(compiled_fn)
 
