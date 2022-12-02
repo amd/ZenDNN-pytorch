@@ -8,7 +8,16 @@
 #if HAS_CUDNN_V8()
 
 #include <ATen/cudnn/cudnn-wrapper.h>
+
+#pragma GCC diagnostic push
+#if defined(__has_warning)
+#if __has_warning("-Wsuggest-override")
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif // _has_warning("-Wsuggest-override")
+#endif // defined(__has_warning)
 #include <cudnn_frontend.h>
+#pragma GCC diagnostic pop
+
 #include <cudnn_frontend_find_plan.h>
 #include <cudnn_frontend_get_plan.h>
 #include <ATen/core/Tensor.h>
