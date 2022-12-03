@@ -244,13 +244,10 @@ def _single_tensor_asgd(
         param.mul_(1 - lambd * eta)
 
         # update parameter
-        param.add_(grad, alpha=-eta)
+        param.add_(grad * -eta)
 
         # averaging
-        if mu != 1:
-            ax.add_(param.sub(ax).mul(mu))
-        else:
-            ax.copy_(param)
+        ax.add_(param.sub(ax).mul(mu))
 
         new_eta = lr / torch.pow((1 + lambd * lr * step_t), alpha)
         eta.copy_(new_eta)

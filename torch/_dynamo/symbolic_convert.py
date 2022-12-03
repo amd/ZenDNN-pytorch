@@ -280,11 +280,6 @@ def break_graph_if_unsupported(*, push):
             try:
                 return inner_fn(self, inst)
             except Unsupported as excp:
-                if self.has_backedge():
-                    msg = "Skipping frame because there is a graph break in a for/while loop"
-                    log.debug(msg)
-                    raise exc.SkipFrame(msg)
-
                 if not self.should_compile_partial_graph():
                     raise
                 user_stack = [self.frame_summary()] + list(reversed(excp.real_stack))

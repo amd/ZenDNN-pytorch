@@ -276,9 +276,9 @@ def _single_tensor_adamax(
             exp_inf.copy_(torch.amax(norm_buf, 0, keepdim=False))
 
         bias_correction = 1 - beta1 ** step_t
-        clr = lr / bias_correction
+        clr = (lr / bias_correction).neg()
 
-        param.addcdiv_(exp_avg, exp_inf, value=-clr)
+        param.add_(exp_avg / exp_inf * clr)
 
 
 def _multi_tensor_adamax(

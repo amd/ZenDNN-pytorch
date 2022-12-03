@@ -291,7 +291,7 @@ def _single_tensor_adagrad(
                 std = state_sum.sqrt() + eps
             else:
                 std = state_sum.sqrt().add_(eps)
-            param.addcdiv_(grad, std, value=-clr)
+            param.add_(grad / std * clr.neg())
             if is_complex:
                 param = torch.view_as_complex(param)
                 state_sum = torch.view_as_complex(state_sum)
