@@ -102,7 +102,6 @@ Operation createLlgaKernel(const Node* node) {
   return [kernel](Stack* stack) {
     RECORD_FUNCTION(kernel->debugName(), std::vector<c10::IValue>());
     kernel->run(*stack);
-    return 0;
   };
 }
 
@@ -167,7 +166,6 @@ Operation createLlgaGuardKernel(const Node* node) {
     GRAPH_DEBUG("all check done, return true");
 #endif
     push(stack, IValue(true));
-    return;
   };
 }
 
