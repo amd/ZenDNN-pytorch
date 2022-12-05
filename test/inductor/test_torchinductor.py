@@ -42,7 +42,8 @@ try:
     from functorch.compile import config as functorch_config
     from torch._decomp import get_decompositions
     from torch._inductor import codecache, config, metrics
-    from torch._inductor.codegen.cpp import CppOverrides, CppVecOverrides
+    from torch._inductor.codegen.cpp import cexpr, CppOverrides, CppVecOverrides
+    from torch._inductor.codegen.triton import texpr
     from torch._inductor.compile_fx import compile_fx, complex_memory_overlap
     from torch._inductor.ir import IndexingDiv, ModularIndexing
     from torch._inductor.overrides import (
@@ -5222,7 +5223,12 @@ if HAS_CPU:
             b = torch.rand((100,))
             with profile() as prof:
                 fn(a, b)
-            assert "kernel_cpp_0" in (e.name for e in prof.profiler.function_events)
+
+            kernel_profile_events = []
+            for e in prof.profiler.function_events:
+                if "kernel_cpp_0" in e.name:
+                    kernel_profile_events.append(e.name)
+            assert len(kernel_profile_events) > 0
 
 
 if HAS_CUDA:
@@ -5269,6 +5275,41 @@ if HAS_CUDA:
             self.assertEqual(num_linear_transpose, 1)
 
             self.assertTrue(torch.allclose(module(input), traced(input)))
+
+        @patch.object(config.triton, "autotune", True)
+        def test_inplace_add_alpha_autotune(self):
+            def fn(x, y):
+                aten.add_.Tensor(x, y, alpha=0.55)
+                return (x,)
+
+            x1 = torch.zeros(2, 3, 4, 10, device="cuda")
+            x2 = torch.zeros(2, 3, 4, 10, device="cuda")
+            x3 = torch.zeros(2, 3, 4, 10, device="cuda")
+            y = torch.randn(2, 3, 4, 10, device="cuda").to(
+                memory_format=torch.channels_last
+            )
+            fn_fx = make_fx(fn)(x1, y)
+            fn_compiled = compile_fx_inner(fn_fx, [x1, y])
+            fn(x2, y)
+            fn_compiled([x3, y])
+            assert same(x2, x3)
+
+        @patch.object(config.triton, "autotune", True)
+        def test_inplace_buffer_autotune(self):
+            def foo(x, y, z):
+                a = x @ y
+                return a.unsqueeze(0).unsqueeze(0) + z
+
+            x = torch.zeros(5, 5, device="cuda")
+            y = torch.zeros(5, 5, device="cuda")
+            z = torch.zeros(1, 1, 5, 5, device="cuda").to(
+                memory_format=torch.channels_last
+            )
+            self.common(
+                foo,
+                (x, y, z),
+                check_lowp=False,
+            )
 
         def test_permute_linear_fusion(self):
             class TestModule(torch.nn.Module):
@@ -5579,6 +5620,7 @@ if HAS_CUDA:
                         meta=meta,
                         configs=configs,
                         save_cache_hook=False,
+                        mutated_arg_names=["in_out_ptr0"],
                     )
 
                 return decorator
@@ -5689,7 +5731,7 @@ if HAS_CUDA:
                 Instead, it transforms the fx graph so that its functions are
                 aten operations. It then saves this graph.
                 """
-                from functorch._src.aot_autograd import Interpreter
+                from torch._functorch.aot_autograd import Interpreter
                 from torch._inductor.decomposition import select_decomp_table
                 from torch._subclasses import FakeTensorMode
 
@@ -5753,6 +5795,31 @@ if HAS_CUDA:
             )
             self.assertEqual(arguments_that_are_divisible_by_16_in_kernel1, (0, 1))
             torch._dynamo.reset()
+
+
+class ExprPrinterTests(TestCase):
+    def test_print_pow(self):
+        s1 = sympy.Symbol("foo", integer=True)
+        s2 = sympy.Symbol("bar", integer=True)
+        s3 = sympy.Symbol("baz", integer=True)
+
+        cases = (
+            # expr, result
+            # Test exprs.
+            (
+                s1 / (2 * s1 - 1) - 1 / (2 * s1 - 1),
+                "((-1)*(1/(((-1) + (2*foo))))) + (foo*(1/(((-1) + (2*foo)))))",
+            ),
+            (s1 / (s2 - s3), "foo*(1/((bar + ((-1)*baz))))"),
+            # Test Pow directly.
+            (sympy.Pow(s1 + s2, 0), "1"),  # note: simplified before _print_Pow
+            (sympy.Pow(s1 + s2, -3), "1/((bar + foo)*(bar + foo)*(bar + foo))"),
+            (sympy.Pow(s1 + s2, 2), "(bar + foo)*(bar + foo)"),
+        )
+
+        for expr, result in cases:
+            self.assertEqual(cexpr(expr), result)
+            self.assertEqual(texpr(expr), result)
 
 
 if __name__ == "__main__":
