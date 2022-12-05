@@ -336,7 +336,7 @@ option(ONNX_ML "Enable traditional ONNX ML API." ON)
 option(HAVE_SOVERSION "Whether to add SOVERSION to the shared objects" OFF)
 option(BUILD_LIBTORCH_CPU_WITH_DEBUG "Enable RelWithDebInfo for libtorch_cpu target only" OFF)
 cmake_dependent_option(USE_CCACHE "Attempt using CCache to wrap the compilation" ON "UNIX" OFF)
-option(WERROR "Build with -Werror supported by the compiler" OFF)
+cmake_dependent_option(WERROR "Build with -Werror supported by the compiler" ON "NOT MSVC" OFF)
 option(USE_COREML_DELEGATE "Use the CoreML backend through delegate APIs" OFF)
 option(USE_PER_OPERATOR_HEADERS "Whether ATen should generate separate headers for each operator" ON)
 cmake_dependent_option(
@@ -846,6 +846,12 @@ if(NOT MSVC)
   if(CMAKE_COMPILER_IS_GNUCXX)
     # Suppress "The ABI for passing parameters with 64-byte alignment has changed in GCC 4.6"
     string(APPEND CMAKE_CXX_FLAGS " -Wno-psabi")
+  endif()
+  if(NOT CMAKE_COMPILER_IS_GNUCXX OR GCC_VERSION VERSION_GREATER_EQUAL 9.2)
+    # Prior to GCC 9.2, this warning misfires when a method is
+    # labeled "final".
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=78010
+    append_cxx_flag_if_supported("-Wsuggest-override" CMAKE_CXX_FLAGS)
   endif()
 
   # Use ld.gold if available, fall back to ld.bfd (the default ld) if not
