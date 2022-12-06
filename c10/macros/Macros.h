@@ -527,4 +527,9 @@ __device__ __attribute__((noinline)) __attribute__((weak)) void __assert_fail(
 #define C10_CLANG_HAS_WARNING(flag) 0
 #endif
 
+#define C10_SUPPRESS_WARNING_IF_DEFINED(warning)                 \
+  _Pragma("GCC diagnostic ignored \"-Wpragmas\"")                \
+  _Pragma("GCC diagnostic ignored \"-Wunknown-warning-option\"") \
+  _Pragma("GCC diagnostic ignored " warning)
+
 #endif // C10_MACROS_MACROS_H_
