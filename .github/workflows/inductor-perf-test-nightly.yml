@@ -2,7 +2,7 @@ name: inductor
 
 on:
   schedule:
-    - cron: 45 1,21 * * *
+    - cron: 45 1 * * *
   workflow_dispatch:
 
 concurrency:
@@ -11,10 +11,10 @@ concurrency:
 
 jobs:
   linux-bionic-cuda11_6-py3_10-gcc7-inductor-build:
-    name: cuda11.6-py3.10-gcc7-sm86
+    name: cuda11.6-py3.10-gcc7-sm80
     uses: ./.github/workflows/_linux-build.yml
     with:
-      build-environment: linux-bionic-cuda11.6-py3.10-gcc7-sm86
+      build-environment: linux-bionic-cuda11.6-py3.10-gcc7-sm80
       docker-image-name: pytorch-linux-bionic-cuda11.6-cudnn8-py3-gcc7
       cuda-arch-list: '8.0'
       test-matrix: |
