@@ -1,4 +1,7 @@
 #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+
+#include <c10/macros/Macros.h>
+
 #include <ATen/cuda/CUDAConfig.h>  // for the definition of AT_CUDNN_ENABLED
 
 #if AT_CUDNN_ENABLED()
