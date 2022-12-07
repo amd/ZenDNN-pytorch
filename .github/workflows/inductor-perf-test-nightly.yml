@@ -1,8 +1,11 @@
-name: inductor
+name: inductor-A100-perf
 
 on:
   schedule:
     - cron: 45 1 * * *
+  push:
+    tags:
+      - ciflow/nightly/*
   workflow_dispatch:
 
 concurrency:

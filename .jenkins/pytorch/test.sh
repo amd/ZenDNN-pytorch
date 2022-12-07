@@ -280,10 +280,8 @@ test_inductor_huggingface_perf() {
   # will bark about file not found later on
   TEST_REPORTS_DIR=$(pwd)/test/test-reports
   mkdir -p "$TEST_REPORTS_DIR"
-  # Check inference with --float32
-  python benchmarks/dynamo/huggingface.py --performance \
-    --device cuda --inductor --float32 --output "$TEST_REPORTS_DIR"/inductor_inference_huggingface.csv
   # Check training with --amp
+  # Not checking accuracy for perf test for now
   python benchmarks/dynamo/huggingface.py --training --performance \
     --device cuda --inductor --amp --output "$TEST_REPORTS_DIR"/inductor_training_huggingface.csv
 }
@@ -320,11 +318,8 @@ test_inductor_timm_perf_shard() {
   # will bark about file not found later on
   TEST_REPORTS_DIR=$(pwd)/test/test-reports
   mkdir -p "$TEST_REPORTS_DIR"
-  # Check inference with --float32
-  python benchmarks/dynamo/timm_models.py --performance \
-    --device cuda --inductor --float32 --total-partitions 2 --partition-id "$1" \
-    --output "$TEST_REPORTS_DIR"/inductor_inference_timm_"$1".csv
   # Check training with --amp
+  # Not checking accuracy for perf test for now
   python benchmarks/dynamo/timm_models.py --performance \
     --device cuda --inductor --amp --total-partitions 2 --partition-id "$1" \
     --output "$TEST_REPORTS_DIR"/inductor_training_timm_"$1".csv
@@ -346,10 +341,8 @@ test_inductor_torchbench() {
 test_inductor_torchbench_perf() {
   TEST_REPORTS_DIR=$(pwd)/test/test-reports
   mkdir -p "$TEST_REPORTS_DIR"
-  # Check inference with --float32
-  PYTHONPATH=$(pwd)/torchbench python benchmarks/dynamo/torchbench.py --performance \
-    --device cuda --inductor --float32 --output "$TEST_REPORTS_DIR"/inductor_inference_torchbench.csv
   # Check training with --amp
+  # Not checking accuracy for perf test for now
   PYTHONPATH=$(pwd)/torchbench python benchmarks/dynamo/torchbench.py --training --performance \
     --device cuda --inductor --amp --output "$TEST_REPORTS_DIR"/inductor_training_torchbench.csv
 }
