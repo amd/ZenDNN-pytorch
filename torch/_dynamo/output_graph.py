@@ -43,6 +43,8 @@ from .variables.tensor import (
     UnspecializedNumpyVariable,
     UnspecializedPythonVariable,
 )
+from torch.fx.experimental.guard_env import GUARD_ENV
+
 
 log = logging.getLogger(__name__)
 

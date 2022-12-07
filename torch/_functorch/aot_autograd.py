@@ -28,6 +28,7 @@ from torch._dispatch.python import enable_python_dispatcher
 from . import config
 from .named_members_polyfill import _named_buffers, _named_parameters
 from .partitioners import default_partition
+from torch.fx.experimental.guard_env import GUARD_ENV
 
 MutationType = Enum("MutationType", ("none", "metadata_only", "data"))
 OutputType = Enum("OutputType", ("non_alias", "alias_of_input", "alias_of_intermediate"))
@@ -1237,7 +1238,7 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
     keep_arg_mask = []
     add_dupe_map = {}
     duped_arg_len = len(flat_args)
-
+    
     j = 0  # index into deduped_flat_args
     for i, t in enumerate(flat_args):
         if t in seen_args:
@@ -1260,9 +1261,15 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
         return [args[add_dupe_map[i]] for i in range(duped_arg_len)]
 
     deduped_flat_args = remove_dupe_args(flat_args)
-    breakpoint()
-    from torch.fx.experimental.guard_env import GUARD_ENV
-
+    
+    # TODO(voz): This structure is 1:1, we could consider an alternate structure like
+    # kept_pos:[dupe_arg_pos], however, add_dupe_map is 1:1 so we would need a new structure there,
+    # which feels like needless complexity for a tiny bit of efficiency at this point.
+    for dupe_arg_pos, kept_pos in add_dupe_map.items():
+        # Edge case, only happens for identity
+        if dupe_arg_pos != kept_pos:
+            GUARD_ENV.register_duplicates(flat_args[dupe_arg_pos], flat_args[kept_pos])
+    
     @wraps(flat_fn)
     def wrapped_flat_fn(*args):
         return flat_fn(*add_dupe_args(args))
@@ -1275,6 +1282,7 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
     @wraps(compiled_fn)
     def wrapped_compiled_fn(args):
         deduped_args = remove_dupe_args(args)
+        breakpoint()
         args.clear()
         return compiled_fn(deduped_args)
     wrapped_compiled_fn._boxed_call = True
@@ -1312,7 +1320,6 @@ def aot_wrapper_dedupe(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig, 
         return wrapped_compiled_fn(args)
     debugged_compiled_fn._boxed_call = True
 
-    breakpoint()
     return debugged_compiled_fn
 
 

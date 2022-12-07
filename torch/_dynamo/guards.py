@@ -10,6 +10,7 @@ import weakref
 from inspect import currentframe, getframeinfo
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 from weakref import ReferenceType
+from torch.fx.experimental.guard_env import GUARD_ENV, DuplicateInputs
 
 import numpy as np
 
@@ -39,6 +40,9 @@ log = logging.getLogger(__name__)
 TensorGuards = torch._C._dynamo.guards.TensorGuards
 check_obj_id = torch._C._dynamo.guards.check_obj_id
 check_type_id = torch._C._dynamo.guards.check_type_id
+
+def hacky_do_not_land_tensor_eq(a, b):
+    return a.size() == b.size() and a.stride() == b.stride()
 
 CLOSURE_VARS = collections.OrderedDict(
     [
@@ -663,6 +667,14 @@ class CheckFunctionManager:
         )
         self._seen_ids.clear()
 
+    def _parse_guard_env_guards(self, guards):
+        for guard in guards:
+            if isinstance(guard, DuplicateInputs):
+                
+            else:
+                raise RuntimeError(f"Unexpected guard type {guard}")
+        return ""
+
     """
     This is a complex bit of logic. The outline here is brief. For a line by line breakdown, see
     the code comments below.
@@ -773,6 +785,12 @@ class CheckFunctionManager:
             symbolic_shape_expression = self._parse_symbolic_shape_expressions(
                 tensor_check_names, tensor_check_ids
             )
+
+            aot_autograd_expression = self._parse_guard_env_guards(GUARD_ENV.get_guards())
+            
+            # We are done with the guards made for this frame.
+            GUARD_ENV.clear()
+            
             tensor_check_examples = (
                 local_builder.tensor_check_examples
                 + global_builder.tensor_check_examples
