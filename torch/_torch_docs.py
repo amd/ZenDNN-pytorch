@@ -10705,7 +10705,8 @@ Keyword args:
     .. versionchanged:: 1.14
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
-
+    .. deprecated:: 1.14
+        The default correction value is deprecated. Pass ``correction=1`` explicitly instead.
     {keepdim}
     {out}
 
@@ -10761,6 +10762,8 @@ Keyword args:
     .. versionchanged:: 1.14
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
+    .. deprecated:: 1.14
+        The default correction value is deprecated. Pass ``correction=1`` explicitly instead.
     {keepdim}
     {out}
 
@@ -12169,6 +12172,8 @@ Keyword args:
     .. versionchanged:: 1.14
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
+    .. deprecated:: 1.14
+        The default correction value is deprecated. Pass ``correction=1`` explicitly instead.
     {keepdim}
     {out}
 
@@ -12223,6 +12228,8 @@ Keyword args:
     .. versionchanged:: 1.14
         Previously this argument was called ``unbiased`` and was a boolean with
         ``True`` corresponding to ``correction=1`` and ``False`` being ``correction=0``.
+    .. deprecated:: 1.14
+        The default correction value is deprecated. Pass ``correction=1`` explicitly instead.
     {keepdim}
     {out}
 

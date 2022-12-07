@@ -1247,14 +1247,23 @@ class TestNamedTensor(TestCase):
             'output_lambda',
         ])
 
+        std = functools.partial(torch.std, correction=1)
+        std_mean = functools.partial(torch.std_mean, correction=1)
+        var = functools.partial(torch.var, correction=1)
+        var_mean = functools.partial(torch.var_mean, correction=1)
+        std.__name__ = "std"
+        std_mean.__name__ = "std_mean"
+        var.__name__ = "var"
+        var_mean.__name__ = "var_mean"
+
         tests = [
             Case(torch.sum, True, True, True, True, None),
             Case(torch.prod, True, False, True, True, None),
             Case(torch.mean, True, True, True, True, None),
-            Case(torch.var, True, True, True, True, None),
-            Case(torch.std, True, True, True, True, None),
-            Case(torch.std_mean, True, True, False, True, None),
-            Case(torch.var_mean, True, True, False, True, None),
+            Case(var, True, True, True, True, None),
+            Case(std, True, True, True, True, None),
+            Case(std_mean, True, True, False, True, None),
+            Case(var_mean, True, True, False, True, None),
             Case(torch.min, True, False, True, True, values_and_indices),
             Case(torch.max, True, False, True, True, values_and_indices),
             Case(torch.unbind, False, False, False, False, None),

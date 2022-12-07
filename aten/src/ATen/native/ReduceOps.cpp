@@ -1707,6 +1707,13 @@ static Tensor& std_var_out(
   TORCH_CHECK(at::isFloatingType(self.scalar_type()) || at::isComplexType(self.scalar_type()),
               "std and var only support floating point and complex dtypes");
 
+  if (!correction_opt.has_value()) {
+    TORCH_WARN_ONCE(
+        fname, ": the default for the correction parameter is deprecated. ",
+        "Call with correction=1 to maintain the current default behavior.")
+  }
+
+  const auto correction = correction_opt.value_or(1);
   if (at::isComplexType(self.scalar_type())) {
     // For complex, calculate variance of real and imaginary components
     // separately then add to get overall variance.
@@ -1718,7 +1725,7 @@ static Tensor& std_var_out(
         real_out,
         real_in,
         dim,
-        correction_opt,
+        correction,
         keepdim,
         /*take_sqrt=*/false);
 
@@ -1729,7 +1736,7 @@ static Tensor& std_var_out(
         imag_out,
         imag_in,
         dim,
-        correction_opt,
+        correction,
         keepdim,
         /*take_sqrt=*/false);
 
@@ -1741,7 +1748,6 @@ static Tensor& std_var_out(
   }
 
   // Computation for floating point
-  const auto correction = correction_opt.value_or(1);
   ScalarType dtype = get_dtype_from_result(result, {});
   auto iter = make_reduction(fname, result, self, dim, keepdim, dtype);
   TORCH_CHECK(at::canCast(self.scalar_type(), result.scalar_type()),
@@ -1781,7 +1787,13 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
   TORCH_CHECK(result1.scalar_type() == c10::toRealValueType(result2.scalar_type()),
               fname, " expected result1 to be real and match the precision of result2. Got ",
               result1.scalar_type(), " and ", result2.scalar_type(), ".");
+  if (!correction_opt.has_value()) {
+    TORCH_WARN_ONCE(
+        fname, ": the default for the correction parameter is deprecated. ",
+        "Call with correction=1 to maintain the current default behavior.")
+  }
 
+  const auto correction = correction_opt.value_or(1);
   if (at::isComplexType(self.scalar_type())) {
     // For complex, calculate for real and imaginary components separately then combine as:
     // variance = var_real + var_imag
@@ -1796,7 +1808,7 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
         real_out_mean,
         real_in,
         dim,
-        correction_opt,
+        correction,
         keepdim,
         /*take_sqrt=*/false);
 
@@ -1809,7 +1821,7 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
         imag_out_mean,
         imag_in,
         dim,
-        correction_opt,
+        correction,
         keepdim,
         /*take_sqrt=*/false);
 
@@ -1822,7 +1834,6 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
   }
 
   // Computation for floating point
-  const auto correction = correction_opt.value_or(1);
   ScalarType dtype = get_dtype_from_result(result1, {});
   auto iter =
       make_reduction(fname, result1, result2, self, dim, keepdim, dtype);
@@ -1837,32 +1848,41 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
   return std::tuple<Tensor&, Tensor&>(result1, result2);
 }
 
+static inline c10::optional<int64_t> correction_from_unbiased(
+    c10::string_view fname, bool unbiased) {
+  if (unbiased) {
+    TORCH_WARN_ONCE(
+        fname, ": The 'unbiased' parameter and it's default value are deprecated in favor of 'correction'. "
+        "Use correction=1 for Bessel's correction, equivalent to unbiased=True.");
+    return 1;
+  } else {
+    TORCH_WARN_ONCE(
+        fname, ": The 'unbiased; parameter is deprecated. "
+        "Use correction=0 to apply no Bessel's correction, equivalent to unbiased=False.");
+    return 0;
+  }
+}
+
 std::tuple<Tensor, Tensor> var_mean(
     const Tensor& self, at::OptionalIntArrayRef dim, bool unbiased, bool keepdim) {
-  return at::var_mean(
-      self, /*dim=*/at::OptionalIntArrayRef(dim),
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}),
-      keepdim);
+  const auto correction = correction_from_unbiased("var_mean", unbiased);
+  return at::var_mean(self, dim, correction, keepdim);
 }
 
 std::tuple<Tensor, Tensor> std_mean(
     const Tensor& self, at::OptionalIntArrayRef dim, bool unbiased, bool keepdim) {
-  return at::std_mean(
-      self, /*dim=*/at::OptionalIntArrayRef(dim),
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}),
-      keepdim);
+  const auto correction = correction_from_unbiased("std_mean", unbiased);
+  return at::std_mean(self, dim, correction, keepdim);
 }
 
 std::tuple<Tensor, Tensor> std_mean(const Tensor& self, bool unbiased) {
-  return at::std_mean(
-      self, /*dim=*/c10::nullopt,
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}));
+  const auto correction = correction_from_unbiased("std_mean", unbiased);
+  return at::std_mean(self, /*dim=*/c10::nullopt, correction);
 }
 
 std::tuple<Tensor, Tensor> var_mean(const Tensor& self, bool unbiased) {
-  return at::var_mean(
-      self, /*dim=*/c10::nullopt,
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}));
+  const auto correction = correction_from_unbiased("var_mean", unbiased);
+  return at::var_mean(self, /*dim=*/c10::nullopt, correction);
 }
 
 std::tuple<Tensor&, Tensor&> var_mean_out(
@@ -1896,38 +1916,34 @@ std::tuple<Tensor, Tensor> std_mean(
 }
 
 Tensor var(const Tensor& self, bool unbiased) {
-  return at::var(
-      self, /*dim=*/c10::nullopt,
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}));
+  const auto correction = correction_from_unbiased("var", unbiased);
+  return at::var(self, /*dim=*/c10::nullopt, correction);
 }
 
-Tensor var(const Tensor& self, at::OptionalIntArrayRef dim, bool unbiased, bool keepdim) {
-  return at::var(
-      self, /*dim=*/at::OptionalIntArrayRef(dim),
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}),
-      keepdim);
+Tensor var(const Tensor& self, at::OptionalIntArrayRef dim,
+           bool unbiased, bool keepdim) {
+  const auto correction = correction_from_unbiased("var", unbiased);
+  return at::var(self, dim, correction, keepdim);
 }
 
 Tensor& var_out(const Tensor& self, at::OptionalIntArrayRef dim, bool unbiased, bool keepdim, Tensor& result) {
-  return at::var_out(
-      result, self, /*dim=*/at::OptionalIntArrayRef(dim),
-      /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}),
-      keepdim);
+  const auto correction = correction_from_unbiased("var", unbiased);
+  return at::var_out(result, self, dim, correction, keepdim);
 }
 
 Tensor std(const Tensor& self, bool unbiased) {
-  return at::std(
-      self, /*dim=*/c10::nullopt, /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}));
+  const auto correction = correction_from_unbiased("std", unbiased);
+  return at::std(self, /*dim=*/c10::nullopt, correction);
 }
 
 Tensor std(const Tensor& self, at::OptionalIntArrayRef dim, bool unbiased, bool keepdim) {
-  return at::std(self, dim,
-                 /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}), keepdim);
+  const auto correction = correction_from_unbiased("std", unbiased);
+  return at::std(self, dim, correction, keepdim);
 }
 
 Tensor& std_out(const Tensor& self, at::OptionalIntArrayRef opt_dim, bool unbiased, bool keepdim, Tensor& result) {
-  return at::std_out(result, self, opt_dim,
-                     /*correction=*/c10::make_optional<int64_t>({unbiased ? 1 : 0}), keepdim);
+  const auto correction = correction_from_unbiased("std", unbiased);
+  return at::std_out(result, self, opt_dim, correction, keepdim);
 }
 
 Tensor std(const Tensor& self, at::OptionalIntArrayRef dim,

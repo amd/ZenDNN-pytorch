@@ -1554,6 +1554,13 @@ def _std_var(
     if correction is not None:
         correction_int = correction
 
+    if unbiased is not None:
+        warnings.warn("The 'unbiased' parameter is deprecated in favor of 'correction'. "
+                      "Use correction=1 for unbiased estimator, or correction=0 for biased.")
+    elif correction is None:
+        warnings.warn("The default correction value is deprecated. "
+                      "Explicitly pass correction=1 for the unbiased estimator (current default)")
+
     if dtype is None:
         dtype = input.dtype
         if not (dtype.is_floating_point or dtype.is_complex):
