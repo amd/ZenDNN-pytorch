@@ -420,7 +420,7 @@ class Function(_SingleLevelFunction):
 
         # TODO: fix circular import
         # https://github.com/pytorch/pytorch/issues/90224
-        from torch._functorch.autograd_function import custom_function_call
+        from torch._functorch.autograd_function import custom_function_call, custom_gradients_call
         if not torch._C._are_functorch_transforms_active():
             # See NOTE: [functorch vjp and autograd interaction]
             args = _functorch.utils.unwrap_dead_wrappers(args)
@@ -433,6 +433,9 @@ class Function(_SingleLevelFunction):
                 'In order to use an autograd.Function with functorch transforms ',
                 '(vmap, grad, jvp, jacrev, ...), it must have a setup_context ',
                 'staticmethod.')
+
+        if getattr(cls, 'custom_gradients', False):
+            return custom_gradients_call(cls, *args, **kwargs)
         return custom_function_call(cls, *args, **kwargs)
 
 def once_differentiable(fn):

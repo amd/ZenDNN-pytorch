@@ -264,7 +264,8 @@ int64_t initAndPushDynamicLayer(
 
   auto& data = getGlobalDynmetaData();
 
-  TORCH_INTERNAL_ASSERT(data.find(layerId) == data.end());
+  // TODO: what is going on here?
+  // TORCH_INTERNAL_ASSERT(data.find(layerId) == data.end());
   if (transform_type == TransformType::Grad) {
     TORCH_INTERNAL_ASSERT(prev_grad_mode.has_value());
   }

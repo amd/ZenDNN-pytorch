@@ -51,6 +51,24 @@ class NumpyCube(torch.autograd.Function):
         input, dinput = ctx.saved_tensors
         return NumpyMul.apply(input_tangent, dinput), 6 * NumpyMul.apply(input_tangent, input)
 
+
+class Cube(torch.autograd.Function):
+    custom_gradients = True
+
+    @staticmethod
+    def forward(x):
+        return x ** 3, 3 * x ** 2
+
+    @staticmethod
+    def setup_context(ctx, outputs, input):
+        ctx.save_for_backward(input, outputs[1])
+
+    @staticmethod
+    def backward(ctx, grad_output, grad_saved):
+        input, dinput = ctx.saved_tensors
+        return grad_output * dinput + 6 * dinput
+
+
 def sample_inputs_numpy_cube(opinfo, device, dtype, requires_grad, **kwargs):
     make_arg = partial(make_tensor, device=device, dtype=dtype, requires_grad=requires_grad)
     yield SampleInput(make_arg(1, low=0.8, high=2), args=())
@@ -289,6 +307,15 @@ autograd_function_db = [
         inplace_variant=NumpyExp_.apply,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        sample_inputs_func=sample_inputs_numpy_cube,
+        dtypes=all_types_and(torch.bool, torch.half),
+        supports_out=False,
+    ),
+    OpInfo(
+        'Cube2AutogradFunction',
+        op=Cube.apply,
+        supports_forward_ad=False,
+        supports_fwgrad_bwgrad=False,
         sample_inputs_func=sample_inputs_numpy_cube,
         dtypes=all_types_and(torch.bool, torch.half),
         supports_out=False,

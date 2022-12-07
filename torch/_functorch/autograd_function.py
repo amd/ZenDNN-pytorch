@@ -12,6 +12,7 @@ from torch._C._functorch import (
 from functorch._src.vmap import (
     _broadcast_to_and_flatten,
     _create_batched_inputs,
+    stupid_vmap,
 )
 from torch.autograd.forward_ad import _enable_fwd_grad
 from typing import NamedTuple
@@ -24,8 +25,8 @@ from typing import NamedTuple
 # We do this by using creating a custom PyOperator that only functorch
 # dispatches specially.
 class CustomFunctionPyOperator(PyOperator):
-    def __init__(self):
-        super().__init__('custom_function_call')
+    def __init__(self, name):
+        super().__init__(name)
 
     def __call__(self, *args, **kwargs):
         # When custom_function_call is done dispatching through functorch,
@@ -50,7 +51,7 @@ class CustomFunctionPyOperator(PyOperator):
 # It wraps an autograd.Function; interactions with functorch transforms are defined
 # via PyDispatcher and PyOperator rather than through the traditional PyTorch
 # dispatcher.
-custom_function_call = CustomFunctionPyOperator()
+custom_function_call = CustomFunctionPyOperator('custom_function_call')
 
 
 # The grad rule for custom_function_call is to construct a new _SingleLevelFunction
@@ -248,3 +249,180 @@ def wrap_batched(args, bdims, level):
 @custom_function_call.py_impl(TransformType.Functionalize)
 def custom_function_call_functionalize(interpreter, autograd_function, *operands):
     raise RuntimeError("NYI: Functionalize rule for custom_function_call")
+
+
+custom_gradients_call = CustomFunctionPyOperator('custom_gradients_call')
+
+
+@custom_gradients_call.py_impl(TransformType.Grad)
+def custom_gradients_call_grad(interpreter, autograd_function, *operands):
+    maybe_interpreter = interpreter
+    level = maybe_interpreter.level()
+
+    # TODO: The name of the grad_fn is GeneratedBackward. This isn't a great UX,
+    # but in theory functorch users shouldn't be peeking at the grad_fn.
+    # We should try to generate a better name for this.
+    class Generated(_SingleLevelFunction):
+        @staticmethod
+        def forward(*operands):
+            unwrapped_operands = pytree.tree_map_only(
+                torch.Tensor,
+                lambda x: _unwrap_for_grad(x, level),
+                operands)
+            # Both enable_grad() and _enable_fwd_grad() are necessary no matter
+            # the transform. _SingleLevelFunction will turn off both fwd and bwd
+            # gradient computation and we need to turn it back on here.
+            with torch.enable_grad(), _enable_fwd_grad(), maybe_interpreter.lower():
+                output = custom_gradients_call(autograd_function, *unwrapped_operands)
+
+            # autograd.Function's ctx.mark_dirty expect a returned input
+            # to have the same object identity as the input.
+            # Mode-only functorch will greatly simplify this logic.
+            results = wrap_outputs_maintaining_identity(
+                output,
+                unwrapped_operands,
+                operands,
+                level)
+            return results
+
+        @staticmethod
+        def setup_context(ctx, outputs, *operands):
+            return autograd_function.setup_context(ctx, outputs, *operands)
+
+        # backward is only used if the transform is TransformType.Grad
+        @staticmethod
+        def backward(ctx, *grads):
+            result = autograd_function.backward(ctx, *grads)
+            return result
+
+        # jvp is only used if the transform is TransformType.Jvp
+        @staticmethod
+        def jvp(ctx, *tangents):
+            result = autograd_function.jvp(ctx, *tangents)
+            return result
+
+    with enable_autograd_function():
+        flat_out = Generated.apply(*operands)
+    return flat_out
+
+
+@custom_gradients_call.py_impl(TransformType.Functionalize)
+def custom_gradients_call_functionalize(interpreter, autograd_function, *operands):
+    raise RuntimeError("NYI: Functionalize rule for custom_gradients_call")
+
+
+@custom_gradients_call.py_impl(TransformType.Jvp)
+def custom_gradients_call_jvp(interpreter, autograd_function, *operands):
+    raise RuntimeError("NYI: jvp rule for custom_gradients_call")
+
+
+@custom_gradients_call.py_impl(TransformType.Vmap)
+def custom_gradients_call_vmap(interpreter, autograd_function, *operands):
+    unwrapped_operands, in_dims = unwrap_batched(operands, interpreter.level())
+    new_function, get_out_dims = batchify_autograd_function(
+        autograd_function, in_dims, interpreter.batch_size())
+
+    with interpreter.lower():
+        output = custom_gradients_call(new_function, *unwrapped_operands)
+
+    out_dims = get_out_dims()
+    return wrap_batched(output, out_dims, interpreter.level())
+
+
+# TODO items
+# - figure out level assert (unordered levels in functorch?)
+# - make MockCtx more legit. Ideas: mechanism to override saved_tensors?
+# - how do we figure out what the in_dims of the saved tensors are?
+#   current approach is a bit jank.
+# - should we support both jax-style and pytorch-style gradients?
+# - should we support autograd.Function only with setup_context? (we don't need to)
+def batchify_autograd_function(autograd_function, in_dims, batch_size):
+    out_dims = None
+    all_outputs = None
+    all_operands = None
+
+    class Generated(torch.autograd.Function):
+        custom_gradients = True
+
+        @staticmethod
+        def forward(*operands):
+            nonlocal out_dims
+            outputs, out_dims = stupid_vmap(
+                autograd_function.forward, in_dims, batch_size)(*operands)
+            return outputs
+
+        @staticmethod
+        def setup_context(ctx, outputs, *operands):
+            # ctx can be some mock object that wraps the original ctx.
+            autograd_function.setup_context(ctx, outputs, *operands)
+            nonlocal all_outputs
+            nonlocal all_operands
+            all_outputs = outputs
+            all_operands = operands
+
+        @staticmethod
+        def backward(ctx, *grad_outputs):
+            assert out_dims is not None
+
+            # Assumption: the user is only allowed to save tensors in ctx.saved_tensors
+            tensorid_to_bdim = {}
+
+            def build(outputs, out_dims):
+                flat_outputs, _ = pytree.tree_flatten(outputs)
+                flat_out_dims, _ = pytree.tree_flatten(out_dims)
+                for output, out_dim in zip(flat_outputs, flat_out_dims):
+                    if not isinstance(output, torch.Tensor):
+                        continue
+                    tensorid_to_bdim[id(output)] = out_dim
+
+            build(all_outputs, out_dims)
+            build(all_operands, in_dims)
+
+            saved_tensor_dims_ = []
+            for tensor in ctx.saved_tensors:
+                if id(tensor) in tensorid_to_bdim:
+                    saved_tensor_dims_.append(tensorid_to_bdim[id(tensor)])
+                else:
+                    saved_tensor_dims_.append(None)
+            saved_tensor_dims = tuple(saved_tensor_dims_)
+
+            def foo(inputs):
+                saved_tensors, grad_outputs = inputs
+
+                class MockCtx:
+                    pass
+                mockctx = MockCtx()
+                setattr(mockctx, 'saved_tensors', ctx.saved_tensors)
+                return autograd_function.backward(mockctx, *grad_outputs)
+
+            grad_ins, grad_ins_dims = stupid_vmap(
+                foo, (saved_tensor_dims, out_dims), batch_size)(
+                    (ctx.saved_tensors, grad_outputs))
+            return reductify(grad_ins, grad_ins_dims, in_dims)
+
+    def get_out_dims():
+        assert out_dims is not None
+        return out_dims
+
+    return Generated, get_out_dims
+
+
+def reductify_leaf(tensor, tensor_bdim, desired_bdim):
+    if tensor_bdim is None and desired_bdim is None:
+        return tensor
+    if tensor_bdim is None and desired_bdim is not None:
+        raise RuntimeError('NYI: A')
+    if tensor_bdim is not None and desired_bdim is None:
+        return tensor.sum(tensor_bdim)
+    return tensor.movedim(tensor_bdim, desired_bdim)
+
+
+def reductify(tensors, tensor_bdims, desired_bdims):
+    tensors, spec = pytree.tree_flatten(tensors)
+    tensor_bdims, _ = pytree.tree_flatten(tensor_bdims)
+    desired_bdims, _ = pytree.tree_flatten(desired_bdims)
+
+    result = [reductify_leaf(tensor, bdim, desired_bdim)
+              for tensor, bdim, desired_bdim
+              in zip(tensors, tensor_bdims, desired_bdims)]
+    return pytree.tree_unflatten(result, spec)

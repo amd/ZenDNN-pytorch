@@ -490,3 +490,43 @@ def _flat_vmap(func, batch_size, flat_in_dims, flat_args, args_spec, out_dims, r
         return _unwrap_batched(batched_outputs, out_dims, vmap_level, batch_size, func)
     finally:
         _vmap_decrement_nesting()
+
+
+def stupid_vmap(func, in_dims, batch_size):
+    def inner(*args, **kwargs):
+        vmap_level = _vmap_increment_nesting(batch_size, "error")
+        try:
+            batched_inputs = wrap_batched(vmap_level, args, in_dims)
+            batched_outputs = func(*batched_inputs, **kwargs)
+            return unwrap_batched(batched_outputs, vmap_level)
+        finally:
+            _vmap_decrement_nesting()
+    return inner
+
+
+def wrap_batched(vmap_level, maybe_tensors, bdims):
+    flat_maybe_tensors, spec = tree_flatten(maybe_tensors)
+    flat_bdims, _ = tree_flatten(bdims)
+    result = [wrap_batched_leaf(vmap_level, maybe_tensor, bdim)
+              for maybe_tensor, bdim in zip(flat_maybe_tensors, flat_bdims)]
+    return tree_unflatten(result, spec)
+
+
+def wrap_batched_leaf(vmap_level, maybe_tensor, maybe_bdim):
+    if maybe_bdim is None:
+        return maybe_tensor
+    return _add_batch_dim(maybe_tensor, maybe_bdim, vmap_level)
+
+
+def unwrap_batched(pytree, vmap_level):
+    leafs, spec = tree_flatten(pytree)
+    something = [unwrap_batched_leaf(leaf, vmap_level) for leaf in leafs]
+    leafs, bdims = zip(*something)
+    return tree_unflatten(leafs, spec), tree_unflatten(bdims, spec)
+
+
+def unwrap_batched_leaf(maybe_tensor, vmap_level):
+    if isinstance(maybe_tensor, torch.Tensor):
+        tensor, bdim = torch._C._functorch._unwrap_batched(maybe_tensor, vmap_level)
+        return tensor, bdim
+    return maybe_tensor, None
