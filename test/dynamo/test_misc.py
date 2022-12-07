@@ -3057,7 +3057,6 @@ class MiscTests(torch._dynamo.test_case.TestCase):
                 "tensor 'x' size mismatch at index 0. expected 2, actual 3",
             )
 
-
 class CustomFunc1(torch.autograd.Function):
     @staticmethod
     def forward(ctx, foo):
