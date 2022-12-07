@@ -512,9 +512,10 @@ __device__ __attribute__((noinline)) __attribute__((weak)) void __assert_fail(
 #endif
 #endif // HAS_DEMANGLE
 
-#ifdef __clang__
 #define _C10_PRAGMA__(string) _Pragma(#string)
 #define _C10_PRAGMA_(string) _C10_PRAGMA__(string)
+
+#ifdef __clang__
 #define C10_CLANG_DIAGNOSTIC_PUSH() _Pragma("clang diagnostic push")
 #define C10_CLANG_DIAGNOSTIC_POP() _Pragma("clang diagnostic pop")
 #define C10_CLANG_DIAGNOSTIC_IGNORE(flag) \
@@ -526,5 +527,10 @@ __device__ __attribute__((noinline)) __attribute__((weak)) void __assert_fail(
 #define C10_CLANG_DIAGNOSTIC_IGNORE(flag)
 #define C10_CLANG_HAS_WARNING(flag) 0
 #endif
+
+#define C10_SUPPRESS_WARNING_IF_DEFINED(warning)                 \
+  _C10_PRAGMA_(GCC diagnostic ignored "-Wpragmas")                \
+  _C10_PRAGMA_(GCC diagnostic ignored "-Wunknown-warning-option") \
+  _C10_PRAGMA_(GCC diagnostic ignored #warning)
 
 #endif // C10_MACROS_MACROS_H_
