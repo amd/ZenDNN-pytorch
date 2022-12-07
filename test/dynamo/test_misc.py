@@ -2353,6 +2353,28 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         b = opt_fn(torch.tensor(True), torch.tensor([0.25, 0.25]))
         self.assertTrue(same(torch.sin(torch.tensor([0.25, 0.25])), b))
 
+    @unittest.expectedFailure
+    def test_cond_side_effects(self):
+        from functorch.experimental.cond import cond
+
+        c = 0
+
+        def true_fn(x):
+            return x - c
+
+        def false_fn(x):
+            return x + c
+
+        def f(pred, x):
+            nonlocal c
+            c = 1
+            return cond(pred, true_fn, false_fn, [x])
+
+        opt_fn = torch._dynamo.optimize("eager")(f)
+        c = 0
+        a = opt_fn(torch.tensor(False), torch.tensor([0.25, 0.25]))
+        self.assertTrue(same(torch.tensor([1.25, 1.25]), a))
+
     def test_cond_nested(self):
         from functorch.experimental.control_flow import cond
 
@@ -3034,7 +3056,6 @@ class MiscTests(torch._dynamo.test_case.TestCase):
                 guard_failure[0],
                 "tensor 'x' size mismatch at index 0. expected 2, actual 3",
             )
-
 
 class CustomFunc1(torch.autograd.Function):
     @staticmethod
