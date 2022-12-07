@@ -4957,15 +4957,13 @@ def sample_inputs_std_var(op_info, device, dtype, requires_grad, **kwargs):
     tensor_1d = partial(make_tensor, (S,), device=device, dtype=dtype,
                         requires_grad=requires_grad)
 
-    yield SampleInput(tensor_nd())
-    yield SampleInput(tensor_nd(), dim=1)
-    yield SampleInput(tensor_nd(), dim=1, unbiased=True, keepdim=True)
-    yield SampleInput(tensor_1d(), dim=0, unbiased=True, keepdim=True)
-    yield SampleInput(tensor_1d(), dim=0, unbiased=False, keepdim=False)
+    yield SampleInput(tensor_nd(), correction=1)
+    yield SampleInput(tensor_nd(), dim=1, correction=1, keepdim=True)
+    yield SampleInput(tensor_1d(), dim=0, correction=1, keepdim=True)
+    yield SampleInput(tensor_1d(), dim=0, correction=0, keepdim=False)
 
     yield SampleInput(tensor_nd(), dim=(1,), correction=S // 2)
     yield SampleInput(tensor_nd(), dim=None, correction=0, keepdim=True)
-    yield SampleInput(tensor_nd(), dim=None, correction=None)
     yield SampleInput(tensor_nd(), correction=0, keepdim=True)
 
 
@@ -8128,16 +8126,12 @@ def reference_smooth_l1_loss(input, target, beta=1.0):
     return loss
 
 def reference_std_var(f):
-    """Forwards unbiased/correction kwargs as NumPy's equivalent ddof"""
+    """Forwards correction kwargs as NumPy's equivalent ddof"""
     g = reference_reduction_numpy(f)
 
     @wraps(g)
     def wrapper(x: np.ndarray, *args, **kwargs):
-        assert not ('unbiased' in kwargs and 'correction' in kwargs)
-
-        if 'unbiased' in kwargs:
-            kwargs['ddof'] = int(kwargs.pop('unbiased'))
-        elif 'correction' in kwargs:
+        if 'correction' in kwargs:
             kwargs['ddof'] = kwargs.pop('correction')
 
         return g(x, *args, **kwargs)
@@ -8145,18 +8139,12 @@ def reference_std_var(f):
     return wrapper
 
 def generate_std_var_kwargs(t: torch.Tensor, **kwargs):
-    """Generates unbiased/correction kwargs for std/var operators"""
-    yield ((), {'unbiased': True})
-    yield ((), {'unbiased': False})
+    """Generates correction kwargs for std/var operators"""
+    yield ((), {'correction': 0})
+    yield ((), {'correction': 1})
 
-    # Currently, calling std with correction is only enabled when
-    # both dim and keepdim are provided.
-    if 'dim' in kwargs and 'keepdim' in kwargs:
-        yield ((), {'correction': 0})
-        yield ((), {'correction': 1})
-
-        numel = torch.tensor(t.shape)[kwargs.get('dim')].prod()
-        yield ((), {'correction': numel // 2})
+    numel = torch.tensor(t.shape)[kwargs.get('dim')].prod()
+    yield ((), {'correction': int(numel // 2)})
 
 def error_inputs_mean(op_info, device, is_ref=False, **kwargs):
     if is_ref:

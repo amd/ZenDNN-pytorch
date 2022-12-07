@@ -1539,7 +1539,6 @@ reduction, is ``{identity_float32}``, except for ``ord=-inf`` it is
 def _std_var(
     input: Union[Tensor, MaskedTensor],
     dim: DimOrDims,
-    unbiased: Optional[bool],
     *,
     correction: Optional[int],
     keepdim: Optional[bool],
@@ -1547,19 +1546,11 @@ def _std_var(
     mask: Optional[Tensor],
     take_sqrt: Optional[bool],
 ) -> Tensor:
-    assert (unbiased is None or correction is None), "Only one of unbiased and correction may be given"
-    correction_int = 1
-    if unbiased is not None:
-        correction_int = 1 if unbiased else 0
     if correction is not None:
         correction_int = correction
-
-    if unbiased is not None:
-        warnings.warn("The 'unbiased' parameter is deprecated in favor of 'correction'. "
-                      "Use correction=1 for unbiased estimator, or correction=0 for biased.")
-    elif correction is None:
-        warnings.warn("The default correction value is deprecated. "
-                      "Explicitly pass correction=1 for the unbiased estimator (current default)")
+    else:
+        raise RuntimeError("The correction parameter must be given explicitly. "
+                           "Call with correction=1 for the old default behavior.")
 
     if dtype is None:
         dtype = input.dtype
@@ -1616,7 +1607,6 @@ def _std_var(
 def var(
     input: Union[Tensor, MaskedTensor],
     dim: DimOrDims = None,
-    unbiased: Optional[bool] = None,
     *,
     correction: Optional[int] = None,
     keepdim: Optional[bool] = False,
@@ -1634,7 +1624,6 @@ fully masked-out elements, have ``nan`` values.
     return _std_var(
         input=input,
         dim=dim,
-        unbiased=unbiased,
         correction=correction,
         keepdim=keepdim,
         dtype=dtype,
@@ -1647,7 +1636,6 @@ fully masked-out elements, have ``nan`` values.
 def std(
     input: Union[Tensor, MaskedTensor],
     dim: DimOrDims = None,
-    unbiased: Optional[bool] = None,
     *,
     correction: Optional[int] = None,
     keepdim: Optional[bool] = False,
@@ -1665,7 +1653,6 @@ fully masked-out elements, have ``nan`` values.
     return _std_var(
         input=input,
         dim=dim,
-        unbiased=unbiased,
         correction=correction,
         keepdim=keepdim,
         dtype=dtype,

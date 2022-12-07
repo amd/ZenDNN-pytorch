@@ -1707,13 +1707,10 @@ static Tensor& std_var_out(
   TORCH_CHECK(at::isFloatingType(self.scalar_type()) || at::isComplexType(self.scalar_type()),
               "std and var only support floating point and complex dtypes");
 
-  if (!correction_opt.has_value()) {
-    TORCH_WARN_ONCE(
-        fname, ": the default for the correction parameter is deprecated. ",
-        "Call with correction=1 to maintain the current default behavior.")
-  }
-
-  const auto correction = correction_opt.value_or(1);
+  TORCH_CHECK(correction_opt.has_value(),
+      fname, ": the correction parameter must be given explicitly. ",
+      "Call with correction=1 for the old default behavior.")
+  const auto correction = *correction_opt;
   if (at::isComplexType(self.scalar_type())) {
     // For complex, calculate variance of real and imaginary components
     // separately then add to get overall variance.
@@ -1787,13 +1784,11 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
   TORCH_CHECK(result1.scalar_type() == c10::toRealValueType(result2.scalar_type()),
               fname, " expected result1 to be real and match the precision of result2. Got ",
               result1.scalar_type(), " and ", result2.scalar_type(), ".");
-  if (!correction_opt.has_value()) {
-    TORCH_WARN_ONCE(
-        fname, ": the default for the correction parameter is deprecated. ",
-        "Call with correction=1 to maintain the current default behavior.")
-  }
 
-  const auto correction = correction_opt.value_or(1);
+  TORCH_CHECK(correction_opt.has_value(),
+      fname, ": the correction parameter must be given explicitly. ",
+      "Call with correction=1 for the old default behavior.")
+  const auto correction = *correction_opt;
   if (at::isComplexType(self.scalar_type())) {
     // For complex, calculate for real and imaginary components separately then combine as:
     // variance = var_real + var_imag
@@ -1851,13 +1846,13 @@ static std::tuple<Tensor&, Tensor&> std_var_mean_out(
 static inline c10::optional<int64_t> correction_from_unbiased(
     c10::string_view fname, bool unbiased) {
   if (unbiased) {
-    TORCH_WARN_ONCE(
-        fname, ": The 'unbiased' parameter and it's default value are deprecated in favor of 'correction'. "
+    TORCH_CHECK(
+        false, fname, ": The 'unbiased' parameter and its default value have been removed. "
         "Use correction=1 for Bessel's correction, equivalent to unbiased=True.");
     return 1;
   } else {
-    TORCH_WARN_ONCE(
-        fname, ": The 'unbiased; parameter is deprecated. "
+    TORCH_CHECK(
+        false, fname, ": The 'unbiased; parameter has been removed. "
         "Use correction=0 to apply no Bessel's correction, equivalent to unbiased=False.");
     return 0;
   }
