@@ -4,8 +4,15 @@
 #include <torch/csrc/jit/tensorexpr/intrinsic_symbols.h>
 #include <torch/csrc/jit/tensorexpr/llvm_jit.h>
 
+#pragma GCC diagnostic push
+#if defined(__has_warning)
+#if __has_warning("-Wsuggest-override")
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif // _has_warning("-Wsuggest-override")
+#endif // defined(__has_warning)
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JITSymbol.h>
+#pragma GCC diagnostic pop
 #include <llvm/ExecutionEngine/Orc/CompileUtils.h>
 #include <llvm/ExecutionEngine/Orc/ExecutionUtils.h>
 #include <llvm/ExecutionEngine/Orc/IRCompileLayer.h>
