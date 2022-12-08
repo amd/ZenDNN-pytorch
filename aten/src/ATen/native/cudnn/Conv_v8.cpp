@@ -1,4 +1,7 @@
 #define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+
+#include <c10/macros/Macros.h>
+
 #include <ATen/cuda/CUDAConfig.h>  // for the definition of AT_CUDNN_ENABLED
 
 #if AT_CUDNN_ENABLED()
@@ -8,7 +11,11 @@
 #if HAS_CUDNN_V8()
 
 #include <ATen/cudnn/cudnn-wrapper.h>
+
+C10_DIAGNOSTIC_PUSH_AND_IGNORED_IF_DEFINED("-Wsuggest-override")
 #include <cudnn_frontend.h>
+C10_DIAGNOSTIC_POP()
+
 #include <cudnn_frontend_find_plan.h>
 #include <cudnn_frontend_get_plan.h>
 #include <ATen/core/Tensor.h>
