@@ -282,7 +282,7 @@ test_inductor_huggingface_perf() {
   mkdir -p "$TEST_REPORTS_DIR"
   # Check training with --amp
   # Not checking accuracy for perf test for now
-  python benchmarks/dynamo/huggingface.py --training --performance \
+  python benchmarks/dynamo/huggingface.py --training --performance --disable-cudagraphs \
     --device cuda --inductor --amp --output "$TEST_REPORTS_DIR"/inductor_training_huggingface.csv
 }
 
@@ -320,7 +320,7 @@ test_inductor_timm_perf_shard() {
   mkdir -p "$TEST_REPORTS_DIR"
   # Check training with --amp
   # Not checking accuracy for perf test for now
-  python benchmarks/dynamo/timm_models.py --performance \
+  python benchmarks/dynamo/timm_models.py --performance --disable-cudagraphs \
     --device cuda --inductor --amp --total-partitions 2 --partition-id "$1" \
     --output "$TEST_REPORTS_DIR"/inductor_training_timm_"$1".csv
 }
@@ -343,7 +343,7 @@ test_inductor_torchbench_perf() {
   mkdir -p "$TEST_REPORTS_DIR"
   # Check training with --amp
   # Not checking accuracy for perf test for now
-  PYTHONPATH=$(pwd)/torchbench python benchmarks/dynamo/torchbench.py --training --performance \
+  PYTHONPATH=$(pwd)/torchbench python benchmarks/dynamo/torchbench.py --training --performance --disable-cudagraphs \
     --device cuda --inductor --amp --output "$TEST_REPORTS_DIR"/inductor_training_torchbench.csv
 }
 
