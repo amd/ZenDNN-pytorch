@@ -145,13 +145,35 @@ class ShapeGuard:
         self.expr = expr
         self.stack = stack
 
+"""
+Parent structure for guard env expressions.
+A GuardEnvExpr can have any subtype.
+Note: All subtypes must be handled exhaustively in
+torch._dynamo.guards._parse_guard_env_guards to avoid a RuntimeError.
+"""
+@dataclasses.dataclass
+class GuardEnvExpr():
+    pass
+
+"""
+A class representing a pair of duplicate inputs.
+arg_a and arg_b are argument names in the traced scope.
+"""
+@dataclasses.dataclass
+class DuplicateInputs(GuardEnvExpr):
+    arg_a: str
+    arg_b: str
+
+
 class GuardsContext:
     dynamo_guards: Set[Guard] = set()
     shape_guards: List[ShapeGuard] = []
+    aotautograd_guards: List[GuardEnvExpr] = []
 
     def clear(self):
         self.dynamo_guards.clear()
         self.shape_guards.clear()
+        self.aotautograd_guards.clear()
 
 
 _CURRENT_TRACING_CONTEXT = None
