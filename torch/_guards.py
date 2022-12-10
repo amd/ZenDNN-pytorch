@@ -3,6 +3,7 @@ from typing import List, Optional, Callable, Set
 import dataclasses
 from contextlib import contextmanager
 import sympy
+import torch
 
 class GuardSource(enum.Enum):
     LOCAL = 0
@@ -157,12 +158,15 @@ class GuardEnvExpr():
 
 """
 A class representing a pair of duplicate inputs.
-arg_a and arg_b are argument names in the traced scope.
+tensor_a and tensor_b are inputs we have deduped.
 """
 @dataclasses.dataclass
 class DuplicateInputs(GuardEnvExpr):
-    arg_a: str
-    arg_b: str
+    tensor_a: torch.Tensor
+    tensor_b: torch.Tensor
+
+    def __post_init__(self):
+        assert self.tensor_a is self.tensor_b
 
 
 class GuardsContext:

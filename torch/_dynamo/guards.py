@@ -33,7 +33,7 @@ from .utils import (
     tuple_iterator_len,
 )
 
-from torch._guards import Guard, GuardSource
+from torch._guards import Guard, GuardSource, DuplicateInputs
 
 log = logging.getLogger(__name__)
 TensorGuards = torch._C._dynamo.guards.TensorGuards
@@ -508,6 +508,22 @@ class CheckFunctionManager:
             )
             verbose_code_parts.append(f"___check_tensors_verbose({verbose_args})")
 
+        graphargs = self.output_graph.graphargs
+        graph_args_fake_tensors = [a.fake_tensor for a in graphargs if a.is_tensor]
+        graph_args_names = [a.source.name() for a in graphargs if a.is_tensor]
+
+        aotautograd_guards: List[GuardEnvExpr] = self.output_graph.tracing_context.guards_context.aotautograd_guards
+        for guard in aotautograd_guards:
+            if isinstance(guard, DuplicateInputs):
+                breakpoint()
+                dup_names = [graph_args_names[idx] for idx, a in enumerate(graph_args_fake_tensors) if a is guard.tensor_a]
+                s = ' is '.join(dup_names)
+                breakpoint()
+            else:
+                raise RuntimeError(f"Unknown GuardEnvExpr: {guard}")
+
+        
+
         # Let's handle ShapeEnv guards.  To do this, we will resolve
         # shape variables to sources from GraphArgs.  This must happen after
         # tensor checks.
@@ -515,10 +531,9 @@ class CheckFunctionManager:
         # TODO: What about grapharg pruning?  This could be problematic if we
         # guarded on a tensor that isn't actually used as an input in the end.
         if self.output_graph and self.output_graph.shape_env:
-            graphargs = self.output_graph.graphargs
             expr_as_str = self.output_graph.shape_env.codegen_guards(
-                [a.fake_tensor for a in graphargs if a.is_tensor],
-                [a.source.name() for a in graphargs if a.is_tensor],
+                graph_args_fake_tensors,
+                graph_args_names,
             )
             if expr_as_str != "True":
                 code_parts.append(expr_as_str)
