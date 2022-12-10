@@ -28,6 +28,7 @@ from typing import Any, Dict, List
 import numpy as np
 
 import torch
+import torch.distributed
 from torch import fx
 from torch._dispatch.python import enable_python_dispatcher
 from torch._subclasses.fake_tensor import FakeTensor
@@ -145,6 +146,18 @@ tensortype_to_dtype = {
     torch.ShortTensor: (torch.int16, torch.short),
     torch.BoolTensor: (torch.bool,),
 }
+
+# TODO where should these live? circular import...
+# Control which distributed collectives and process group types are specially supported
+DYNAMO_SUPPORTED_COLLECTIVES = {
+    torch.distributed.all_reduce,
+}
+
+DYNAMO_SUPPORTED_PROCESS_GROUPS = {
+    torch.distributed.ProcessGroupGloo,
+}
+if hasattr(torch.distributed, "ProcessGroupNCCL"):
+    DYNAMO_SUPPORTED_PROCESS_GROUPS.add(torch.distributed.ProcessGroupNCCL)
 
 
 class DuplicateWarningChecker(object):
@@ -1024,6 +1037,11 @@ def get_fake_value(node, tx):
 
     def visit(n: torch.fx.Node):
         return n.meta["example_value"]
+
+    if node.op == "call_function" and node.target in DYNAMO_SUPPORTED_COLLECTIVES:
+        # HACK- collectives generally mutate in-place and don't change shape/dtype
+        # and.. node.kwargs doesn't have example_value, so fails `visit`
+        return node.args[0].meta["example_value"].clone()
 
     args, kwargs = torch.fx.node.map_arg((node.args, node.kwargs), visit)
     args = tree_map(fake_wrapper, args)

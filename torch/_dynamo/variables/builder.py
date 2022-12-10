@@ -39,6 +39,7 @@ from ..source import (
 )
 from ..utils import (
     clone_input,
+    DYNAMO_SUPPORTED_PROCESS_GROUPS,
     get_fake_value,
     getfile,
     global_key_name,
@@ -64,6 +65,7 @@ from .dicts import (
     DefaultDictVariable,
     HFPretrainedConfigVariable,
 )
+from .distributed import ProcessGroupVariable
 from .functions import UserFunctionVariable
 from .lists import (
     ListIteratorVariable,
@@ -230,6 +232,17 @@ class VariableBuilder:
             return self.wrap_sym(value)
         if istensor(value):
             return self.wrap_tensor(value)
+        elif value.__class__ in DYNAMO_SUPPORTED_PROCESS_GROUPS:
+            # This is required for generating the LOAD_FAST instruction for the
+            # process group which is required for passing it to __compiled_fn.
+            self.tx.output.graphargs.append(GraphArg(self.get_source(), value, False))
+            return ProcessGroupVariable(
+                proxy=self.tx.output.create_graph_input(
+                    re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
+                ),
+                value=value,
+                guards=make_guards(GuardBuilder.PROCESS_GROUP_MATCH),
+            )
         elif istype(value, (tuple, list, odict_values)) or is_namedtuple(value):
             # One can index a tensor with a list/tuple. Therefore, we need to
             # have a stricter match.

@@ -374,6 +374,20 @@ class GuardBuilder(GuardBuilderBase):
                 weakref.ref(value),
             )
 
+    def PROCESS_GROUP_MATCH(self, guard: Guard):
+        """ProcessGroup state match"""
+        ref = self.arg_ref(guard)
+        value = self.get(guard.name)
+
+        # type_id encompasses NCCL vs Gloo
+        self.TYPE_MATCH(guard)
+
+        # size/rank appear to be the only other critical attributes
+        code = list()
+        code.append(f"{ref}.size() == {value.size()!r}")
+        code.append(f"{ref}.rank() == {value.rank()!r}")
+        self._produce_guard_code(guard, code)
+
     # A util that appends guarded code, or, in the case of export, adds data onto guards
     def _produce_guard_code(self, guard, code_list, provided_guarded_object=None):
         # WARNING: It is important that cur_frame/caller do NOT stay in
