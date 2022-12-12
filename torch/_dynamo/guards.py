@@ -455,7 +455,12 @@ class CheckFunctionManager:
         )
         global_builder = GuardBuilder(self.id_ref, f_globals, self, renames=False)
         for guard in sorted(guards or [], key=Guard.sort_key):
-            if not config.guard_nn_modules and guard.is_nn_module():
+            if (
+                not config.guard_nn_modules
+                and guard.is_nn_module()
+                and not "__defaults__" in guard.name
+                and not "__kwdefaults__" in guard.name
+            ):
                 continue
             guard.create(local_builder, global_builder)
         self.check_fn = self.compile_check_fn(
