@@ -9,7 +9,7 @@ from typing import Dict, List
 from .. import variables
 from ..bytecode_transformation import create_instruction
 from ..exc import unimplemented
-from ..source import AttrSource, GetItemSource
+from ..source import AttrSource, DefaultsSource, GetItemSource
 from ..utils import istensor, make_cell
 from .base import typestr, VariableTracker
 
@@ -41,20 +41,26 @@ def wrap_bound_arg(tx, val, options, source=None):
         # since InstructionTranslator __init__ prepares VariableTrackers for args of top
         # level function including defaults.
         #
-        # TODO: wish i could assert this; but if the default tensor arg lives on
-        # a NNModuleVariable, currently the UserFunctionVariable itself has no source
-        # so we need to fix that first
-        # assert source is not None, "source must be provided for tensor arg"
+
+        # Circular import...
+        from torch._dynamo.variables.builder import VariableBuilder
+
         if source:
-            return tx.output.register_attr_or_module(
-                val,
-                # should there be a "name" here?
-                source=source,
-            )
+            # return tx.output.register_attr_or_module(
+            #     val,
+            #     # should there be a "name" here?
+            #     source=source,
+            # )
+            return VariableBuilder(tx, source)(val)
         else:
-            return tx.output.register_attr_or_module(
-                val,
-            )
+            # TODO: wish i could assert this; but if the default tensor arg lives on
+            # a NNModuleVariable, currently the UserFunctionVariable itself has no source
+            # so we need to fix that first
+            # assert source is not None, "source must be provided for tensor arg"
+            return VariableBuilder(tx, source)(val)
+            # return tx.output.register_attr_or_module(
+            #     val,
+            # )
     else:
         assert isinstance(val, VariableTracker), typestr(val)
         return val
@@ -146,11 +152,9 @@ class UserFunctionVariable(BaseUserFunctionVariable):
         wrap = functools.partial(wrap_bound_arg, tx=tx, options=options)
 
         fn: types.FunctionType = self.fn
-        # TODO comment
         defaults = fn.__defaults__ or []
-        defaults_source = AttrSource(self.source, "__defaults__")
-        defaults_item_sources = [
-            GetItemSource(defaults_source, i) for i, _ in enumerate(defaults)
+        defaults_sources = [
+            DefaultsSource(self.source, idx) for idx, _ in enumerate(defaults)
         ]
         fake_func = types.FunctionType(
             fn.__code__,
@@ -159,15 +163,14 @@ class UserFunctionVariable(BaseUserFunctionVariable):
             tuple(
                 [
                     wrap(val=arg, source=source)
-                    for arg, source in zip(defaults, defaults_item_sources)
+                    for arg, source in zip(defaults, defaults_sources)
                 ]
             ),
             fn.__closure__,
         )
         if fn.__kwdefaults__:
-            kwdefaults_source = AttrSource(self.source, "__kwdefaults__")
             kwdefaults_sources = {
-                k: GetItemSource(kwdefaults_source, k) for k in fn.__kwdefaults__
+                k: DefaultsSource(self.source, k, is_kw=True) for k in fn.__kwdefaults__
             }
             fake_func.__kwdefaults__ = {
                 k: wrap(val=v, source=kwdefaults_sources[k])
