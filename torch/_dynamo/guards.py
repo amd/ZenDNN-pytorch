@@ -455,7 +455,15 @@ class CheckFunctionManager:
         )
         global_builder = GuardBuilder(self.id_ref, f_globals, self, renames=False)
         for guard in sorted(guards or [], key=Guard.sort_key):
-            if not config.guard_nn_modules and guard.is_nn_module():
+            if (
+                not config.guard_nn_modules
+                and guard.is_nn_module()
+                # we must guard on default args for functions,
+                # even if we specialize on the rest of the nnmodule contents
+                # TODO(whc) - presumably we can use the 'DefaultsSource' in some way here instead of name parsing?
+                and "__defaults__" not in guard.name
+                and "__kwdefaults__" not in guard.name
+            ):
                 continue
             guard.create(local_builder, global_builder)
         self.check_fn = self.compile_check_fn(
