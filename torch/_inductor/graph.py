@@ -2,6 +2,7 @@ import logging
 import operator
 import os
 import re
+import sys
 import time
 
 import sympy
@@ -12,20 +13,43 @@ from torch._decomp import get_decompositions
 from torch.fx.experimental.symbolic_shapes import ShapeEnv
 from torch.utils._mode_utils import no_dispatch
 
+from .._dynamo import config as dynamo_config
+
 from . import config, ir
-from .codegen.wrapper import WrapperCodeGen
+from .codegen.wrapper import CppWrapperCodeGen, WrapperCodeGen
 from .exc import (
     LoweringException,
     MissingOperatorWithDecomp,
     MissingOperatorWithoutDecomp,
 )
 from .ir import Constant, FixedLayout, InputBuffer, Pointwise, Reduction, TensorBox
-from .lowering import lowerings, make_fallback, needs_realized_inputs
-from .sizevars import SizeVarAllocator
+from .lowering import (
+    layout_constraints,
+    lowerings,
+    make_fallback,
+    needs_realized_inputs,
+)
+from .sizevars import CppSizeVarAllocator, SizeVarAllocator
 from .utils import dynamo_utils, gather_origins, get_dtype_size, sympy_product
 from .virtualized import V
 
 log = logging.getLogger(__name__)
+
+
+def supported_dtype_of_cpp_wrapper(dtype):
+    supported_dtype = {
+        torch.float32,
+        torch.float64,
+        torch.int64,
+        torch.int32,
+        torch.int16,
+        torch.int8,
+        torch.uint8,
+        torch.bool,
+        # torch.float16, # TODO: implement this
+        # torch.bfloat16, # TODO: implement this
+    }
+    return dtype in supported_dtype
 
 
 class GraphLowering(torch.fx.Interpreter):
@@ -56,9 +80,18 @@ class GraphLowering(torch.fx.Interpreter):
         return size, stride
 
     def __init__(
-        self, gm: torch.fx.GraphModule, shape_env=None, num_static_inputs=None
+        self,
+        gm: torch.fx.GraphModule,
+        shape_env=None,
+        num_static_inputs=None,
+        graph_id=None,
+        fake_mode=None,
     ):
         super().__init__(gm)
+        if fake_mode is None:
+            self.fake_mode = torch._subclasses.FakeTensorMode()
+        else:
+            self.fake_mode = fake_mode
         if shape_env is None:
             shape_env = ShapeEnv()
             self.reuse_shape_env = False
@@ -83,6 +116,8 @@ class GraphLowering(torch.fx.Interpreter):
         self.randomness_seeds = []
         self.name_to_buffer = {}
         self.creation_time = time.time()
+        self._can_use_cpp_wrapper = config.cpp_wrapper
+        self.graph_id = graph_id
 
     def get_dtype(self, buffer_name):
         if buffer_name in self.constants:
@@ -132,7 +167,22 @@ class GraphLowering(torch.fx.Interpreter):
     def run(self, *args):
         return super().run(*args)
 
+    def disable_cpp_wrapper(self, cond):
+        self._can_use_cpp_wrapper = False
+        log.debug("Set _can_use_cpp_wrapper to False due to %s", cond)
+
+    def check_buffer_for_cpp_wrapper(self, buffer: ir.ComputedBuffer):
+        if isinstance(buffer, ir.ExternKernel):
+            if not isinstance(
+                buffer,
+                (ir.MatrixMultiply, ir.BatchMatrixMultiply, ir.MatrixMultiplyAdd),
+            ):
+                self.disable_cpp_wrapper("ExternKernel")
+
     def register_buffer(self, buffer: ir.ComputedBuffer):
+        if config.cpp_wrapper:
+            self.check_buffer_for_cpp_wrapper(buffer)
+
         name = f"buf{len(self.buffers)}"
         self.buffers.append(buffer)
         self.name_to_buffer[name] = buffer
@@ -271,7 +321,15 @@ class GraphLowering(torch.fx.Interpreter):
         assert isinstance(result, (tuple, list)), type(result)
         assert all(
             isinstance(
-                x, (TensorBox, ir.Constant, type(None), ir.ConstantBuffer, sympy.Expr)
+                x,
+                (
+                    TensorBox,
+                    ir.Constant,
+                    type(None),
+                    ir.ConstantBuffer,
+                    sympy.Expr,
+                    int,
+                ),
             )
             for x in result
         ), result
@@ -301,7 +359,12 @@ class GraphLowering(torch.fx.Interpreter):
 
     def run_node(self, n: torch.fx.Node):
         with ir.IRNode.current_origins({n}):
-            result = super().run_node(n)
+            if n.op == "call_function" and n.target in layout_constraints:
+                args, kwargs = self.fetch_args_kwargs_from_env(n)
+                args, kwargs = layout_constraints[n.target](n, *args, **kwargs)
+                result = self.call_function(n.target, args, kwargs)
+            else:
+                result = super().run_node(n)
 
             # Realize if (1) any user need inputs realized, or (2) there is
             # already too many reads and rematerializing can be bad.
@@ -310,7 +373,25 @@ class GraphLowering(torch.fx.Interpreter):
                 for user in n.users:
                     if user.target in needs_realized_inputs:
                         result.realize_hint()
-                    elif user.op == "output":
+                        # This inclusion is somewhat controversial (from
+                        # discussion between Horace, Natalia, and Elias).
+                        # Currently, it's not very clear why this is helpful.
+                        # The general idea here is that even though a node may
+                        # have FlexibleLayout, we still often *treat* it as if
+                        # it was contiguous. This appears to sometime result in
+                        # suboptimal behavior.
+                        #
+                        # When we do a better job selecting layout, we should
+                        # revisit this.
+                        if user.target in (
+                            torch.ops.aten.convolution.default,
+                            torch.ops.aten.convolution_backward.default,
+                            torch.ops.aten.mm.default,
+                        ):
+                            result = ir.ExternKernel.require_stride_order(
+                                result, ir.get_stride_order(n.meta["val"].stride())
+                            )
+                    if user.op == "output":
                         if isinstance(result.data.data, (Pointwise, Reduction)):
                             result.realize()
 
@@ -325,10 +406,52 @@ class GraphLowering(torch.fx.Interpreter):
                 result.realize_hint()
         return result
 
+    def check_platform(self):
+        if sys.platform != "linux":
+            self.disable_cpp_wrapper("platform not linux")
+
+    def check_profiler_mark_wrapper_call(self):
+        if config.profiler_mark_wrapper_call:
+            self.disable_cpp_wrapper("profiler not supported")
+
+    def check_device_for_cpp_buffer(self):
+        if len(self.device_types) == 1:
+            device = self.device_types.pop()
+            if device == "cpu":
+                return
+        self.disable_cpp_wrapper("device not CPU")
+
+    def check_input_for_cpp_buffer(self):
+        for _, value in self.graph_inputs.items():
+            if not supported_dtype_of_cpp_wrapper(value.get_dtype()):
+                self.disable_cpp_wrapper("unsupported inputs dtype")
+
+    def check_constant_for_cpp_buffer(self):
+        if self.constants:
+            self.disable_cpp_wrapper("Constants")
+
+    def check_cpp_wrapper(self):
+        self.check_platform()
+        self.check_profiler_mark_wrapper_call()
+        self.check_device_for_cpp_buffer()
+        self.check_input_for_cpp_buffer()
+        self.check_constant_for_cpp_buffer()
+
+    def init_wrapper_code(self):
+        if config.cpp_wrapper:
+            self.check_cpp_wrapper()
+            if self._can_use_cpp_wrapper:
+                self.sizevars = CppSizeVarAllocator(self._shape_env)
+                self.wrapper_code = CppWrapperCodeGen()
+                return
+        self.wrapper_code = WrapperCodeGen()
+        return
+
     def codegen(self):
         from .scheduler import Scheduler
 
-        self.wrapper_code = WrapperCodeGen()
+        self.init_wrapper_code()
+
         self.scheduler = Scheduler(self.buffers)
         self.scheduler.codegen()
         return self.wrapper_code.generate()
@@ -386,7 +509,8 @@ class GraphLowering(torch.fx.Interpreter):
         for name, value in self.constants.items():
             setattr(mod, name, value)
 
-        log.log(logging.CODE, "Output code: %s", mod.__file__)
+        if dynamo_config.output_code:
+            log.info("Output code: %s", mod.__file__)
         V.debug.output_code(mod.__file__)
         V.debug.rename(os.path.splitext(mod.__file__)[0] + ".debug")
         return mod
