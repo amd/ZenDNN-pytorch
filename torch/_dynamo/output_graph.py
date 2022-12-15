@@ -661,12 +661,12 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             #
             # (B) Refactor minifier accuracy backend to do its comparison fully at runtime, so as not to need to
             # pass real tensors to it at compile time.
-            is_top_level_minifying = (
-                config.repro_after is not None and config.repro_level == 4
-            )
-            if torch._dynamo.debug_utils.MINIFIER_SPAWNED or is_top_level_minifying:
-                compiled_fn = compiler_fn(gm, self.example_inputs())
-            elif config.DO_NOT_USE_legacy_non_fake_example_inputs:
+            # is_top_level_minifying = (
+            #     config.repro_after is not None and config.repro_level == 4
+            # )
+            # if torch._dynamo.debug_utils.MINIFIER_SPAWNED or is_top_level_minifying:
+            #     compiled_fn = compiler_fn(gm, self.example_inputs())
+            if config.DO_NOT_USE_legacy_non_fake_example_inputs:
                 compiled_fn = compiler_fn(gm, self.example_inputs())
             else:
                 compiled_fn = compiler_fn(gm, self.fake_example_inputs())

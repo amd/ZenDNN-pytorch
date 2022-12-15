@@ -348,7 +348,7 @@ def _optimize_catch_errors(
 
 
 def get_compiler_fn(compiler_fn):
-    from .debug_utils import wrap_backend_debug
+    from .debug.minifier_backend import debug_wrapper
 
     if isinstance(compiler_fn, torch._TorchCompileInductorWrapper):
         compiler_str = "inductor"
@@ -357,7 +357,7 @@ def get_compiler_fn(compiler_fn):
     else:
         compiler_str = None
     compiler_fn = lookup_backend(compiler_fn)
-    return wrap_backend_debug(compiler_fn, compiler_str)
+    return debug_wrapper(compiler_fn, compiler_str)
 
 
 @functools.lru_cache(1)

@@ -3744,3 +3744,13 @@ def foobar(self, *args, **kwargs):
 def _realize(x):
     x.realize()
     return clone(x)
+
+
+@register_lowering(torch.ops._inductor_test.bad_clone)
+def bad_clone(x):
+    raise NotImplementedError("This op is used for minifier testing")
+
+
+@register_lowering(torch.ops._inductor_test.inaccurate_clone)
+def inaccurate_clone(x):
+    return relu(x)

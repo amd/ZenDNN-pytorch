@@ -1,4 +1,4 @@
-from . import allowed_functions, convert_frame, eval_frame, resume_execution
+from . import allowed_functions, convert_frame, debug, eval_frame, resume_execution
 from .convert_frame import replay
 from .eval_frame import (
     assume_constant_result,

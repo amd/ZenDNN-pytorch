@@ -53,6 +53,62 @@ class MinifierTests(MinifierTestBase):
     def tearDownClass(cls):
         super().tearDownClass()
 
+    def _test_compilation_exception(self, device, isolate):
+        run_code = textwrap.dedent(
+            f"""\
+            @torch._dynamo.optimize("inductor")
+            def inner(x):
+                for _ in range(3):
+                    x = torch.sin(x)
+                x = torch.ops._inductor_test.bad_clone(x)
+                for _ in range(3):
+                    x = torch.cos(x)
+                return x
+
+            inner(torch.randn(20, 20).to("{device}"))
+        """
+        )
+        patch_code = ""
+        (test_proc, _, repro_proc), (_, repro_code) = self._run_full_test(
+            run_code, "dynamo", 2, patch_code, isolate
+        )
+        self.assertIn("bad_clone", test_proc.stderr.decode("utf-8"))
+        self.assertIn("bad_clone", repro_proc.stderr.decode("utf-8"))
+        # Ensure that there is only torch.ops in the minified repro
+        self.assertEqual(run_code.count("torch.ops"), 1)
+
+    def test_compilation_exception(self):
+        self._test_compilation_exception("cuda", False)
+        self._test_compilation_exception("cpu", False)
+
+    def _test_accuracy(self, device, isolate):
+        run_code = textwrap.dedent(
+            f"""\
+            @torch._dynamo.optimize("inductor")
+            def inner(x):
+                for _ in range(3):
+                    x = torch.sin(x)
+                x = torch.ops._inductor_test.inaccurate_clone(x)
+                for _ in range(3):
+                    x = torch.cos(x)
+                return x
+
+            inner(torch.randn(20, 20).to("{device}"))
+        """
+        )
+        patch_code = ""
+        (test_proc, _, repro_proc), (_, repro_code) = self._run_full_test(
+            run_code, "dynamo", 4, patch_code, isolate
+        )
+        self.assertIn("inaccurate_clone", test_proc.stderr.decode("utf-8"))
+        self.assertIn("inaccurate_clone", repro_proc.stderr.decode("utf-8"))
+        # Ensure that there is only torch.ops in the minified repro
+        self.assertEqual(run_code.count("torch.ops"), 1)
+
+    def test_accuracy(self):
+        self._test_accuracy("cuda", False)
+        self._test_accuracy("cpu", False)
+
     # Generates code that patches CppOverrides/TritonOverrides.
     def _gen_codegen_fn_patch_code(self, old_fn_name, new_fn_code, device):
         new_fn_name = self._get_fn_name(new_fn_code)

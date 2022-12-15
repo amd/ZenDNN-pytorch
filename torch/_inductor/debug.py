@@ -222,7 +222,7 @@ class DebugContext:
             with DebugContext():
                 return fn(*args, **kwargs)
 
-        return dynamo_debug_utils.wrap_compiler_debug(inner, compiler_name="inductor")
+        return dynamo_debug_utils.debug_wrapper(inner, compiler_name="inductor_inner")
 
     @staticmethod
     def create_debug_dir(folder_name):

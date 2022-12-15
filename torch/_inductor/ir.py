@@ -2593,6 +2593,7 @@ class ExternKernel(InputsKernel):
             stride = V.graph.sizevars.codegen_shape_tuple(self.get_stride())
             wrapper.writeline(
                 f"assert_size_stride({self.get_name()}, {size}, {stride})"
+                # f"assert_size_stride({self.get_name()}, {size}, {size})"
             )
 
     def get_group_stride(self):

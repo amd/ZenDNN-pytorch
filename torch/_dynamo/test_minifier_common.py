@@ -7,12 +7,16 @@ import unittest
 import torch
 import torch._dynamo
 import torch._dynamo.test_case
-from torch._dynamo.debug_utils import TEST_REPLACEABLE_COMMENT
+
+# from torch._dynamo.debug_utils import TEST_REPLACEABLE_COMMENT
+# TEST_REPLACEABLE_COMMENT = ""
+TEST_REPLACEABLE_COMMENT = "# REPLACEABLE COMMENT FOR TESTING PURPOSES"
 
 
 class MinifierTestBase(torch._dynamo.test_case.TestCase):
     _debug_dir_obj = tempfile.TemporaryDirectory()
     DEBUG_DIR = _debug_dir_obj.name
+    DEBUG_DIR = "/scratch/anijain/work/pytorch"
 
     @classmethod
     def setUpClass(cls):
@@ -117,10 +121,20 @@ torch._dynamo.config.debug_dir_root = "{self.DEBUG_DIR}"
     # 1. Run the problematic code (in a separate process since it could segfault)
     # 2. Run the generated minifier launcher script
     # 3. Run the generated repro script
-    def _run_full_test(self, run_code, repro_after, repro_level, patch_code):
+    def _run_full_test(
+        self, run_code, repro_after, repro_level, patch_code, isolate=True
+    ):
         test_code = self._gen_test_code(run_code, repro_after, repro_level, patch_code)
-        test_proc, repro_dir = self._run_test_code(test_code)
-        self.assertIsNotNone(repro_dir)
-        launch_proc, launch_code = self._run_minifier_launcher(patch_code, repro_dir)
-        repro_proc, repro_code = self._run_repro(patch_code, repro_dir)
-        return ((test_proc, launch_proc, repro_proc), (launch_code, repro_code))
+        if isolate:
+            test_proc, repro_dir = self._run_test_code(test_code)
+            self.assertIsNotNone(repro_dir)
+            launch_proc, launch_code = self._run_minifier_launcher(
+                patch_code, repro_dir
+            )
+            repro_proc, repro_code = self._run_repro(patch_code, repro_dir)
+            return ((test_proc, launch_proc, repro_proc), (launch_code, repro_code))
+        else:
+            test_proc, repro_dir = self._run_test_code(test_code)
+            assert os.path.exists(os.path.join(self.DEBUG_DIR, "repro.py"))
+            repro_proc, repro_code = self._run_repro(patch_code, self.DEBUG_DIR)
+            return ((test_proc, None, repro_proc), (None, repro_code))
