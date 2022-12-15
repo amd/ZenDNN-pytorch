@@ -26,8 +26,16 @@ from torch.utils._pytree import tree_map
 
 
 aten = torch.ops.aten
+c10d = torch.ops.c10d
 
 _meta_lib_dont_use_me_use_register_meta = torch.library.Library("aten", "IMPL", "Meta")
+
+# HACK - it is wrong to just register c10d ops to AutogradMeta instead of Meta
+# but it seems to work (fixes basic test at least) in part becuase allreduce_ and other ops
+# are incorrectly registered as CompositeExplicit without having derivatives
+_meta_c10d_lib_dont_use_me_use_register_meta = torch.library.Library(
+    "c10d", "IMPL", "AutogradMeta"
+)
 
 
 def register_meta(op):
@@ -2393,6 +2401,10 @@ def _thnn_fused_lstm_cell_backward_impl(grad_hy, grad_cy, cx, cy, workspace, has
     grad_bias = grad_gates.sum(0, keepdim=False) if has_bias else None
     return grad_gates, grad_cx, grad_bias
 
+@register_meta(c10d.traceable_allreduce)
+def allreduce__meta(x):
+    return torch.empty_like(x)
+
 
 # We must also trigger meta registrations from PrimTorch ref
 # decompositions
@@ -2453,6 +2465,8 @@ def activate_meta():
                 _meta_lib_dont_use_me_use_register_meta_for_mkldnn.impl(op_overload, fn)
             elif "mkl::" in op_overload.name():
                 _meta_lib_dont_use_me_use_register_meta_for_mkl.impl(op_overload, fn)
+            elif op_overload.name().startswith("c10d"):
+                _meta_c10d_lib_dont_use_me_use_register_meta.impl(op_overload, fn)
             else:
                 _meta_lib_dont_use_me_use_register_meta.impl(op_overload, fn)
 

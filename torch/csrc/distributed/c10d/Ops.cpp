@@ -8,6 +8,16 @@
 namespace c10d {
 namespace {
 
+// TODO(whc) did this section of code get moved to another file? Rebase conflict..
+
+// for now this op is useless in eager. we just assume we're tracing it and
+// replacing it in part, this is due to it being difficult to construct
+// ProcessGroup or ReduceOp in python in an acceptable way to pass them to the
+// dispatcher.  (Pybind classes, which are available, do not work)
+at::Tensor traceable_allreduce(at::Tensor x) {
+  return x;
+}
+
 TORCH_LIBRARY(c10d, m) {
   // The following ProcessGroup, Work, and ReduceOp definitions are more like
   // declarations. They don't expose the details of the two classes into
@@ -23,6 +33,10 @@ TORCH_LIBRARY(c10d, m) {
       "allreduce_(Tensor[] tensors, __torch__.torch.classes.c10d.ProcessGroup process_group, __torch__.torch.classes.c10d.ReduceOp reduce_op, int timeout) -> (Tensor[], __torch__.torch.classes.c10d.Work)");
   m.def(
       "allreduce_coalesced_(Tensor[] tensors, __torch__.torch.classes.c10d.ProcessGroup process_group, __torch__.torch.classes.c10d.ReduceOp reduce_op, int timeout) -> __torch__.torch.classes.c10d.Work");
+  m.def(
+      "traceable_allreduce",
+      torch::dispatch(
+          c10::DispatchKey::CompositeExplicitAutograd, traceable_allreduce));
   m.def(
       "allgather_(Tensor[][] output_tensors, Tensor[] input_tensors, __torch__.torch.classes.c10d.ProcessGroup process_group, int timeout) -> (Tensor[][], __torch__.torch.classes.c10d.Work)");
   m.def(
