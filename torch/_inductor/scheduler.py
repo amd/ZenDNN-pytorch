@@ -1134,7 +1134,6 @@ class Scheduler:
                     elif self.current_device and self.current_device.type == "cuda":
                         V.graph.wrapper_code.codegen_cuda_device_guard_exit()
                     self.current_device = device
-
             self.buffer_names_to_free.update(node.last_usage)
 
             if node.is_template():

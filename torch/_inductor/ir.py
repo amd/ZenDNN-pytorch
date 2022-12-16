@@ -3408,6 +3408,75 @@ class Convolution(ExternKernelAlloc):
         )
 
 
+class Wait(ExternKernelAlloc):
+    """
+    Wait should not be used by itself.  It should always be constructed in tandem
+    with a collective op that produces a work to wait on.
+    """
+
+    def __init__(
+        self,
+        layout,
+        inputs,
+        constant_args=(),
+    ):
+        super().__init__(layout, inputs, constant_args)
+
+    def codegen(self, wrapper):
+        (x, work) = [t.codegen_reference() for t in self.inputs]
+        wrapper.writeline(f"{work}.wait()")
+        # wrapper.writeline(f"{self.get_name()} = {x}")
+
+    def get_mutation_names(self):
+        assert isinstance(self.layout, MutationLayout)
+        return (self.layout.target.get_name(),)
+
+
+class AllReduce(ExternKernelAlloc):
+    def __init__(
+        self,
+        layout,
+        inputs,
+        constant_args=(),
+    ):
+        super().__init__(layout, inputs, constant_args)
+
+    @classmethod
+    def create(
+        cls,
+        x: "TensorBox",
+    ):
+        # Force input to become a materialized buffer (compile a kernel if needed)
+        x = cls.realize_input(x)
+
+        # AllReduce returns a 'work' object.  But Inductor's scheduler doesn't need to know
+        # about that, and we just pretend for scheduling purposes that the work obj is a 1-elem tensor.
+        # Nobody should consume the output of AllReduce except 'Wait', which we control here.
+        all_reduce = AllReduce(
+            layout=FixedLayout(
+                device=x.get_device(), dtype=x.get_dtype(), size=[1], stride=[1]
+            ),
+            inputs=[x],
+        )
+
+        # Return a 'Wait' to the user that called 'all_reduce' in the first place.  It consumes the 'work'
+        # and waits on it, also producing a buffer which is really the input buffer to AllReduce.
+
+        # Nit: currently the codegen for Wait produces an unnecessary but harmless line such as
+        #      buf4 = buf2, where buf2 was the input to AllReduce, and buf4 will be used by any consumers
+        # Update: i think 'Wait' still has a new name (E.g. buf4) but downstream ops still refer to 'buf2',
+        #      meaning I can just delete the codegen for `buf4=buf2` -- not sure i'm totally in the clear here.
+        return Wait(
+            layout=MutationLayout(x),
+            inputs=[x, all_reduce],
+        )
+
+    def codegen(self, wrapper):
+        wrapper.header.writeline("import torch.distributed as dist")
+        (x,) = [t.codegen_reference() for t in self.inputs]
+        wrapper.writeline(f"{self.get_name()} = dist.all_reduce({x}, async_op=True)")
+
+
 def _prepare_convolution_fusion_create(
     cls,
     x: "TensorBox",

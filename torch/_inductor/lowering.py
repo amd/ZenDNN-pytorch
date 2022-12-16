@@ -42,6 +42,7 @@ lowerings = {}
 layout_constraints = {}
 fallbacks = set()
 aten = torch.ops.aten
+c10d = torch.ops.c10d
 prims = torch.ops.prims
 needs_realized_inputs = set()
 
@@ -3720,3 +3721,12 @@ def foobar(self, *args, **kwargs):
 def _realize(x):
     x.realize()
     return clone(x)
+
+
+@register_lowering(c10d.traceable_allreduce)
+def allreduce(inputs):
+    return TensorBox.create(
+        ir.AllReduce.create(
+            inputs,
+        )
+    )
