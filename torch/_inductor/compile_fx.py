@@ -178,11 +178,10 @@ def compile_fx_inner(
 
 
 def clone_preserve_strides(x):
-    needed_size = (
-        sum((shape - 1) * stride for shape, stride in zip(x.size(), x.stride())) + 1
-    )
-    buffer = torch.as_strided(x, (needed_size,), (1,)).clone()
-    return torch.as_strided(buffer, x.size(), x.stride())
+    from torch._prims_common import compute_required_storage_length
+    needed_size = compute_required_storage_length(x.size(), x.stride(), x.storage_offset())
+    buffer = torch.as_strided(x, (needed_size,), (1,), 0).clone()
+    return torch.as_strided(buffer, x.size(), x.stride(), x.storage_offset())
 
 
 def align_inputs(model, inputs, static_input_idxs=()):
