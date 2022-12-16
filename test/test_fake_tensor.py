@@ -1,6 +1,6 @@
 # Owner(s): ["module: meta tensors"]
 
-from torch.testing._internal.common_utils import TestCase, run_tests, skipIfCrossRef, skipIfRocm
+from torch.testing._internal.common_utils import TestCase, run_tests, skipIfCrossRef, skipIfRocm, skipIfTorchDynamo
 import torch
 import torch._dynamo
 import itertools
@@ -20,6 +20,7 @@ import torch._prims as prims
 import contextlib
 import weakref
 import copy
+from torch.utils._pytree import tree_flatten
 
 class FakeTensorTest(TestCase):
     def checkType(self, t, device_str, size):
@@ -137,6 +138,18 @@ class FakeTensorTest(TestCase):
 
         self.assertTrue(isinstance(out, FakeTensor))
 
+    def check_function_with_fake(self, fn):
+        out = fn()
+        with torch._subclasses.FakeTensorMode():
+            out_fake = fn()
+
+        for a, b in zip(tree_flatten(out), tree_flatten(out_fake)):
+            if not isinstance(a, FakeTensor):
+                self.assertTrue(not isinstance(b, FakeTensor))
+                continue
+
+            prims.utils.compare_tensor_meta(a, b, check_strides=True)
+
     @unittest.skipIf(not RUN_CUDA, "requires cuda")
     def test_non_kwarg_device(self):
         with FakeTensorMode():
@@ -146,10 +159,17 @@ class FakeTensorTest(TestCase):
             z = x.to(torch.device("cuda"))
             self.assertEqual(z.device.type, "cuda")
 
+    def test_non_overlapping_stride_zero(self):
+        def foo():
+            x = torch.empty_strided([1, 3, 427, 640], (0, 1, 1920, 3))
+            return x.half()
+
+        self.check_function_with_fake(foo)
+
     def test_fake_mode_error(self):
         x = torch.rand([4, 4])
 
-        with self.assertRaisesRegex(Exception, "non-Fake Tensor inputs"):
+        with self.assertRaisesRegex(Exception, "Please convert all Tensors"):
             with FakeTensorMode():
                 y = x[0]
 
@@ -202,6 +222,19 @@ class FakeTensorTest(TestCase):
         with FakeTensorMode():
             out = str(x)
         assert "FakeTensor" not in out
+
+    @unittest.skipIf(not RUN_CUDA, "requires cuda")
+    def test_upsample_bilinear_small_channels(self):
+        out = []
+        mode = FakeTensorMode()
+        for i, context in enumerate([contextlib.nullcontext, lambda: mode]):
+            with context():
+                arg0_1 = torch.empty_strided((3, 427, 640), (1, 1920, 3), dtype=torch.float32, device='cuda')
+                unsqueeze = torch.ops.aten.unsqueeze.default(arg0_1, 0)
+                out.append(torch.ops.aten.upsample_bilinear2d.default(unsqueeze, [800, 1199], False))
+
+        self.assertTrue(out[1].is_contiguous())
+        self.checkMetaProps(out[0], out[1])
 
     @unittest.skipIf(not RUN_CUDA, "requires cuda")
     def test_cpu_fallback(self):
@@ -360,7 +393,7 @@ class FakeTensorTest(TestCase):
             self.assertRaises(DynamicOutputShapeException, lambda: torch.nonzero(x))
 
     def checkMetaProps(self, t1, t2):
-        prims.utils.compare_tensor_meta(t1, t2)
+        prims.utils.compare_tensor_meta(t1, t2, check_strides=True)
 
     @skipIfCrossRef
     def test_deepcopy(self):
@@ -524,6 +557,7 @@ class FakeTensorConverterTest(TestCase):
         y_conv = converter(mode, y)
         self.assertEqual(torch._C._storage_id(x_conv), torch._C._storage_id(y_conv))
 
+    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/1991")
     def test_separate_tensor_storages_non_view(self):
         x = torch.rand(2, 2, 2)
         y = torch.rand(4, 2)
@@ -544,6 +578,7 @@ class FakeTensorConverterTest(TestCase):
         self.assertEqual(len(converter.meta_converter.storage_memo), 0)
 
 
+    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/1991")
     def test_dead_weak_ref(self):
         x = torch.rand(2, 2, 2)
         y = x[0]
@@ -556,6 +591,7 @@ class FakeTensorConverterTest(TestCase):
         y_conv = converter(mode, y)
         self.assertEqual(x_conv_storage, torch._C._storage_id(y_conv))
 
+    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/1991")
     def test_dead_key(self):
         x = torch.rand(2, 2, 2)
         mode = FakeTensorMode()
@@ -584,6 +620,7 @@ class FakeTensorConverterTest(TestCase):
             y = torch.empty(2, 2, device="cpu")
         self.assertRaises(Exception, lambda: x, y)
 
+    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/1991")
     def test_no_ref_cycle(self):
         x = torch.rand([4])
         mode = FakeTensorMode()
