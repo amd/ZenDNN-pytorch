@@ -1130,10 +1130,12 @@ class BenchmarkRunner:
         # Collect the fp64 reference outputs to be used later for accuracy checking.
         fp64_outputs = None
         try:
+            ind = 0
             model_fp64, inputs_fp64 = cast_to_fp64(
                 deepcopy_and_maybe_ddp(model),
                 clone_inputs(example_inputs),
             )
+
             self.init_optimizer(name, current_device, model_fp64.parameters())
             fp64_outputs = self.run_n_iterations(model_fp64, inputs_fp64)
         except Exception:
@@ -1161,7 +1163,15 @@ class BenchmarkRunner:
             correct_result = self.run_n_iterations(
                 model_copy, clone_inputs(example_inputs)
             )
+            ind = 1
+            with open(f"inputs{ind}.txt", "w") as f:
+                print(example_inputs, file=f)
 
+            with open(f"parameters{ind}.txt", "w") as f:
+                print(list(model_copy.parameters()), file=f)
+
+            with open(f"outputs{ind}.txt", "w") as f:
+                print(correct_result, file=f)
             # Rerun native pytorch
             reset_rng_state()
             model_copy = deepcopy_and_maybe_ddp(model)
