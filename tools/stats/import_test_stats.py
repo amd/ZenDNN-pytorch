@@ -19,6 +19,7 @@ def get_disabled_issues() -> List[str]:
     # "closes  #62851" --> extra space, "fixing #62851" --> not a keyword, nor "fix 62851" --> no #
     regex = "(?i)(Close(d|s)?|Resolve(d|s)?|Fix(ed|es)?) (#|https://github.com/pytorch/pytorch/issues/)([0-9]+)"
     issue_numbers = [x[5] for x in re.findall(regex, pr_body + commit_messages)]
+    issue_numbers.append('91381')
     print("Ignoring disabled issues: ", issue_numbers)
     return issue_numbers
 
