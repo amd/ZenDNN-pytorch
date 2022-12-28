@@ -942,10 +942,13 @@ class BenchmarkRunner:
             self.autocast = torch.cuda.amp.autocast
 
     def init_optimizer(self, name, device, params):
-        print(name)
         if device == "cuda" and self.args.training and name not in CI_SKIP_OPTIMIZER:
-            print("INIT OPTIMIZER")
-            self.optimizer = torch.optim.SGD(params, lr=0.01)
+            self.optimizer = torch.optim.Adam(params, lr=0.01)
+            if os.environ.get("USE_EAGER_OPTIMIZER") is not None:
+                print("OPTIMIZER DISABLED")
+                self.optimizer_step = torch._dynamo.disable(self.optimizer_step)
+            else:
+                print("OPTIMIZER ENABLED")
         else:
             self.optimizer = None
 
