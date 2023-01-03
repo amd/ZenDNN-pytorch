@@ -9,6 +9,7 @@ from .functions import (
 )
 from .lists import (
     BaseListVariable,
+    DictKeysVariable,
     ListIteratorVariable,
     ListVariable,
     NamedTupleVariable,

@@ -1,3 +1,4 @@
+import _collections_abc
 from typing import Dict, List, Optional
 
 import torch
@@ -272,6 +273,11 @@ class TupleVariable(BaseListVariable):
                 self.items + list(args[0].unpack_var_sequence(self)), **options
             )
         return super().call_method(tx, name, args, kwargs)
+
+
+class DictKeysVariable(TupleVariable):
+    def python_type(self):
+        return _collections_abc.dict_keys
 
 
 class SizeVariable(TupleVariable):
