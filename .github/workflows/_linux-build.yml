@@ -88,10 +88,10 @@ jobs:
           docker-image-name: ${{ inputs.docker-image-name }}
           xla: ${{ contains(inputs.build-environment, 'xla') }}
 
-      - name: Pull docker image
-        uses: pytorch/test-infra/.github/actions/pull-docker-image@main
-        with:
-          docker-image: ${{ steps.calculate-docker-image.outputs.docker-image }}
+      # - name: Pull docker image
+      #   uses: pytorch/test-infra/.github/actions/pull-docker-image@main
+      #   with:
+      #     docker-image: ${{ steps.calculate-docker-image.outputs.docker-image }}
 
       - name: Parse ref
         id: parse-ref

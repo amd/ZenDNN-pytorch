@@ -85,10 +85,10 @@ jobs:
       #   with:
       #     docker-image: ${{ inputs.docker-image }}
 
-      - name: Download build artifacts
-        uses: ./.github/actions/download-build-artifacts
-        with:
-          name: ${{ inputs.build-environment }}
+      # - name: Download build artifacts
+      #   uses: ./.github/actions/download-build-artifacts
+      #   with:
+      #     name: ${{ inputs.build-environment }}
 
       - name: Generate netrc (only for docs-push)
         env:
