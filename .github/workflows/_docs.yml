@@ -73,9 +73,9 @@ jobs:
             To start Python docs build type:
               cd docs && make html && make coverage
 
-      # [see note: pytorch repo ref]
-      - name: Checkout PyTorch
-        uses: pytorch/pytorch/.github/actions/checkout-pytorch@master
+      # # [see note: pytorch repo ref]
+      # - name: Checkout PyTorch
+      #   uses: pytorch/pytorch/.github/actions/checkout-pytorch@master
 
       - name: Setup Linux
         uses: ./.github/actions/setup-linux
@@ -95,8 +95,8 @@ jobs:
           GITHUB_PYTORCHBOT_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
         run: |
           # set credentials for https pushing
-          [[ -d "${RUNNER_TEMP}/.netrc" ]] && ls "${RUNNER_TEMP}/.netrc"
-          [[ -f "${RUNNER_TEMP}/.netrc" ]] && cat "${RUNNER_TEMP}/.netrc"
+          [[ -d "${RUNNER_TEMP}/.netrc" ]] && echo "is a directory" && ls "${RUNNER_TEMP}/.netrc"
+          [[ -f "${RUNNER_TEMP}/.netrc" ]] && echo "is a file" && cat "${RUNNER_TEMP}/.netrc"
           echo "machine github.com" > "${RUNNER_TEMP}/.netrc"
           echo "login pytorchbot" >> "${RUNNER_TEMP}/.netrc"
           echo "password ${GITHUB_PYTORCHBOT_TOKEN}" >> "${RUNNER_TEMP}/.netrc"
