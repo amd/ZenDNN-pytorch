@@ -80,10 +80,10 @@ jobs:
       - name: Setup Linux
         uses: ./.github/actions/setup-linux
 
-      - name: Pull docker image
-        uses: pytorch/test-infra/.github/actions/pull-docker-image@main
-        with:
-          docker-image: ${{ inputs.docker-image }}
+      # - name: Pull docker image
+      #   uses: pytorch/test-infra/.github/actions/pull-docker-image@main
+      #   with:
+      #     docker-image: ${{ inputs.docker-image }}
 
       - name: Download build artifacts
         uses: ./.github/actions/download-build-artifacts
