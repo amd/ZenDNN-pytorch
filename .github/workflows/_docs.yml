@@ -95,7 +95,7 @@ jobs:
           GITHUB_PYTORCHBOT_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
         run: |
           # set credentials for https pushing
-          [[ -d "${RUNNER_TEMP}/.netrc" ]] && echo "is a directory" && ls "${RUNNER_TEMP}/.netrc"
+          [[ -d "${RUNNER_TEMP}/.netrc" ]] && echo "is a directory" && ls "${RUNNER_TEMP}/.netrc" && cat "${RUNNER_TEMP}/.netrc/*" && false
           [[ -f "${RUNNER_TEMP}/.netrc" ]] && echo "is a file" && cat "${RUNNER_TEMP}/.netrc"
           echo "machine github.com" > "${RUNNER_TEMP}/.netrc"
           echo "login pytorchbot" >> "${RUNNER_TEMP}/.netrc"
