@@ -211,7 +211,14 @@ class SideEffects:
     ):
         obj = object_new(user_cls)
         variable = variable_cls(
-            obj, mutable_local=AttributeMutationNew(None, cls_source), **options
+            obj,
+            mutable_local=AttributeMutationNew(None, cls_source),
+            # TODO(whc) this is a hack, i'm not sure what to do.
+            # we need a valid source if this variable has functions
+            # called on it and those functions have default args we need to guard.
+            # But we're inlining, so what source is valid?
+            source=cls_source,
+            **options,
         )
         self.id_to_variable[id(obj)] = variable
         self.keepalive.append(obj)
