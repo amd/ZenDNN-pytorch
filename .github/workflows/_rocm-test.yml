@@ -121,7 +121,7 @@ jobs:
           PYTORCH_JIT_ENABLE_NVFUSER: 1
           PYTORCH_TEST_CUDA_MEM_LEAK_CHECK: ${{ matrix.mem_leak_check && '1' || '0' }}
           PYTORCH_TEST_RERUN_DISABLED_TESTS: ${{ matrix.rerun_disabled_tests && '1' || '0' }}
-        timeout-minutes: 270
+        timeout-minutes: 15
         run: |
           set -x
 
@@ -194,7 +194,10 @@ jobs:
         shell: bash
         if: always()
         run: |
+          ls
+          pwd
           cat test/**/*.log || true
+          cat ../workpace/test/**/*.log
 
       - name: Save test results
         if: always()
