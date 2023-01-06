@@ -201,7 +201,7 @@ jobs:
           pwd
           cat test/**/*.log || true
           cat ../workpace/test/**/*.log || true
-          find test -name '*.log' | xargs cat || true
+          find test -name "*.log" -exec cat {} \; || true
 
       - name: Save test results
         if: always()

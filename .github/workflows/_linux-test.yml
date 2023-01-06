@@ -210,7 +210,7 @@ jobs:
         shell: bash
         if: always()
         run: |
-          find test -name '*.log' | xargs cat || true
+          find test -name '*.log' -exec cat {} \; || true
 
       - name: Get workflow job id
         id: get-job-id
