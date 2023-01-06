@@ -478,7 +478,7 @@ class Reduction(Loops):
 
     @cache_on_self
     def inner_fn_str(self):
-        formatter = V.KernelFormatterHandler(MockHandler())
+        formatter = V.KernelFormatterHandler(V.MockHandler())
         with V.set_ops_handler(formatter), patch.object(
             FlexibleLayout, "allow_indexing", True
         ):
@@ -1631,6 +1631,17 @@ class Layout(IRNode):
                 return False
         return True
 
+    def is_channels_last_contiguous(self):
+        ndim = len(self.size)
+        if ndim not in [4, 5]:
+            return False
+        for left, right, size in zip(
+            self.stride, make_channels_last_strides_for(self.size), self.size
+        ):
+            if size != 1 and left != right:
+                return False
+        return True
+
     def is_transposed(self):
         for left, right, size in zip(
             self.stride,
@@ -2307,13 +2318,27 @@ class ConcatKernel(NopKernel):
                     )
             offsets_end.append(new_size[dim])
 
+        output_stride = FlexibleLayout.contiguous_strides(new_size)
+        # If any of the inputs is in CL format, use CL format for the output
+        for i in range(len(inputs)):
+            x = inputs[i]
+            if is_storage_and_layout(x):
+                layout = x.get_layout()
+                if (
+                    isinstance(layout, FixedLayout)
+                    and layout.is_channels_last_contiguous()
+                ):
+                    # use CL stride for the output
+                    output_stride = make_channels_last_strides_for(new_size)
+                    break
+
         kernel = ConcatKernel(
             name=None,
             layout=FixedLayout(
                 device=device,
                 dtype=dtype,
                 size=new_size,
-                stride=FlexibleLayout.contiguous_strides(new_size),
+                stride=output_stride,
             ),
             inputs=[],
         )
@@ -3413,8 +3438,6 @@ def _prepare_convolution_fusion_create(
     stride_: List[int],
     dilation_: List[int],
     groups: int,
-    transposed: bool = False,
-    output_padding_: List[int] = None,
 ):
     """
     This function is a helper function to prepare inputs, layout and constant args
@@ -3427,8 +3450,6 @@ def _prepare_convolution_fusion_create(
     padding = tuple(padding_)
     dilation = tuple(dilation_)
     assert isinstance(groups, int)
-    output_padding = tuple(output_padding_) if output_padding_ else (0, 0)
-
     with V.graph.fake_mode:
         x_fake = ir_node_to_tensor(x, guard_shape=True)
         weight_fake = ir_node_to_tensor(weight, guard_shape=True)
@@ -3442,8 +3463,8 @@ def _prepare_convolution_fusion_create(
             stride,
             padding,
             dilation,
-            transposed,
-            output_padding,
+            False,
+            [0, 0],
             groups,
         )
         output_size = output.size()
@@ -3462,8 +3483,6 @@ def _prepare_convolution_fusion_create(
         output_stride,
     )
     constant_args = [padding, stride, dilation, groups]
-    if transposed:
-        constant_args.insert(1, output_padding)
 
     if bias is not None:
         inputs.append(bias)
@@ -3798,62 +3817,6 @@ class LinearBinary(ExternKernelAlloc):
         pass
 
 
-class ConvolutionTransposeUnary(ExternKernelAlloc):
-    kernel = "torch.ops.mkldnn._convolution_transpose_pointwise"
-
-    def __init__(
-        self,
-        layout,
-        inputs,
-        constant_args=(),
-        kernel="torch.ops.mkldnn._convolution_transpose_pointwise",
-    ):
-        super().__init__(layout, inputs, constant_args)
-        self.kernel = kernel
-
-    def codegen(self, wrapper):
-        wrapper.writeline(
-            f"{self.get_name()} = {self.kernel}({', '.join(self.codegen_args())})"
-        )
-
-    @classmethod
-    def create(
-        cls,
-        x: "TensorBox",
-        weight: "TensorBox",
-        bias: "TensorBox",
-        padding_: List[int],
-        output_padding_: List[int],
-        stride_: List[int],
-        dilation_: List[int],
-        groups_: int,
-        attr,
-        scalars,
-        algorithm,
-    ):
-        kernel = "torch.ops.mkldnn._convolution_transpose_pointwise"
-        transposed = True
-        (inputs, constant_args, kernel_layout, _,) = _prepare_convolution_fusion_create(
-            cls,
-            x,
-            weight,
-            bias,
-            padding_,
-            stride_,
-            dilation_,
-            groups_,
-            transposed,
-            output_padding_,
-        )
-        constant_args = constant_args + [attr, scalars, algorithm]
-        return ConvolutionTransposeUnary(
-            layout=kernel_layout,
-            inputs=inputs,
-            constant_args=constant_args,
-            kernel=kernel,
-        )
-
-
 @dataclasses.dataclass
 class MutableBox(IRNode):
     """
@@ -3978,6 +3941,21 @@ class StorageBox(MutableBox):
         return len(read_writes.reads)
 
 
+class InterpreterShim(torch.fx.Interpreter):
+    def __init__(self, graph, submodules):
+        """
+        We don't call super() here to avoid constructing a
+        GraphModule which is very expensive (it does codegen).
+        """
+        self.module = self
+        self.graph = graph
+        self.submodules = submodules
+        self.garbage_collect_values = False
+        self.env = {}
+        self.fetch_attr = submodules.__getitem__
+        self.name = V.get_ops_handler().name
+
+
 class LoopBody:
     """
     Captures the body of a Loops subclass into an FX graph.  Persists any
@@ -4035,7 +4013,7 @@ class LoopBody:
     def add_indirect(self):
         name = f"indirect{len(self.indirect_vars)}"
         var = sympy_symbol(name)
-        self.indirect_vars.append([var])
+        self.indirect_vars.append(var)
         return var
 
     def replace_indirect(self, old, new):
@@ -4081,6 +4059,8 @@ class LoopBodyBlock:
             )
 
         class CaptureIndexing(V.WrapperHandler):
+            self.name = "CaptureIndexing"
+
             def load(self, name: str, index: sympy.Expr):
                 index = add_index(index, "reads", name)
                 return self._inner.load(name, index)
@@ -4151,20 +4131,7 @@ class LoopBodyBlock:
         graph = self.graph
         submodules = self.body.submodules
 
-        class InterpreterShim(torch.fx.Interpreter):
-            def __init__(self):
-                """
-                We don't call super() here to avoid constructing a
-                GraphModule which is very expensive (it does codegen).
-                """
-                self.module = self
-                self.graph = graph
-                self.submodules = submodules
-                self.garbage_collect_values = False
-                self.env = {}
-                self.fetch_attr = submodules.__getitem__
-
-        return InterpreterShim().run(V.get_ops_handler())
+        return InterpreterShim(graph, submodules).run(V.get_ops_handler())
 
     def debug_str(self, name="block"):
         code = torch.fx.GraphModule(self.body.submodules, self.graph).code

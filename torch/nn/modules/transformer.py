@@ -199,13 +199,15 @@ class TransformerEncoder(Module):
             src: Tensor,
             mask: Optional[Tensor] = None,
             src_key_padding_mask: Optional[Tensor] = None,
-            is_causal: bool = False) -> Tensor:
+            is_causal: Optional[bool] = None) -> Tensor:
         r"""Pass the input through the encoder layers in turn.
 
         Args:
             src: the sequence to the encoder (required).
             mask: the mask for the src sequence (optional).
-            is_causal: If specified, applies a causal mask as mask (optional). Mutually exclusive with providing mask. Default: ``False``.
+            is_causal: If specified, applies a causal mask as mask (optional)
+                and ignores attn_mask for computing scaled dot product attention.
+                Default: ``False``.
             src_key_padding_mask: the mask for the src keys per batch (optional).
 
         Shape:
@@ -285,14 +287,19 @@ class TransformerEncoder(Module):
                 src_key_padding_mask_for_layers = None
 
         # Prevent type refinement
-        make_causal = False
-        if mask is not None:
-            if is_causal:
-                raise RuntimeError("specify either mask or is_causal, but not both")
+        make_causal = (is_causal is True)
 
-        if make_causal:
-            is_causal = True
-            mask = None
+        if is_causal is None:
+            if mask is not None:
+                sz = mask.size(0)
+                causal_comparison = torch.triu(
+                    torch.ones(sz, sz, device=mask.device) * float('-inf'), diagonal=1
+                ).to(mask.dtype)
+
+                if torch.equal(mask, causal_comparison):
+                    make_causal = True
+
+        is_causal = make_causal
 
         for mod in self.layers:
             output = mod(output, src_mask=mask, is_causal=is_causal, src_key_padding_mask=src_key_padding_mask_for_layers)
@@ -665,8 +672,10 @@ class TransformerDecoderLayer(Module):
             memory_mask: the mask for the memory sequence (optional).
             tgt_key_padding_mask: the mask for the tgt keys per batch (optional).
             memory_key_padding_mask: the mask for the memory keys per batch (optional).
-            tgt_is_causal: If specified, applies a causal mask as tgt mask. Mutually exclusive with providing tgt_mask. Default: ``False``.
-            memory_is_causal: If specified, applies a causal mask as tgt mask. Mutually exclusive with providing memory_mask. Default: ``False``.
+            tgt_is_causal: If specified, applies a causal mask as tgt mask.
+                Mutually exclusive with providing tgt_mask. Default: ``False``.
+            memory_is_causal: If specified, applies a causal mask as tgt mask.
+                Mutually exclusive with providing memory_mask. Default: ``False``.
         Shape:
             see the docs in Transformer class.
         """
