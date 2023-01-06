@@ -195,6 +195,7 @@ jobs:
         if: always()
         run: |
           ls
+          shopt -s globstar
           pwd
           cat test/**/*.log || true
           cat ../workpace/test/**/*.log
