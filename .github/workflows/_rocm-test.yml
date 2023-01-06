@@ -196,6 +196,8 @@ jobs:
         run: |
           ls
           shopt -s globstar
+          echo $BASH_VERSION
+          shopt globstar
           pwd
           cat test/**/*.log || true
           cat ../workpace/test/**/*.log || true
