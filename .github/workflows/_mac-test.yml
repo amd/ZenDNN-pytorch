@@ -154,7 +154,7 @@ jobs:
         shell: bash
         if: always()
         run: |
-          cat test/**/*.log || true
+          find test -name '*.log' | xargs cat || true
 
       - name: Get workflow job id
         id: get-job-id

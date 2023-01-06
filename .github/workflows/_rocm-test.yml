@@ -198,7 +198,8 @@ jobs:
           shopt -s globstar
           pwd
           cat test/**/*.log || true
-          cat ../workpace/test/**/*.log
+          cat ../workpace/test/**/*.log || true
+          find test -name '*.log' | xargs cat || true
 
       - name: Save test results
         if: always()
