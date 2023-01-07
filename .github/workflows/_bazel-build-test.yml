@@ -168,7 +168,7 @@ jobs:
         shell: bash
         if: always()
         run: |
-          find test -name '*.log' -exec cat {} \; || true
+          cat test/**/*.log || true
 
       - name: Chown workspace
         uses: ./.github/actions/chown-workspace

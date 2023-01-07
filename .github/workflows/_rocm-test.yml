@@ -200,15 +200,7 @@ jobs:
         shell: bash
         if: always()
         run: |
-          ls
-          shopt -s globstar
-          echo $BASH_VERSION
-          shopt globstar
-          pwd
           cat test/**/*.log || true
-          cat ../workpace/test/**/*.log || true
-          find test -name "*.log" -exec cat {} \; || true
-          find "../workspace/test" -name "*.log" -exec cat {} \; || true
 
       - name: Get workflow job id
         id: get-job-id

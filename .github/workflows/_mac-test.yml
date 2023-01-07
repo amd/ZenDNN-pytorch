@@ -154,7 +154,7 @@ jobs:
         shell: bash
         if: always()
         run: |
-          find test -name '*.log' -exec cat {} \; || true
+          cat test/**/*.log || true
 
       - name: Get workflow job id
         id: get-job-id
