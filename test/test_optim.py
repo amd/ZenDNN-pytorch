@@ -46,6 +46,7 @@ from torch.testing._internal.common_utils import (
     skipIfRocm,
     skipIfTorchDynamo
 )
+from torch.testing._internal.common_device_type import onlyCUDA
 from typing import Dict, Any, Tuple
 from torch.optim.optimizer import register_optimizer_step_pre_hook, register_optimizer_step_post_hook
 from torch.utils._pytree import tree_flatten
@@ -645,9 +646,8 @@ class TestOptim(TestCase):
                 )
             )
 
+    @onlyCUDA
     def _test_derived_optimizers(self, optimizer_pairs_with_flags, flag):
-        if not torch.cuda.is_available():
-            return
         assert flag in ("foreach", "fused")
 
         kIterations = 4
@@ -1472,10 +1472,8 @@ class TestOptim(TestCase):
             opt.step()
 
     # make sure that `state_steps` is correctly either updated or not updated when `found_inf`.
+    @onlyCUDA
     def test_functional_fused_adam_with_foundinf(self):
-        if not torch.cuda.is_available():
-            self.skipTest("CUDA is required.")
-
         from torch.optim import adam
 
         num_tensors = 5
@@ -3922,9 +3920,8 @@ class TestSWAUtils(TestCase):
             self._test_averaged_model(cpu, cuda)
             self._test_averaged_model(cuda, cuda)
 
+    @onlyCUDA
     def test_averaged_model_mixed_device(self):
-        if not torch.cuda.is_available():
-            return
         dnn = torch.nn.Sequential(
             torch.nn.Conv2d(1, 5, kernel_size=3), torch.nn.Linear(5, 10)
         )
