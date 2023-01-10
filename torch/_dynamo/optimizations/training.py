@@ -116,7 +116,7 @@ def is_aot_autograd_safe_to_run(gm, example_inputs):
 DEBUG = False
 
 # Useful for debugging purpose
-aot_eager = aot_autograd(fw_compiler=debug_nop if DEBUG else nop)
+# aot_eager = aot_autograd(fw_compiler=debug_nop if DEBUG else nop)
 
 # AOT Autograd with torchscript backend. Default partitioner.
 aot_ts = aot_autograd(fw_compiler=ts_compile)
@@ -376,7 +376,7 @@ def register_aot_and_inductor_training_backends():
     Register aliases for the AOT backends, and inductor
     """
     # aot_eager uses AOT Autograd backend with nop compiler. It is helpful in debugging.
-    BACKENDS["aot_eager"] = aot_eager
+    # BACKENDS["aot_eager"] = aot_eager
 
     # aot_ts uses torchscript backend. We can use this with both nnc and nvfuser
     # by using the relevant fuser with torch.jit.fuser(...)

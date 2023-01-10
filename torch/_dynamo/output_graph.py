@@ -669,12 +669,17 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             is_top_level_minifying = (
                 config.repro_after is not None and config.repro_level == 4
             )
+                
+            aot_eager = torch._dynamo.optimizations.training.aot_autograd(fw_compiler=torch._functorch.compilers.nop) 
+
+            autograd_out_gm = aot_eager(gm, self.example_inputs())
+
             if torch._dynamo.debug_utils.MINIFIER_SPAWNED or is_top_level_minifying:
-                compiled_fn = compiler_fn(gm, self.example_inputs())
+                compiled_fn = compiler_fn(autograd_out_gm, self.example_inputs())
             elif config.DO_NOT_USE_legacy_non_fake_example_inputs:
-                compiled_fn = compiler_fn(gm, self.example_inputs())
+                compiled_fn = compiler_fn(autograd_out_gm, self.example_inputs())
             else:
-                compiled_fn = compiler_fn(gm, self.fake_example_inputs())
+                compiled_fn = compiler_fn(autograd_out_gm, self.fake_example_inputs())
             _step_logger()(logging.INFO, f"done compiler function {name}")
             assert callable(compiled_fn), "compiler_fn did not return callable"
         except Exception as e:
