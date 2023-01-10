@@ -141,7 +141,7 @@ class CachingAutotuner(KernelInterface):
     @dynamo_utils.dynamo_timed
     def autotune_to_one_config(self, *args, **kwargs):
         """Do the actual autotuning"""
-        from ..compile_fx import clone_preserve_strides
+        from ..inductor import clone_preserve_strides
 
         # clone inplace buffers to avoid autotune contaminating them if
         # the kernel does in-place stores. avoid cloning other buffers because

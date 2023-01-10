@@ -363,22 +363,11 @@ def get_compiler_fn(compiler_fn):
 @functools.lru_cache(1)
 def lookup_backend(compiler_fn):
     """Expand backend strings to functions"""
-    if compiler_fn == "inductor":
-        if torch.cuda.is_available():
-            if (
-                torch.backends.cuda.matmul.allow_tf32 is False
-                and torch.cuda.get_device_capability() >= (8, 0)
-            ):
-                warnings.warn(
-                    "TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled."
-                    "Consider setting `torch.set_float32_matmul_precision('high')`"
-                )
-
-        compiler_fn = import_module(f"{config.inductor_import}.compile_fx").compile_fx
-    elif isinstance(compiler_fn, str):
+    if isinstance(compiler_fn, str):
         from .optimizations import BACKENDS
-
+        assert compiler_fn in BACKENDS, f"Illegal backend name {compiler_fn} provided"
         compiler_fn = BACKENDS[compiler_fn]
+    assert callable(compiler_fn)
     return compiler_fn
 
 

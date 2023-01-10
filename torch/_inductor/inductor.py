@@ -4,6 +4,7 @@ import itertools
 import logging
 import sys
 from typing import List
+import warnings
 
 import functorch
 from functorch.compile import min_cut_rematerialization_partition
@@ -27,12 +28,6 @@ from .virtualized import V
 
 log = logging.getLogger(__name__)
 ALIGNMENT = 16
-
-aot_autograd = dynamo_optimizations.training.aot_autograd
-normalize_ir = dynamo_optimizations.normalize.normalize_ir
-is_aot_autograd_safe_to_run = dynamo_optimizations.training.is_aot_autograd_safe_to_run
-count_calls = dynamo_utils.count_calls
-
 
 @dataclasses.dataclass
 class BoxedBool:
@@ -99,7 +94,7 @@ def count_bytes_inner(gm, example_inputs, num_fixed=0, **kwargs):
 
 @DebugContext.wrap
 @torch.utils._python_dispatch._disable_current_modes()
-def compile_fx_inner(
+def inductor_inner(
     gm: torch.fx.GraphModule,
     example_inputs: List[torch.Tensor],
     cudagraphs=None,
@@ -344,14 +339,24 @@ def count_tangents(fx_g: torch.fx.GraphModule):
 _graph_counter = itertools.count(0)
 
 
-def compile_fx(
+def inductor(
     model_: torch.fx.GraphModule,
     example_inputs_: List[torch.Tensor],
-    inner_compile=compile_fx_inner,
+    inner_compile=inductor_inner,
 ):
     """Main entrypoint to a compile given FX graph"""
 
-    if not is_aot_autograd_safe_to_run(model_, example_inputs_):
+    if torch.cuda.is_available():
+        if (
+            torch.backends.cuda.matmul.allow_tf32 is False
+            and torch.cuda.get_device_capability() >= (8, 0)
+        ):
+            warnings.warn(
+                "TensorFloat32 tensor cores for float32 matrix multiplication available but not enabled."
+                "Consider setting `torch.set_float32_matmul_precision('high')`"
+            )
+
+    if not dynamo_optimizations.training.is_aot_autograd_safe_to_run(model_, example_inputs_):
         log.warning("Aot Autograd is not safe to run, so falling back to eager")
         return model_
 
@@ -359,7 +364,7 @@ def compile_fx(
     functorch.compile.config.use_fake_tensor = True
 
     with overrides.patch_functions():
-        model_ = normalize_ir(model_, example_inputs_)
+        model_ = dynamo_optimizations.normalize.normalize_ir(model_, example_inputs_)
         model_ = overrides.replace_fx(model_)
         model_ = overrides.fuse_fx(model_, example_inputs_)
     num_example_inputs = len(example_inputs_)
@@ -395,7 +400,7 @@ def compile_fx(
         # TODO: can add logging before/after the call to create_aot_dispatcher_function
         # in torch._functorch/aot_autograd.py::aot_module_simplified::aot_function_simplified::new_func
         # once torchdynamo is merged into pytorch
-        return aot_autograd(
+        return dynamo_optimizations.training.aot_autograd(
             fw_compiler=fw_compiler,
             bw_compiler=bw_compiler,
             decompositions=select_decomp_table(),

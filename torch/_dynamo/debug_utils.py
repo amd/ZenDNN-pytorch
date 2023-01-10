@@ -269,15 +269,15 @@ from torch.fx.experimental.proxy_tensor import make_fx
 
 
 INDUCTOR_IMPORT = f"""
-from {config.inductor_import}.compile_fx import compile_fx_inner
+from {config.inductor_import}.inductor import inductor_inner
 from {config.dynamo_import}.debug_utils import same_two_models
 """
 
 COMPILER_REPRO_OPTIONS = {
-    "inductor": (INDUCTOR_IMPORT, "compile_fx_inner", "inductor_fails"),
+    "inductor": (INDUCTOR_IMPORT, "inductor_inner", "inductor_fails"),
     "inductor_accuracy": (
         INDUCTOR_IMPORT,
-        "compile_fx_inner",
+        "inductor_inner",
         "inductor_accuracy_fails",
     ),
 }
@@ -410,9 +410,9 @@ def inductor_fails(fx_g, args, check_str=None):
             # Ensures that segfaults are surfaced
             torch.cuda.synchronize()
 
-    compile_fx_inner = import_module(
-        f"{config.inductor_import}.compile_fx"
-    ).compile_fx_inner
+    inductor_inner = import_module(
+        f"{config.inductor_import}.inductor"
+    ).inductor_inner
 
     try:
         result = fx_g(*args)
@@ -425,7 +425,7 @@ def inductor_fails(fx_g, args, check_str=None):
     sync()
 
     try:
-        compile_mod = compile_fx_inner(fx_g, args)
+        compile_mod = inductor_inner(fx_g, args)
         compile_mod(args)
         sync()
     except Exception as e:
@@ -437,9 +437,9 @@ def inductor_fails(fx_g, args, check_str=None):
 
 
 def inductor_accuracy_fails(fx_g, args, check_str=None):
-    from torch._inductor.compile_fx import compile_fx_inner
+    from torch._inductor.inductor import inductor_inner
 
-    return backend_aot_accuracy_fails(fx_g, args, compile_fx_inner)
+    return backend_aot_accuracy_fails(fx_g, args, inductor_inner)
 
 
 def get_minifier_repro_path():
@@ -1078,13 +1078,7 @@ def dynamo_accuracy_minifier_backend(gm, example_inputs, compiler_name):
     from functorch.compile import minifier
 
     from torch._dynamo.optimizations.backends import BACKENDS
-
-    if compiler_name == "inductor":
-        from torch._inductor.compile_fx import compile_fx
-
-        compiler_fn = compile_fx
-    else:
-        compiler_fn = BACKENDS[compiler_name]
+    compiler_fn = BACKENDS[compiler_name]
 
     # Set the eval mode to remove randomness.
     gm.eval()

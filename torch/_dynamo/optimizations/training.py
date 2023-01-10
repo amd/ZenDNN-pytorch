@@ -129,7 +129,7 @@ aot_inductor_debug = aot_autograd(
     bw_compiler=nop,
     # NB: lambda here is to delay import of inductor
     decompositions=lambda: import_module(
-        f"{config.inductor_import}.compile_fx"
+        f"{config.inductor_import}.inductor"
     ).select_decomp_table(),
     partition_fn=functools.partial(
         min_cut_rematerialization_partition, compiler="inductor"
@@ -371,10 +371,9 @@ aot_torchxla_trace_once = aot_autograd(
     fw_compiler=BACKENDS["torchxla_trace_once"],
 )
 
-
-def create_aot_backends():
+def register_aot_and_inductor_training_backends():
     """
-    Register aliases for the AOT backends
+    Register aliases for the AOT backends, and inductor
     """
     # aot_eager uses AOT Autograd backend with nop compiler. It is helpful in debugging.
     BACKENDS["aot_eager"] = aot_eager
@@ -410,3 +409,10 @@ def create_aot_backends():
 
     BACKENDS["aot_torchxla_trivial"] = aot_torchxla_trivial
     BACKENDS["aot_torchxla_trace_once"] = aot_torchxla_trace_once
+
+
+    def lazy_import_inductor_trampoline(*args, **kwargs):
+        from torch._inductor.inductor import inductor
+        return inductor(*args, **kwargs)
+
+    BACKENDS["inductor"] = lazy_import_inductor_trampoline

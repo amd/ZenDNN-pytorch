@@ -61,7 +61,7 @@ def signature_of(arg):
 
 
 def config_of(args):
-    from ..compile_fx import ALIGNMENT
+    from ..inductor import ALIGNMENT
 
     def is_aligned(x):
         if isinstance(x, TensorArg):

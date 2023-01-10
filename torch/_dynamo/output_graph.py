@@ -71,6 +71,9 @@ class CompiledFn(Protocol):
 
 CompilerFn = Callable[[fx.GraphModule, List[torch.Tensor]], CompiledFn]
 
+@dataclass
+class Backend:
+
 
 class OutputGraphState(NamedTuple):
     graphargs: List[GraphArg]

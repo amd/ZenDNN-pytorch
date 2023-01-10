@@ -1823,7 +1823,7 @@ class AliasedLayout(Layout):
         offset = self.view.get_layout().offset
         if offset == 0:
             return True
-        from .compile_fx import ALIGNMENT
+        from .inductor import ALIGNMENT
 
         return V.graph.sizevars.maybe_guard_multiple_of(offset, ALIGNMENT)
 
