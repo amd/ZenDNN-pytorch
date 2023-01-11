@@ -27,6 +27,13 @@ struct NoopPyInterpreterVTable final : public PyInterpreterVTable {
     PANIC(dispatch);
   }
 
+  void python_op_registration_trampoline(
+      const c10::OperatorHandle& op,
+      c10::DispatchKey,
+      torch::jit::Stack* stack) const override {
+    PANIC(python_op_registration_trampoline);
+  }
+
   void python_dispatcher(
       const c10::OperatorHandle& op,
       c10::DispatchKeySet,
@@ -84,6 +91,11 @@ struct NoopPyInterpreterVTable final : public PyInterpreterVTable {
   void trace_gpu_device_synchronization() const override {}
   void trace_gpu_stream_synchronization(uintptr_t stream) const override {}
   void trace_gpu_event_synchronization(uintptr_t event) const override {}
+
+  void mode_state_push_trampoline(
+      std::shared_ptr<SafePyObject> mode) const override{};
+  void mode_state_pop_trampoline(
+      std::shared_ptr<SafePyObject> mode) const override{};
 };
 
 void PyInterpreter::disarm() noexcept {
