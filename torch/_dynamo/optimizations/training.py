@@ -76,6 +76,7 @@ def aot_autograd(**kwargs):
             # NB: NOT cloned!
             with enable_aot_logging():
                 cg = aot_module_simplified(gm, example_inputs, **kwargs)
+                breakpoint()
                 counters["aot_autograd"]["ok"] += 1
                 return eval_frame.disable(cg)
         except Exception:
@@ -116,10 +117,12 @@ def is_aot_autograd_safe_to_run(gm, example_inputs):
 DEBUG = False
 
 # Useful for debugging purpose
-# aot_eager = aot_autograd(fw_compiler=debug_nop if DEBUG else nop)
+from torch._dynamo.output_graph import Backend
+
+aot_eager = Backend(BACKENDS["eager"], fw_compiler=debug_nop if DEBUG else nop)
 
 # AOT Autograd with torchscript backend. Default partitioner.
-aot_ts = aot_autograd(fw_compiler=ts_compile)
+aot_ts = Backend(BACKENDS["eager"], fw_compiler=ts_compile)
 
 # Uses TorchInductor AOT Autograd decomps and partitioner to isolate aot vs
 # inductor problems.
@@ -361,7 +364,7 @@ def cudagraphs(model, inputs):
     return model
 
 
-aot_cudagraphs = aot_autograd(fw_compiler=cudagraphs, bw_compiler=cudagraphs)
+aot_cudagraphs = Backend(BACKENDS["eager"], fw_compiler=cudagraphs, bw_compiler=cudagraphs)
 
 aot_torchxla_trivial = aot_autograd(
     fw_compiler=BACKENDS["torchxla_trivial"],
@@ -376,7 +379,7 @@ def register_aot_and_inductor_training_backends():
     Register aliases for the AOT backends, and inductor
     """
     # aot_eager uses AOT Autograd backend with nop compiler. It is helpful in debugging.
-    # BACKENDS["aot_eager"] = aot_eager
+    BACKENDS["aot_eager"] = aot_eager
 
     # aot_ts uses torchscript backend. We can use this with both nnc and nvfuser
     # by using the relevant fuser with torch.jit.fuser(...)

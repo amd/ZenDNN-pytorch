@@ -400,6 +400,7 @@ def inductor(
         # TODO: can add logging before/after the call to create_aot_dispatcher_function
         # in torch._functorch/aot_autograd.py::aot_module_simplified::aot_function_simplified::new_func
         # once torchdynamo is merged into pytorch
+        from torch._dynamo.output_graph import Backend
         return dynamo_optimizations.training.aot_autograd(
             fw_compiler=fw_compiler,
             bw_compiler=bw_compiler,

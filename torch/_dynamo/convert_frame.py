@@ -348,7 +348,7 @@ def convert_frame_assert(
             frame,
         )
 
-    _convert_frame_assert._torchdynamo_orig_callable = compiler_fn
+    _convert_frame_assert._torchdynamo_orig_callable = backend
     return wrap_convert_context(_convert_frame_assert)
 
 
@@ -488,7 +488,7 @@ def convert_frame(backend: Backend, hooks: Hooks):
             log.info("converting frame raised error, suppressing error")
         return None
 
-    _convert_frame._torchdynamo_orig_callable = compiler_fn  # type: ignore[attr-defined]
+    _convert_frame._torchdynamo_orig_callable = backend  # type: ignore[attr-defined]
     return _convert_frame
 
 

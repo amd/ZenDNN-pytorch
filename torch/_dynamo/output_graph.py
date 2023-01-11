@@ -79,6 +79,9 @@ class Backend:
     fw_compiler : CompilerFn = nop
     bw_compiler : Optional[CompilerFn] = None
 
+    def __call__(self, *args, **kwargs):
+        return self.compiler_fn(*args, **kwargs)
+
 
 class OutputGraphState(NamedTuple):
     graphargs: List[GraphArg]
@@ -676,16 +679,17 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             )
                 
             
-            aot_eager = torch._dynamo.optimizations.training.aot_autograd(fw_compiler=backend.fw_compiler, bw_compiler=backend.bw_compiler) 
+            aot_eager = torch._dynamo.optimizations.training.aot_autograd(fw_compiler=self.backend.fw_compiler, bw_compiler=self.backend.bw_compiler) 
 
-            autograd_out_gm = aot_eager(gm, self.example_inputs())
-
+            autograd_out_gm_fn = aot_eager(gm, self.example_inputs())
+            breakpoint()
+            gm.forward = autograd_out_gm_fn
             if torch._dynamo.debug_utils.MINIFIER_SPAWNED or is_top_level_minifying:
-                compiled_fn = compiler_fn(autograd_out_gm, self.example_inputs())
+                compiled_fn = compiler_fn(gm, self.example_inputs())
             elif config.DO_NOT_USE_legacy_non_fake_example_inputs:
-                compiled_fn = compiler_fn(autograd_out_gm, self.example_inputs())
+                compiled_fn = compiler_fn(gm, self.example_inputs())
             else:
-                compiled_fn = compiler_fn(autograd_out_gm, self.fake_example_inputs())
+                compiled_fn = compiler_fn(gm, self.fake_example_inputs())
             _step_logger()(logging.INFO, f"done compiler function {name}")
             assert callable(compiled_fn), "compiler_fn did not return callable"
         except Exception as e:

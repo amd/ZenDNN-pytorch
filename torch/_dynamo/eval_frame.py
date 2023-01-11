@@ -357,14 +357,33 @@ def get_compiler_fn(compiler_fn_or_backend_or_str):
     else:
         compiler_str = None
 
+    # Insanely confusing absolute garbage
+    from torch._dynamo.output_graph import Backend
+
+    backend = None
     if isinstance(compiler_fn_or_backend_or_str, str):
         compiler_fn = lookup_backend(compiler_fn_or_backend_or_str)
+        if isinstance(compiler_fn, Backend):
+            backend = compiler_fn
+            compiler_fn = backend.compiler_fn
+            breakpoint()
+
     elif isinstance(compiler_fn_or_backend_or_str, Backend):
+        backend = compiler_fn_or_backend_or_str
         compiler_fn = compiler_fn_or_backend_or_str.compiler_fn
+        breakpoint()
     else:
         compiler_fn = compiler_fn_or_backend_or_str
 
-    return wrap_backend_debug(compiler_fn, compiler_str)
+    compiler_fn = wrap_backend_debug(compiler_fn, compiler_str)
+    
+    if backend:
+        breakpoint()
+        backend.compiler_fn = compiler_fn
+        return backend
+
+    breakpoint()
+    return compiler_fn
 
 
 @functools.lru_cache(1)
@@ -439,22 +458,22 @@ def optimize(
         return _NullDecorator()
 
     compiler_fn = get_compiler_fn(backend)
-    if isinstance(backend, Backend):
-        backend.compiler_fn = compiler_fn
-    else:
-        backend = Backend(compiler_fn)
+    inner_compiler_fn = compiler_fn
+    from .output_graph import Backend
+    if isinstance(compiler_fn, Backend):
+        inner_compiler_fn = compiler_fn.compiler_fn
 
     # Find if backend has any extra context manager
-    backend_ctx_ctor = getattr(backend.compiler_fn, "backend_ctx_ctor", null_context)
+    backend_ctx_ctor = getattr(inner_compiler_fn, "backend_ctx_ctor", null_context)
 
     if nopython:
         return optimize_assert(
-            backend,
+            compiler_fn,
             dynamic=dynamic,
             hooks=hooks,
         )
     return _optimize_catch_errors(
-        convert_frame.convert_frame(backend, hooks=hooks),
+        convert_frame.convert_frame(compiler_fn, hooks=hooks),
         hooks,
         backend_ctx_ctor,
         dynamic=dynamic,
