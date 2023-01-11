@@ -1,9 +1,14 @@
+from typing import Optional
+
 import torch.fx
 from torch.fx import Node
 from torch.fx._compatibility import compatibility
 from torch._subclasses.fake_tensor import FakeTensorMode
 
 __all__ = ['FakeTensorProp']
+
+from torch.utils._python_dispatch import push_if_not_on_stack
+
 
 @compatibility(is_backward_compatible=False)
 class FakeTensorProp(torch.fx.Interpreter):
@@ -17,7 +22,13 @@ class FakeTensorProp(torch.fx.Interpreter):
 
     Args:
          module (GraphModule): The module to be executed
+         mode (Optional[FakeTensorMode]): The dispatch mode used to execute computation indicated by each FX Node.
     """
+    def __init__(self, module: torch.fx.GraphModule, mode: Optional[FakeTensorMode] = None):
+        super().__init__(module)
+        if mode is None:
+            mode = FakeTensorMode()
+        self._mode = mode
 
     def run_node(self, n: Node):
         result = super().run_node(n)
@@ -25,6 +36,6 @@ class FakeTensorProp(torch.fx.Interpreter):
         return result
 
     def propagate(self, *args):
-        with FakeTensorMode.push() as mode:
-            fake_args = [mode.from_tensor(a) for a in args]
+        with push_if_not_on_stack(self._mode):
+            fake_args = [self._mode.from_tensor(a) for a in args]
             return super().run(*fake_args)
