@@ -101,6 +101,7 @@ include_patterns = [
     'test/test_torch.py',
     'test/test_type_hints.py',
     'test/test_type_info.py',
+    '.github/scripts/*.py',
 ]
 exclude_patterns = [
     'torch/include/**',
@@ -149,7 +150,7 @@ init_command = [
     '--dry-run={{DRYRUN}}',
     'numpy==1.23.1',
     'expecttest==0.1.3',
-    'mypy==0.960',
+    'mypy==0.991',
     'types-requests==2.27.25',
     'types-PyYAML==6.0.7',
     'types-tabulate==0.8.8',
