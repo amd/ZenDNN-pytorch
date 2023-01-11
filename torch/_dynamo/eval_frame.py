@@ -347,27 +347,33 @@ def _optimize_catch_errors(
     )
 
 
-def get_compiler_fn(compiler_fn):
+def get_compiler_fn(compiler_fn_or_backend_or_str):
     from .debug_utils import wrap_backend_debug
 
-    if isinstance(compiler_fn, torch._TorchCompileInductorWrapper):
+    if isinstance(compiler_fn_or_backend_or_str, torch._TorchCompileInductorWrapper):
         compiler_str = "inductor"
-    elif isinstance(compiler_fn, str):
-        compiler_str = compiler_fn
+    elif isinstance(compiler_fn_or_backend_or_str, str):
+        compiler_str = compiler_fn_or_backend_or_str
     else:
         compiler_str = None
-    compiler_fn = lookup_backend(compiler_fn)
+
+    if isinstance(compiler_fn_or_backend_or_str, str):
+        compiler_fn = lookup_backend(compiler_fn_or_backend_or_str)
+    elif isinstance(compiler_fn_or_backend_or_str, Backend):
+        compiler_fn = compiler_fn_or_backend_or_str.compiler_fn
+    else:
+        compiler_fn = compiler_fn_or_backend_or_str
+
     return wrap_backend_debug(compiler_fn, compiler_str)
 
 
 @functools.lru_cache(1)
 def lookup_backend(compiler_fn):
     """Expand backend strings to functions"""
-    if isinstance(compiler_fn, str):
-        from .optimizations import BACKENDS
-        assert compiler_fn in BACKENDS, f"Illegal backend name {compiler_fn} provided"
-        compiler_fn = BACKENDS[compiler_fn]
-    assert callable(compiler_fn)
+    assert isinstance(compiler_fn, str)
+    from .optimizations import BACKENDS
+    assert compiler_fn in BACKENDS, f"Illegal backend name {compiler_fn} provided"
+    compiler_fn = BACKENDS[compiler_fn]
     return compiler_fn
 
 
@@ -432,10 +438,14 @@ def optimize(
         )
         return _NullDecorator()
 
-    backend = get_compiler_fn(backend)
+    compiler_fn = get_compiler_fn(backend)
+    if isinstance(backend, Backend):
+        backend.compiler_fn = compiler_fn
+    else:
+        backend = Backend(compiler_fn)
 
     # Find if backend has any extra context manager
-    backend_ctx_ctor = getattr(backend, "backend_ctx_ctor", null_context)
+    backend_ctx_ctor = getattr(backend.compiler_fn, "backend_ctx_ctor", null_context)
 
     if nopython:
         return optimize_assert(

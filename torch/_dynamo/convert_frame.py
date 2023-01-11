@@ -25,7 +25,7 @@ from .exc import (
 )
 from .guards import CheckFunctionManager, GuardedCode
 from .hooks import Hooks
-from .output_graph import CompilerFn, OutputGraph
+from .output_graph import CompilerFn, OutputGraph, Backend
 from .replay_record import ExecutionRecord
 from .symbolic_convert import InstructionTranslator
 from .utils import (
@@ -266,7 +266,7 @@ def exception_handler(e, code, frame=None):
 
 
 def convert_frame_assert(
-    compiler_fn: CompilerFn,
+    backend: Backend,
     one_graph: bool = True,
     export: bool = False,
 ):
@@ -341,7 +341,7 @@ def convert_frame_assert(
             frame.f_globals,
             frame.f_locals,
             frame.f_builtins,
-            compiler_fn,
+            backend,
             one_graph,
             export,
             hooks,
@@ -357,7 +357,7 @@ def _compile(
     globals: Dict[str, object],
     locals: Dict[str, object],
     builtins: Dict[str, object],
-    compiler_fn: CompilerFn,
+    backend: Backend,
     one_graph: bool,
     export: bool,
     hooks: Hooks,
@@ -379,7 +379,7 @@ def _compile(
             globals,
             builtins,
             code_options,
-            compiler_fn,
+            backend,
             one_graph,
             export,
             mutated_closure_cell_contents,
@@ -470,9 +470,9 @@ def _compile(
         raise InternalTorchDynamoError() from e
 
 
-def convert_frame(compiler_fn: CompilerFn, hooks: Hooks):
+def convert_frame(backend: Backend, hooks: Hooks):
     """Try to convert a frame into an FX graph, if error leave frame unmodified"""
-    inner_convert = convert_frame_assert(compiler_fn, one_graph=False)
+    inner_convert = convert_frame_assert(backend, one_graph=False)
 
     def _convert_frame(frame: types.FrameType, cache_size: int, hooks: Hooks):
         counters["frames"]["total"] += 1
@@ -511,7 +511,7 @@ def replay(filename):
             record.globals,
             record.locals,
             record.builtins,
-            compiler_fn=eager,
+            backend=Backend(eager),
             one_graph=False,
             export=False,
             hooks=Hooks(),

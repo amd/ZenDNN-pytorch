@@ -71,8 +71,13 @@ class CompiledFn(Protocol):
 
 CompilerFn = Callable[[fx.GraphModule, List[torch.Tensor]], CompiledFn]
 
+from torch._functorch.compilers import nop
+
 @dataclass
 class Backend:
+    compiler_fn : CompilerFn
+    fw_compiler : CompilerFn = nop
+    bw_compiler : Optional[CompilerFn] = None
 
 
 class OutputGraphState(NamedTuple):
@@ -192,7 +197,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         self,
         f_globals: Dict[str, Any],
         code_options: Dict[str, Any],
-        compiler_fn: CompilerFn,
+        backend: Backend,
         root_tx,
     ):
         super(OutputGraph, self).__init__()
@@ -233,7 +238,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         self.real_value_cache: Dict[fx.Node, torch.Tensor] = {}
 
         # Not checkpointed
-        self.compiler_fn: CompilerFn = compiler_fn
+        self.backend: Backend = backend
         self.root_globals = f_globals
         self.root_tx = root_tx
         from torch._dynamo.symbolic_convert import InstructionTranslatorBase
@@ -630,12 +635,12 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
     def call_user_compiler(self, gm: fx.GraphModule) -> CompiledFn:
         try:
             name = (
-                self.compiler_fn.__name__
-                if hasattr(self.compiler_fn, "__name__")
+                self.backend.compiler_fn.__name__
+                if hasattr(self.backend.compiler_fn, "__name__")
                 else ""
             )
             _step_logger()(logging.INFO, f"calling compiler function {name}")
-            compiler_fn = self.compiler_fn
+            compiler_fn = self.backend.compiler_fn
             # WrapperBackend needs real inputs, for now, to verify correctness
             if config.verify_correctness:
                 compiler_fn = WrapperBackend(compiler_fn, self.example_inputs())
@@ -670,7 +675,8 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
                 config.repro_after is not None and config.repro_level == 4
             )
                 
-            aot_eager = torch._dynamo.optimizations.training.aot_autograd(fw_compiler=torch._functorch.compilers.nop) 
+            
+            aot_eager = torch._dynamo.optimizations.training.aot_autograd(fw_compiler=backend.fw_compiler, bw_compiler=backend.bw_compiler) 
 
             autograd_out_gm = aot_eager(gm, self.example_inputs())
 
@@ -684,7 +690,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             assert callable(compiled_fn), "compiler_fn did not return callable"
         except Exception as e:
             compiled_fn = gm.forward
-            raise BackendCompilerFailed(self.compiler_fn, e) from e
+            raise BackendCompilerFailed(self.backend.compiler_fn, e) from e
         return compiled_fn
 
     def fake_example_inputs(self) -> List[torch.Tensor]:

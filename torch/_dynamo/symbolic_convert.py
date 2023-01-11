@@ -1613,13 +1613,13 @@ class InstructionTranslator(InstructionTranslatorBase):
         f_globals,
         f_builtins,
         code_options,
-        compiler_fn,
+        backend,
         one_graph,
         export,
         mutated_closure_cell_contents: Set[str],
     ):
         super(InstructionTranslator, self).__init__(
-            output=OutputGraph(f_globals, code_options, compiler_fn, self),
+            output=OutputGraph(f_globals, code_options, backend, self),
             instructions=instructions,
             f_locals=f_locals,
             f_globals=f_globals,

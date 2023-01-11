@@ -46,7 +46,7 @@ try:
     from torch._inductor import codecache, config, metrics, test_operators
     from torch._inductor.codegen.cpp import cexpr, CppOverrides, CppVecOverrides
     from torch._inductor.codegen.triton import texpr
-    from torch._inductor.compile_fx import compile_fx, complex_memory_overlap
+    from torch._inductor.inductor import inductor, complex_memory_overlap
     from torch._inductor.ir import IndexingDiv, ModularIndexing
     from torch._inductor.overrides import (
         linear_permute_fusion,
@@ -63,7 +63,7 @@ try:
     # This will only pass on pytorch builds newer than roughly 5/15/2022
     assert get_decompositions([torch.ops.aten.trace])
     # Requires functorch
-    from torch._inductor.compile_fx import compile_fx_inner
+    from torch._inductor.inductor import inductor_inner
 except (ImportError, AssertionError) as e:
     sys.stderr.write(f"{type(e)}: {e}\n")
     if __name__ == "__main__":
@@ -319,15 +319,15 @@ def check_model(
 
     called = False
 
-    def compile_fx_wrapper(model_, example_inputs_):
+    def inductor_wrapper(model_, example_inputs_):
         nonlocal called
         called = True
-        return compile_fx(model_, example_inputs_)
+        return inductor(model_, example_inputs_)
 
     def run(*ex, **kwargs):
         return model(*ex, **kwargs)
 
-    run = torch._dynamo.optimize(compile_fx_wrapper, nopython=nopython)(run)
+    run = torch._dynamo.optimize(inductor_wrapper, nopython=nopython)(run)
 
     torch.manual_seed(0)
     actual = run(*example_inputs, **kwargs)
@@ -336,7 +336,7 @@ def check_model(
     #     print("Explain:", exp[0])
     #     for graph in exp[2]:
     #         print("Graph", graph)
-    assert called, "Ran graph without calling compile_fx"
+    assert called, "Ran graph without calling inductor"
     assert type(actual) == type(correct)
 
     correct_flat, correct_spec = tree_flatten(correct)
@@ -3623,7 +3623,7 @@ class CommonTemplate:
         arg4 = arg3.clone()
         correct1 = fn(arg1)
         correct2 = fn(arg3)
-        opt_fn = torch._dynamo.optimize_assert(compile_fx)(fn)
+        opt_fn = torch._dynamo.optimize_assert(inductor)(fn)
         actual1 = opt_fn(arg2)
         actual2 = opt_fn(arg4)
 
@@ -3645,7 +3645,7 @@ class CommonTemplate:
         arg1 = torch.randn([1, 64], device=self.device).requires_grad_(True).add(1)
         arg2 = arg1.clone()
         correct1 = fn(arg1)
-        opt_fn = torch._dynamo.optimize_assert(compile_fx)(fn)
+        opt_fn = torch._dynamo.optimize_assert(inductor)(fn)
         actual1 = opt_fn(arg2)
 
         self.assertTrue(same(actual1, correct1))
@@ -3666,7 +3666,7 @@ class CommonTemplate:
         arg1 = torch.randn([1, 64], device=self.device)
         arg2 = arg1.clone()
         correct1 = fn(arg1)
-        opt_fn = torch._dynamo.optimize_assert(compile_fx)(fn)
+        opt_fn = torch._dynamo.optimize_assert(inductor)(fn)
         actual1 = opt_fn(arg2)
 
         self.assertTrue(same(actual1, correct1))
@@ -3680,7 +3680,7 @@ class CommonTemplate:
         arg1 = torch.randn([1, 64], device=self.device)
         arg2 = arg1.clone()
         correct1 = fn(arg1)
-        opt_fn = torch._dynamo.optimize_assert(compile_fx)(fn)
+        opt_fn = torch._dynamo.optimize_assert(inductor)(fn)
         actual1 = opt_fn(arg2)
 
         self.assertTrue(same(actual1, correct1))
@@ -3708,7 +3708,7 @@ class CommonTemplate:
         arg1 = torch.randn([1, 64], device=self.device)
         arg2 = arg1.clone()
         fn(arg1)
-        opt_fn = torch._dynamo.optimize_assert(compile_fx)(fn)
+        opt_fn = torch._dynamo.optimize_assert(inductor)(fn)
         opt_fn(arg2)
 
         self.assertTrue(same(arg1, arg2))
@@ -4943,7 +4943,7 @@ class CommonTemplate:
                     IndexError, "Expected reduction dim 1 to have non-zero size"
                 ):
                     mod = make_fx(fo)(*inps0)
-                    _ = compile_fx_inner(mod, inps0)
+                    _ = inductor_inner(mod, inps0)
 
             pass_ops = [
                 lambda *x: fn(*x) for fn in [aten.sum, aten.prod, aten.any, aten.all]
@@ -5003,7 +5003,7 @@ class CommonTemplate:
                     return (a @ a,)
 
                 fn_fx = make_fx(fn)(inps[0], inps[1])
-                fn_compiled = compile_fx_inner(fn_fx, inps)
+                fn_compiled = inductor_inner(fn_fx, inps)
 
                 test_self = self
                 matmul_seen = False
@@ -5145,7 +5145,7 @@ if HAS_CPU:
                 inp = torch.randn([2, 5, 16, 16])
                 inps = [inp, m.weight.to(memory_format=fmt)]
                 fn_fx = make_fx(fn)(*inps)
-                fn_compiled = compile_fx_inner(fn_fx, inps)
+                fn_compiled = inductor_inner(fn_fx, inps)
                 test_self = self
                 conv_seen = False
 
@@ -5198,7 +5198,7 @@ if HAS_CPU:
             x3 = torch.zeros(10)
             y = torch.randn(10)
             fn_fx = make_fx(fn)(x1, y)
-            fn_compiled = compile_fx_inner(fn_fx, [x1, y])
+            fn_compiled = inductor_inner(fn_fx, [x1, y])
             fn(x2, y)
             fn_compiled([x3, y])
             assert same(x2, x3)
@@ -5400,7 +5400,7 @@ if HAS_CPU:
                 torch._dynamo.reset()
                 metrics.reset()
                 traced = make_fx(fn)(x)
-                compiled = compile_fx_inner(traced, [x])
+                compiled = inductor_inner(traced, [x])
                 assert same(fn(x)[0], compiled([x])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 1
 
@@ -5424,7 +5424,7 @@ if HAS_CPU:
                     torch._dynamo.reset()
                     metrics.reset()
                     traced = make_fx(fn)(x)
-                    compiled = compile_fx_inner(traced, [x])
+                    compiled = inductor_inner(traced, [x])
                     assert same(fn(x)[0], compiled([x])[0], equal_nan=True)
                     assert metrics.generated_cpp_vec_kernel_count == 1
 
@@ -5466,7 +5466,7 @@ if HAS_CPU:
                 torch._dynamo.reset()
                 metrics.reset()
                 traced = make_fx(fn)(x)
-                compiled = compile_fx_inner(traced, [x])
+                compiled = inductor_inner(traced, [x])
                 assert same(fn(x)[0], compiled([x])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 1
                 assert (
@@ -5490,7 +5490,7 @@ if HAS_CPU:
                 torch._dynamo.reset()
                 metrics.reset()
                 traced = make_fx(fn)(x)
-                compiled = compile_fx_inner(traced, [x])
+                compiled = inductor_inner(traced, [x])
                 assert same(fn(x)[0], compiled([x])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 1
 
@@ -5542,7 +5542,7 @@ if HAS_CPU:
                 torch._dynamo.reset()
                 metrics.reset()
                 traced = make_fx(fn)(x1, x2)
-                compiled = compile_fx_inner(traced, [x1, x2])
+                compiled = inductor_inner(traced, [x1, x2])
                 assert same(fn(x1, x2)[0], compiled([x1, x2])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 0
 
@@ -5550,7 +5550,7 @@ if HAS_CPU:
                 torch._dynamo.reset()
                 metrics.reset()
                 traced = make_fx(fn)(x1, x2)
-                compiled = compile_fx_inner(traced, [x1, x2])
+                compiled = inductor_inner(traced, [x1, x2])
                 assert same(fn(x1, x2)[0], compiled([x1, x2])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 1
 
@@ -5559,7 +5559,7 @@ if HAS_CPU:
                 x1 = x1.permute(1, 0)
                 x2 = torch.randn((20, 10))
                 traced = make_fx(fn)(x1, x2)
-                compiled = compile_fx_inner(traced, [x1, x2])
+                compiled = inductor_inner(traced, [x1, x2])
                 assert same(fn(x1, x2)[0], compiled([x1, x2])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 0
 
@@ -5568,7 +5568,7 @@ if HAS_CPU:
                 x1 = torch.randn((10, 7))
                 x2 = torch.randn((10, 7))
                 traced = make_fx(fn)(x1, x2)
-                compiled = compile_fx_inner(traced, ([x1, x2]))
+                compiled = inductor_inner(traced, ([x1, x2]))
                 assert same(fn(x1, x2)[0], compiled([x1, x2])[0], equal_nan=True)
                 assert metrics.generated_cpp_vec_kernel_count == 1
 
@@ -5698,7 +5698,7 @@ if HAS_CUDA:
                 memory_format=torch.channels_last
             )
             fn_fx = make_fx(fn)(x1, y)
-            fn_compiled = compile_fx_inner(fn_fx, [x1, y])
+            fn_compiled = inductor_inner(fn_fx, [x1, y])
             fn(x2, y)
             fn_compiled([x3, y])
             assert same(x2, x3)
@@ -5807,7 +5807,7 @@ if HAS_CUDA:
                 torch.ones(shape, dtype=dtype, device="cuda") for (shape, dtype) in inps
             ]
             mod = make_fx(forward)(*inps)
-            compiled = compile_fx_inner(mod, inps)
+            compiled = inductor_inner(mod, inps)
             compiled(inps)
 
         @requires_cuda()
@@ -5854,7 +5854,7 @@ if HAS_CUDA:
                 rand_strided((), (), torch.int64, "cpu"),
             ]
             mod = make_fx(Repro().to(device="cuda"))(*inps)
-            compiled = compile_fx_inner(mod, inps)
+            compiled = inductor_inner(mod, inps)
             compiled(inps)
 
         @patch.object(config, "fallback_random", True)
@@ -5870,7 +5870,7 @@ if HAS_CUDA:
                 return (unsqueeze_default_2,)
 
             mod = make_fx(forward)()
-            compiled = compile_fx_inner(mod, ())
+            compiled = inductor_inner(mod, ())
             assert compiled([])[0].device.type == "cuda"
 
         @patch.object(config.triton, "cudagraphs", True)

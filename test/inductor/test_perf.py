@@ -6,7 +6,7 @@ import torch._dynamo
 import torch._inductor.config as config
 from torch._dynamo.optimizations.backends import register_backend
 from torch._inductor import metrics
-from torch._inductor.compile_fx import compile_fx, count_bytes_inner
+from torch._inductor.inductor import inductor, count_bytes_inner
 from torch.testing._internal.common_utils import (
     TEST_WITH_ROCM,
     TestCase as TorchTestCase,
@@ -18,7 +18,7 @@ aten = torch.ops.aten
 
 @register_backend
 def count_bytes_inductor(gm, example_inputs):
-    return compile_fx(gm, example_inputs, inner_compile=count_bytes_inner)
+    return inductor(gm, example_inputs, inner_compile=count_bytes_inner)
 
 
 @torch._dynamo.optimize("count_bytes_inductor")
