@@ -3598,7 +3598,6 @@ class TestVmapOperatorsOpInfo(TestCase):
         xfail('take'),
         xfail('tensor_split'),
         xfail('to_sparse'),
-        xfail('vdot'),
         xfail('tril'),  # Exception not raised on error input
         xfail('triu'),  # Exception not raised on error input
         xfail('__getitem__', ''),
@@ -3687,7 +3686,6 @@ class TestVmapOperatorsOpInfo(TestCase):
         xfail('jiterator_binary', device_type='cuda'),
         xfail('special.modified_bessel_i0'),
         xfail('jiterator_4inputs_with_extra_args', device_type='cuda'),
-        xfail('linalg.vander', ''),
         xfail('segment_reduce', 'lengths'),
         xfail('lu_solve', ''),
         xfail('special.bessel_y1'),
@@ -3696,7 +3694,6 @@ class TestVmapOperatorsOpInfo(TestCase):
         xfail('nn.functional.dropout3d', ''),
         xfail('special.scaled_modified_bessel_k1'),
         xfail('special.modified_bessel_k0'),
-        xfail('linalg.vecdot', ''),
         xfail('linalg.ldl_factor', ''),
         xfail('special.modified_bessel_i1'),
         xfail('special.chebyshev_polynomial_t'),
