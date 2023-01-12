@@ -366,23 +366,23 @@ def get_compiler_fn(compiler_fn_or_backend_or_str):
         if isinstance(compiler_fn, Backend):
             backend = compiler_fn
             compiler_fn = backend.compiler_fn
-            breakpoint()
+            # breakpoint()
 
     elif isinstance(compiler_fn_or_backend_or_str, Backend):
         backend = compiler_fn_or_backend_or_str
         compiler_fn = compiler_fn_or_backend_or_str.compiler_fn
-        breakpoint()
+        # breakpoint()
     else:
         compiler_fn = compiler_fn_or_backend_or_str
 
     compiler_fn = wrap_backend_debug(compiler_fn, compiler_str)
-    
+    # breakpoint()
     if backend:
-        breakpoint()
+        # breakpoint()
         backend.compiler_fn = compiler_fn
         return backend
 
-    breakpoint()
+    # breakpoint()
     return compiler_fn
 
 

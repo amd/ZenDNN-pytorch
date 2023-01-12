@@ -76,7 +76,7 @@ def aot_autograd(**kwargs):
             # NB: NOT cloned!
             with enable_aot_logging():
                 cg = aot_module_simplified(gm, example_inputs, **kwargs)
-                breakpoint()
+                # breakpoint()
                 counters["aot_autograd"]["ok"] += 1
                 return eval_frame.disable(cg)
         except Exception:
