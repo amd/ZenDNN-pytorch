@@ -147,7 +147,7 @@ def hashable(v):
         return False
     return True
 
-garbage_tree_cache = dict()
+# garbage_tree_cache = dict()
 
 def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
     """Flattens a pytree into a list of values and a TreeSpec that can be used
@@ -156,10 +156,10 @@ def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
     if _is_leaf(pytree):
         return [pytree], LeafSpec()
 
-    can_hash = hashable(pytree)
-    if can_hash:
-        if pytree in garbage_tree_cache:
-            return garbage_tree_cache[pytree]
+    # can_hash = hashable(pytree)
+    # if can_hash:
+        # if pytree in garbage_tree_cache:
+        #     return garbage_tree_cache[pytree]
 
     node_type = _get_node_type(pytree)
     flatten_fn = SUPPORTED_NODES[node_type].flatten_fn
@@ -169,19 +169,19 @@ def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
     result : List[Any] = []
     children_specs : List['TreeSpec'] = []
     for child in child_pytrees:
-        if check:
-            if check(child) == False:
-                return True, None
+        # if check:
+            # if check(child) == False:
+            #     return True, None
         flat, child_spec = tree_flatten(child, check)
-        if not check:
-            result += flat
-            children_specs.append(child_spec)
+        # if not check:
+        result += flat
+        children_specs.append(child_spec)
     
     out_spec = TreeSpec(node_type, context, children_specs)
-    if check:
-        return False, None
-    if can_hash:
-        garbage_tree_cache[pytree] = (result, out_spec)
+    # if check:
+    #     return False, None
+    # if can_hash:
+    #     garbage_tree_cache[pytree] = (result, out_spec)
     return result, out_spec
 
 

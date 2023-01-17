@@ -785,12 +785,15 @@ class FakeTensorMode(TorchDispatchMode):
             with in_kernel_invocation_manager(self):
                 return func(*args, **kwargs)
 
-        flat_arg_fake_tensors = tree_flatten_only(FakeTensor, (args, kwargs))
+        # flat_arg_fake_tensors = tree_flatten_only(FakeTensor, (args, kwargs))
+        # flat_symints = tree_flatten_only(torch.SymInt, (args, kwargs))
         flat_symints = tree_flatten_type_check(torch.SymInt, (args, kwargs))
-        has_symbolic_sizes = (
-            any([i._has_symbolic_sizes_strides for i in flat_arg_fake_tensors])
-            or flat_symints
-        )
+        has_symbolic_sizes = True
+        # (
+        #     any([i._has_symbolic_sizes_strides for i in flat_arg_fake_tensors])
+        #     or len(flat_symints) > 0
+        #     # or flat_symints
+        # )
 
         converter = self.fake_tensor_converter
 
@@ -811,8 +814,8 @@ class FakeTensorMode(TorchDispatchMode):
         # tensor, it might be related to this line.  Though I'm not sure
         # how you'll know to read this comment, as this line won't show up
         # in the stack trace.
-        if self.check_for_subclass(args, kwargs):
-            return NotImplemented
+        # if self.check_for_subclass(args, kwargs):
+        #     return NotImplemented
 
         # if we are in the dispatch mode, we will enter this function even if the inputs
         # are not FakeTensors. For now, throw if any non-Fake Tensor inputs
@@ -840,12 +843,13 @@ class FakeTensorMode(TorchDispatchMode):
         # objects on an FX Graph.
 
         # We dispatch size/stride/numel on the FakeTensor not its constant, so bail on inplace_view
-        all_constant = all(e.constant is not None for e in flat_arg_fake_tensors)
+        all_constant = False
+        # all(e.constant is not None for e in flat_arg_fake_tensors)
         if (
             torch.Tag.nondeterministic_seeded not in func.tags  # type: ignore[attr-defined]
             and torch.Tag.inplace_view not in func.tags  # type: ignore[attr-defined]
             and all_constant
-            and len(flat_arg_fake_tensors) != 0
+            # and len(flat_arg_fake_tensors) != 0
             and not has_symbolic_sizes
         ):
             const_args, const_kwargs = pytree.tree_map_only(
@@ -875,7 +879,7 @@ class FakeTensorMode(TorchDispatchMode):
 
         # we are falling through to running non constant tensors, any input constant that
         # is written to must be invalidated
-        self.invalidate_written_to_constants(func, flat_arg_fake_tensors, args, kwargs)
+        # self.invalidate_written_to_constants(func, flat_arg_fake_tensors, args, kwargs)
 
         # If there's a Python meta, prefer that over the decomposition
         from torch._decomp import meta_table as meta_table
@@ -890,7 +894,7 @@ class FakeTensorMode(TorchDispatchMode):
                     # TODO: Remove these exclusions, so that we can remove
                     # this leg entirely
                     torch_decomp_decompositions(func)
-                    and all(not e.is_sparse for e in flat_arg_fake_tensors)
+                    # and all(not e.is_sparse for e in flat_arg_fake_tensors)
                 )
             ):
                 with self:
@@ -950,8 +954,8 @@ class FakeTensorMode(TorchDispatchMode):
                 and type(x) is not torch.Tensor
                 and type(x) is not torch.nn.Parameter
             )
-
-        return tree_flatten_type_check(torch.Tensor, (args, kwargs), check)
+        return any([check(x) for x in tree_flatten_only(torch.Tensor, (args, kwargs))])
+        # return tree_flatten_type_check(torch.Tensor, (args, kwargs), check)
 
     def validate_and_convert_non_fake_tensors(self, func, converter, args, kwargs):
         """

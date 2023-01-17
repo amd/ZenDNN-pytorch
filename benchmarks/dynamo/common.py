@@ -17,14 +17,14 @@ import warnings
 from contextlib import contextmanager
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import psutil
 import torch
 
 import torch._dynamo
 import torch._dynamo.utils
 import torch.distributed
-from scipy.stats import gmean, ttest_ind
+# from scipy.stats import gmean, ttest_ind
 from torch._dynamo.exc import BackendCompilerFailed
 from torch._dynamo.optimizations import backends
 from torch._dynamo.optimizations.log_args import conv_args_analysis
