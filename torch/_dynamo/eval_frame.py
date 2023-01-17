@@ -127,6 +127,15 @@ def enable_dynamic(enable: bool = True):
     ):
         yield
 
+GLOBAL_PRIOR_HACK = None
+
+
+@contextlib.contextmanager
+def disable_frame_hooks():
+    # set_eval_frame(None)
+    yield
+    # set_eval_frame(GLOBAL_PRIOR_HACK)
+
 
 class _TorchDynamoContext:
     def __init__(
@@ -158,6 +167,7 @@ class _TorchDynamoContext:
             )
         self.on_enter()
         self.prior = set_eval_frame(self.callback)
+        GLOBAL_PRIOR_HACK = self.callback
         self.backend_ctx = self.extra_ctx_ctor()
         self.backend_ctx.__enter__()
         self.dynamic_ctx = enable_dynamic(self.dynamic)
@@ -166,6 +176,7 @@ class _TorchDynamoContext:
     def __exit__(self, exc_type, exc_val, exc_tb):
         assert self.prior is not unset
         set_eval_frame(self.prior)
+        GLOBAL_PRIOR_HACK = self.prior
         self.prior = unset
         # TODO: This is totally not the right way to chain contexts manually
         self.dynamic_ctx.__exit__(exc_type, exc_val, exc_tb)
@@ -204,6 +215,7 @@ class _TorchDynamoContext:
 
             on_enter()
             prior = set_eval_frame(callback)
+            GLOBAL_PRIOR_HACK = callback
             backend_ctx = backend_ctx_ctor()
             backend_ctx.__enter__()
             dynamic_ctx = enable_dynamic(self.dynamic)
@@ -212,6 +224,7 @@ class _TorchDynamoContext:
                 return fn(*args, **kwargs)
             finally:
                 set_eval_frame(prior)
+                GLOBAL_PRIOR_HACK = prior
                 dynamic_ctx.__exit__(None, None, None)
                 backend_ctx.__exit__(None, None, None)
 

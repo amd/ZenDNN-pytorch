@@ -30,6 +30,8 @@ aten = torch._ops.ops.aten
 
 CONSTANT_NUMEL_LIMIT = 1
 
+from functools import lru_cache
+
 
 @dataclass
 class UnsupportedFakeTensorException(RuntimeError):
@@ -132,10 +134,19 @@ def torch_decomp_decompositions(func):
     return decomposition_table[func] in decomp_attrs
 
 
+def tree_flatten_type_check(ty: Type[T], pytree: PyTree, check=None):
+    def check_type_internal(r):
+        return not isinstance(ty, r)
+
+    check_type = check if check else check_type_internal
+    
+    type_found, _ = tree_flatten(pytree, check_type)
+    return type_found
+    
+
 def tree_flatten_only(ty: Type[T], pytree: PyTree):
     flat_vals, _ = tree_flatten(pytree)
     return [elem for elem in flat_vals if isinstance(elem, ty)]
-
 
 # Similar to `MetaConverter`, this is a class for converting
 # multiple tensors into fake tensors which share the same view/storage
@@ -775,10 +786,10 @@ class FakeTensorMode(TorchDispatchMode):
                 return func(*args, **kwargs)
 
         flat_arg_fake_tensors = tree_flatten_only(FakeTensor, (args, kwargs))
-        flat_symints = tree_flatten_only(torch.SymInt, (args, kwargs))
+        flat_symints = tree_flatten_type_check(torch.SymInt, (args, kwargs))
         has_symbolic_sizes = (
             any([i._has_symbolic_sizes_strides for i in flat_arg_fake_tensors])
-            or len(flat_symints) > 0
+            or flat_symints
         )
 
         converter = self.fake_tensor_converter
@@ -940,7 +951,7 @@ class FakeTensorMode(TorchDispatchMode):
                 and type(x) is not torch.nn.Parameter
             )
 
-        return any([check(x) for x in tree_flatten_only(torch.Tensor, (args, kwargs))])
+        return tree_flatten_type_check(torch.Tensor, (args, kwargs), check)
 
     def validate_and_convert_non_fake_tensors(self, func, converter, args, kwargs):
         """

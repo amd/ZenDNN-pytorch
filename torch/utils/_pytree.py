@@ -139,7 +139,7 @@ class LeafSpec(TreeSpec):
     def __repr__(self, indent: int = 0) -> str:
         return '*'
 
-def tree_flatten(pytree: PyTree) -> Tuple[List[Any], TreeSpec]:
+def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
     """Flattens a pytree into a list of values and a TreeSpec that can be used
     to reconstruct the pytree.
     """
@@ -154,10 +154,16 @@ def tree_flatten(pytree: PyTree) -> Tuple[List[Any], TreeSpec]:
     result : List[Any] = []
     children_specs : List['TreeSpec'] = []
     for child in child_pytrees:
+        if check:
+            if check(child) == False:
+                return True, None
         flat, child_spec = tree_flatten(child)
+        
         result += flat
         children_specs.append(child_spec)
-
+    
+    if check:
+        return False, None
     return result, TreeSpec(node_type, context, children_specs)
 
 

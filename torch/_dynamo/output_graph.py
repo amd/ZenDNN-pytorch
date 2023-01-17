@@ -567,7 +567,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         Generate code from self.graph and return the Instruction()s to
         call that generated code.
         """
-        from .eval_frame import disable
+        from .eval_frame import disable, disable_frame_hooks
 
         assert isinstance(rv, list)
         assert isinstance(root, FakeRootModule)
@@ -594,7 +594,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         name = unique_id("__compiled_fn")
 
         assert_no_fake_params_or_buffers(gm)
-        with tracing(self.tracing_context):
+        with tracing(self.tracing_context), disable_frame_hooks():
             compiled_fn = self.call_user_compiler(gm)
         compiled_fn = disable(compiled_fn)
 

@@ -163,10 +163,12 @@ class SymNode:
     def is_float(self):
         return self.pytype is float
 
+    @lru_cache(1024)
     def wrap_int(self, num):
         assert isinstance(num, int)
         return SymNode(sympy.Integer(num), self.shape_env, int, constant=num)
 
+    @lru_cache(1024)
     def wrap_float(self, num):
         assert isinstance(num, float)
         return SymNode(sympy.Float(num), self.shape_env, float, constant=num)
@@ -319,7 +321,7 @@ def _make_node_magic(method, func):
         except Exception:
             log.warning(f"failed to eval {method}({expr}, {other_expr})")
             raise
-        out = sympy.expand(out)
+        # out = sympy.expand(out)
         pytype: Type
         if method in always_float_magic_methods:
             pytype = float
@@ -348,7 +350,7 @@ def _make_node_magic(method, func):
         except Exception:
             log.warning(f"failed to eval {method}({expr})")
             raise
-        out = sympy.expand(out)
+        # out = sympy.expand(out)
         pytype: Type
         if method in always_int_magic_methods:
             pytype = int
@@ -415,10 +417,10 @@ def _lru_cache(fn, maxsize=None):
 
     @functools.wraps(fn)
     def wrapper(self, *args, **kwargs):
-        nonlocal prior_key
-        if prior_key != self._get_key():
-            prior_key = self._get_key()
-            fn_cache.cache_clear()
+        # nonlocal prior_key
+        # if prior_key != self._get_key():
+        #     prior_key = self._get_key()
+        #     fn_cache.cache_clear()
         return fn_cache(self, *args, **kwargs)
 
     wrapper.cache_info = fn_cache.cache_info  # type: ignore[attr-defined]
@@ -855,39 +857,42 @@ class ShapeEnv(object):
         floor_div_replace = {}
         for atom in new_expr.atoms(FloorDiv):
             floor_div_replace[atom] = sympy.floor(atom.args[0] / atom.args[1])
-        new_expr = sympy.expand(new_expr.xreplace(floor_div_replace))
+        new_expr = new_expr.xreplace(floor_div_replace)
         if len(list(new_expr.free_symbols)) == 0:
             return new_expr
         return None
 
     @_lru_cache
     def replace(self, expr: "sympy.Expr") -> "sympy.Expr":
-        replacements = {s: self._find(cast(sympy.Symbol, s)) for s in expr.free_symbols}
-        return sympy.expand(expr.xreplace(replacements))
+        return expr
+        # replacements = {s: self._find(cast(sympy.Symbol, s)) for s in expr.free_symbols}
+        # return expr.xreplace(replacements)
 
     @_lru_cache
     def _update_divisible(self):
-        new_divisible = set()
-        for k in self.divisible:
-            res = self.replace(k)
-            if len(res.free_symbols) > 0:
-                new_divisible.add(k)
+        return
+        # new_divisible = set()
+        # for k in self.divisible:
+        #     res = self.replace(k)
+        #     if len(res.free_symbols) > 0:
+        #         new_divisible.add(k)
 
-        self.divisible = new_divisible
+        # self.divisible = new_divisible
 
     @_lru_cache
     def simplify(self, expr: "sympy.Expr") -> "sympy.Expr":
-        expr = self.replace(expr)
-        if expr.has(FloorDiv):
-            self._update_divisible()
-            div_replacements = {}
-            for atom in expr.atoms(FloorDiv):
-                base, divisor = atom.args
-                if self.replace(base % divisor) in self.divisible:
-                    div_replacements[atom] = base / divisor
-            expr = expr.xreplace(div_replacements)
-            expr = sympy.expand(expr)
         return expr
+        # expr = self.replace(expr)
+        # if expr.has(FloorDiv):
+        #     self._update_divisible()
+        #     div_replacements = {}
+        #     for atom in expr.atoms(FloorDiv):
+        #         base, divisor = atom.args
+        #         if self.replace(base % divisor) in self.divisible:
+        #             div_replacements[atom] = base / divisor
+        #     expr = expr.xreplace(div_replacements)
+        #     # expr = sympy.expand(expr)
+        # return expr
 
     @lru_cache(256)
     def size_hint(self, expr: "sympy.Expr"):
@@ -918,7 +923,7 @@ class ShapeEnv(object):
             # problem
         )
 
-    @_lru_cache
+    @lru_cache(1024)
     def _find(self, a: "sympy.Symbol") -> "sympy.Expr":
         """
         Implements a DSU-like algorithm to find the variable that represents a
