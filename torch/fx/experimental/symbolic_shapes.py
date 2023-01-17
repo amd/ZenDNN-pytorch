@@ -946,8 +946,9 @@ class ShapeEnv(object):
         simplify shapes (i.e. a == b or a % 5 == 0)
         """
         concrete_bool = bool(self.size_hint(expr))
-        if not concrete_bool:
-            return
+        # if not concrete_bool:
+            # return
+        return concrete_bool
         free = list(expr.free_symbols)
 
         assert len(free) > 0, "The expression should not be static by this point"

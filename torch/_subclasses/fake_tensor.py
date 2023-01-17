@@ -136,7 +136,7 @@ def torch_decomp_decompositions(func):
 
 def tree_flatten_type_check(ty: Type[T], pytree: PyTree, check=None):
     def check_type_internal(r):
-        return not isinstance(ty, r)
+        return not isinstance(r, ty)
 
     check_type = check if check else check_type_internal
     

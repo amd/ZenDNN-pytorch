@@ -139,12 +139,27 @@ class LeafSpec(TreeSpec):
     def __repr__(self, indent: int = 0) -> str:
         return '*'
 
+def hashable(v):
+    """Determine whether `v` can be hashed."""
+    try:
+        hash(v)
+    except TypeError:
+        return False
+    return True
+
+garbage_tree_cache = dict()
+
 def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
     """Flattens a pytree into a list of values and a TreeSpec that can be used
     to reconstruct the pytree.
     """
     if _is_leaf(pytree):
         return [pytree], LeafSpec()
+
+    can_hash = hashable(pytree)
+    if can_hash:
+        if pytree in garbage_tree_cache:
+            return garbage_tree_cache[pytree]
 
     node_type = _get_node_type(pytree)
     flatten_fn = SUPPORTED_NODES[node_type].flatten_fn
@@ -157,14 +172,17 @@ def tree_flatten(pytree: PyTree, check=None) -> Tuple[List[Any], TreeSpec]:
         if check:
             if check(child) == False:
                 return True, None
-        flat, child_spec = tree_flatten(child)
-        
-        result += flat
-        children_specs.append(child_spec)
+        flat, child_spec = tree_flatten(child, check)
+        if not check:
+            result += flat
+            children_specs.append(child_spec)
     
+    out_spec = TreeSpec(node_type, context, children_specs)
     if check:
         return False, None
-    return result, TreeSpec(node_type, context, children_specs)
+    if can_hash:
+        garbage_tree_cache[pytree] = (result, out_spec)
+    return result, out_spec
 
 
 def tree_unflatten(values: List[Any], spec: TreeSpec) -> PyTree:
