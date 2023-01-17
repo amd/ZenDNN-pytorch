@@ -392,7 +392,8 @@ class CppVecOverrides(OpOverrides):
 
     @staticmethod
     def expm1(x):
-        return f"{x}.expm1()"
+        vec_one = f"decltype({x})(1)"
+        return f"{x}.exp() - {vec_one}"
 
     @staticmethod
     def log1p(x):
