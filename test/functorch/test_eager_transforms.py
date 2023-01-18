@@ -764,7 +764,7 @@ class TestGradTransform(TestCase):
         B = 10
         weights, fn, _ = functional_init(MLPClassifier, (B,), device=device)(32, 2)
         inputs = torch.randn(B, 7, 2, device=device)
-        vmap(fn)(weights, (inputs,))
+        vmap(fn)(weights, inputs)
 
     def test_functional_init_with_buffers(self, device):
         class MLPClassifier(nn.Module):
@@ -789,7 +789,7 @@ class TestGradTransform(TestCase):
         weights, buffers, fn, _, _ = \
             functional_init_with_buffers(MLPClassifier, [B], device=device)(32, 2)
         inputs = torch.randn(B, 7, 2, device=device)
-        vmap(fn)(weights, buffers, (inputs,))
+        vmap(fn)(weights, buffers, inputs)
 
     def test_advanced_indexing(self, device):
         def f(value):

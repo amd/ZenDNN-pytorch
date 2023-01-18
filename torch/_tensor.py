@@ -107,6 +107,7 @@ class Tensor(torch._C._TensorBase):
             ):
                 new_tensor = self.clone()
                 if type(new_tensor) is not type(self):
+                    import pdb; pdb.set_trace()
                     raise RuntimeError(
                         "The default implementation of __deepcopy__() for wrapper subclasses "
                         "only works for subclass types that implement clone() and for which "
