@@ -218,6 +218,22 @@ static PyObject* THPModule_crashIfATenASAN(PyObject* module, PyObject* arg) {
   return THPUtils_packInt32(at::_crash_if_asan(THPUtils_unpackInt(arg)));
 }
 
+static PyObject* THPModule_crashIfDebugAssertsFail(PyObject* module, PyObject* arg) {
+  THPUtils_assert(
+      THPUtils_checkLong(arg),
+      "crash_if_debug_asserts_fail expects an int set to a nonzero value during debug builds, "
+      "but got %s",
+      THPUtils_typename(arg));
+  int32_t x = THPUtils_unpackInt(arg);
+  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(x != 0)
+
+#ifdef NDEBUG
+  TORCH_INTERNAL_ASSERT(x == 0)
+#endif
+
+  return THPUtils_packInt32(0);
+}
+
 static PyObject* THPModule_getNumThreads(PyObject* module, PyObject* noargs) {
   return THPUtils_packInt32(at::get_num_threads());
 }
@@ -1009,6 +1025,7 @@ static PyMethodDef TorchMethods[] = {
     {"_crash_if_csrc_ubsan", THPModule_crashIfCsrcUBSAN, METH_O, nullptr},
     {"_crash_if_vptr_ubsan", THPModule_crashIfvptrUBSAN, METH_NOARGS, nullptr},
     {"_crash_if_aten_asan", THPModule_crashIfATenASAN, METH_O, nullptr},
+    {"_crash_if_debug_asserts_fail", THPModule_crashIfDebugAssertsFail, METH_O, nullptr},
     {"_show_config", THPModule_showConfig, METH_NOARGS, nullptr},
     {"_cxx_flags", THPModule_cxxFlags, METH_NOARGS, nullptr},
     {"_parallel_info", THPModule_parallelInfo, METH_NOARGS, nullptr},
