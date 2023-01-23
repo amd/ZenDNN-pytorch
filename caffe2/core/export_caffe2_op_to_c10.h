@@ -23,15 +23,15 @@ constexpr const char* PREALLOCATED_OUTPUT_ARGNAME =
 
 using _CallCaffe2OpFunc = std::vector<caffe2::Tensor>(
     const c10::FunctionSchema& schema,
-    std::vector<c10::IValue> &&inputs,
+    c10::ArrayRef<c10::IValue> inputs,
     std::vector<caffe2::Tensor> &&outputs);
 
 template <class Caffe2Operator>
 inline std::vector<caffe2::Tensor> _call_caffe2_op(
     const c10::FunctionSchema& schema,
-    std::vector<c10::IValue> &&inputs,
+    c10::ArrayRef<c10::IValue> inputs,
     std::vector<caffe2::Tensor> &&outputs) {
-  Caffe2Operator op(schema, std::move(inputs), std::move(outputs), -1);
+  Caffe2Operator op(schema, inputs, std::move(outputs), -1);
   op.Run(-1);
   return std::move(op).move_output_tensors();
 }
