@@ -511,6 +511,7 @@ filegroup(
         "caffe2/core/db.cc",
         "caffe2/core/event.cc",
         "caffe2/core/export_c10_op_to_caffe2.cc",
+        "caffe2/core/export_caffe2_op_to_c10.cc",
         "caffe2/core/graph.cc",
         "caffe2/core/init.cc",
         "caffe2/core/init_denormals.cc",
