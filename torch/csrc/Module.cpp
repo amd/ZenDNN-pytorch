@@ -219,8 +219,8 @@ static PyObject* THPModule_crashIfATenASAN(PyObject* module, PyObject* arg) {
 }
 
 static PyObject* THPModule_crashIfDebugAssertsFail(
-  PyObject* module,
-  PyObject* arg) {
+    PyObject* module,
+    PyObject* arg) {
   THPUtils_assert(
       THPUtils_checkLong(arg),
       "crash_if_debug_asserts_fail expects an int set to a nonzero value during debug builds, "
