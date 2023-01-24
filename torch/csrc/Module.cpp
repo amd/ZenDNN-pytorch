@@ -233,8 +233,6 @@ static PyObject* THPModule_crashIfDebugAssertsFail(
 // Verify that we are indeed in debug mode
 #ifdef NDEBUG
   TORCH_INTERNAL_ASSERT(x == 0)
-#else
-  FAIL_BUILD_IF_DEBUG_MODE_HAHAHA
 #endif
 
   return THPUtils_packInt32(0);
