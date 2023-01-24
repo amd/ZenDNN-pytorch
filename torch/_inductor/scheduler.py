@@ -279,6 +279,28 @@ class BaseSchedulerNode:
                 return False
         return True
 
+    def max_alive_variables(self):
+        graph = self._body.root_block.graph
+        max_alive = 0
+        alive_variables = set()
+        for n in reversed(graph.nodes):
+            alive_variables.discard(n.name)
+            used_vars = set(
+                itertools.chain(
+                    (node.name for node in n.args if isinstance(node, torch.fx.Node)),
+                    (
+                        node.name
+                        for node in n.kwargs.values()
+                        if isinstance(node, torch.fx.Node)
+                    ),
+                )
+            )
+
+            alive_variables |= used_vars
+            max_alive = max(max_alive, len(alive_variables))
+
+        return max_alive
+
     def codegen_originating_info(self, buffer, only_once=True):
         if not config.comment_origin:
             return

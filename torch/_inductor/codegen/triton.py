@@ -619,6 +619,7 @@ class TritonKernel(Kernel):
         mutations=None,
         pid_cache=None,
         reduction_hint=ReductionHint.DEFAULT,
+        max_regs=2**16,  # Max registers in an SM in an A100
     ):
         if pid_cache is None:
             pid_cache = {}
@@ -637,6 +638,7 @@ class TritonKernel(Kernel):
         self.reduction_hint = reduction_hint
         self.persistent_reduction = self.should_use_persistent_reduction()
         self.initialize_range_tree(pid_cache)
+        self.max_regs = max_regs
 
         # define this in a closure to make cache local to object
         @functools.lru_cache(None)
@@ -1243,6 +1245,7 @@ class TritonKernel(Kernel):
                 @{heuristics}(
                     size_hints={size_hints!r},
                     reduction_hint={reduction_hint},
+                    {f"max_regs={self.max_regs}," if heuristics == "reduction" else ""}
                     filename=__file__,
                     meta={triton_meta!r}
                 )
@@ -1505,6 +1508,53 @@ class TritonScheduling:
         else:
             return node.node.data.reduction_hint
 
+    @staticmethod
+    def estimate_reg_usage(list_nodes: List["SchedulerNode"]):
+        # We estimate the registry usage of a kernel by counting the number of alive variables
+        # in the graph at any given point and taking the max
+        # N.B. A tighter bound may be given by implementing algorithm like that proposed in
+        # Minimum register instruction sequence problem: revisiting optimal code generation for DAGs
+        # If you intend to do that, talk to Lezcano, as he knows how to improve the algorithm in that paper
+
+        # We assume we are in a reduction by default. This can be generalised afterwards
+        in_reduction_loop = True
+        loads_in_loop = set()
+        max_alive_in_loop = 0
+        max_alive = 0
+        alive = set()
+        for n in reversed(list_nodes):
+            if n is EnableReduction:
+                in_reduction_loop = False
+                # Loads are all done at the beginning of the loop
+                max_alive = max(
+                    max_alive, len(alive | loads_in_loop) + max_alive_in_loop
+                )
+            elif n is DisableReduction:
+                in_reduction_loop = True
+                loads_in_loop = set()
+                max_alive_in_loop = 0
+            else:
+                max_alive_node = n.max_alive_variables()
+                # Update alive
+                reads = n.read_writes.reads
+                alive -= n.read_writes.writes
+                alive |= reads
+                if in_reduction_loop:
+                    loads_in_loop |= reads
+                    # We add the loads later as we consider them alive for the whole reduction
+                    max_alive_in_loop = max(
+                        max_alive_in_loop, max_alive_node - len(reads)
+                    )
+                else:
+                    max_alive = max(max_alive, max_alive_node + len(alive))
+        # There's no EnableReduction at the beginning
+        if in_reduction_loop:
+            max_alive = max(
+                max_alive, len(alive | loads_in_loop) + max_alive_in_loop
+            )
+
+        return max_alive
+
     def codegen_node_schedule(self, node_schedule, numel, reduction_numel):
         tiled_groups = self.select_tiling(node_schedule, numel, reduction_numel)
         reductions = list(
@@ -1523,13 +1573,23 @@ class TritonScheduling:
         else:
             reduction_hint_val = ReductionHint.DEFAULT
 
+        # TODO(lezcano): Query the value of MAX_REGS_SM. This is the value on an A100
+        MAX_REGS_SM = 2**16
+        # TODO(lezcano): Query the size of the dtype of the kernel
+        size_dtype = 4
+        reg_usage = TritonScheduling.estimate_reg_usage(node_schedule)
+        max_regs = MAX_REGS_SM // (reg_usage * max(size_dtype // 4, 1))
+
         mutations = set()
         for node in node_schedule:
             if hasattr(node, "get_mutations"):
                 mutations.update(node.get_mutations())
 
         with TritonKernel(
-            *tiled_groups, reduction_hint=reduction_hint_val, mutations=mutations
+            *tiled_groups,
+            reduction_hint=reduction_hint_val,
+            mutations=mutations,
+            max_regs=max_regs,
         ) as kernel:
             stack = contextlib.ExitStack()
             for node in node_schedule:
