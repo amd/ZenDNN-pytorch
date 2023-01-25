@@ -1518,7 +1518,7 @@ class BenchmarkRunner:
             )
             print(status)
         if self.args.timing:
-            from torch._dynamo.utils import print_time_report, op_count
+            from torch._dynamo.utils import op_count, print_time_report
             from torch.utils._stats import simple_call_counter
 
             print_time_report()
@@ -1526,7 +1526,6 @@ class BenchmarkRunner:
             for key, value in simple_call_counter.items():
                 stats = f"{stats} | {key}:{value}"
             print(stats)
-            
 
         end_calls_captured = torch._dynamo.utils.counters["stats"]["calls_captured"]
         end_unique_graphs = torch._dynamo.utils.counters["stats"]["unique_graphs"]

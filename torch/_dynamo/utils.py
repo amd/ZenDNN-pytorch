@@ -52,6 +52,7 @@ compilation_metrics = collections.OrderedDict()
 
 timer_counter = itertools.count()
 
+
 def tabulate(rows, headers):
     try:
         import tabulate
@@ -100,11 +101,15 @@ def reset_frame_count():
     frame_phase_timing.clear()
     curr_frame = 0
 
+
 op_count = 0
+
+
 def increment_op_count(cnt):
     global op_count
-    op_count += cnt 
-    
+    op_count += cnt
+
+
 # Print a report of time spent so far
 # Ex:
 # TIMING:

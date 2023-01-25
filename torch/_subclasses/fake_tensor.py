@@ -18,9 +18,9 @@ from torch.multiprocessing.reductions import StorageWeakRef
 from torch.overrides import TorchFunctionMode
 from torch.utils._mode_utils import no_dispatch
 from torch.utils._python_dispatch import TorchDispatchMode
-from torch.utils._stats import count
 
 from torch.utils._pytree import PyTree, tree_flatten, tree_map, tree_map_only
+from torch.utils._stats import count
 from torch.utils.weak import WeakIdRef
 
 pytree = torch.utils._pytree
@@ -532,6 +532,7 @@ def in_kernel_invocation_manager(fake_mode):
 
 class FakeTensorConfig:
     debug = os.environ.get("TORCH_FAKE_TENSOR_DEBUG", False)
+
 
 class FakeTensor(torch.Tensor):
     """

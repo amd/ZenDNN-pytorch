@@ -307,6 +307,7 @@ class OpOverload(PyOperatorABC):
         elif torch._C._dispatch_has_kernel_for_dispatch_key(self.name(), dk):
             self.dk_res = self._op_dk(dk, *args, **kwargs)
             from torch.fx.experimental.proxy_tensor import get_isolated_graphmodule
+
             # with no_dispatch():
             return self.dk_res
         else:

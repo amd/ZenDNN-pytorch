@@ -214,7 +214,7 @@ def out_wrapper(*out_names: str, exact_dtype: bool = False):
         is_factory_fn = all(p in sig.parameters for p in factory_kwargs)
 
         @wraps(fn)
-        
+
         def _fn(*args, out=None, **kwargs):
             if is_factory_fn and out is not None:
                 for k in factory_kwargs:
