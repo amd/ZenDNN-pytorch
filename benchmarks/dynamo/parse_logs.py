@@ -46,7 +46,7 @@ c = 0
 i = 0
 
 out = csv.writer(sys.stdout, dialect="excel")
-out.writerow(["", hash, "", "", "", "", gist_url])
+out.writerow(["", hash, "", "", "", "", gist_url, "backend_time", "frame_time", "total_ops", "fake_tensor_dispatch_calls", "proxy_torch_dispatch_calls"])
 
 # Sometimes backtraces will be in third party code, which results
 # in very long file names.  Delete the absolute path in this case.
@@ -127,6 +127,17 @@ for name, name2, log in chunker(entries, 3):
     if "TIMING:" in log:
         result = re.search("TIMING:(.*)\n", log).group(1)
         split_str = result.split("backend_compile:")
+        if len(split_str) == 2:
+            backend_time = float(split_str[1])
+            frame_time = float(split_str[0].split("entire_frame_compile:")[1])
+    
+    tot_ops = None
+    fm_dispatches = None
+    pm_dispatches = None
+    if "STATS:" in log:
+        result = re.search("STATS:(.*)\n", log).group(1)
+        # call_* op count: 970 | FakeTensor.__torch_dispatch__:35285 | ProxyTorchDispatchMode.__torch_dispatch__:13339
+        split_str = result.split("|")
         if len(split_str) == 2:
             backend_time = float(split_str[1])
             frame_time = float(split_str[0].split("entire_frame_compile:")[1])
