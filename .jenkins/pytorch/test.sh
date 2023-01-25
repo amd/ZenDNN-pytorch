@@ -184,6 +184,9 @@ fi
 
 if [[ "$BUILD_ENVIRONMENT" == *-debug* ]]; then
     (cd test && ! get_exit_code python -c "import torch; torch._C._crash_if_debug_asserts_fail(1)")
+else 
+  # Noop when debug is disabled
+  (cd test && python -c "import torch; torch._C._crash_if_debug_asserts_fail(1)")
 fi
 
 if [[ "$BUILD_ENVIRONMENT" == *-tsan* ]]; then
