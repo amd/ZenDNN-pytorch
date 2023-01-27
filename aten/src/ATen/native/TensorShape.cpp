@@ -3479,14 +3479,13 @@ std::vector<Tensor> unbind(const Tensor& self, Dimname dim) {
   return at::unbind(self, dimname_to_position(self, dim));
 }
 
-std::vector<Tensor> meshgrid(TensorList tensors) {
-  TORCH_WARN_ONCE("torch.meshgrid: in an upcoming release, it will be required to pass the "
-                  "indexing argument.");
-  return native::meshgrid(tensors, /*indexing=*/"ij");
-}
-
 std::vector<Tensor> meshgrid(TensorList tensors,
-                             c10::string_view indexing) {
+                             c10::optional<c10::string_view> indexing) {
+  if (!indexing.has_value()) {
+    TORCH_WARN_ONCE("torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument.");
+    indexing = "ij";
+  }
+  assert(indexing.has_value());
   int64_t size = tensors.size();
   TORCH_CHECK(size > 0, "meshgrid expects a non-empty TensorList");
 
@@ -3527,7 +3526,7 @@ std::vector<Tensor> meshgrid(TensorList tensors,
   // * Why do we even support this function for exactly one input?
   bool swap_first_and_second_tensors = false;
 
-  if (indexing == "xy") {
+  if (*indexing == "xy") {
     // We can only swap if there are multiple tensors.
     swap_first_and_second_tensors = size >= 2;
     if (swap_first_and_second_tensors) {
@@ -3536,9 +3535,9 @@ std::vector<Tensor> meshgrid(TensorList tensors,
   } else {
     // Only "xy" and "ij" are supported, and we already checked for
     // "xy" above. Only "ij" remains as a valid mode.
-    TORCH_CHECK(indexing == "ij",
+    TORCH_CHECK(*indexing == "ij",
                 "torch.meshgrid: indexing must be one of \"xy\" or \"ij\", "
-                "but received: ", indexing);
+                "but received: ", *indexing);
   }
 
   std::vector<c10::SymInt> shape(size);
