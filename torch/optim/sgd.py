@@ -83,7 +83,8 @@ class SGD(Optimizer):
                 nesterov=group['nesterov'],
                 maximize=group['maximize'],
                 has_sparse_grad=has_sparse_grad,
-                foreach=group['foreach'])
+                foreach=group['foreach'],
+                differentiable=group['differentiable'])
 
             # update momentum_buffers in state
             for p, momentum_buffer in zip(params_with_grad, momentum_buffer_list):
@@ -191,6 +192,7 @@ def sgd(params: List[Tensor],
         # setting this as kwarg for now as functional API is compiled by torch/distributed/optim
         has_sparse_grad: bool = None,
         foreach: Optional[bool] = None,
+        differentiable: bool = False,
         *,
         weight_decay: float,
         momentum: float,
@@ -208,7 +210,7 @@ def sgd(params: List[Tensor],
         # because JIT can't handle Optionals nor fancy conditionals when scripting
         if not torch.jit.is_scripting():
             foreach = _default_to_fused_or_foreach([params, d_p_list, momentum_buffer_list],
-                                                   differentiable = False, has_fused = False)[1]
+                                                   differentiable, has_fused = False)[1]
         else:
             foreach = False
 
@@ -223,6 +225,7 @@ def sgd(params: List[Tensor],
     func(params,
          d_p_list,
          momentum_buffer_list,
+         differentiable=differentiable,
          weight_decay=weight_decay,
          momentum=momentum,
          lr=lr,
@@ -241,7 +244,8 @@ def _single_tensor_sgd(params: List[Tensor],
                        dampening: float,
                        nesterov: bool,
                        maximize: bool,
-                       has_sparse_grad: bool):
+                       has_sparse_grad: bool,
+                       differentiable: bool):
 
     for i, param in enumerate(params):
         d_p = d_p_list[i] if not maximize else -d_p_list[i]
@@ -276,10 +280,13 @@ def _multi_tensor_sgd(params: List[Tensor],
                       dampening: float,
                       nesterov: bool,
                       maximize: bool,
-                      has_sparse_grad: bool):
+                      has_sparse_grad: bool,
+                      differentiable: bool):
 
     if len(params) == 0:
         return
+
+    assert not differentiable, "_foreach ops don't support autograd"
 
     grouped_tensors = _group_tensors_by_device_and_dtype([params, grads, momentum_buffer_list], with_indices=True)
     for device_params, device_grads, device_momentum_buffer_list, indices in grouped_tensors.values():
