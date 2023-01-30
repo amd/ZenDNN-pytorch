@@ -92,7 +92,6 @@ jobs:
           name: ${{ inputs.build-environment }}
 
       - name: Generate netrc (only for docs-push)
-        if: inputs.push
         env:
           GITHUB_PYTORCHBOT_TOKEN: ${{ secrets.GH_PYTORCHBOT_TOKEN }}
         run: |
