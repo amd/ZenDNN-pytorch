@@ -1991,12 +1991,17 @@ def upsample_compute_output_size(input_size, output_size, scale_factors):
             lambda: "Must specify exactly one of output_size and scale_factors",
         )
         utils.check(len(scale_factors) == spatial_dimensions, lambda: "")
-        return [
-            # Returning output_size as float. We cannot convert it to int directly,
-            # as latter computation of scale_factor is relying output size being float
-            sym_float(input_size[i + 2] * scale_factors[i])
-            for i in range(spatial_dimensions)
-        ]
+        output_sizes = []
+        for i in range(spatial_dimensions):
+            output_sizes.append(sym_int(input_size[i+2] * scale_factors[i]))
+        return output_sizes
+
+
+        # return [
+
+        #     sym_float(input_size[i + 2] * scale_factors[i])
+        #     for i in range(spatial_dimensions)
+        # ]
     utils.check(
         False, lambda: "Must specify exactly one of output_size and scale_factors"
     )
@@ -2153,14 +2158,14 @@ def upsample_bilinear2d(
     # get dimensions of original image
     n_batch, n_channels, in_h, in_w = input.shape
 
-    out_h = sym_float(output_size[0])
-    out_w = sym_float(output_size[1])
+    out_h = sym_int(output_size[0])
+    out_w = sym_int(output_size[1])
 
     # Calculate horizontal and vertical scaling factor
     # TODO: Figure out if scales_h/scales_w matters here
     if out_h > 1:
         if align_corners:
-            h_scale_factor = (in_h - 1) / (sym_int(out_h) - 1)
+            h_scale_factor = (in_h - 1) / (out_h - 1)
         else:
             h_scale_factor = in_h / out_h
     else:
@@ -2168,7 +2173,7 @@ def upsample_bilinear2d(
 
     if out_w > 1:
         if align_corners:
-            w_scale_factor = (in_w - 1) / (sym_int(out_w) - 1)
+            w_scale_factor = (in_w - 1) / (out_w - 1)
         else:
             w_scale_factor = in_w / out_w
     else:
