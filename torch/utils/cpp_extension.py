@@ -1412,6 +1412,7 @@ def load_inline(name,
             else:
                 module_def.append('m.def("{0}", {0}, "{1}");'.format(function_name, docstring))
         module_def.append('}')
+        breakpoint()
         cpp_sources += module_def
 
     cpp_source_path = os.path.join(build_directory, 'main.cpp')

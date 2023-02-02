@@ -463,7 +463,7 @@ class CppCodeCache:
         picked_vec_isa = pick_vec_isa()
         key, input_path = write(
             source_code,
-            "cpp",
+            "h",
             extra=cpp_compile_command("i", "o", vec_isa=picked_vec_isa),
         )
         if key not in cls.cache:
@@ -494,6 +494,7 @@ class PyCodeCache:
 
     @classmethod
     def load(cls, source_code):
+        breakpoint()
         key, path = write(source_code, "py")
         if key not in cls.cache:
             with open(path) as f:

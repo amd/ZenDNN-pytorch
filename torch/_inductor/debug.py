@@ -401,4 +401,5 @@ class DebugFormatter:
         draw_buffers(nodes, fname=self.filename("graph_diagram.svg"))
 
     def output_code(self, filename):
+        breakpoint()
         shutil.copy(filename, self.filename("output_code.py"))

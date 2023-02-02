@@ -260,7 +260,7 @@ class WrapperCodeGen(CodeGen):
     The outer wrapper that calls the kernels.
     """
 
-    def __init__(self):
+    def __init__(self, py=True):
         super().__init__()
         self._names_iter = count()
         self.header = IndentedBuffer()
@@ -268,40 +268,42 @@ class WrapperCodeGen(CodeGen):
         self.wrapper_call = IndentedBuffer()
         self.kernels = {}
         self.lines = []
-        self.header.splice(
-            f"""
-                from ctypes import c_void_p, c_long
-                import torch
-                import random
-                from torch import empty_strided, as_strided, device
-                from {codecache.__name__} import AsyncCompile
-                from torch._inductor.select_algorithm import extern_kernels
-
-                aten = torch.ops.aten
-                assert_size_stride = torch._C._dynamo.guards.assert_size_stride
-                async_compile = AsyncCompile()
-
-            """
-        )
-
-        if has_triton():
+        # TODO(voz): Change this lol
+        if py:
             self.header.splice(
                 f"""
-                import triton
-                import triton.language as tl
-                from {config.inductor_import}.triton_ops.autotune import grid
-                from torch._C import _cuda_getCurrentRawStream as get_cuda_stream
+                    from ctypes import c_void_p, c_long
+                    import torch
+                    import random
+                    from torch import empty_strided, as_strided, device
+                    from {codecache.__name__} import AsyncCompile
+                    from torch._inductor.select_algorithm import extern_kernels
+
+                    aten = torch.ops.aten
+                    assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+                    async_compile = AsyncCompile()
+
                 """
             )
 
-            if config.triton.convolution != "aten":
+            if has_triton():
                 self.header.splice(
                     f"""
-                    from {config.inductor_import}.triton_ops.conv_perf_model import early_config_prune
-                    from {config.inductor_import}.triton_ops.conv_perf_model import estimate_conv_time
-                    from {config.inductor_import}.triton_ops.autotune import conv_heuristics
+                    import triton
+                    import triton.language as tl
+                    from {config.inductor_import}.triton_ops.autotune import grid
+                    from torch._C import _cuda_getCurrentRawStream as get_cuda_stream
                     """
                 )
+
+                if config.triton.convolution != "aten":
+                    self.header.splice(
+                        f"""
+                        from {config.inductor_import}.triton_ops.conv_perf_model import early_config_prune
+                        from {config.inductor_import}.triton_ops.conv_perf_model import estimate_conv_time
+                        from {config.inductor_import}.triton_ops.autotune import conv_heuristics
+                        """
+                    )
 
         self.write_prefix()
 
@@ -573,7 +575,8 @@ class WrapperCodeGen(CodeGen):
             )
 
     def define_kernel(self, name: str, kernel: str):
-        self.header.splice(f"\n\n{name} = {kernel}")
+        return 
+        # self.header.splice(f"\n\n{name} = {kernel}")
 
     def load_kernel(self, name: str = None, kernel: str = None, arg_types: List = None):
         return
@@ -607,7 +610,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
     def __init__(self):
         self._call_func_id = next(CppWrapperCodeGen.call_func_id)
-        super().__init__()
+        super().__init__(py=False)
 
     @cache_on_self
     def get_output_refs(self):
@@ -624,15 +627,14 @@ class CppWrapperCodeGen(WrapperCodeGen):
         ]
 
     def write_prefix(self):
+        from .cpp import cpp_prefix
         self.prefix.splice(
             """
-            async_compile.wait(globals())
-            del async_compile
-            from torch.utils.cpp_extension import load_inline
-            wrapper = (
-            '''
             #include <dlfcn.h>
             #include <assert.h>
+            #include <iostream>
+            #include <ATen/core/Tensor.h>
+            #include <ATen/ATen.h>
 
             template <typename KernelFunc>
             KernelFunc load_cpp_kernel(const char* so_filename) {
@@ -645,6 +647,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
             """
         )
+        self.prefix.writeline(cpp_prefix())
         with self.wrapper_call.indent():
             inputs_len = len(V.graph.graph_inputs.keys())
             output_refs = self.get_output_refs()
@@ -724,7 +727,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
     def generate_return(self, output_refs):
         if output_refs:
             if len(output_refs) == 1:
-                self.wrapper_call.writeline("return " + output_refs[0] + "; }''' )")
+                self.wrapper_call.writeline("return " + output_refs[0] + "; }")
             else:
                 self.wrapper_call.writeline(
                     "return std::vector<at::Tensor>({"
@@ -733,6 +736,48 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 )
         else:
             self.wrapper_call.writeline("return; }''' )")
+
+    def add_benchmark_harness(self, output):
+        if not config.benchmark_harness:
+            return
+
+        def add_fake_input(name, shape, stride, device, dtype):
+            output.writeline(
+                f"{name} = rand_strided("
+                f"{V.graph.sizevars.codegen_benchmark_shape_tuple(shape)}, "
+                f"{V.graph.sizevars.codegen_benchmark_shape_tuple(stride)}, "
+                f"device='{device}', dtype={dtype})"
+            )
+
+        output.writeline('extern "C" {')
+        output.writeline("at::Tensor call(std::vector<at::Tensor> args) {")
+        with output.indent():
+            output.writeline('std::cout<< "Hey" <<std::endl;')
+            # output.splice(
+            #     """
+            #     from torch._dynamo.testing import rand_strided
+            #     from torch._inductor.utils import print_performance
+            #     """,
+            #     strip=True,
+            # )
+
+            # for name, value in V.graph.constants.items():
+            #     add_fake_input(
+            #         name, value.size(), value.stride(), value.device, value.dtype
+            #     )
+
+            # for name, value in V.graph.graph_inputs.items():
+            #     shape = [V.graph.sizevars.size_hint(x) for x in value.get_size()]
+            #     stride = [V.graph.sizevars.size_hint(x) for x in value.get_stride()]
+            #     add_fake_input(
+            #         name, shape, stride, value.get_device(), value.get_dtype()
+            #     )
+
+            # output.writeline(
+            #     f"print_performance(lambda: call([{', '.join(V.graph.graph_inputs.keys())}]))"
+            # )
+        output.writeline("}")
+        output.writeline('} // extern "C"')
 
     def generate_end(self, result):
         shared = codecache.get_shared()
@@ -748,27 +793,31 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
         # get the hash of the wrapper code to name the extension
         wrapper_call_hash = codecache.code_hash(self.wrapper_call.getvalue())
-        result.splice(
-            f"""
-            module = load_inline(
-                name='inline_extension_{wrapper_call_hash}',
-                cpp_sources=[wrapper],
-                functions=['call_{self._call_func_id}'],
-                extra_cflags=['{extra_cflags}'],
-                extra_ldflags=['{extra_ldflags}'],
-                extra_include_paths=['{extra_include_paths}'])
-            """
-        )
+        # result.splice(
+        #     f"""
+        #     /* TODO MOVE ME
+        from torch.utils.cpp_extension import load_inline
+        module = load_inline(
+            name='inline_extension_{wrapper_call_hash}',
+            cpp_sources=[wrapper],
+            functions=['call_{self._call_func_id}'],
+            extra_cflags=['{extra_cflags}'],
+            extra_ldflags=['{extra_ldflags}'],
+            extra_include_paths=['{extra_include_paths}'])
+        breakpoint()
+        # */
+        #     """
+        # )
         # Wrap the func to support setting result._boxed_call = True
-        result.splice(
-            f"""
-            def _wrap_func(f):
-                def g(args):
-                    return f(args)
-                return g
-            call = _wrap_func(module.call_{self._call_func_id})
-            """
-        )
+        # result.splice(
+        #     f"""
+        #     def _wrap_func(f):
+        #         def g(args):
+        #             return f(args)
+        #         return g
+        #     call = _wrap_func(module.call_{self._call_func_id})
+        #     """
+        # )
 
     def generate_extern_kernel_out(
         self, output_view, codegen_reference, args, kernel, cpp_kernel

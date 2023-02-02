@@ -1233,7 +1233,7 @@ class CppVecKernelChecker(CppVecKernel):
         # and replace it with a dummy warpper_code and then restore to the
         # original one as long as the checker is finished.
         self._orig_wrapper_code = V.graph.wrapper_code
-        V.graph.wrapper_code = WrapperCodeGen()
+        V.graph.wrapper_code = WrapperCodeGen(py=False)
 
         class VecCheckerProxy:
             @staticmethod
@@ -1568,9 +1568,10 @@ class KernelGroup:
             code.splice(self.loops_code)
 
         codecache_def = IndentedBuffer()
-        codecache_def.writeline("async_compile.cpp('''")
-        codecache_def.splice(code)
-        codecache_def.writeline("''')")
+        # breakpoint()    
+        # codecache_def.writeline("async_compile.cpp('''")
+        # codecache_def.splice(code)
+        # codecache_def.writeline("''')")
 
         codecache_str = codecache_def.getvalue()
         # TODO(voz): Ostensibly, we should not need this. But there are cases where C++ codegen does

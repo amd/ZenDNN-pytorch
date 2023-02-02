@@ -550,23 +550,28 @@ class GraphLowering(torch.fx.Interpreter):
 
     @dynamo_timed
     def compile_to_module(self):
-        from .codecache import PyCodeCache
+        from .codecache import PyCodeCache, CppCodeCache
 
         code = self.codegen()
         if config.debug:
             print(code)
+        
+        if config.cpp_wrapper:
+            mod = CppCodeCache.load(code)
+        else:
+            mod = PyCodeCache.load(code)
+        # breakpoint()
+            for name, value in self.constants.items():
+                setattr(mod, name, value)
 
-        mod = PyCodeCache.load(code)
-        for name, value in self.constants.items():
-            setattr(mod, name, value)
-
-        if dynamo_config.output_code:
-            log.info("Output code: %s", mod.__file__)
-        V.debug.output_code(mod.__file__)
-        V.debug.rename(os.path.splitext(mod.__file__)[0] + ".debug")
+            if dynamo_config.output_code:
+                log.info("Output code: %s", mod.__file__)
+            V.debug.output_code(mod.__file__)
+            V.debug.rename(os.path.splitext(mod.__file__)[0] + ".debug")
         return mod
 
     def compile_to_fn(self):
+        breakpoint()
         return self.compile_to_module().call
 
     def get_output_names(self):
