@@ -3770,6 +3770,16 @@ def _realize(x):
     return clone(x)
 
 
+@register_lowering(aten.all_reduce)
+def allreduce(inputs, group_id, reduce_op):
+    # return TensorBox.create(
+    return ir.AllReduce.create(
+        inputs,
+        group_id,
+        reduce_op,
+    )
+    # )
+
 # populate lowerings defined in kernel/*
 from . import kernel
 
