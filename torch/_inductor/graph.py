@@ -560,7 +560,6 @@ class GraphLowering(torch.fx.Interpreter):
             mod = CppCodeCache.load(code)
         else:
             mod = PyCodeCache.load(code)
-        # breakpoint()
             for name, value in self.constants.items():
                 setattr(mod, name, value)
 
@@ -568,11 +567,13 @@ class GraphLowering(torch.fx.Interpreter):
                 log.info("Output code: %s", mod.__file__)
             V.debug.output_code(mod.__file__)
             V.debug.rename(os.path.splitext(mod.__file__)[0] + ".debug")
+        breakpoint()
         return mod
 
     def compile_to_fn(self):
+        mod = self.compile_to_module()
         breakpoint()
-        return self.compile_to_module().call
+        return mod.call_0
 
     def get_output_names(self):
         assert self.graph_outputs is not None

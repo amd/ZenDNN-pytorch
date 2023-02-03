@@ -575,8 +575,9 @@ class WrapperCodeGen(CodeGen):
             )
 
     def define_kernel(self, name: str, kernel: str):
-        return 
-        # self.header.splice(f"\n\n{name} = {kernel}")
+        # breakpoint()
+        # return 
+        self.writeline.splice(f"{kernel}")
 
     def load_kernel(self, name: str = None, kernel: str = None, arg_types: List = None):
         return
@@ -635,6 +636,10 @@ class CppWrapperCodeGen(WrapperCodeGen):
             #include <iostream>
             #include <ATen/core/Tensor.h>
             #include <ATen/ATen.h>
+            #include <pybind11/operators.h>
+            #include <torch/csrc/jit/python/pybind_utils.h>
+            #include <torch/csrc/utils/pybind.h>
+
 
             template <typename KernelFunc>
             KernelFunc load_cpp_kernel(const char* so_filename) {
@@ -647,7 +652,7 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
             """
         )
-        self.prefix.writeline(cpp_prefix())
+        # self.prefix.writeline(cpp_prefix())
         with self.wrapper_call.indent():
             inputs_len = len(V.graph.graph_inputs.keys())
             output_refs = self.get_output_refs()
@@ -716,10 +721,12 @@ class CppWrapperCodeGen(WrapperCodeGen):
         return kernel_path
 
     def load_kernel(self, name: str = None, kernel: str = None, arg_types: List = None):
-        kernel_path = self.get_kernel_path(kernel)
-        self.writeline(
-            f'static auto {name} = load_cpp_kernel<void (*)({arg_types})>("{kernel_path}");'
-        )
+        pass
+        # kernel_path = self.get_kernel_path(kernel)
+        # breakpoint()
+        # self.writeline(
+        #     f'static auto {name} = load_cpp_kernel<void (*)({arg_types})>("{kernel_path}");'
+        # )
 
     def wrap_kernel_call(self, name, call_args):
         return "{}({});".format(name, ", ".join(call_args))
@@ -749,10 +756,11 @@ class CppWrapperCodeGen(WrapperCodeGen):
                 f"device='{device}', dtype={dtype})"
             )
 
-        output.writeline('extern "C" {')
-        output.writeline("at::Tensor call(std::vector<at::Tensor> args) {")
-        with output.indent():
-            output.writeline('std::cout<< "Hey" <<std::endl;')
+        output.writelines(['PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {', f'm.def("call_{self._call_func_id}", &kernel_cpp_{self._call_func_id});', '}', '}'])
+        # output.writeline('extern "C" {')
+        # output.writeline("at::Tensor call(std::vector<at::Tensor> args) {")
+        # with output.indent():
+        #     output.writeline('std::cout<< "Hey" <<std::endl;')
             # output.splice(
             #     """
             #     from torch._dynamo.testing import rand_strided
@@ -776,8 +784,8 @@ class CppWrapperCodeGen(WrapperCodeGen):
             # output.writeline(
             #     f"print_performance(lambda: call([{', '.join(V.graph.graph_inputs.keys())}]))"
             # )
-        output.writeline("}")
-        output.writeline('} // extern "C"')
+        # output.writeline("}")
+        # output.writeline('} // extern "C"')
 
     def generate_end(self, result):
         shared = codecache.get_shared()
@@ -793,18 +801,21 @@ class CppWrapperCodeGen(WrapperCodeGen):
 
         # get the hash of the wrapper code to name the extension
         wrapper_call_hash = codecache.code_hash(self.wrapper_call.getvalue())
+        # result.splice(self.wrapper_call)
+        # breakpoint()
         # result.splice(
         #     f"""
         #     /* TODO MOVE ME
-        from torch.utils.cpp_extension import load_inline
-        module = load_inline(
-            name='inline_extension_{wrapper_call_hash}',
-            cpp_sources=[wrapper],
-            functions=['call_{self._call_func_id}'],
-            extra_cflags=['{extra_cflags}'],
-            extra_ldflags=['{extra_ldflags}'],
-            extra_include_paths=['{extra_include_paths}'])
-        breakpoint()
+        # from torch.utils.cpp_extension import load_inline
+        # from .cpp import cpp_prefix
+        # module = load_inline(
+        #     name='inline_extension_{wrapper_call_hash}',
+        #     cpp_sources=[cpp_prefix()],
+        #     functions=['call_{self._call_func_id}'],
+        #     extra_cflags=['{extra_cflags}'],
+        #     extra_ldflags=['{extra_ldflags}'],
+        #     extra_include_paths=['{extra_include_paths}'])
+        # breakpoint()
         # */
         #     """
         # )

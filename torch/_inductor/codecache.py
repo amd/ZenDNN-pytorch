@@ -466,6 +466,7 @@ class CppCodeCache:
             "h",
             extra=cpp_compile_command("i", "o", vec_isa=picked_vec_isa),
         )
+        
         if key not in cls.cache:
             from filelock import FileLock
 

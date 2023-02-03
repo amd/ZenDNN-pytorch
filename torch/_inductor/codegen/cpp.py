@@ -1538,6 +1538,7 @@ class KernelGroup:
         new_kernel.codegen_loops(code, ws)
 
     def codegen_define_and_call(self, wrapper):
+        # breakpoint()
         self.stack.close()
         if self.count == 0:
             return
@@ -1553,7 +1554,7 @@ class KernelGroup:
         )
         if enable_kernel_profile:
             code.writelines(["#include <ATen/record_function.h>"])
-        code.writelines([cpp_prefix(), "" f'extern "C" void kernel({arg_defs})'])
+        code.writelines([cpp_prefix(), "" f'extern "C" {{ void {kernel_name}({arg_defs})'])
         with code.indent():
             if enable_kernel_profile:
                 graph_id = V.graph.graph_id
@@ -1570,7 +1571,8 @@ class KernelGroup:
         codecache_def = IndentedBuffer()
         # breakpoint()    
         # codecache_def.writeline("async_compile.cpp('''")
-        # codecache_def.splice(code)
+        codecache_def.splice(code)
+        # wrapper.splice(code)
         # codecache_def.writeline("''')")
 
         codecache_str = codecache_def.getvalue()
@@ -1578,9 +1580,10 @@ class KernelGroup:
         # not use BracesBuffer, so we have no good indicator of a C++ buffer atm.
         codecache_str = codecache_str.replace("#pragma CMT", "//")
         wrapper.define_kernel(kernel_name, codecache_str)
-        wrapper.load_kernel(kernel_name, code, arg_types)
+        # wrapper.load_kernel(kernel_name, code, arg_types)
         # generate the code to call this
-        wrapper.generate_kernel_call(kernel_name, call_args)
+        # wrapper.generate_kernel_call(kernel_name, call_args)
+        breakpoint()
 
 
 class CppWrapperKernelGroup(KernelGroup):
