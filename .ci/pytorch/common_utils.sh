@@ -139,8 +139,13 @@ function install_triton() {
     echo "skipping triton due to rocm"
   else
     commit=$(get_pinned_commit triton)
-    if [[ "${TEST_CONFIG}" == *gcc7* ]]; then
+    if [[ "${BUILD_ENVIRONMENT}" == *gcc7* ]]; then
       # Trition needs gcc-9 to build
+      sudo apt-get install -y g++-9
+      CXX=g++-9 pip_install --user "git+https://github.com/openai/triton@${commit}#subdirectory=python"
+    elif [[ "${BUILD_ENVIRONMENT}" == *clang* ]]; then
+      # Trition needs <filesystem> which surprisingly is not available with clang-9 toolchain
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       sudo apt-get install -y g++-9
       CXX=g++-9 pip_install --user "git+https://github.com/openai/triton@${commit}#subdirectory=python"
     else
