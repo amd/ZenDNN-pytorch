@@ -1,47 +1,47 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates
 # Owner(s): ["oncall: distributed"]
 
-from typing import List, cast
+import itertools
+from typing import cast, List
+
+import torch
+import torch.distributed as dist
+from torch import rand, randn, Tensor
+from torch.distributed._tensor import DeviceMesh, distribute_tensor, Replicate, Shard
+from torch.distributed._tensor.ops.view_ops import (
+    Broadcast,
+    Flatten,
+    InputDim,
+    ops,
+    Repeat,
+    Singleton,
+    Split,
+    view_groups,
+)
 from torch.distributed._tensor.placement_types import Placement
+from torch.testing._internal.common_utils import run_tests
 from torch.testing._internal.distributed._tensor.common_dtensor import (
     DTensorTestBase,
     redistribute_profiler,
     with_comms,
 )
-from torch.distributed._tensor import DeviceMesh, Shard, Replicate, distribute_tensor
-from torch.distributed._tensor.ops.view_ops import (
-    ops,
-    Singleton,
-    Broadcast,
-    Flatten,
-    Repeat,
-    Split,
-    InputDim,
-    view_groups,
-)
-from torch import Tensor, rand, randn
-from torch.testing._internal.common_utils import run_tests
 from torch.utils._pytree import tree_flatten
-
-import itertools
-import torch
-import torch.distributed as dist
 
 
 class TestViewOps(DTensorTestBase):
     def test_view_groups(self):
-        self.assertEquals(
+        self.assertEqual(
             view_groups([2, 3], [3, 2]),
             (
                 Split(Flatten((InputDim(0), InputDim(1))), (3, 2), 0),
                 Split(Flatten((InputDim(0), InputDim(1))), (3, 2), 1),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([3, 4, 5], [12, 5]),
             (Flatten((InputDim(0), InputDim(1))), InputDim(2)),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([2, 3, 4, 5, 7], [12, 70]),
             (
                 Split(
@@ -72,20 +72,16 @@ class TestViewOps(DTensorTestBase):
                 ),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([2, 3, 4, 5, 7], [3, 8, 7, 5]),
             (
-                Split(
-                    Flatten((InputDim(0), InputDim(1), InputDim(2))), (3, 8), 0
-                ),
-                Split(
-                    Flatten((InputDim(0), InputDim(1), InputDim(2))), (3, 8), 1
-                ),
+                Split(Flatten((InputDim(0), InputDim(1), InputDim(2))), (3, 8), 0),
+                Split(Flatten((InputDim(0), InputDim(1), InputDim(2))), (3, 8), 1),
                 Split(Flatten((InputDim(3), InputDim(4))), (7, 5), 0),
                 Split(Flatten((InputDim(3), InputDim(4))), (7, 5), 1),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([3, 4, 8, 3], [12, 4, 2, 3]),
             (
                 Flatten((InputDim(0), InputDim(1))),
@@ -94,7 +90,7 @@ class TestViewOps(DTensorTestBase):
                 InputDim(3),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([3, 24], [1, 3, 2, 4, 1, 3, 1]),
             (
                 Singleton(),
@@ -106,7 +102,7 @@ class TestViewOps(DTensorTestBase):
                 Singleton(),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([1, 1, 3, 2, 1, 1], [6, 1, 1, 1]),
             (
                 Flatten((InputDim(2), InputDim(3))),
@@ -115,7 +111,7 @@ class TestViewOps(DTensorTestBase):
                 Singleton(),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([1, 1, 12, 1, 1, 1, 2, 5, 1], [3, 4, 1, 10]),
             (
                 Split(InputDim(2), (3, 4), 0),
@@ -124,7 +120,7 @@ class TestViewOps(DTensorTestBase):
                 Flatten((InputDim(6), InputDim(7))),
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             view_groups([2, 3, 4], [2, -1, 4]),
             (InputDim(0), InputDim(1), InputDim(2)),
         )
@@ -159,9 +155,7 @@ class TestViewOps(DTensorTestBase):
             no_shard_dims.add(kwargs.get("dim", 0))
 
         sharding_choices = cast(List[Placement], [Replicate()]) + [
-            Shard(i)
-            for i, s in enumerate(in_shape)
-            if s > 1 and i not in no_shard_dims
+            Shard(i) for i, s in enumerate(in_shape) if s > 1 and i not in no_shard_dims
         ]
 
         all_sharding_choices = itertools.product(
@@ -175,9 +169,7 @@ class TestViewOps(DTensorTestBase):
             with redistribute_profiler() as profiler:
                 out_dt = op(in_dt, *args[1:], **kwargs)
 
-            self.assertEqual(
-                profiler.num_calls, 0, "Expected no redistribution."
-            )
+            self.assertEqual(profiler.num_calls, 0, "Expected no redistribution.")
 
             full_out = out_dt.redistribute(
                 device_mesh, device_mesh.ndim * [Replicate()]
@@ -188,7 +180,7 @@ class TestViewOps(DTensorTestBase):
 
     def dimmap_test(self, op, args, expected_rule_output):
         rules = ops[op].dim_map(*args)
-        self.assertEquals(rules, expected_rule_output)
+        self.assertEqual(rules, expected_rule_output)
         self.call_dt_test(op, args, {}, self.device_mesh)
 
     @with_comms
@@ -198,19 +190,11 @@ class TestViewOps(DTensorTestBase):
         )
         self.dimmap_test(torch.atleast_1d, (randn(()),), (Singleton(),))
         self.dimmap_test(torch.atleast_1d, (randn(24),), (InputDim(0),))
-        self.dimmap_test(
-            torch.atleast_1d, (randn(24, 36),), (InputDim(0), InputDim(1))
-        )
+        self.dimmap_test(torch.atleast_1d, (randn(24, 36),), (InputDim(0), InputDim(1)))
 
-        self.dimmap_test(
-            torch.atleast_2d, (randn(()),), (Singleton(), Singleton())
-        )
-        self.dimmap_test(
-            torch.atleast_2d, (randn(24),), (Singleton(), InputDim(0))
-        )
-        self.dimmap_test(
-            torch.atleast_2d, (randn(24, 36),), (InputDim(0), InputDim(1))
-        )
+        self.dimmap_test(torch.atleast_2d, (randn(()),), (Singleton(), Singleton()))
+        self.dimmap_test(torch.atleast_2d, (randn(24),), (Singleton(), InputDim(0)))
+        self.dimmap_test(torch.atleast_2d, (randn(24, 36),), (InputDim(0), InputDim(1)))
         self.dimmap_test(
             torch.atleast_2d,
             (randn(24, 36, 48),),

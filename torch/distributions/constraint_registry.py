@@ -76,7 +76,7 @@ __all__ = [
 ]
 
 
-class ConstraintRegistry(object):
+class ConstraintRegistry:
     """
     Registry to link constraints to transforms.
     """
@@ -227,6 +227,12 @@ def _transform_to_simplex(constraint):
 @transform_to.register(constraints.lower_cholesky)
 def _transform_to_lower_cholesky(constraint):
     return transforms.LowerCholeskyTransform()
+
+
+@transform_to.register(constraints.positive_definite)
+@transform_to.register(constraints.positive_semidefinite)
+def _transform_to_positive_definite(constraint):
+    return transforms.PositiveDefiniteTransform()
 
 
 @biject_to.register(constraints.corr_cholesky)

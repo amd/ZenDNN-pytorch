@@ -1,8 +1,8 @@
 import functools
+from typing import Callable, Optional, Union
 
 import torch
 from torch.distributed._tensor import DeviceMesh, DTensor
-from typing import Callable, Optional, Union
 
 _PrepareInputType = Callable[
     [Union[torch.Tensor, DTensor], Optional[DeviceMesh], Optional[int]], DTensor
@@ -30,10 +30,12 @@ def _prepare_input_validate(
         func (Callable): Same input function with validation logic added.
 
     Example::
+        >>> # xdoctest: +SKIP(failing)
         >>> @_prepare_input_validate
         >>> def make_input_shard_1d(args, kwargs):
         >>>   ...
         >>>
+        >>> # xdoctest: +SKIP(failing)
         >>> input = torch.rand(...)
         >>> dtensor = make_input_shard_1d(input, device_mesh, 1)
         >>> # This will call '_prepare_input_validate' first
@@ -53,9 +55,7 @@ def _prepare_input_validate(
                 device_mesh = input.device_mesh
                 args = (*args[:1], device_mesh, *args[2:])  # pyre-ignore[60]
             else:
-                raise RuntimeError(
-                    "device_mesh is not passed nor can be inferred"
-                )
+                raise RuntimeError("device_mesh is not passed nor can be inferred")
         if device_mesh.ndim != 1:
             raise RuntimeError(
                 f"device_mesh has dims {device_mesh.ndim} but expcted to be 1"
@@ -73,14 +73,18 @@ def _prepare_output_validate(
     Inject common validation logics for _prepare_output funcs via this
     decorator, including verifying that output needs to be a DTensor
     and only 1D Device Mesh is passed in.
+
     Example::
+        >>> # xdoctest: +SKIP(failing)
         >>> @_prepare_output_validate
         >>> def make_output_shard_1d(args, kwargs):
         >>>   ...
         >>>
+        >>> # xdoctest: +SKIP(failing)
         >>> dt = distribute(tensor, device_mesh, [Shard(0)])
         >>> make_output_shard_1d(dt, device_mesh, 1)
         >>> # This will call '_prepare_output_validate' first
+
     Args:
         _prepare_output_func (Callable): The func we want to inject the
             validation into.
@@ -111,9 +115,7 @@ def _prepare_output_validate(
     return wrapper
 
 
-def _create_1d_device_mesh(
-    device_mesh: DeviceMesh, tp_mesh_dim: int = 0
-) -> DeviceMesh:
+def _create_1d_device_mesh(device_mesh: DeviceMesh, tp_mesh_dim: int = 0) -> DeviceMesh:
     """
     This function converts a N-D ``device_mesh`` into a 1D ``device_mesh``
     for 1D Tensor Parallelism.
@@ -130,9 +132,7 @@ def _create_1d_device_mesh(
         device_mesh (DeviceMesh): 1-D :class:``DeviceMesh`` object that
             Tensor Parallelism operates on.
     """
-    assert (
-        tp_mesh_dim < device_mesh.ndim and tp_mesh_dim >= -device_mesh.ndim
-    ), (
+    assert tp_mesh_dim < device_mesh.ndim and tp_mesh_dim >= -device_mesh.ndim, (
         f"Expect tp_mesh_dim within range [{-device_mesh.ndim},"
         f" {device_mesh.ndim}), but found {tp_mesh_dim}."
     )

@@ -46,8 +46,17 @@ Features described in this documentation are classified by release status:
    :glob:
    :maxdepth: 1
    :caption: torch.compile
+   :hidden:
 
-   dynamo/*
+   dynamo/index
+   dynamo/installation
+   dynamo/get-started
+   dynamo/guards-overview
+   dynamo/custom-backends
+   dynamo/deep-dive
+   dynamo/troubleshooting
+   dynamo/faq
+   ir
 
 .. toctree::
    :maxdepth: 1
@@ -58,7 +67,8 @@ Features described in this documentation are classified by release status:
    torch::deploy <deploy>
 
 .. toctree::
-   :maxdepth: 1
+   :glob:
+   :maxdepth: 2
    :caption: Python API
 
    torch
@@ -82,6 +92,7 @@ Features described in this documentation are classified by release status:
    torch.distributions <distributions>
    torch._dynamo <_dynamo>
    torch.fft <fft>
+   torch.func <func>
    futures
    fx
    torch.hub <hub>
@@ -133,7 +144,7 @@ Features described in this documentation are classified by release status:
    TorchServe <https://pytorch.org/serve>
    torchtext <https://pytorch.org/text/stable>
    torchvision <https://pytorch.org/vision/stable>
-   PyTorch on XLA Devices <http://pytorch.org/xla/>
+   PyTorch on XLA Devices <https://pytorch.org/xla/>
 
 Indices and tables
 ==================
