@@ -14580,3 +14580,7 @@
   dispatch:
     CUDA: _fused_adamw_kernel_cuda_
   autogen: _fused_adamw, _fused_adamw.out
+
+# This op is ONLY used by pytorch/XLA in functionalization, and should never show up in vanilla eager mode or in any pytorch tracing contexts.
+- func: _propagate_xla_data(Tensor input, Tensor output) -> ()
+  variants: function
