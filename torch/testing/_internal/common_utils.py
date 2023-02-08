@@ -79,14 +79,14 @@ from torch.onnx import (
     unregister_custom_op_symbolic,
 )
 from torch.testing import make_tensor
-from torch.testing._comparison import (
-    BooleanPair,
-    NonePair,
-    NumberPair,
-    Pair,
-    TensorLikePair,
+from torch.testing.comparison import (
+    _not_close_error_metas,
+    _BooleanPair,
+    _NonePair,
+    _NumberPair,
+    _Pair,
+    _TensorLikePair,
 )
-from torch.testing._comparison import not_close_error_metas
 from torch.testing._internal.common_dtype import get_all_dtypes
 import torch.utils._pytree as pytree
 
@@ -1744,20 +1744,20 @@ def check_if_enable(test: unittest.TestCase):
 
 
 # `TestCase.assertEqual` is very permissive and coerced the inputs into a format that could be compared. This is very
-# convenient when writing tests, but not so much while reviewing them. By default, the comparison `Pair` framework of
-# `torch.testing._comparison.are_equal`, used for example by the public testing function
+# convenient when writing tests, but not so much while reviewing them. By default, the comparison `_Pair` framework of
+# `torch.testing.comparison._not_close_error_metas`, used for example by the public testing function
 # `torch.testing.assert_close`, is more strict. In order to use the same framework and thus reduce the divergence
 # between internal and external comparison logic as much as possible, we define some "relaxed" pairs here. They only
 # change the supported inputs, but the comparison logic is the same.
 # TODO: Revisit the relaxed pairs and check how much work it is to fix the tests that would fail without the relaxation.
 
-class RelaxedBooleanPair(BooleanPair):
+class RelaxedBooleanPair(_BooleanPair):
     """Pair for boolean-like inputs.
 
     In contrast to the builtin :class:`BooleanPair`, this class also supports one input being a number or a single
     element tensor-like.
     """
-    _supported_number_types = NumberPair(0, 0)._supported_types
+    _supported_number_types = _NumberPair(0, 0)._supported_types
 
     def _process_inputs(self, actual, expected, *, id):
         # We require only one of the inputs of the inputs to be a boolean and the other can also be a boolean, a
@@ -1792,7 +1792,7 @@ class RelaxedBooleanPair(BooleanPair):
             return super()._to_bool(bool_like, id=id)
 
 
-class RelaxedNumberPair(NumberPair):
+class RelaxedNumberPair(_NumberPair):
     """Pair for number-like inputs.
 
     In contrast to the builtin :class:`NumberPair`, this class also supports one input being a single element
@@ -1850,7 +1850,7 @@ class RelaxedNumberPair(NumberPair):
             return super()._to_number(number_like, id=id)
 
 
-class TensorOrArrayPair(TensorLikePair):
+class TensorOrArrayPair(_TensorLikePair):
     """Pair for tensor-like inputs.
 
     On the one hand this class is stricter than the builtin :class:`TensorLikePair` since it only allows instances of
@@ -1875,7 +1875,7 @@ class TensorOrArrayPair(TensorLikePair):
         return actual, expected
 
 
-class TypedStoragePair(TensorLikePair):
+class TypedStoragePair(_TensorLikePair):
     """Pair for :class:`torch.storage.TypedStorage` inputs."""
     def __init__(self, actual, expected, *, rtol_override=0.0, atol_override=0.0, **other_parameters):
         self._check_inputs_isinstance(actual, expected, cls=torch.storage.TypedStorage)
@@ -1897,7 +1897,7 @@ class TypedStoragePair(TensorLikePair):
         )
 
 
-class UnittestPair(Pair):
+class UnittestPair(_Pair):
     """Fallback ABC pair that handles non-numeric inputs.
 
     To avoid recreating the mismatch messages of :meth:`unittest.TestCase.assertEqual`, this pair simply wraps it in
@@ -2928,11 +2928,11 @@ class TestCase(expecttest.TestCase):
         if isinstance(y, torch.Tensor) and y.is_nested:
             y = y.unbind()
 
-        error_metas = not_close_error_metas(
+        error_metas = _not_close_error_metas(
             x,
             y,
             pair_types=(
-                NonePair,
+                _NonePair,
                 RelaxedBooleanPair,
                 RelaxedNumberPair,
                 TensorOrArrayPair,
