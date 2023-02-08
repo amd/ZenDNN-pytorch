@@ -29,7 +29,7 @@ class HasPostInit(type):
         return obj
 
 
-class VariableTracker(object, metaclass=HasPostInit):
+class VariableTracker(metaclass=HasPostInit):
     """
     Base class for tracked locals and stack values
 
@@ -49,13 +49,6 @@ class VariableTracker(object, metaclass=HasPostInit):
             if type(var) in (list, tuple, dict_values, odict_values):
                 for i in var:
                     visit(i)
-            elif isinstance(var, variables.BaseListVariable):
-                guards.update(var.guards)
-                for i in var.items:
-                    visit(i)
-            elif isinstance(var, variables.ConstDictVariable):
-                guards.update(var.guards)
-                visit(var.items.values())
             else:
                 assert isinstance(var, VariableTracker), typestr(var)
                 guards.update(var.guards)
@@ -229,7 +222,7 @@ class VariableTracker(object, metaclass=HasPostInit):
         unimplemented(f"num_parameters: {self}")
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
-        unimplemented(f"hasattr: {self}")
+        unimplemented(f"hasattr: {repr(self)}")
 
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
@@ -288,6 +281,8 @@ class VariableTracker(object, metaclass=HasPostInit):
             VariableTracker.apply(
                 aggregate_mutables, self, skip_fn=lambda var: var is not self
             )
+
+        assert None not in self.recursively_contains
 
 
 def typestr(*objs):
