@@ -337,72 +337,30 @@ def _single_tensor_adam(params: List[Tensor],
         exp_avg_sq = exp_avg_sqs[i]
         step_t = state_steps[i]
 
-        if capturable:
-            assert param.is_cuda and step_t.is_cuda, "If capturable=True, params and state_steps must be CUDA tensors."
-
         # update step
-        step_t += 1
-
-        if weight_decay != 0:
-            grad = grad.add(param, alpha=weight_decay)
-
-        if torch.is_complex(param):
-            grad = torch.view_as_real(grad)
-            exp_avg = torch.view_as_real(exp_avg)
-            exp_avg_sq = torch.view_as_real(exp_avg_sq)
-            param = torch.view_as_real(param)
+        step_mut = step_t + 1
 
         # Decay the first and second moment running average coefficient
-        exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
-        exp_avg_sq.mul_(beta2).addcmul_(grad, grad.conj(), value=1 - beta2)
+        exp_avg_mut = exp_avg.mul(beta1).add(grad)
+        exp_avg_sq_mut = exp_avg_sq.mul(beta2).mul(grad)
 
-        if capturable or differentiable:
-            step = step_t
+        step = _get_value(step_mut)
 
-            # 1 - beta1 ** step can't be captured in a CUDA graph, even if step is a CUDA tensor
-            # (incurs "RuntimeError: CUDA error: operation not permitted when stream is capturing")
-            bias_correction1 = 1 - torch.pow(beta1, step)
-            bias_correction2 = 1 - torch.pow(beta2, step)
+        #bias_correction1 = 1 - beta1 ** step
+        bias_correction2 = 1 - beta2 ** step
 
-            step_size = lr / bias_correction1
-            step_size_neg = step_size.neg()
+        bias_correction2_sqrt = _dispatch_sqrt(bias_correction2)
 
-            bias_correction2_sqrt = bias_correction2.sqrt()
+        denom = (exp_avg_sq_mut.sqrt() / bias_correction2_sqrt).add(eps)
 
-            if amsgrad:
-                # Maintains the maximum of all 2nd moment running avg. till now
-                if differentiable:
-                    max_exp_avg_sqs_i = max_exp_avg_sqs[i].clone()
-                else:
-                    max_exp_avg_sqs_i = max_exp_avg_sqs[i]
-                max_exp_avg_sqs[i].copy_(torch.maximum(max_exp_avg_sqs_i, exp_avg_sq))
-                # Uses the max. for normalizing running avg. of gradient
-                # Folds in (admittedly ugly) 1-elem step_size math here to avoid extra param-set-sized read+write
-                # (can't fold it into addcdiv_ below because addcdiv_ requires value is a Number, not a Tensor)
-                denom = (max_exp_avg_sqs[i].sqrt() / (bias_correction2_sqrt * step_size_neg)).add_(eps / step_size_neg)
-            else:
-                denom = (exp_avg_sq.sqrt() / (bias_correction2_sqrt * step_size_neg)).add_(eps / step_size_neg)
+        param_mut = param.addcdiv(exp_avg_mut, denom)
 
-            param.addcdiv_(exp_avg, denom)
-        else:
-            step = _get_value(step_t)
+        param.copy_(param_mut)
+        exp_avg.copy_(exp_avg_mut)
+        exp_avg_sq.copy_(exp_avg_sq_mut)
+        step_t.copy_(step_mut)
 
-            bias_correction1 = 1 - beta1 ** step
-            bias_correction2 = 1 - beta2 ** step
 
-            step_size = lr / bias_correction1
-
-            bias_correction2_sqrt = _dispatch_sqrt(bias_correction2)
-
-            if amsgrad:
-                # Maintains the maximum of all 2nd moment running avg. till now
-                torch.maximum(max_exp_avg_sqs[i], exp_avg_sq, out=max_exp_avg_sqs[i])
-                # Use the max. for normalizing running avg. of gradient
-                denom = (max_exp_avg_sqs[i].sqrt() / bias_correction2_sqrt).add_(eps)
-            else:
-                denom = (exp_avg_sq.sqrt() / bias_correction2_sqrt).add_(eps)
-
-            param.addcdiv_(exp_avg, denom, value=-step_size)
 
 
 def _multi_tensor_adam(params: List[Tensor],

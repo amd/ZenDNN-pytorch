@@ -68,7 +68,7 @@ prefuse_nodes = True
 tune_layout = False
 
 # fuse even in cases without common reads
-aggressive_fusion = False
+aggressive_fusion = True
 
 # how many nodes to allow into a single fusion
 max_fusion_size = 64
@@ -203,7 +203,7 @@ class trace:
     output_code = True
 
     # SVG figure showing post-fusion graph
-    graph_diagram = False
+    graph_diagram = True
 
     # Store cProfile (see snakeviz to view)
     compile_profile = False
