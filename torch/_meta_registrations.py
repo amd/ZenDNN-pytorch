@@ -1799,7 +1799,7 @@ def meta_select(self, dim, index):
 
     check(
         not (-index > size or index >= size),
-        f"{self.size()} at dimension {dim}",
+        lambda: f"{self.size()} at dimension {dim}",
         IndexError,
     )
 
