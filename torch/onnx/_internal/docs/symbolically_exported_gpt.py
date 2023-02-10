@@ -1,11 +1,10 @@
 # Import generic wrappers
 import numpy as np
 import onnx
-import onnxruntime  # type: ignore[import]
 import torch
 import torch._dynamo
 from torch._subclasses.fake_tensor import FakeTensorMode
-from torch.onnx._internal import fx as fx_onnx
+from torch.onnx._internal import diagnostics, fx as fx_onnx
 from transformers import AutoModel, AutoTokenizer  # type: ignore[import]
 
 model_name = "sshleifer/tiny-gpt2"
@@ -15,15 +14,21 @@ with ftm, ctx:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     inputs = tokenizer("Hello world!", return_tensors="pt")
     model = AutoModel.from_pretrained(model_name)
+
     outputs = model(**inputs)
-    (
-        onnx_model,
-        graph_module,
-        bound_args,
-        replaced_attrs,
-    ) = fx_onnx.export_without_parameters_and_buffers(
-        model, use_binary_format=False, **inputs
-    )
+    with diagnostics.engine.create_diagnostic_context(
+        "fx-exporter", version=torch.__version__
+    ) as diag_ctx:
+        (
+            onnx_model,
+            graph_module,
+            bound_args,
+            replaced_attrs,
+        ) = fx_onnx.export_without_parameters_and_buffers(
+            model, use_binary_format=False, **inputs
+        )
+
+    diagnostics.engine.dump("report_symbolic_export_gpt2.sarif")
 
 onnx.save(onnx_model, "gpt_stateless.onnx")
 fx_onnx.save_model_with_external_data(
@@ -53,10 +58,13 @@ def test_external_data(baseline_model, onnx_model_path, example_inputs):
     real_inputs = create_real_arguments(*example_inputs)
     real_outputs = baseline_model(*real_inputs)
 
-    ort_sess = onnxruntime.InferenceSession(
-        onnx_model_path,
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
-    )
+    # ort_sess = onnxruntime.InferenceSession(
+    #     onnx_model_path,
+    #     providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    # )
+    import onnx.reference
+
+    ort_sess = onnx.reference.ReferenceEvaluator(onnx_model_path, verbose=True)
     onnx_model = onnx.load(onnx_model_path)
     initializer_names = set([init.name for init in onnx_model.graph.initializer])
     ort_input_dict = {}
@@ -71,12 +79,20 @@ def test_external_data(baseline_model, onnx_model_path, example_inputs):
         ort_input_dict[ort_input.name] = t.numpy()
     ort_out = ort_sess.run(None, ort_input_dict)
 
+    print("\nStart validation!")
     np.testing.assert_allclose(
         ort_out[0],
         real_outputs["last_hidden_state"].detach().numpy(),
         atol=1e-4,
         rtol=1e-3,
     )
+    print("\nort_out[0]: ", ort_out[0])
+    print(
+        "\nreal_outputs['last_hidden_state']: ",
+        real_outputs["last_hidden_state"].detach().numpy(),
+    )
+
+    print("\nDone validation on last_hidden_state!")
     for ort_value, pth_value in zip(
         ort_out[1:],
         real_outputs["past_key_values"][0] + real_outputs["past_key_values"][1],
@@ -84,6 +100,7 @@ def test_external_data(baseline_model, onnx_model_path, example_inputs):
         np.testing.assert_allclose(
             ort_value, pth_value.detach().numpy(), atol=1e-4, rtol=1e-3
         )
+    print("\nDone validation on past_key_values!")
 
 
 model = AutoModel.from_pretrained(model_name)
