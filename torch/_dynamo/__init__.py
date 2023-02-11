@@ -1,4 +1,4 @@
-from . import allowed_functions, convert_frame, eval_frame, resume_execution
+from . import allowed_functions, convert_frame, eval_frame, resume_execution, guards
 from .backends.registry import list_backends, register_backend
 from .convert_frame import replay
 from .eval_frame import (
@@ -52,6 +52,12 @@ def reset():
     compilation_metrics.clear()
     reset_frame_count()
 
+
+def mark_unguarded(cls):
+    import torch
+    guards.ignored_classes.add(cls)
+    return cls
+    
 
 def allow_in_graph(fn):
     """

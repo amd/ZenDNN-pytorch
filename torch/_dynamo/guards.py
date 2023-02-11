@@ -45,6 +45,7 @@ TensorGuards = torch._C._dynamo.guards.TensorGuards
 check_obj_id = torch._C._dynamo.guards.check_obj_id
 check_type_id = torch._C._dynamo.guards.check_type_id
 
+ignored_classes = set()
 
 CLOSURE_VARS = collections.OrderedDict(
     [
@@ -284,9 +285,10 @@ class GuardBuilder(GuardBuilderBase):
             self.EQUALS_MATCH(guard)
 
     def NN_MODULE(self, guard: Guard):
-        self.ID_MATCH(guard)
         ref = self.arg_ref(guard)
         val = self.get(guard.name)
+
+        self.ID_MATCH(guard)
 
         def setup_guard():
             assert istype(val.training, bool)
@@ -544,7 +546,14 @@ class CheckFunctionManager:
                 and "__kwdefaults__" not in guard.name
             ):
                 continue
-            guard.create(local_builder, global_builder)
+            builder = guard.select_builder(local_builder, global_builder)
+            # Not all guards can have names, like GRAD_MODE
+            if guard.name != "":
+                # print("Reading out", guard.name, guard)
+                underlying_type = type(builder.get(guard.name))
+                if underlying_type in ignored_classes:
+                    continue
+            guard.create(builder)
         self.check_fn = self.compile_check_fn(
             local_builder, global_builder, guards, guard_fail_fn
         )
@@ -696,6 +705,7 @@ def guard_fail_hook(
             reason = part
             break
     try:
+        # print("Failed! ", reason or "unknown reason", orig_code_map[code])
         if guard_fn.guard_fail_fn is not None:
             guard_fn.guard_fail_fn(
                 GuardFail(reason or "unknown reason", orig_code_map[code])

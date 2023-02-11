@@ -159,8 +159,11 @@ class Guard:
             """
         return s
 
-    def create(self, local_builder: GuardBuilderBase, global_builder: GuardBuilderBase):
-        return self.create_fn(self.source.select(local_builder, global_builder), self)
+    def select_builder(self, local_builder: GuardBuilderBase, global_builder: GuardBuilderBase):
+        return self.source.select(local_builder, global_builder)
+
+    def create(self, builder):
+        return self.create_fn(builder, self)
 
     def is_nn_module(self):
         return self.source.is_nn_module()
