@@ -32,6 +32,7 @@ from .source import (
     ConstantSource,
     is_constant_source,
     LocalInputSource,
+    NNModuleSource,
     LocalSource,
     ShapeEnvSource,
 )
@@ -380,6 +381,13 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
 
         elif isinstance(target, torch.nn.Module):
             assert isinstance(target, torch.nn.Module)
+            # Top level inputs are local input sources
+            if isinstance(source, LocalInputSource):
+                # Nest it in an NNModuleSource, to force it to have the correct GuardSource
+                # for is_nn_module
+                source = NNModuleSource(source)
+                # For option propagation
+                options["source"] = source
             options["guards"].add(source.make_guard(GuardBuilder.NN_MODULE))
 
             def wrap_name(module_key):
