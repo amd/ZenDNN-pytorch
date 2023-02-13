@@ -176,6 +176,7 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         code_options: Dict[str, Any],
         compiler_fn: CompilerFn,
         root_tx,
+        export: bool,
     ):
         super().__init__()
         self.graph = torch.fx.Graph()
@@ -233,6 +234,10 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         self.name_to_input: OrderedDict[
             str, Optional[fx.Proxy]
         ] = collections.OrderedDict()
+        # In export mode, we force the shape_env to strictly disallow any constraining
+        # of the user marked dynamic dims
+        if self.shape_env:
+            self.shape_env.strict_mark_dyn = export
 
     @property
     def output(self):

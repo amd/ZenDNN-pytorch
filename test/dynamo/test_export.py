@@ -1777,6 +1777,40 @@ class ExportTests(torch._dynamo.test_case.TestCase):
         dynamo_result = out_graph(inp)
         self.assertEqual(dynamo_result, m(inp))
 
+    @config.patch(dynamic_shapes=True)
+    def test_export_raise_guard_full_constraint(self):
+        y = torch.randn([3, 3, 3])
+
+        def my_dyn_fn(x):
+            if x.shape[0] == 3:
+                return x.sin()
+            return x.cos()
+
+        torch._dynamo.export(my_dyn_fn, y)
+        torch._dynamo.mark_dynamic(y, 0)
+
+        with self.assertRaises(
+            torch._dynamo.exc.InternalTorchDynamoError,
+        ):
+            torch._dynamo.export(my_dyn_fn, y)
+
+    @config.patch(dynamic_shapes=True)
+    def test_export_raise_guard_partial_constraint(self):
+        y = torch.randn([3, 3, 3])
+
+        def my_dyn_fn(x):
+            if x.shape[0] > 3:
+                return x.sin()
+            return x.cos()
+
+        torch._dynamo.export(my_dyn_fn, y)
+        torch._dynamo.mark_dynamic(y, 0)
+
+        with self.assertRaises(
+            torch._dynamo.exc.InternalTorchDynamoError,
+        ):
+            torch._dynamo.export(my_dyn_fn, y)
+
 
 if __name__ == "__main__":
     from torch._dynamo.test_case import run_tests

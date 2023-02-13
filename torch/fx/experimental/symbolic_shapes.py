@@ -927,11 +927,9 @@ class ShapeEnv:
         self.replacements: Dict["sympy.Symbol", "sympy.Expr"] = {}  #
         # Set holds a % b expressions that evaluate to 0.
         self.divisible: Set["sympy.Expr"] = set()
-        # Duck-shaping says that if two input tensors have the same size,
-        # they get assigned the same symbolic variable
-        self.val_to_var: Dict[int, "sympy.Expr"] = {0: sympy.Integer(0), 1: sympy.Integer(1)}
         self.unbacked_symfloat_counter = itertools.count()
         self.unbacked_symint_counter = itertools.count()
+        self.strict_mark_dyn = False
 
     def _suppress_guards_tls(self):
         return getattr(TLS, "suppress_guards", False)
@@ -951,6 +949,19 @@ class ShapeEnv:
         """
         return (len(self.replacements), len(self.divisible))
 
+    def _produce_dyn_sizes(self, ex: torch.Tensor, source: Source) -> List[sympy.Expr]:
+        from torch._dynamo.source import TensorPropertySource, TensorProperty
+        size = []
+        for i, val in enumerate(ex.size()):
+            is_dynamic = _is_dim_dynamic(ex, i)
+            if _should_allocate(is_dynamic):
+                size.append(self.create_symbol(
+                    val, TensorPropertySource(source, TensorProperty.SIZE, i)
+                ))
+            else:
+                size.append(sympy.Integer(val))
+        return size
+
     def create_symbolic_sizes_strides_storage_offset(self, ex: torch.Tensor, source: Source):
         """
         Returns a list of symbolic sizes and strides for the given tensor.
@@ -958,12 +969,7 @@ class ShapeEnv:
         introduce new symbolic variables.
         """
         from torch._dynamo.source import TensorPropertySource, TensorProperty
-
-        size = [
-            self.create_symbol(
-                val, TensorPropertySource(source, TensorProperty.SIZE, i)
-            ) for i, val in enumerate(ex.size())
-        ]
+        size: List[sympy.Expr] = self._produce_dyn_sizes(ex, source)
         stride: List[Optional[sympy.Expr]] = [None] * len(size)
         for i, val in enumerate(ex.stride()):
             if val in (0, 1):
@@ -1038,38 +1044,9 @@ class ShapeEnv:
             from torch._dynamo.source import NegateSource
             return -self.create_symbol(-val, NegateSource(source))
 
-        # Now attempt to duck size this value
-        # TODO: Use site has to duck size
-        # TODO: Do this duck sizing lazily later
-
-        # Create a duck sized int if necessary
-        if val not in self.val_to_var:
-            sympy_expr = Symbol(f"s{len(self.var_to_val)}", positive=True, integer=True)
-            self.var_to_val[sympy_expr] = sympy.Integer(val)
-            self.val_to_var[val] = sympy_expr
-
-        # This implements duck-shaping: input sizes that match are assigned
-        # the same symint
-        r = self.duck_int(val)
-        if isinstance(r, Symbol):
-            r.sources.append(source)
-        return r
-
-    # Given a concrete integer value, return the duck sized symbol associated
-    # with it; e.g., suppose we already have a tensor of size 3 in scope,
-    # which was assigned s3, then shape_env.duck_int(3) we will get back s3.
-    # This has some pretty tricky preconditions associated with it, so if
-    # you are in a binding context, you probably wanted create_symbol instead.
-    def duck_int(self, val):
-        assert val in self.val_to_var, (
-            "Direct call to duck_int MUST only duck size an integer values "
-            "that have already produced by inputs (allocated "
-            "by create_symbol), or we risk being unable to instantiate the "
-            "symbolic variable later.  However, at time of this call "
-            f"val={val} was not duck sized.  Bound duck sized integers: "
-            f"{list(self.val_to_var.keys())}"
-        )
-        return self.val_to_var[val]
+        sympy_expr = Symbol(f"s{len(self.var_to_val)}", positive=True, integer=True)
+        self.var_to_val[sympy_expr] = sympy.Integer(val)
+        return sympy_expr
 
     # Generates a list of guards strings which, when evaluated in a context that
     # defines tensors for all the sources, returns True or False depending
@@ -1153,6 +1130,7 @@ class ShapeEnv:
         input_guards = []
 
         symbol_to_source = collections.defaultdict(list)
+        dynamic_sources = set()
 
         # How do we know what the value of s0 is?  Fresh variables can only be
         # bound by inputs, so there MUST be some other input which binds the
@@ -1178,6 +1156,13 @@ class ShapeEnv:
             else:
                 input_guards.append((source, sympy.Integer(val)))
 
+        def _verify(expr, potential_expr):
+            for e in expr.free_symbols:
+                srcs = symbol_to_source[e]
+                for src in srcs:
+                    if src in dynamic_sources:
+                        raise RuntimeError(f"Attempting to introduce a guard {potential_expr} that violates user's mark_dynamic")
+
         for t, source in zip(placeholders, sources):
             if isinstance(source, str):
                 from torch._dynamo.source import LocalSource
@@ -1189,10 +1174,17 @@ class ShapeEnv:
                 track_symint(source, t)
                 continue
             assert isinstance(t, torch.Tensor)
-            for i, s in enumerate(t.size()):
-                track_symint(TensorPropertySource(source, TensorProperty.SIZE, i), s)
-            for i, s in enumerate(t.stride()):
-                track_symint(TensorPropertySource(source, TensorProperty.STRIDE, i), s)
+            for i, ss in enumerate(t.size()):
+                property_source = TensorPropertySource(source, TensorProperty.SIZE, i)
+                track_symint(property_source, ss)
+                if _is_dim_dynamic(t, i):
+                    # If this dim is marked dynamic, we need to do a test on it, to ensure that it has not bee
+                    # constrained to an integer.
+                    if _is_int(ss):
+                        raise RuntimeError(f"Attempting to constrain dim {i} for {source}, which violates user's mark_dynamic")
+                    dynamic_sources.add(property_source)
+            for i, ss in enumerate(t.stride()):
+                track_symint(TensorPropertySource(source, TensorProperty.STRIDE, i), ss)
             track_symint(TensorPropertySource(source, TensorProperty.STORAGE_OFFSET), t.storage_offset())
 
         exprs = []
@@ -1201,6 +1193,7 @@ class ShapeEnv:
         #    stored on the placeholder.  Given a placeholder (s0*2, s1),
         #    if we have an input (2, 3), we must show s0*2 == 2 and s1 == 3.
         #    This does a lot of work: it covers duck sizing and equality guards.
+        exprs = []
         if not simplified:
             for source, expr in input_guards:
                 # Small optimization
@@ -1211,6 +1204,10 @@ class ShapeEnv:
                 ):
                     continue
                 sexpr = ShapeGuardPrinter(symbol_to_source, source_ref).doprint(expr)
+                if self.strict_mark_dyn:
+                    if source in dynamic_sources:
+                        raise RuntimeError(f"Attempting to introduce a guard {sexpr} that violates user's mark_dynamic")
+                    _verify(expr, sexpr)
                 exprs.append(f"{source_ref(source)} == {sexpr}")
 
         # 2. Every guard must evaluate to True (but remember many guards
@@ -1220,7 +1217,10 @@ class ShapeEnv:
                 continue
             g = self.simplify(g)
             try:
-                exprs.append(ShapeGuardPrinter(symbol_to_source, source_ref).doprint(g))
+                guard_expr = ShapeGuardPrinter(symbol_to_source, source_ref).doprint(g)
+                exprs.append(guard_expr)
+                if self.strict_mark_dyn:
+                    _verify(g, guard_expr)
             except Exception:
                 log.warning(f"Failing guard allocated at: \n{tb}")
                 raise
@@ -1492,3 +1492,25 @@ class ShapeEnv:
                 self.guards.append(
                     ShapeGuard(sympy.Eq(expr, concrete_val), stack))  # type: ignore[arg-type]
         return concrete_val
+
+def _should_allocate(user_marked_dynamic):
+    """
+    Mainly here for readability, repurposes the flag name for the context
+    of shape_env, which cares about allocation.
+    """
+    if user_marked_dynamic:
+        return True
+    # If we got here, the user did *NOT* mark this dim as dynamic,
+    # but BC behavior is to allocate a symbol anyway.
+    from torch._dynamo.config import assume_static_by_default
+    return not assume_static_by_default
+
+def _is_dim_dynamic(t, d):
+    return hasattr(t, "_dynamo_dynamic_indices") and d in t._dynamo_dynamic_indices
+
+def _is_int(expr):
+    try:
+        int(expr)
+    except RuntimeError:
+        return False
+    return True
