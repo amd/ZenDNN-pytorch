@@ -803,7 +803,6 @@ class ReproTests(torch._dynamo.test_case.TestCase):
             torch._dynamo.utils.counters["frames"]["ok"] + 1,
         )
 
-    @patch.object(torch._dynamo.config, "assume_static_by_default", False)
     def test_convert_boxes_to_pooler_format(self):
         boxes1 = [
             Boxes(torch.arange(0, 8).reshape((2, 4))),

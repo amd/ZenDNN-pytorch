@@ -4187,7 +4187,6 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         res = opt_fn(x)
         self.assertTrue(same(ref, res))
 
-
     @unittest.skipIf(sys.version_info < (3, 11), "requires Python 3.11+")
     def test_py311_jump_offset(self):
         new_inst = bytecode_transformation.create_instruction
@@ -4286,7 +4285,6 @@ class MiscTests(torch._dynamo.test_case.TestCase):
 
             # TODO should also pass the code object back into dynamo again, but
             # dynamo is not enabled for Python 3.11 yet.
-
 
     @torch._dynamo.config.patch(dynamic_shapes=True)
     def test_raise_guard_full_constraint(self):

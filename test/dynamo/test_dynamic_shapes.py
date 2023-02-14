@@ -98,33 +98,6 @@ unittest.expectedFailure(
     DynamicShapesReproTestsDefaultStatic.test_sort_out2_dynamic_shapes_static_default
 )
 
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_shape_control_flow_1_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_free_function_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_tuple_nonzero_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_kwarg_dynamic_shapes_static_defaul
-)
-
-unittest.expectedFailure(
-    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_order_dependence_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_shapes_dynamic_shapes_static_default
-)
 
 unittest.expectedFailure(
     DynamicShapesReproTests.test_do_paste_mask_dynamic_shapes
