@@ -2,6 +2,7 @@
 
 import types
 from copy import deepcopy
+from typing import Tuple
 from unittest.mock import patch
 
 import torch
@@ -1163,6 +1164,48 @@ class OptimizedModuleTest(torch._dynamo.test_case.TestCase):
                 torch.zeros(1),
             )
         )
+
+    def test_hooks_outer(self):
+        class TestModule(torch.nn.Module):
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
+                return 2 * x
+
+        m = TestModule()
+
+        def forward_hook(
+            module: torch.nn.Module, inputs: Tuple[torch.Tensor], output: torch.Tensor
+        ) -> torch.Tensor:
+            return 2 * output
+
+        m.register_forward_hook(forward_hook)
+        inp = torch.tensor(1.0, requires_grad=True)
+        compiled_m = torch.compile(m, backend="eager")
+
+        self.assertEqual(compiled_m(inp), m(inp))
+
+    def test_hooks_inner(self):
+        class TestModule(torch.nn.Module):
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
+                return 2 * x
+
+        m = TestModule()
+
+        def forward_hook(
+            module: torch.nn.Module, inputs: Tuple[torch.Tensor], output: torch.Tensor
+        ) -> torch.Tensor:
+            return 2 * output
+
+        m.register_forward_hook(forward_hook)
+
+        def outer_func(tensor):
+            x = tensor * 2
+            y = m(x)
+            return y
+
+        inp = torch.tensor(1.0, requires_grad=True)
+        compiled_func = torch.compile(outer_func, backend="eager")
+
+        self.assertEqual(compiled_func(inp), outer_func(inp))
 
 
 if __name__ == "__main__":
