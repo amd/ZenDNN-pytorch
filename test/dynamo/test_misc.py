@@ -3800,7 +3800,10 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         opt_fn(x2, y2)
 
         self.assertTrue(guard_failure is not None)
-        self.assertEqual(guard_failure[0], "x.size()[0] < 3")
+        if torch._dynamo.config.assume_static_by_default:
+            self.assertEqual(guard_failure[0], "x.size()[0] == 2")
+        else:
+            self.assertEqual(guard_failure[0], "x.size()[0] < 3")
 
     def test_guard_failure_fn2(self):
         def fn(x, y):
@@ -3828,7 +3831,13 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         opt_fn(x2, y2)
 
         if torch._dynamo.config.dynamic_shapes:
-            self.assertTrue(guard_failure is None)
+            if torch._dynamo.config.assume_static_by_default:
+                self.assertEqual(
+                    guard_failure[0],
+                    "x.size()[0] == 2",
+                )
+            else:
+                self.assertTrue(guard_failure is None)
         else:
             self.assertTrue(guard_failure is not None)
             self.assertEqual(

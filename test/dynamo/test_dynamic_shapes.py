@@ -25,20 +25,106 @@ except ImportError:
 import unittest
 
 
-def make_dynamic_cls(cls):
+def make_dynamic_cls(cls, assume_static_by_default):
+    assume_static_by_default_suffix = (
+        "_static_default" if assume_static_by_default else ""
+    )
     return make_test_cls_with_patches(
-        cls, "DynamicShapes", "_dynamic_shapes", (config, "dynamic_shapes", True)
+        cls,
+        "DynamicShapes",
+        f"_dynamic_shapes{assume_static_by_default_suffix}",
+        (config, "dynamic_shapes", True),
+        (config, "assume_static_by_default", assume_static_by_default),
     )
 
 
-DynamicShapesFunctionTests = make_dynamic_cls(test_functions.FunctionTests)
-DynamicShapesMiscTests = make_dynamic_cls(test_misc.MiscTests)
-DynamicShapesReproTests = make_dynamic_cls(test_repros.ReproTests)
-DynamicShapesNNModuleTests = make_dynamic_cls(test_modules.NNModuleTests)
-DynamicShapesUnspecTests = make_dynamic_cls(test_unspec.UnspecTests)
-DynamicShapesExportTests = make_dynamic_cls(test_export.ExportTests)
-DynamicShapesSubGraphTests = make_dynamic_cls(test_subgraphs.SubGraphTests)
+DynamicShapesFunctionTests = make_dynamic_cls(
+    test_functions.FunctionTests, assume_static_by_default=False
+)
+DynamicShapesFunctionTestsDefaultStatic = make_dynamic_cls(
+    test_functions.FunctionTests, assume_static_by_default=True
+)
+DynamicShapesMiscTests = make_dynamic_cls(
+    test_misc.MiscTests, assume_static_by_default=False
+)
+DynamicShapesMiscTestsDefaultStatic = make_dynamic_cls(
+    test_misc.MiscTests, assume_static_by_default=True
+)
+DynamicShapesReproTests = make_dynamic_cls(
+    test_repros.ReproTests, assume_static_by_default=False
+)
+DynamicShapesReproTestsDefaultStatic = make_dynamic_cls(
+    test_repros.ReproTests, assume_static_by_default=True
+)
+DynamicShapesNNModuleTests = make_dynamic_cls(
+    test_modules.NNModuleTests, assume_static_by_default=False
+)
+DynamicShapesNNModuleTestsDefaultStatic = make_dynamic_cls(
+    test_modules.NNModuleTests, assume_static_by_default=True
+)
+DynamicShapesUnspecTests = make_dynamic_cls(
+    test_unspec.UnspecTests, assume_static_by_default=False
+)
+DynamicShapesUnspecTestsDefaultStatic = make_dynamic_cls(
+    test_unspec.UnspecTests, assume_static_by_default=True
+)
+DynamicShapesExportTests = make_dynamic_cls(
+    test_export.ExportTests, assume_static_by_default=False
+)
+DynamicShapesExportTestsDefaultStatic = make_dynamic_cls(
+    test_export.ExportTests, assume_static_by_default=True
+)
+DynamicShapesSubGraphTests = make_dynamic_cls(
+    test_subgraphs.SubGraphTests, assume_static_by_default=False
+)
+DynamicShapesSubGraphTestsDefaultStatic = make_dynamic_cls(
+    test_subgraphs.SubGraphTests, assume_static_by_default=True
+)
 
+
+unittest.expectedFailure(
+    DynamicShapesReproTestsDefaultStatic.test_convert_boxes_to_pooler_format_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesReproTestsDefaultStatic.test_do_paste_mask_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesReproTestsDefaultStatic.test_hf_t5_forward_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesReproTestsDefaultStatic.test_sort_out2_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_shape_control_flow_1_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_free_function_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_tuple_nonzero_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_kwarg_dynamic_shapes_static_defaul
+)
+
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_order_dependence_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_shapes_dynamic_shapes_static_default
+)
 
 unittest.expectedFailure(
     DynamicShapesReproTests.test_do_paste_mask_dynamic_shapes
