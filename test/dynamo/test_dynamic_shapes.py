@@ -37,7 +37,10 @@ def make_dynamic_cls(cls, assume_static_by_default):
         (config, "assume_static_by_default", assume_static_by_default),
     )
 
-
+# Note - this is a little redundant, but some of these tests have specific
+# exclusions.
+# Note #2 - Putting this in a for loop over [True, False] for
+# assume_static_by_default clobbers the name, which makes the tests not run.
 DynamicShapesFunctionTests = make_dynamic_cls(
     test_functions.FunctionTests, assume_static_by_default=False
 )
@@ -98,6 +101,29 @@ unittest.expectedFailure(
     DynamicShapesReproTestsDefaultStatic.test_sort_out2_dynamic_shapes_static_default
 )
 
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_shape_control_flow_1_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_free_function_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_tuple_nonzero_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_kwarg_dynamic_shapes_static_default
+)
+
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_order_dependence_dynamic_shapes_static_default
+)
 
 unittest.expectedFailure(
     DynamicShapesReproTests.test_do_paste_mask_dynamic_shapes

@@ -1054,6 +1054,8 @@ class ShapeEnv:
             sympy_expr = Symbol(f"s{len(self.var_to_val)}", positive=True, integer=True)
 
         self.var_to_val[sympy_expr] = sympy.Integer(val)
+        if isinstance(sympy_expr, Symbol):
+            sympy_expr.sources.append(source)
         return sympy_expr
 
     # Generates a list of guards strings which, when evaluated in a context that
@@ -1159,14 +1161,20 @@ class ShapeEnv:
                     symbol_to_source[s].append(source)
                 elif isinstance(-s, sympy.Symbol):
                     symbol_to_source[-s].append(NegateSource(source))
-
                 input_guards.append((source, s))
             else:
                 input_guards.append((source, sympy.Integer(val)))
 
         def _verify(expr, potential_expr):
-            for e in expr.free_symbols:
-                srcs = symbol_to_source[e]
+            # An expression of > 1 symbols is a relationship,
+            # and relationships can be ignored due to the nature of the 
+            # constraint api explicitly not supporting relationships.
+            #
+            # In a future where we want to extend the constraint API to include
+            # user directives about relationships, we can remove this check from
+            # verification.
+            if len(expr.free_symbols) == 1:
+                srcs = symbol_to_source[expr.free_symbols.pop()]
                 for src in srcs:
                     if src in dynamic_sources:
                         raise RuntimeError(f"Attempting to introduce a guard {potential_expr} that violates user's mark_dynamic")
@@ -1236,7 +1244,7 @@ class ShapeEnv:
         # 3. Every symbol must not be equal to 0/1
         if not simplified:
             for sources in symbol_to_source.values():
-                assert sources
+                assert sources, breakpoint()
                 # We must assert that each symbol is not zero or one, as we make
                 # negative inferences on shape variables
                 exprs.append(f"{source_ref(sources[0])} != 0 and {source_ref(sources[0])} != 1")
