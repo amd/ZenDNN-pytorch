@@ -927,6 +927,9 @@ class ShapeEnv:
         self.replacements: Dict["sympy.Symbol", "sympy.Expr"] = {}  #
         # Set holds a % b expressions that evaluate to 0.
         self.divisible: Set["sympy.Expr"] = set()
+        # Duck-shaping says that if two input tensors have the same size,
+        # they get assigned the same symbolic variable
+        self.val_to_var: Dict[int, "sympy.Expr"] = {0: sympy.Integer(0), 1: sympy.Integer(1)}
         self.unbacked_symfloat_counter = itertools.count()
         self.unbacked_symint_counter = itertools.count()
         self.strict_mark_dyn = False
@@ -1044,7 +1047,12 @@ class ShapeEnv:
             from torch._dynamo.source import NegateSource
             return -self.create_symbol(-val, NegateSource(source))
 
-        sympy_expr = Symbol(f"s{len(self.var_to_val)}", positive=True, integer=True)
+        if val in self.val_to_var: 
+            # 0 or 1
+            sympy_expr = self.val_to_var[val]
+        else:
+            sympy_expr = Symbol(f"s{len(self.var_to_val)}", positive=True, integer=True)
+
         self.var_to_val[sympy_expr] = sympy.Integer(val)
         return sympy_expr
 
