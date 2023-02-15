@@ -37,6 +37,7 @@ def make_dynamic_cls(cls, assume_static_by_default):
         (config, "assume_static_by_default", assume_static_by_default),
     )
 
+
 # Note - this is a little redundant, but some of these tests have specific
 # exclusions.
 # Note #2 - Putting this in a for loop over [True, False] for
@@ -102,30 +103,6 @@ unittest.expectedFailure(
 )
 
 unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_shape_control_flow_1_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_list_nonzero_free_function_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesExportTestsDefaultStatic.test_export_with_constant_tuple_nonzero_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_kwarg_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
-    DynamicShapesSubGraphTestsDefaultStatic.test_dynamic_order_dependence_dynamic_shapes_static_default
-)
-
-unittest.expectedFailure(
     DynamicShapesReproTests.test_do_paste_mask_dynamic_shapes
     # aten.min.dim - couldn't find symbolic meta function/decomposition
 )
@@ -149,6 +126,11 @@ unittest.expectedFailure(
 # DynamicShapesSubGraphTests
 unittest.expectedFailure(
     DynamicShapesSubGraphTests.test_enumerate_not_break_graph_dynamic_shapes
+)
+
+# DynamicShapesSubGraphTests
+unittest.expectedFailure(
+    DynamicShapesSubGraphTestsDefaultStatic.test_enumerate_not_break_graph_dynamic_shapes_static_default
 )
 
 

@@ -1047,7 +1047,7 @@ class ShapeEnv:
             from torch._dynamo.source import NegateSource
             return -self.create_symbol(-val, NegateSource(source))
 
-        if val in self.val_to_var: 
+        if val in self.val_to_var:
             # 0 or 1
             sympy_expr = self.val_to_var[val]
         else:
@@ -1167,7 +1167,7 @@ class ShapeEnv:
 
         def _verify(expr, potential_expr):
             # An expression of > 1 symbols is a relationship,
-            # and relationships can be ignored due to the nature of the 
+            # and relationships can be ignored due to the nature of the
             # constraint api explicitly not supporting relationships.
             #
             # In a future where we want to extend the constraint API to include
