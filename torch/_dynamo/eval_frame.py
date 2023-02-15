@@ -79,7 +79,7 @@ class OptimizedModule(torch.nn.Module):
         return getattr(self._orig_mod, name)
 
     def forward(self, *args, **kwargs):
-        return self.dynamo_ctx(self._orig_mod.forward)(*args, **kwargs)
+        return self.dynamo_ctx(self._orig_mod.__call__)(*args, **kwargs)
 
 
 def remove_from_cache(f):
