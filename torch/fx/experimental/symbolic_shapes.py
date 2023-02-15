@@ -917,7 +917,7 @@ TLS = threading.local()
 
 
 class ShapeEnv:
-    def __init__(self):
+    def __init__(self, strict_mark_dyn=False, assume_static_by_default=False):
         self.guards: List[ShapeGuard] = []
         # Maps symbolic ints to their original concrete values
         # Currently populated from tensors
@@ -932,7 +932,8 @@ class ShapeEnv:
         self.val_to_var: Dict[int, "sympy.Expr"] = {0: sympy.Integer(0), 1: sympy.Integer(1)}
         self.unbacked_symfloat_counter = itertools.count()
         self.unbacked_symint_counter = itertools.count()
-        self.strict_mark_dyn = False
+        self.strict_mark_dyn = strict_mark_dyn
+        self.assume_static_by_default = assume_static_by_default
 
     def _suppress_guards_tls(self):
         return getattr(TLS, "suppress_guards", False)
@@ -957,7 +958,7 @@ class ShapeEnv:
         size = []
         for i, val in enumerate(ex.size()):
             is_dynamic = _is_dim_dynamic(ex, i)
-            if _should_allocate(is_dynamic):
+            if _should_allocate(is_dynamic, self.assume_static_by_default):
                 size.append(self.create_symbol(
                     val, TensorPropertySource(source, TensorProperty.SIZE, i)
                 ))
@@ -1509,7 +1510,7 @@ class ShapeEnv:
                     ShapeGuard(sympy.Eq(expr, concrete_val), stack))  # type: ignore[arg-type]
         return concrete_val
 
-def _should_allocate(user_marked_dynamic):
+def _should_allocate(user_marked_dynamic, assume_static_by_default):
     """
     Mainly here for readability, repurposes the flag name for the context
     of shape_env, which cares about allocation.
@@ -1518,7 +1519,6 @@ def _should_allocate(user_marked_dynamic):
         return True
     # If we got here, the user did *NOT* mark this dim as dynamic,
     # but BC behavior is to allocate a symbol anyway.
-    from torch._dynamo.config import assume_static_by_default
     return not assume_static_by_default
 
 def _is_dim_dynamic(t, d):

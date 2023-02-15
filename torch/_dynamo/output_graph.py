@@ -181,8 +181,15 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         super().__init__()
         self.graph = torch.fx.Graph()
         self.graphargs: List[GraphArg] = []
+        # In export mode, we force the shape_env to strictly disallow any constraining
+        # of the user marked dynamic dims
         fake_mode = torch._subclasses.FakeTensorMode(
-            shape_env=ShapeEnv() if config.dynamic_shapes else None,
+            shape_env=ShapeEnv(
+                strict_mark_dyn=export,
+                assume_static_by_default=config.assume_static_by_default,
+            )
+            if config.dynamic_shapes
+            else None,
         )
         self.tracing_context: TracingContext = TracingContext(fake_mode)
         if config.dynamic_shapes:
@@ -234,10 +241,6 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         self.name_to_input: OrderedDict[
             str, Optional[fx.Proxy]
         ] = collections.OrderedDict()
-        # In export mode, we force the shape_env to strictly disallow any constraining
-        # of the user marked dynamic dims
-        if self.shape_env:
-            self.shape_env.strict_mark_dyn = export
 
     @property
     def output(self):
