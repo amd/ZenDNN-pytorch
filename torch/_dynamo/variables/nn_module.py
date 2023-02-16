@@ -191,6 +191,13 @@ class NNModuleVariable(VariableTracker):
         options = VariableTracker.propagate(self, args, kwargs.values())
         mod = tx.output.get_submodule(self.module_key)
 
+        # This function needs to be modified to fix test_hooks_inner
+        # mod is our TestModule() instance,
+        # and mod._forward_hooks contains our hook.
+
+        # our challenge is to have dynamo trace the code for our hook(s) before
+        # continuing on to trace the forward itself.
+
         @contextmanager
         def record_nn_module_stack():
             try:
@@ -239,35 +246,25 @@ class NNModuleVariable(VariableTracker):
                 )
 
             else:
-                # for lazy modules, run the pre-hooks which will update the type
-                # TODO mlazos: we don't fully support all of the hooks that exist,
-                # so restrict using __call__ only to lazy modules for now
                 assert self.source, (
                     "Must provide a valid source in order to inline, "
                     "since inlined function may have default args which must be guarded."
                 )
-                if is_lazy:
-                    if istype(mod.__call__, types.FunctionType):
-                        fn = mod.__call__
-                        fn_source = AttrSource(self.source, "__call__")
-                    else:
-                        assert istype(mod.__call__, types.MethodType)
-                        fn = mod.__call__.__func__
-                        fn_source = AttrSource(
-                            AttrSource(self.source, "__call__"), "__func__"
-                        )
-                        args = [self] + args
+                if isinstance(mod, torch.fx.GraphModule):
+                    # TODO: do we want to support __call__ for GM's?
+                    # If so at least some changes are needed, we don't allow inlining
+                    # the call_wrapped currently, and maybe other issues too
+                    fn = mod.forward
                 else:
-                    if istype(mod.forward, types.FunctionType):
-                        fn = mod.forward
-                        fn_source = AttrSource(self.source, "forward")
-                    else:
-                        assert istype(mod.forward, types.MethodType)
-                        fn = mod.forward.__func__
-                        fn_source = AttrSource(
-                            AttrSource(self.source, "forward"), "__func__"
-                        )
-                        args = [self] + args
+                    fn = mod.__call__
+                fn_source = AttrSource(self.source, "__call__")
+                if istype(mod.__call__, types.MethodType):
+                    fn = fn.__func__
+                    fn_source = AttrSource(fn_source, "__func__")
+                    args = [self] + args
+                else:
+                    assert istype(mod.__call__, types.FunctionType)
+
                 options["source"] = fn_source
                 return tx.inline_user_function_return(
                     variables.UserFunctionVariable(fn, **options),
@@ -289,8 +286,10 @@ class NNModuleVariable(VariableTracker):
         key = self.module_key
         module = tx.output.get_submodule(key)
 
-        if name == "forward":
-            return self.call_function(tx, args, kwargs)
+        # TODO(whc)  do we really need this special case?
+        # if so it needs to be updated to __call__
+        # if name == "__call__":
+        #     return self.call_function(tx, args, kwargs)
 
         if name == "_check_input_dim" and skipfiles.is_torch_inline_allowed(
             inspect.getfile(module.__class__._check_input_dim)
