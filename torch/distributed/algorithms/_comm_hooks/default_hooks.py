@@ -3,7 +3,7 @@ import torch
 import torch.distributed as dist
 
 
-class DefaultState(object):
+class DefaultState:
     r"""
     Stores state needed to perform the default communication algorithm
     within a communication hook.
@@ -108,7 +108,7 @@ def reduce_scatter_hook(state: DefaultState, grad: torch.Tensor, output: torch.T
     # Average grad by pre-division factor.
     if state.gradient_predivide_factor > 1:
         grad.div_(state.gradient_predivide_factor)
-    dist._reduce_scatter_base(
+    dist.reduce_scatter_tensor(
         output, grad, group=state.process_group
     )
     # Average grad's shard by post-division factor.
@@ -116,9 +116,11 @@ def reduce_scatter_hook(state: DefaultState, grad: torch.Tensor, output: torch.T
         output.div_(state.gradient_postdivide_factor)
 
 def _low_precision_hook(prec: torch.dtype, state: LowPrecisionState, grad: torch.Tensor, output: torch.Tensor):
-    grad.data = grad.data.to(prec)
+    if grad.dtype != prec:
+        grad.data = grad.data.to(prec)
     if output is not None:
-        output.data = output.data.to(prec)
+        if output.dtype != prec:
+            output.data = output.data.to(prec)
         reduce_scatter_hook(state, grad, output)
         _decompress(state, output)
     else:

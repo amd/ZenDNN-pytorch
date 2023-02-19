@@ -95,6 +95,9 @@
 #   USE_FFMPEG
 #     enables use of ffmpeg for additional operators
 #
+#   USE_FLASH_ATTENTION=0
+#     disables building flash attention for scaled dot product attention
+#
 #   USE_LEVELDB
 #     enables use of LevelDB for storage
 #
@@ -172,6 +175,9 @@
 #   NCCL_INCLUDE_DIR
 #     specify where nccl is installed
 #
+#   NVFUSER_SOURCE_DIR
+#     specify nvfuser root directory
+#
 #   NVTOOLSEXT_PATH (Windows only)
 #     specify where nvtoolsext is installed
 #
@@ -211,7 +217,7 @@ if sys.platform == 'win32' and sys.maxsize.bit_length() == 31:
     sys.exit(-1)
 
 import platform
-python_min_version = (3, 7, 0)
+python_min_version = (3, 8, 0)
 python_min_version_str = '.'.join(map(str, python_min_version))
 if sys.version_info < python_min_version:
     print("You are using Python {}. Python >={} is required.".format(platform.python_version(),
@@ -335,7 +341,7 @@ def check_submodules():
     def check_for_files(folder, files):
         if not any(os.path.exists(os.path.join(folder, f)) for f in files):
             report("Could not find any of {} in {}".format(", ".join(files), folder))
-            report("Did you run 'git submodule update --init --recursive --jobs 0'?")
+            report("Did you run 'git submodule update --init --recursive'?")
             sys.exit(1)
 
     def not_exists_or_empty(folder):
@@ -354,7 +360,7 @@ def check_submodules():
             print(' --- Submodule initialization took {:.2f} sec'.format(end - start))
         except Exception:
             print(' --- Submodule initalization failed')
-            print('Please run:\n\tgit submodule update --init --recursive --jobs 0')
+            print('Please run:\n\tgit submodule update --init --recursive')
             sys.exit(1)
     for folder in folders:
         check_for_files(folder, ["CMakeLists.txt", "Makefile", "setup.py", "LICENSE", "LICENSE.md", "LICENSE.txt"])
@@ -446,8 +452,8 @@ Please install it via `conda install {module}` or `pip install {module}`
 def check_pydep(importname, module):
     try:
         importlib.import_module(importname)
-    except ImportError:
-        raise RuntimeError(missing_pydep.format(importname=importname, module=module))
+    except ImportError as e:
+        raise RuntimeError(missing_pydep.format(importname=importname, module=module)) from e
 
 
 class build_ext(setuptools.command.build_ext.build_ext):
@@ -536,11 +542,18 @@ class build_ext(setuptools.command.build_ext.build_ext):
             report('-- Using static dispatch with backend {}'.format(cmake_cache_vars['STATIC_DISPATCH_BACKEND']))
         if cmake_cache_vars['USE_LIGHTWEIGHT_DISPATCH']:
             report('-- Using lightweight dispatch')
+        if cmake_cache_vars['BUILD_EXECUTORCH']:
+            report('-- Building Executorch')
 
         if cmake_cache_vars['USE_ITT']:
             report('-- Using ITT')
         else:
             report('-- Not using ITT')
+
+        if cmake_cache_vars['BUILD_NVFUSER']:
+            report('-- Building nvfuser')
+        else:
+            report('-- Not Building nvfuser')
 
         # Do not use clang to compile extensions if `-fstack-clash-protection` is defined
         # in system CFLAGS
@@ -623,6 +636,22 @@ class build_ext(setuptools.command.build_ext.build_ext):
             filename = self.get_ext_filename(fullname)
             fileext = os.path.splitext(filename)[1]
             src = os.path.join(os.path.dirname(filename), "functorch" + fileext)
+            dst = os.path.join(os.path.realpath(self.build_lib), filename)
+            if os.path.exists(src):
+                report("Copying {} from {} to {}".format(ext.name, src, dst))
+                dst_dir = os.path.dirname(dst)
+                if not os.path.exists(dst_dir):
+                    os.makedirs(dst_dir)
+                self.copy_file(src, dst)
+
+        # Copy nvfuser extension
+        for i, ext in enumerate(self.extensions):
+            if ext.name != "nvfuser._C":
+                continue
+            fullname = self.get_ext_fullname(ext.name)
+            filename = self.get_ext_filename(fullname)
+            fileext = os.path.splitext(filename)[1]
+            src = os.path.join(os.path.dirname(filename), "nvfuser" + fileext)
             dst = os.path.join(os.path.realpath(self.build_lib), filename)
             if os.path.exists(src):
                 report("Copying {} from {} to {}".format(ext.name, src, dst))
@@ -749,6 +778,9 @@ class clean(setuptools.Command):
                         break
                     # Ignore lines which begin with '#'.
                 else:
+                    # Don't remove absolute paths from the system
+                    wildcard = wildcard.lstrip('./')
+
                     for filename in glob.glob(wildcard):
                         try:
                             os.remove(filename)
@@ -762,6 +794,14 @@ class sdist(setuptools.command.sdist.sdist):
             super().run()
 
 
+def get_cmake_cache_vars():
+    try:
+        return defaultdict(lambda: False, cmake.get_cmake_cache_variables())
+    except FileNotFoundError:
+        # CMakeCache.txt does not exist. Probably running "python setup.py clean" over a clean directory.
+        return defaultdict(lambda: False)
+
+
 def configure_extension_build():
     r"""Configures extension build options according to system environment and user's choice.
 
@@ -769,11 +809,7 @@ def configure_extension_build():
       The input to parameters ext_modules, cmdclass, packages, and entry_points as required in setuptools.setup.
     """
 
-    try:
-        cmake_cache_vars = defaultdict(lambda: False, cmake.get_cmake_cache_variables())
-    except FileNotFoundError:
-        # CMakeCache.txt does not exist. Probably running "python setup.py clean" over a clean directory.
-        cmake_cache_vars = defaultdict(lambda: False)
+    cmake_cache_vars = get_cmake_cache_vars()
 
     ################################################################################
     # Configure compile flags
@@ -791,7 +827,7 @@ def configure_extension_build():
         # /EHsc is about standard C++ exception handling
         # /DNOMINMAX removes builtin min/max functions
         # /wdXXXX disables warning no. XXXX
-        extra_compile_args = ['/MD', '/EHsc', '/DNOMINMAX',
+        extra_compile_args = ['/MD', '/FS', '/EHsc', '/DNOMINMAX',
                               '/wd4267', '/wd4251', '/wd4522', '/wd4522', '/wd4838',
                               '/wd4305', '/wd4244', '/wd4190', '/wd4101', '/wd4996',
                               '/wd4275']
@@ -844,6 +880,13 @@ def configure_extension_build():
             extra_compile_args += ['-g']
             extra_link_args += ['-g']
 
+    # special CUDA 11.7 package that requires installation of cuda runtime, cudnn and cublas
+    pytorch_extra_install_requirements = os.getenv("PYTORCH_EXTRA_INSTALL_REQUIREMENTS", "")
+    if pytorch_extra_install_requirements:
+        report(f"pytorch_extra_install_requirements: {pytorch_extra_install_requirements}")
+        extra_install_requires += pytorch_extra_install_requirements.split("|")
+
+
     # Cross-compile for M1
     if IS_DARWIN:
         macos_target_arch = os.getenv('CMAKE_OSX_ARCHITECTURES', '')
@@ -870,7 +913,14 @@ def configure_extension_build():
     ################################################################################
 
     extensions = []
-    packages = find_packages(exclude=('tools', 'tools.*'))
+    excludes = ['tools', 'tools.*']
+    if not cmake_cache_vars['BUILD_CAFFE2']:
+        excludes.extend(['caffe2', 'caffe2.*'])
+    if not cmake_cache_vars['BUILD_FUNCTORCH']:
+        excludes.extend(['functorch', 'functorch.*'])
+    if not cmake_cache_vars['BUILD_NVFUSER']:
+        excludes.extend(['nvfuser', 'nvfuser.*'])
+    packages = find_packages(exclude=excludes)
     C = Extension("torch._C",
                   libraries=main_libraries,
                   sources=main_sources,
@@ -892,6 +942,13 @@ def configure_extension_build():
 
     # These extensions are built by cmake and copied manually in build_extensions()
     # inside the build_ext implementation
+    if cmake_cache_vars['USE_ROCM']:
+        triton_req_file = os.path.join(cwd, ".github", "requirements", "triton-requirements-rocm.txt")
+        if os.path.exists(triton_req_file):
+            with open(triton_req_file) as f:
+                triton_req = f.read().strip()
+                extra_install_requires.append(triton_req)
+
     if cmake_cache_vars['BUILD_CAFFE2']:
         extensions.append(
             Extension(
@@ -914,6 +971,12 @@ def configure_extension_build():
         extensions.append(
             Extension(
                 name=str('functorch._C'),
+                sources=[]),
+        )
+    if cmake_cache_vars['BUILD_NVFUSER']:
+        extensions.append(
+            Extension(
+                name=str('nvfuser._C'),
                 sources=[]),
         )
 
@@ -960,8 +1023,21 @@ def print_box(msg):
 def main():
     # the list of runtime dependencies required by this built package
     install_requires = [
-        'typing_extensions',
+        'filelock',
+        'typing-extensions',
+        'sympy',
+        'networkx',
     ]
+
+    extras_require = {
+        'opt-einsum': ['opt-einsum>=3.3']
+    }
+    if platform.system() == 'Linux':
+        triton_pin_file = os.path.join(cwd, ".github", "ci_commit_pins", "triton.txt")
+        if os.path.exists(triton_pin_file):
+            with open(triton_pin_file) as f:
+                triton_pin = f.read().strip()
+                extras_require['dynamo'] = ['pytorch-triton==2.0.0+' + triton_pin[:10], 'jinja2']
 
     # Parse the command line and check the arguments before we proceed with
     # building deps and setup. We need to set values so `--help` works.
@@ -996,11 +1072,11 @@ def main():
         'cuda/*.pyi',
         'optim/*.pyi',
         'autograd/*.pyi',
-        'utils/data/*.pyi',
         'nn/*.pyi',
         'nn/modules/*.pyi',
         'nn/parallel/*.pyi',
         'utils/data/*.pyi',
+        'utils/data/datapipes/*.pyi',
         'lib/*.so*',
         'lib/*.dylib*',
         'lib/*.dll',
@@ -1008,9 +1084,11 @@ def main():
         'lib/*.pdb',
         'lib/torch_shm_manager',
         'lib/*.h',
+        'include/*.h',
         'include/ATen/*.h',
         'include/ATen/cpu/*.h',
         'include/ATen/cpu/vec/vec256/*.h',
+        'include/ATen/cpu/vec/vec256/vsx/*.h',
         'include/ATen/cpu/vec/vec512/*.h',
         'include/ATen/cpu/vec/*.h',
         'include/ATen/core/*.h',
@@ -1026,6 +1104,7 @@ def main():
         'include/ATen/hip/detail/*.cuh',
         'include/ATen/hip/detail/*.h',
         'include/ATen/hip/impl/*.h',
+        'include/ATen/miopen/*.h',
         'include/ATen/detail/*.h',
         'include/ATen/native/*.h',
         'include/ATen/native/cpu/*.h',
@@ -1036,8 +1115,7 @@ def main():
         'include/ATen/native/quantized/*.h',
         'include/ATen/native/quantized/cpu/*.h',
         'include/ATen/quantized/*.h',
-        'include/caffe2/utils/*.h',
-        'include/caffe2/utils/**/*.h',
+        'include/caffe2/serialize/*.h',
         'include/c10/*.h',
         'include/c10/macros/*.h',
         'include/c10/core/*.h',
@@ -1051,9 +1129,6 @@ def main():
         'include/c10/cuda/impl/*.h',
         'include/c10/hip/*.h',
         'include/c10/hip/impl/*.h',
-        'include/c10d/*.h',
-        'include/c10d/*.hpp',
-        'include/caffe2/**/*.h',
         'include/torch/*.h',
         'include/torch/csrc/*.h',
         'include/torch/csrc/api/include/torch/*.h',
@@ -1080,10 +1155,8 @@ def main():
         'include/torch/csrc/autograd/generated/*.h',
         'include/torch/csrc/autograd/utils/*.h',
         'include/torch/csrc/cuda/*.h',
-        'include/torch/csrc/deploy/*.h',
-        'include/torch/csrc/deploy/interpreter/*.h',
-        'include/torch/csrc/deploy/interpreter/*.hpp',
-        'include/torch/csrc/distributed/c10d/exception.h',
+        'include/torch/csrc/distributed/c10d/*.h',
+        'include/torch/csrc/distributed/c10d/*.hpp',
         'include/torch/csrc/distributed/rpc/*.h',
         'include/torch/csrc/jit/*.h',
         'include/torch/csrc/jit/backends/*.h',
@@ -1107,6 +1180,7 @@ def main():
         'include/torch/csrc/onnx/*.h',
         'include/torch/csrc/profiler/*.h',
         'include/torch/csrc/profiler/orchestration/*.h',
+        'include/torch/csrc/profiler/stubs/*.h',
         'include/torch/csrc/utils/*.h',
         'include/torch/csrc/tensor/*.h',
         'include/torch/csrc/lazy/backend/*.h',
@@ -1124,6 +1198,8 @@ def main():
         'include/THH/*.cuh',
         'include/THH/*.h*',
         'include/THH/generic/*.h',
+        'include/sleef.h',
+        "_inductor/codegen/*.h",
         'share/cmake/ATen/*.cmake',
         'share/cmake/Caffe2/*.cmake',
         'share/cmake/Caffe2/public/*.cmake',
@@ -1140,6 +1216,13 @@ def main():
         'utils/model_dump/code.js',
         'utils/model_dump/*.mjs',
     ]
+
+    if get_cmake_cache_vars()['BUILD_CAFFE2']:
+        torch_package_data.extend([
+            'include/caffe2/**/*.h',
+            'include/caffe2/utils/*.h',
+            'include/caffe2/utils/**/*.h',
+        ])
     torchgen_package_data = [
         # Recursive glob doesn't work in setup.py,
         # https://github.com/pypa/setuptools/issues/1806
@@ -1161,6 +1244,7 @@ def main():
         packages=packages,
         entry_points=entry_points,
         install_requires=install_requires,
+        extras_require=extras_require,
         package_data={
             'torch': torch_package_data,
             'torchgen': torchgen_package_data,

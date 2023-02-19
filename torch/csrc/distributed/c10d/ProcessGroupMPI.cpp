@@ -1,4 +1,4 @@
-#include <c10d/ProcessGroupMPI.hpp>
+#include <torch/csrc/distributed/c10d/ProcessGroupMPI.hpp>
 
 #ifdef USE_C10D_MPI
 
@@ -305,7 +305,7 @@ c10::intrusive_ptr<ProcessGroupMPI> ProcessGroupMPI::createProcessGroupMPI(
 }
 
 ProcessGroupMPI::ProcessGroupMPI(int rank, int size, MPI_Comm pgComm)
-    : ProcessGroup(rank, size), stop_(false), pgComm_(pgComm) {
+    : Backend(rank, size), stop_(false), pgComm_(pgComm) {
   if (pgComm_ == MPI_COMM_NULL) {
     TORCH_CHECK(false, "pgComm_ must not be MPI_COMM_NULL");
   }

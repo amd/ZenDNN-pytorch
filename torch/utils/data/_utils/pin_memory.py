@@ -9,7 +9,6 @@ import collections
 import queue
 
 import torch
-from torch._six import string_classes
 from . import MP_STATUS_CHECK_INTERVAL
 from torch._utils import ExceptionWrapper
 
@@ -19,7 +18,10 @@ def _pin_memory_loop(in_queue, out_queue, device_id, done_event, device):
     # consuming all CPU cores.
     torch.set_num_threads(1)
 
-    torch.cuda.set_device(device_id)
+    if device == "cuda":
+        torch.cuda.set_device(device_id)
+    elif device == "xpu":
+        torch.xpu.set_device(device_id)  # type: ignore[attr-defined]
 
     def do_one_step():
         try:
@@ -51,7 +53,7 @@ def _pin_memory_loop(in_queue, out_queue, device_id, done_event, device):
 def pin_memory(data, device=None):
     if isinstance(data, torch.Tensor):
         return data.pin_memory(device)
-    elif isinstance(data, string_classes):
+    elif isinstance(data, str):
         return data
     elif isinstance(data, collections.abc.Mapping):
         try:

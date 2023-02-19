@@ -52,6 +52,7 @@ inline Return callUnboxedKernelFunction(void* unboxed_kernel_func, OperatorKerne
 
 // This template requires you to explicitly specify the argument you want to
 // forward; it doesn't work if you try to deduce it
+// NB: keep this in sync with cloneWithRealTypes in function_schema.cpp
 
 template <typename T>
 inline typename remove_symint<T>::type unpackSymInt(T x) { return x; }
@@ -63,12 +64,17 @@ inline typename remove_symint<c10::SymInt>::type unpackSymInt(c10::SymInt x) {
 
 template <>
 inline typename remove_symint<c10::SymIntArrayRef>::type unpackSymInt(c10::SymIntArrayRef x) {
-  return c10::asIntArrayRefSlow(x);
+  return C10_AS_INTARRAYREF_SLOW(x);
 }
 
 template <>
 inline typename remove_symint<c10::optional<c10::SymInt>>::type unpackSymInt(c10::optional<c10::SymInt> x) {
   return x.has_value() ? c10::make_optional(x->expect_int()) : c10::nullopt;
+}
+
+template <>
+inline typename remove_symint<at::OptionalSymIntArrayRef>::type unpackSymInt(at::OptionalSymIntArrayRef x) {
+  return x.has_value() ? c10::make_optional(C10_AS_INTARRAYREF_SLOW(*x)) : c10::nullopt;
 }
 
 template<class Return, class... Args>

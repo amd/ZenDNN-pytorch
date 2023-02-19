@@ -227,7 +227,7 @@ class PythonArgument:
         # s/self/input/ outside method bindings
         # [old codegen] TODO: remove this? doesn't rename in codegen, it's just
         # for the parse string
-        if name == "self" and type_str == "Tensor" and not method:
+        if name == "self" and type_str in ["Tensor", "Number"] and not method:
             name = "input"
 
         # add default
@@ -719,7 +719,9 @@ def argument(a: Argument) -> PythonArgument:
         name=a.name,
         type=a.type,
         # TODO: directly translate a.default to python default
-        default=str(pythonify_default(cpp.default_expr(a.default, a.type)))
+        default=str(
+            pythonify_default(cpp.default_expr(a.default, a.type, symint=False))
+        )
         if a.default is not None
         else None,
         default_init=None,
@@ -754,9 +756,9 @@ def signature_from_schema(
     args.extend(func.arguments.post_tensor_options_kwarg_only)
     args.extend(func.arguments.out)
 
-    input_arg_set = set(a.name for a in func.arguments.flat_positional)
-    kwarg_only_set = set(a.name for a in func.arguments.flat_kwarg_only)
-    out_arg_set = set(a.name for a in func.arguments.out)
+    input_arg_set = {a.name for a in func.arguments.flat_positional}
+    kwarg_only_set = {a.name for a in func.arguments.flat_kwarg_only}
+    out_arg_set = {a.name for a in func.arguments.out}
 
     input_args = tuple(map(argument, filter(lambda a: a.name in input_arg_set, args)))
     input_kwargs = tuple(
@@ -804,7 +806,7 @@ def signature_from_schema(
             a = getattr(topt_args, name)
             if a.default is None or a.default == "None":
                 return None
-            return cpp.default_expr(a.default, a.type)
+            return cpp.default_expr(a.default, a.type, symint=False)
 
         tensor_options_args.append(
             PythonArgument(
@@ -956,11 +958,13 @@ def argument_type_str_pyi(t: Type) -> str:
             elem = argument_type_str_pyi(t.elem)
             ret = f"Sequence[{elem}]"
 
+    else:
+        raise RuntimeError(f"unrecognized type {repr(t)}")
+
     if add_optional:
         ret = "Optional[" + ret + "]"
-    return ret
 
-    raise RuntimeError(f"unrecognized type {repr(t)}")
+    return ret
 
 
 def return_type_str_pyi(t: Type) -> str:
@@ -1068,7 +1072,7 @@ def dispatch_lambda_args(
         method=False,
         cpp_no_default_args=f.cpp_no_default_args,
     )
-    out_args: Set[str] = set(a.name for a in schema.arguments.out)
+    out_args: Set[str] = {a.name for a in schema.arguments.out}
 
     # Convert from cpp argument to lambda argument
     def dispatch_lambda_arg(cpp_arg: Binding) -> DispatchLambdaArgument:
@@ -1112,6 +1116,8 @@ SUPPORTED_RETURN_TYPES = {
     "::std::tuple<double,int64_t>",
     "::std::tuple<at::Tensor,::std::vector<at::Tensor>>",
     "::std::vector<at::Tensor>",
+    # Needed for flash attention forw/backward
+    "::std::tuple<at::Tensor,at::Tensor,at::Tensor,at::Tensor,int64_t,int64_t,int64_t,int64_t,at::Tensor>",
     "at::Scalar",
     "bool",
     "int64_t",

@@ -56,7 +56,7 @@ def _getattr_qual(obj, name, default=_NOTHING):
             raise
 
 
-class DecorateInfo(object):
+class DecorateInfo:
     """Describes which test, or type of tests, should be wrapped in the given
     decorators when testing an operator. Any test that matches all provided
     arguments will be decorated. The decorators will only be applied if the
@@ -97,13 +97,19 @@ class DecorateInfo(object):
             for dtype in self.dtypes:
                 assert isinstance(dtype, torch.dtype)
 
-    def is_active(self, cls_name, test_name, device_type, dtype):
+    def is_active(self, cls_name, test_name, device_type, dtype, param_kwargs):
         return (
             self.active_if
             and (self.cls_name is None or self.cls_name == cls_name)
             and (self.test_name is None or self.test_name == test_name)
             and (self.device_type is None or self.device_type == device_type)
             and (self.dtypes is None or dtype in self.dtypes)
+            # Support callables over kwargs to determine if the decorator is active.
+            and (
+                self.active_if(param_kwargs)
+                if isinstance(self.active_if, Callable)
+                else self.active_if
+            )
         )
 
 
@@ -111,7 +117,7 @@ class DecorateInfo(object):
 # Note: historically the 'input' kwarg had to be a Tensor or TensorList, but we are trying
 #   to support scalar inputs, too. Some tests still depend on 'input' being a Tensor
 #   or TensorList, however.
-class SampleInput(object):
+class SampleInput:
     """Represents sample inputs to a function."""
 
     __slots__ = [
@@ -126,22 +132,47 @@ class SampleInput(object):
     def __init__(
         self,
         input,
-        *,
-        args=tuple(),
+        *var_args,
+        args=None,
         kwargs=None,
-        output_process_fn_grad=lambda x: x,
-        broadcasts_input=False,
-        name="",
+        output_process_fn_grad=None,
+        broadcasts_input=None,
+        name=None,
+        **var_kwargs,
     ):
         # input is the first input to the op and is typically either a Tensor or TensorList (Sequence[Tensor]).
         # This follows the typical pattern where for Tensor inputs op(t, ...) = t.op(...).
         self.input = input
-        self.args = args
+
+        # Allow calling either as SampleInput(input, args=args, kwargs=kwargs), or as
+        # SampleInput(input, *args, **kwargs) but not to mix the two forms
+        if args is not None or kwargs is not None:
+            assert (
+                not var_args and not var_kwargs
+            ), """
+A SampleInput can be constructed "naturally" with *args and **kwargs or by
+explicitly setting the "args" and "kwargs" paremeters, but the two
+methods of construction cannot be mixed!"""
+        elif len(var_args) or len(var_kwargs):
+            assert (
+                output_process_fn_grad is None
+                and broadcasts_input is None
+                and name is None
+            ), """
+A SampleInput constructed "naturally" with *args and **kwargs
+cannot specify additional metadata in keyword arguments"""
+
+        self.args = args if args is not None else var_args
         assert isinstance(self.args, tuple)
-        self.kwargs = kwargs if kwargs is not None else {}
+        self.kwargs = kwargs if kwargs is not None else var_kwargs
         assert isinstance(self.kwargs, dict)
-        self.output_process_fn_grad = output_process_fn_grad
-        self.name = name
+
+        self.output_process_fn_grad = (
+            output_process_fn_grad
+            if output_process_fn_grad is not None
+            else lambda x: x
+        )
+        self.name = name if name is not None else ""
 
         # Specifies if `self.input` is broadcasted or not,
         # given that the operator supports broadcasting.
@@ -151,7 +182,20 @@ class SampleInput(object):
         # it is verified that we get a `RuntimeError` with this sample,
         # and inplace variant. Also inplace grad{grad} tests are skipped,
         # for such inputs (as they will error out otherwise).
-        self.broadcasts_input = broadcasts_input
+        self.broadcasts_input = (
+            broadcasts_input if broadcasts_input is not None else False
+        )
+
+    def with_metadata(
+        self, *, output_process_fn_grad=None, broadcasts_input=None, name=None
+    ):
+        if output_process_fn_grad is not None:
+            self.output_process_fn_grad = output_process_fn_grad
+        if broadcasts_input is not None:
+            self.broadcasts_input = broadcasts_input
+        if name is not None:
+            self.name = name
+        return self
 
     def _repr_helper(self, formatter):
         # Helper function to return the details of the SampleInput as `str`
@@ -265,7 +309,7 @@ class SampleInput(object):
 NumericsFilter = collections.namedtuple("NumericsFilter", ["condition", "safe_val"])
 
 
-class ErrorInput(object):
+class ErrorInput:
     """
     A SampleInput that will cause the operation to throw an error plus information
     about the resulting error.
@@ -279,7 +323,7 @@ class ErrorInput(object):
         self.error_regex = error_regex
 
 
-class AliasInfo(object):
+class AliasInfo:
     """Class holds alias information. For example, torch.abs ->
     torch.absolute, torch.Tensor.absolute, torch.Tensor.absolute_
     """
@@ -573,7 +617,7 @@ class AliasInfo(object):
 
 # Classes and methods for the operator database
 @dataclass
-class OpInfo(object):
+class OpInfo:
     """Operator information and helper functions for acquiring it."""
 
     # the string name of the function
@@ -712,6 +756,10 @@ class OpInfo(object):
     # If the value is True, we check that the gradients are correct
     # If the value is False, we test that forward grad is not implemented
     supports_forward_ad: bool = False
+
+    # Whether the operation has a varargs variant
+    # (e.g. functions like ones, zeros, methods like view, permute)
+    supports_varargs: bool = False
 
     # wrapper function for gradcheck
     gradcheck_wrapper: Callable = lambda op, *args, **kwargs: op(*args, **kwargs)
@@ -1119,6 +1167,17 @@ class OpInfo(object):
         """
         return self.error_inputs_func(self, device, **kwargs)
 
+    def sample_inputs_sparse(
+        self, layout, device, dtype, requires_grad=False, **kwargs
+    ):
+        """Returns an iterable of SampleInputs that contain inputs with a
+        specified sparse layout.
+        """
+        sample_inputs_mth = getattr(
+            self, "sample_inputs_" + str(layout).split(".", 1)[-1]
+        )
+        return sample_inputs_mth(device, dtype, requires_grad=requires_grad, **kwargs)
+
     def sample_inputs_sparse_coo(self, device, dtype, requires_grad=False, **kwargs):
         """Returns an iterable of SampleInputs that contain inputs with sparse
         coo layout.
@@ -1159,12 +1218,14 @@ class OpInfo(object):
             self, device, dtype, requires_grad, **kwargs
         )
 
-    def get_decorators(self, test_class, test_name, device, dtype):
+    def get_decorators(self, test_class, test_name, device, dtype, param_kwargs):
         """Returns the decorators targeting the given test."""
         result = []
         for decorator in self.decorators:
             if isinstance(decorator, DecorateInfo):
-                if decorator.is_active(test_class, test_name, device, dtype):
+                if decorator.is_active(
+                    test_class, test_name, device, dtype, param_kwargs
+                ):
                     result.extend(decorator.decorators)
             else:
                 result.append(decorator)
@@ -1690,11 +1751,11 @@ def generate_elementwise_binary_extremal_value_tensors(
     lhs = make_tensor(
         (128, 128), device=device, dtype=dtype, requires_grad=requires_grad
     )
-    lhs.flatten()[::3] = nan
+    lhs.view(-1)[::3] = nan
     rhs = make_tensor(
         (128, 128), device=device, dtype=dtype, requires_grad=requires_grad
     )
-    rhs.flatten()[::3] = nan
+    rhs.view(-1)[::3] = nan
 
     yield SampleInput(lhs, args=(rhs,))
 
@@ -1950,7 +2011,7 @@ class BinaryUfuncInfo(OpInfo):
             ),
         )
         kwargs["skips"] = kwargs.get("skips", tuple()) + common_skips
-        super(BinaryUfuncInfo, self).__init__(
+        super().__init__(
             name,
             sample_inputs_func=sample_inputs_func,
             reference_inputs_func=reference_inputs_func,
@@ -2377,52 +2438,39 @@ def sample_inputs_spectral_ops(self, device, dtype, requires_grad=False, **kwarg
         )
 
     if self.ndimensional == SpectralFuncType.ND:
-        return [
-            SampleInput(
-                nd_tensor(),
-                kwargs=dict(
-                    s=(3, 10) if not is_fp16_or_chalf else (4, 8),
-                    dim=(1, 2),
-                    norm="ortho",
-                ),
-            ),
-            SampleInput(nd_tensor(), kwargs=dict(norm="ortho")),
-            SampleInput(nd_tensor(), kwargs=dict(s=(8,))),
-            SampleInput(oned_tensor()),
-            *(
-                SampleInput(nd_tensor(), kwargs=dict(dim=dim))
-                for dim in [-1, -2, -3, (0, -1)]
-            ),
-        ]
+        yield SampleInput(
+            nd_tensor(),
+            s=(3, 10) if not is_fp16_or_chalf else (4, 8),
+            dim=(1, 2),
+            norm="ortho",
+        )
+        yield SampleInput(nd_tensor(), norm="ortho")
+        yield SampleInput(nd_tensor(), s=(8,))
+        yield SampleInput(oned_tensor())
+        yield from (SampleInput(nd_tensor(), dim=dim) for dim in [-1, -2, -3, (0, -1)])
     elif self.ndimensional == SpectralFuncType.TwoD:
-        return [
-            SampleInput(
-                nd_tensor(),
-                kwargs=dict(
-                    s=(3, 10) if not is_fp16_or_chalf else (4, 8),
-                    dim=(1, 2),
-                    norm="ortho",
-                ),
-            ),
-            SampleInput(nd_tensor(), kwargs=dict(norm="ortho")),
-            SampleInput(
-                nd_tensor(), kwargs=dict(s=(6, 8) if not is_fp16_or_chalf else (4, 8))
-            ),
-            SampleInput(nd_tensor(), kwargs=dict(dim=0)),
-            SampleInput(nd_tensor(), kwargs=dict(dim=(0, -1))),
-            SampleInput(nd_tensor(), kwargs=dict(dim=(-3, -2, -1))),
-        ]
+        yield SampleInput(
+            nd_tensor(),
+            s=(3, 10) if not is_fp16_or_chalf else (4, 8),
+            dim=(1, 2),
+            norm="ortho",
+        )
+        yield SampleInput(nd_tensor(), norm="ortho")
+        yield SampleInput(nd_tensor(), s=(6, 8) if not is_fp16_or_chalf else (4, 8))
+        yield SampleInput(nd_tensor(), dim=0)
+        yield SampleInput(nd_tensor(), dim=(0, -1))
+        yield SampleInput(nd_tensor(), dim=(-3, -2, -1))
     else:
-        return [
-            SampleInput(
-                nd_tensor(),
-                kwargs=dict(n=10 if not is_fp16_or_chalf else 8, dim=1, norm="ortho"),
-            ),
-            SampleInput(nd_tensor(), kwargs=dict(norm="ortho")),
-            SampleInput(nd_tensor(), kwargs=dict(n=7 if not is_fp16_or_chalf else 8)),
-            SampleInput(oned_tensor()),
-            *(SampleInput(nd_tensor(), kwargs=dict(dim=dim)) for dim in [-1, -2, -3]),
-        ]
+        yield SampleInput(
+            nd_tensor(),
+            n=10 if not is_fp16_or_chalf else 8,
+            dim=1,
+            norm="ortho",
+        )
+        yield SampleInput(nd_tensor(), norm="ortho")
+        yield SampleInput(nd_tensor(), n=7 if not is_fp16_or_chalf else 8)
+        yield SampleInput(oned_tensor())
+        yield from (SampleInput(nd_tensor(), dim=dim) for dim in [-1, -2, -3])
 
 
 SpectralFuncType = Enum("SpectralFuncType", ("OneD", "TwoD", "ND"))
@@ -2482,7 +2530,7 @@ class ShapeFuncInfo(OpInfo):
         sample_inputs_func=None,
         **kwargs,
     ):
-        super(ShapeFuncInfo, self).__init__(
+        super().__init__(
             name,
             dtypes=dtypes,
             dtypesIfCUDA=dtypesIfCUDA,
@@ -2534,6 +2582,8 @@ class ForeachFuncInfo(OpInfo):
         dtypesIfROCM=None,
         supports_alpha_param=False,
         sample_inputs_func=sample_inputs_foreach,
+        supports_autograd=False,
+        supports_scalar_self_arg=False,
         **kwargs,
     ):
         super().__init__(
@@ -2542,8 +2592,10 @@ class ForeachFuncInfo(OpInfo):
             dtypesIfCUDA=dtypesIfCUDA,
             dtypesIfROCM=dtypesIfROCM,
             sample_inputs_func=sample_inputs_func,
+            supports_autograd=supports_autograd,
             **kwargs,
         )
+        self.supports_scalar_self_arg = supports_scalar_self_arg
 
         (
             foreach_method,
@@ -2559,6 +2611,14 @@ class ForeachFuncInfo(OpInfo):
 
         if name == "norm":
             self.ref = torch.linalg.vector_norm
+        elif name == "minimum":
+            # because minimum ref does not support inplace or scalar
+            self.ref = torch.clamp_max
+            self.ref_inplace = torch.Tensor.clamp_max_
+        elif name == "maximum":
+            # because maximum ref does not support inplace or scalar
+            self.ref = torch.clamp_min
+            self.ref_inplace = torch.Tensor.clamp_min_
 
 
 def gradcheck_wrapper_hermitian_input(op, input, *args, **kwargs):
@@ -2610,7 +2670,7 @@ def gradcheck_wrapper_masked_operation(op, input, *args, **kwargs):
     output = op(input, *args, **kwargs)
     mask = kwargs.get("mask")
     if mask is not None:
-        output_mask = torch._masked._output_mask(op, input, *args, **kwargs)
+        output_mask = torch.masked._output_mask(op, input, *args, **kwargs)
         output = torch.where(output_mask, output, output.new_zeros([]))
     return output
 
@@ -2630,7 +2690,7 @@ def gradcheck_wrapper_masked_pointwise_operation(op, input, *args, **kwargs):
     if input_mask is not None and other_mask is not None:
         combined_mask = torch.logical_and(input_mask, other_mask)
         new_kwargs = dict(mask=combined_mask, **kwargs)
-        output_mask = torch._masked._input_mask(input, *args, **new_kwargs)
+        output_mask = torch.masked._input_mask(input, *args, **new_kwargs)
         output = torch.where(output_mask, output, output.new_zeros([]))
     return output
 
@@ -2653,5 +2713,5 @@ def clone_sample(sample, **kwargs):
     return SampleInput(
         clone_tensor(sample.input),
         args=tuple(map(clone_tensor, sample.args)),
-        kwargs=dict(((k, clone_tensor(v)) for k, v in sample_kwargs.items())),
+        kwargs={k: clone_tensor(v) for k, v in sample_kwargs.items()},
     )

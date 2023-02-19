@@ -1,20 +1,9 @@
 //  Copyright © 2022 Apple Inc.
 
-#include <ATen/mps/MPSStream.h>
 #include <ATen/native/mps/Copy.h>
 #include <ATen/native/mps/OperationUtils.h>
-#include <iostream>
-#include <cstring>
-#include <ATen/ATen.h>
-#include <ATen/Tensor.h>
-#include <ATen/Utils.h>
-#include <torch/library.h>
-#include <ATen/native/Resize.h>
-#include <c10/util/Optional.h>
 
-
-namespace at {
-namespace native {
+namespace at::native {
 namespace mps {
 
 void* pageAlignedBlockPtr(
@@ -31,6 +20,25 @@ void* pageAlignedBlockPtr(
 
   *alignedBlockSize = alignedLength;
   return (void*)alignedAddress;
+}
+
+/**
+ * Computes number of elements one needs to transfer to preserve all the elements
+ */
+size_t compute_strided_size(const at::Tensor& t) {
+   size_t rc = 1;
+   if (t.numel() == 0) {
+       return 0;
+   }
+   for(const auto i: c10::irange(t.dim())) {
+     assert(t.size(i) > 0);
+     rc += (t.size(i) - 1) * t.stride(i);
+   }
+   return rc;
+}
+
+bool is_strided_contiguous(const at::Tensor& t) {
+  return compute_strided_size(t) == t.numel();
 }
 
 // Copy sourceBuffer into destBuffer, casting sourceBuffer to src.scalar_type().
@@ -66,7 +74,11 @@ void copy_cast_mps(at::Tensor& dst, const at::Tensor& src,
           newCachedGraph = new CachedGraph(mpsGraph);
 
           MPSGraphTensor* inputTensor = mpsGraphRankedPlaceHolder(mpsGraph, src);
-          MPSGraphTensor* outputTensor = [mpsGraph castTensor:inputTensor toType:dstDType name:@"cast"];
+          MPSGraphTensor* inputCastTensor = inputTensor;
+          if (isFloatingType(src.scalar_type()) && dstDType == MPSDataTypeUInt8) {
+            inputCastTensor = [mpsGraph castTensor:inputTensor toType:MPSDataTypeInt32 name:@"cast"];
+          }
+          MPSGraphTensor* outputTensor = [mpsGraph castTensor:inputCastTensor toType:dstDType name:@"cast"];
 
           newCachedGraph->inputTensor_ = inputTensor;
           newCachedGraph->outputTensor_ = outputTensor;
@@ -83,26 +95,26 @@ void copy_cast_mps(at::Tensor& dst, const at::Tensor& src,
                                    autorelease];
     NSDictionary<MPSGraphTensor*, MPSGraphTensorData*>* feeds = @{cachedGraph->inputTensor_: srcData};
     NSDictionary<MPSGraphTensor*, MPSGraphTensorData*>* results = @{cachedGraph->outputTensor_: dstData};
-    runMPSGraph(stream, cachedGraph->graph(), feeds, results);
-    if (!non_blocking)
-      stream->synchronize(SyncType::COMMIT_AND_WAIT);
+    stream->executeMPSGraph(cachedGraph->graph(), feeds, results, !non_blocking ? SyncType::COMMIT_AND_WAIT : SyncType::COMMIT_ADAPTIVE);
   }
 }
 
 static at::Tensor& copy_from_mps_(at::Tensor& dst_, const at::Tensor& src_, bool non_blocking)
 {
+  auto sameMemFormat = src_.is_contiguous(dst_.suggest_memory_format()) && dst_.is_contiguous(dst_.suggest_memory_format());
+
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* stream = getCurrentMPSStream();
   Tensor dst;
   Tensor src;
-  if (!dst_.is_contiguous()) {
+  if (!dst_.is_contiguous(MemoryFormat::Contiguous) && !sameMemFormat) {
     dst = at::empty_like(dst_, LEGACY_CONTIGUOUS_MEMORY_FORMAT);
   } else {
     dst = dst_;
   }
 
   auto storage_byte_offset = src_.storage_offset() * src_.itemsize();
-  if (!src_.is_contiguous()) {
+  if (!src_.is_contiguous(MemoryFormat::Contiguous) && !sameMemFormat) {
     Tensor emptyShell = Tensor();
     src = gatherViewTensor(src_, emptyShell);
     if (src.has_storage()) {
@@ -156,7 +168,6 @@ static at::Tensor& copy_from_mps_(at::Tensor& dst_, const at::Tensor& src_, bool
 
       // If there's anything wrong with source, we shouldn't return dst_ silently and must error out.
       TORCH_INTERNAL_ASSERT(sourceBuffer && dst_tensor_nbytes > 0);
-      TORCH_INTERNAL_ASSERT(dst_tensor_nbytes >= (dst.storage_offset() * dst.element_size()));
 
       stream->copy_and_sync(tmpBuffer, destBuffer, size_to_copy, storage_byte_offset, destOffset, non_blocking);
       [destBuffer release];
@@ -169,55 +180,60 @@ static at::Tensor& copy_from_mps_(at::Tensor& dst_, const at::Tensor& src_, bool
   return dst_;
 }
 
-static at::Tensor& copy_to_mps_(at::Tensor& dst_, const at::Tensor& src_, bool non_blocking)
+// Copies tensor from cpu to mps backed by identical strided-contiguous data
+static void copy_to_mps_stride_contig(at::Tensor& dst, const at::Tensor& src, bool non_blocking)
 {
   MPSStream* stream = getCurrentMPSStream();
-  Tensor dst;
-  Tensor src;
-
   id<MTLDevice> device = MPSDevice::getInstance()->device();
-  auto dst_byte_offset = dst_.storage_offset() * dst_.itemsize();
-  id<MTLBuffer> destBuffer = getMTLBufferStorage(dst_);
-  uint64_t src_total_size = 0;
-
-  if (src_.is_view()) {
-    src = src_.to(dst_.dtype()).expand_as(dst_).contiguous();
-    // Get the actual size of a View (takes into account the storage offset)
-    // For View tensors, the storage offset can be bigger than what's being reported by nbytes
-    src_total_size = at::detail::computeStorageNbytesContiguous(src.sizes(), src.element_size(), src.storage_offset());
-  } else {
-    src = src_;
-    if (src.dtype() != dst_.dtype()) {
-      // In case of dtype change, perform conversion on source device
-      src = src.to(dst_.dtype());
-    }
-    src_total_size = src.nbytes();
-  }
-
+  auto dst_byte_offset = dst.storage_offset() * dst.itemsize();
+  auto src_byte_offset = src.storage_offset() * src.itemsize();
+  id<MTLBuffer> destBuffer = getMTLBufferStorage(dst);
   const size_t size_to_copy = src.nbytes();
-  const void* host_src = src.storage().data();
-  TORCH_INTERNAL_ASSERT(src_total_size >= (src.storage_offset() * src.element_size()));
-  TORCH_INTERNAL_ASSERT(dst_.nbytes() >= dst_byte_offset);
+  const void* host_src = static_cast<char *>(src.storage().data()) + src_byte_offset;
 
-  NSUInteger sourceOffset = 0;
+  TORCH_INTERNAL_ASSERT(src.dtype() == dst.dtype() && src.strides() == dst.strides() && is_strided_contiguous(src));
+
   @autoreleasepool {
     MTLResourceOptions options = MTLResourceOptionCPUCacheModeDefault | MTLResourceStorageModeShared;
     NSUInteger alignedLength = 0;
+    NSUInteger sourceOffset = 0;
 
-    void* alignedPtr = pageAlignedBlockPtr(host_src, (NSUInteger)src_total_size, &alignedLength);
+    void* alignedPtr = pageAlignedBlockPtr(host_src, (NSUInteger)size_to_copy, &alignedLength);
+    sourceOffset = uintptr_t(host_src) - uintptr_t(alignedPtr);
     id<MTLBuffer> sourceBuffer = [device newBufferWithBytesNoCopy:alignedPtr
                                           length:alignedLength
                                          options:options
                                      deallocator:nil];
-    sourceOffset = uintptr_t(host_src) - uintptr_t(alignedPtr);
-    if (src_.is_view() || !src_.is_contiguous())
-      sourceOffset += src_.storage_offset() * src_.itemsize();
 
     stream->copy_and_sync(sourceBuffer, destBuffer, size_to_copy, sourceOffset, dst_byte_offset, non_blocking);
     [sourceBuffer release];
   }
+}
 
-  return dst_;
+static at::Tensor& copy_to_mps_(at::Tensor& dst_, const at::Tensor& src_, bool non_blocking)
+{
+  // Typecast to dst_ if needed and expand, which is a no-op
+  Tensor src = (src_.dtype() != dst_.dtype() ? src_.to(dst_.dtype()) : src_).expand_as(dst_);
+
+  // If src is not contiguously strided it must be cloned
+  // It does not mean that tensor is contiguous, but rather
+  // that it could be represented as 1d view
+  if (!is_strided_contiguous(src)) {
+    src = src.clone();
+    TORCH_INTERNAL_ASSERT(is_strided_contiguous(src));
+  }
+  Tensor dst = dst_;
+  bool needs_copy = false;
+  // If src and dst_ strides do not match, it means that
+  // either dst_ is not representable as 1d view or its stride order is different
+  // in that case create an empty storage like src, copy it to device and then do
+  // reshaping on the device
+  if (src.strides() != dst_.strides()) {
+    needs_copy = true;
+    dst = at::empty_like(src, at::device(at::kMPS));
+  }
+  copy_to_mps_stride_contig(dst, src, non_blocking && !needs_copy);
+  return needs_copy? dst_.copy_(dst) : dst_;
 }
 
 void copy_blit_mps(void* dst, const void* src, size_t size) {
@@ -232,16 +248,18 @@ static at::Tensor& copy_kernel_mps(at::Tensor& dst_, const at::Tensor& src_, boo
 
   // If dst is contiguous and there is no byte offset, we can save directly the result of
   // gather into dst. This reduces the overhead of doing an additional blit for most cases
-  bool returnGatherOutput = (dst_.is_contiguous() && !dst_byte_offset);
+  bool returnGatherOutput = dst_.is_contiguous();
   Tensor src;
+  auto sameMemFormat = src_.is_contiguous(dst_.suggest_memory_format()) && dst_.is_contiguous(dst_.suggest_memory_format());
 
-  if (!src_.is_contiguous()) {
+  if (!src_.is_contiguous(MemoryFormat::Contiguous) && !sameMemFormat) {
     Tensor emptyShell = Tensor();
     src = gatherViewTensor(src_, returnGatherOutput ? dst_ : emptyShell);
 
     if (src.has_storage()) {
-      if (returnGatherOutput)
+      if (returnGatherOutput) {
         return dst_;
+      }
 
       src_byte_offset = 0;
     } else {
@@ -257,19 +275,8 @@ static at::Tensor& copy_kernel_mps(at::Tensor& dst_, const at::Tensor& src_, boo
   // Scatter to `dst` if the memory is not contiguous
   // If the memory is not contiguous, it means that the tensor has strides and we would not be
   // able to do the copy using a single blit
-  if (!dst_.is_contiguous()) {
-    Tensor tmp;
-    if (src.dtype() != dst_.dtype()) {
-      id<MTLBuffer> tmpBuffer = sourceBuffer;
-      if (src.element_size() < dst_.element_size()) {
-        tmp = at::native::empty_mps(dst_.sizes(), dst_.scalar_type(), c10::nullopt, kMPS);
-        tmpBuffer = getMTLBufferStorage(tmp);
-      }
-
-      copy_cast_mps(dst_, src, tmpBuffer, sourceBuffer);
-    }
-
-    return scatterViewTensor((src.dtype() != dst_.dtype() && tmp.has_storage()) ? tmp : src, dst_);
+  if (!dst_.is_contiguous(MemoryFormat::Contiguous) && !sameMemFormat) {
+    return scatterViewTensor(src, dst_);
   }
   src._set_conj(src_.is_conj());
   src._set_neg(src_.is_neg());
@@ -323,5 +330,5 @@ Tensor _copy_from_mps(const at::Tensor& self, const at::Tensor& dst, bool non_bl
 {
   return mps::mps_copy_(const_cast<Tensor&>(dst), self, non_blocking);
 }
-} // namespace native
-} // namespace at
+
+} // namespace at::native

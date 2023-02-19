@@ -5,9 +5,10 @@ import warnings
 
 import torch
 from torch.nn import Module
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import LRScheduler
 
 __all__ = ['AveragedModel', 'update_bn', 'SWALR']
+
 
 class AveragedModel(Module):
     r"""Implements averaged model for Stochastic Weight Averaging (SWA).
@@ -99,7 +100,7 @@ class AveragedModel(Module):
         https://arxiv.org/abs/2001.02312
     """
     def __init__(self, model, device=None, avg_fn=None, use_buffers=False):
-        super(AveragedModel, self).__init__()
+        super().__init__()
         self.module = deepcopy(model)
         if device is not None:
             self.module = self.module.to(device)
@@ -132,6 +133,11 @@ class AveragedModel(Module):
             else:
                 p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_,
                                                  self.n_averaged.to(device)))
+        if not self.use_buffers:
+            # If not apply running averages to the buffers,
+            # keep the buffers in sync with the source model.
+            for b_swa, b_model in zip(self.module.buffers(), model.buffers()):
+                b_swa.detach().copy_(b_model.detach().to(device))
         self.n_averaged += 1
 
 
@@ -191,7 +197,7 @@ def update_bn(loader, model, device=None):
     model.train(was_training)
 
 
-class SWALR(_LRScheduler):
+class SWALR(LRScheduler):
     r"""Anneals the learning rate in each parameter group to a fixed value.
 
     This learning rate scheduler is meant to be used with Stochastic Weight
@@ -248,7 +254,7 @@ class SWALR(_LRScheduler):
         if not isinstance(anneal_epochs, int) or anneal_epochs < 0:
             raise ValueError(f"anneal_epochs must be equal or greater than 0, got {anneal_epochs}")
         self.anneal_epochs = anneal_epochs
-        super(SWALR, self).__init__(optimizer, last_epoch)
+        super().__init__(optimizer, last_epoch)
 
     @staticmethod
     def _format_param(optimizer, swa_lrs):

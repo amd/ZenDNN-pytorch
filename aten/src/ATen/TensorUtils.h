@@ -6,7 +6,12 @@
 #include <ATen/TensorGeometry.h>
 #include <ATen/Utils.h>
 
+#include <utility>
+
 // These functions are NOT in Utils.h, because this file has a dep on Tensor.h
+
+#define TORCH_CHECK_TENSOR_ALL(cond, ...) \
+  TORCH_CHECK((cond)._is_all_true().item<bool>(), __VA_ARGS__);
 
 namespace at {
 
@@ -37,7 +42,7 @@ struct TORCH_API TensorGeometryArg {
   /* implicit */ TensorGeometryArg(TensorArg arg)
       : tensor(TensorGeometry{arg.tensor}), name(arg.name), pos(arg.pos) {}
   TensorGeometryArg(TensorGeometry tensor, const char* name, int pos)
-      : tensor(tensor), name(name), pos(pos) {}
+      : tensor(std::move(tensor)), name(name), pos(pos) {}
   const TensorGeometry* operator->() const {
     return &tensor;
   }
@@ -85,11 +90,20 @@ TORCH_API void checkSize(
     CheckedFrom c,
     const TensorGeometryArg& t,
     IntArrayRef sizes);
+TORCH_API void checkSize_symint(
+    CheckedFrom c,
+    const TensorGeometryArg& t,
+    c10::SymIntArrayRef sizes);
 TORCH_API void checkSize(
     CheckedFrom c,
     const TensorGeometryArg& t,
     int64_t dim,
     int64_t size);
+TORCH_API void checkSize_symint(
+    CheckedFrom c,
+    const TensorGeometryArg& t,
+    int64_t dim,
+    c10::SymInt size);
 TORCH_API void checkNumel(
     CheckedFrom c,
     const TensorGeometryArg& t,

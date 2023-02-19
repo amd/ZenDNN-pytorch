@@ -21,7 +21,7 @@ from .skip.layout import inspect_skip_layout
 from .skip.skippable import verify_skippables
 from .stream import AbstractStream, new_stream
 
-__all__ = ["Pipe"]
+__all__ = ["Pipe", "BalanceError", "PipeSequential", "WithDevice"]
 
 
 Device = Union[torch.device, int, str]
@@ -162,7 +162,7 @@ class WithDevice(nn.Module):
         >>> model = Pipe(model, chunks=8)
     """
     def __init__(self, module: nn.Module, device: torch.device):
-        super(WithDevice, self).__init__()
+        super().__init__()
         self._module = module
         self._device = torch.device(device)
 

@@ -1,8 +1,8 @@
 #include <chrono>
 #include <iostream>
 
-#include <c10d/FileStore.hpp>
-#include <c10d/ProcessGroupNCCL.hpp>
+#include <torch/csrc/distributed/c10d/FileStore.hpp>
+#include <torch/csrc/distributed/c10d/ProcessGroupNCCL.hpp>
 #include "CUDATest.hpp"
 #include "TestUtils.hpp"
 #include "c10d/Types.hpp"
@@ -22,7 +22,7 @@ class NCCLTestBase {
  public:
   NCCLTestBase(
       const std::string& path,
-      const std::chrono::milliseconds pgTimeout = kProcessGroupDefaultTimeout)
+      const std::chrono::milliseconds pgTimeout = kBackendDefaultTimeout)
       : path_(path), pgTimeout_(pgTimeout) {}
 
   NCCLTestBase(NCCLTestBase&& other) {
@@ -56,7 +56,7 @@ class NCCLTest : public NCCLTestBase {
   NCCLTest(
       const std::string& path,
       int worldSize,
-      std::chrono::milliseconds pgTimeout = kProcessGroupDefaultTimeout)
+      std::chrono::milliseconds pgTimeout = kBackendDefaultTimeout)
       : NCCLTestBase(path, pgTimeout),
         numDevices_(cudaNumDevices()),
         worldSize_(worldSize) {
@@ -355,7 +355,7 @@ void testAllreduce(const std::string& path, int rank, int size) {
     const auto* const data = tensor.data_ptr<float>();
     for (const auto k : c10::irange(tensor.numel())) {
       EXPECT_EQ(data[k], expected)
-          << "Allreduce ouputs do not match expected outputs";
+          << "Allreduce outputs do not match expected outputs";
     }
   }
 }

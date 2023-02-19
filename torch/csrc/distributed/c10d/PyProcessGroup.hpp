@@ -1,6 +1,6 @@
 #pragma once
 
-#include <c10d/ProcessGroup.hpp>
+#include <torch/csrc/distributed/c10d/ProcessGroup.hpp>
 #include <torch/csrc/utils/pybind.h>
 #include <torch/csrc/jit/python/pybind_utils.h>
 
@@ -76,7 +76,7 @@ class PyProcessGroup : public ProcessGroup {
   }
 
   c10::intrusive_ptr<Work> barrier(
-      const BarrierOptions& opts = BarrierOptions()) {
+      const BarrierOptions& opts = BarrierOptions()) override {
     PYBIND11_OVERRIDE(
         c10::intrusive_ptr<Work>, /* Return type */
         ProcessGroup, /* Parent class */

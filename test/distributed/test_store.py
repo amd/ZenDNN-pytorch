@@ -16,7 +16,6 @@ if not dist.is_available():
     sys.exit(0)
 
 import torch.testing._internal.common_utils as common
-from torch._six import string_classes
 from torch.testing._internal.common_distributed import (
     skip_if_win32,
     create_tcp_store
@@ -60,7 +59,7 @@ def gpus_for_rank(world_size):
     return gpus_for_rank
 
 
-class StoreTestBase(object):
+class StoreTestBase:
     def _create_store(self, i):
         raise RuntimeError("not implemented")
 
@@ -122,7 +121,7 @@ class StoreTestBase(object):
 
 class FileStoreTest(TestCase, StoreTestBase):
     def setUp(self):
-        super(FileStoreTest, self).setUp()
+        super().setUp()
         self.file = tempfile.NamedTemporaryFile(delete=False)
 
     def _create_store(self):
@@ -130,12 +129,38 @@ class FileStoreTest(TestCase, StoreTestBase):
         store.set_timeout(timedelta(seconds=300))
         return store
 
+    def test_init_pg_and_rpc_with_same_file(self):
+        file = tempfile.NamedTemporaryFile(delete=False)
+        # Init RPC using file
+        rpc_backend_options = rpc.TensorPipeRpcBackendOptions()
+        rpc_backend_options.init_method = f"file://{file.name}"
+        rpc.init_rpc("worker", rank=0, world_size=1, rpc_backend_options=rpc_backend_options)
+
+        # Init PG using file
+        dist.init_process_group("gloo", rank=0, world_size=1, init_method=f"file://{file.name}")
+        dist.destroy_process_group()
+        assert os.path.exists(file.name)
+
+        rpc.shutdown()
+        os.remove(file.name)
+
+    def test_refcount(self):
+        file = tempfile.NamedTemporaryFile(delete=False)
+        store = dist.FileStore(file.name, 1)
+        store2 = dist.FileStore(file.name, 1)
+
+        del store
+        assert os.path.exists(file.name)
+        del store2
+        assert not os.path.exists(file.name)
+
+    @property
+    def num_keys_total(self):
+        return 6
+
 
 @skip_if_win32()
 class HashStoreTest(TestCase, StoreTestBase):
-    def setUp(self):
-        super(HashStoreTest, self).setUp()
-
     def _create_store(self):
         store = dist.HashStore()
         store.set_timeout(timedelta(seconds=300))
@@ -157,7 +182,7 @@ class PrefixStoreTest(TestCase):
 
 class PrefixFileStoreTest(TestCase, StoreTestBase):
     def setUp(self):
-        super(PrefixFileStoreTest, self).setUp()
+        super().setUp()
         self.file = tempfile.NamedTemporaryFile(delete=False)
         self.filestore = dist.FileStore(self.file.name, 1)
         self.prefix = "test_prefix"
@@ -165,6 +190,10 @@ class PrefixFileStoreTest(TestCase, StoreTestBase):
 
     def _create_store(self):
         return dist.PrefixStore(self.prefix, self.filestore)
+
+    @property
+    def num_keys_total(self):
+        return 6
 
 
 class TCPStoreTest(TestCase, StoreTestBase):
@@ -284,7 +313,7 @@ class TCPStoreTest(TestCase, StoreTestBase):
 
 class PrefixTCPStoreTest(TestCase, StoreTestBase):
     def setUp(self):
-        super(PrefixTCPStoreTest, self).setUp()
+        super().setUp()
         self.tcpstore = create_tcp_store()
         self.prefix = "test_prefix"
         self.tcpstore.set_timeout(timedelta(seconds=300))
@@ -302,11 +331,11 @@ class PrefixTCPStoreTest(TestCase, StoreTestBase):
 
 class MyPythonStore(dist.Store):
     def __init__(self):
-        super(MyPythonStore, self).__init__()
+        super().__init__()
         self.store = {}
 
     def set(self, key, value):
-        if not isinstance(key, string_classes):
+        if not isinstance(key, str):
             raise AssertionError("Expected set to be called with string key")
         if type(value) is not bytes:
             raise AssertionError("Expected set to be called with bytes value")
@@ -325,9 +354,6 @@ class MyPythonStore(dist.Store):
 
 
 class PythonStoreTest(TestCase):
-    def setUp(self):
-        super(PythonStoreTest, self).setUp()
-
     def test_set_get(self):
         # If we were to inherit from StoreTestBase and try to use
         # its test_set_get function, we would exercise the Python

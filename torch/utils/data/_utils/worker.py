@@ -10,8 +10,10 @@ import os
 import queue
 from dataclasses import dataclass
 from torch._utils import ExceptionWrapper
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
 from . import signal_handling, MP_STATUS_CHECK_INTERVAL, IS_WINDOWS, HAS_NUMPY
+if TYPE_CHECKING:
+    from torch.utils.data import Dataset
 
 if IS_WINDOWS:
     import ctypes
@@ -20,7 +22,7 @@ if IS_WINDOWS:
     # On Windows, the parent ID of the worker process remains unchanged when the manager process
     # is gone, and the only way to check it through OS is to let the worker have a process handle
     # of the manager and ask if the process status has changed.
-    class ManagerWatchdog(object):
+    class ManagerWatchdog:
         def __init__(self):
             self.manager_pid = os.getppid()
 
@@ -46,7 +48,7 @@ if IS_WINDOWS:
                 self.manager_dead = self.kernel32.WaitForSingleObject(self.manager_handle, 0) == 0
             return not self.manager_dead
 else:
-    class ManagerWatchdog(object):  # type: ignore[no-redef]
+    class ManagerWatchdog:  # type: ignore[no-redef]
         def __init__(self):
             self.manager_pid = os.getppid()
             self.manager_dead = False
@@ -59,7 +61,11 @@ else:
 _worker_info = None
 
 
-class WorkerInfo(object):
+class WorkerInfo:
+    id: int
+    num_workers: int
+    seed: int
+    dataset: 'Dataset'
     __initialized = False
 
     def __init__(self, **kwargs):
@@ -71,7 +77,7 @@ class WorkerInfo(object):
     def __setattr__(self, key, val):
         if self.__initialized:
             raise RuntimeError("Cannot assign attributes to {} objects".format(self.__class__.__name__))
-        return super(WorkerInfo, self).__setattr__(key, val)
+        return super().__setattr__(key, val)
 
     def __repr__(self):
         items = []
@@ -80,7 +86,7 @@ class WorkerInfo(object):
         return '{}({})'.format(self.__class__.__name__, ', '.join(items))
 
 
-def get_worker_info():
+def get_worker_info() -> Optional[WorkerInfo]:
     r"""Returns the information about the current
     :class:`~torch.utils.data.DataLoader` iterator worker process.
 
@@ -111,12 +117,12 @@ def get_worker_info():
 
 r"""Dummy class used to signal the end of an IterableDataset"""
 @dataclass(frozen=True)
-class _IterableDatasetStopIteration(object):
+class _IterableDatasetStopIteration:
     worker_id: int
 
 r"""Dummy class used to resume the fetching when worker reuse is enabled"""
 @dataclass(frozen=True)
-class _ResumeIteration(object):
+class _ResumeIteration:
     seed: Optional[int] = None
 
 # The function `_generate_state` is adapted from `numpy.random.SeedSequence`

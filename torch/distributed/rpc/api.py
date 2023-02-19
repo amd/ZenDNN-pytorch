@@ -58,7 +58,6 @@ logger = logging.getLogger(__name__)
 _ignore_rref_leak = True
 _default_pickler = _internal_rpc_pickler
 
-
 @contextlib.contextmanager
 def _use_rpc_pickler(rpc_pickler):
     r"""
@@ -85,7 +84,7 @@ def _require_initialized(func):
     return wrapper
 
 
-class AllGatherStates(object):
+class AllGatherStates:
     def __init__(self):
         # Each `gathered_objects` is an empty dict at beginning.
         # The leader worker is elected as the first worker in a sorted worker
@@ -192,7 +191,7 @@ def _all_gather(obj, worker_names=None, timeout=UNSET_RPC_TIMEOUT):
             _ALL_WORKER_NAMES is not None
         ), "`_ALL_WORKER_NAMES` is not initialized for `def _all_gather`."
         worker_names = _ALL_WORKER_NAMES
-    leader_name = sorted(worker_names)[0]
+    leader_name = min(worker_names)
 
     self_name = _get_current_rpc_agent().get_worker_info().name
 
@@ -426,7 +425,7 @@ def get_worker_info(worker_name=None):
 def _to_worker_info(to):
     if isinstance(to, WorkerInfo):
         return to
-    elif isinstance(to, str) or isinstance(to, int):
+    elif isinstance(to, (str, int)):
         return get_worker_info(to)
     else:
         raise ValueError("Cannot get WorkerInfo from name {}".format(to))

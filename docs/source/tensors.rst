@@ -483,7 +483,6 @@ Tensor class reference
     Tensor.logit
     Tensor.logit_
     Tensor.long
-    Tensor.lstsq
     Tensor.lt
     Tensor.lt_
     Tensor.less
@@ -624,6 +623,7 @@ Tensor class reference
     Tensor.size
     Tensor.slogdet
     Tensor.slice_scatter
+    Tensor.softmax
     Tensor.sort
     Tensor.split
     Tensor.sparse_mask
@@ -637,6 +637,7 @@ Tensor class reference
     Tensor.std
     Tensor.stft
     Tensor.storage
+    Tensor.untyped_storage
     Tensor.storage_offset
     Tensor.storage_type
     Tensor.stride
@@ -649,7 +650,6 @@ Tensor class reference
     Tensor.svd
     Tensor.swapaxes
     Tensor.swapdims
-    Tensor.symeig
     Tensor.t
     Tensor.t_
     Tensor.tensor_split
