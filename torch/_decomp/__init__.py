@@ -2,24 +2,59 @@ import inspect
 from collections import defaultdict
 from functools import wraps
 from itertools import chain
-from typing import Callable, Dict, NamedTuple, Sequence, Tuple, Union
+from typing import Callable, Dict, Sequence, Union
 
 import torch
-import torch._ops
 import torch.library
+from torch._ops import OpOverload, OpOverloadPacket
 from torch.utils._pytree import tree_map
 
-__all__ = ["decomposition_table", "register_decomposition", "get_decompositions"]
+__all__ = [
+    "decomposition_table",
+    "pre_autograd_decomposition_table",
+    "meta_table",
+    "register_decomposition",
+    "get_decompositions",
+    "core_aten_decompositions",
+]
+
 
 # TODO: relax key type here; torch registrations should be possible to; but
 # right now this type is accurate
-decomposition_table: Dict[torch._ops.OpOverload, Callable] = {}
+global_decomposition_table: Dict[str, Dict[OpOverload, Callable]] = defaultdict(dict)
+
+decomposition_table = global_decomposition_table["post_autograd"]
+pre_autograd_decomposition_table = global_decomposition_table["pre_autograd"]
+meta_table = global_decomposition_table["meta"]
 
 
-meta_lib = torch.library.Library("aten", "IMPL", "Meta")
+def _add_op_to_registry(registry, op, fn):
+    """
+    This is an internal API for adding an op to the decomposition table.
+
+    If op is OpOverload, it will be added to the registry directly.
+    If op is OpOverloadPacket, all the valid op_overloads in the packet will be added to the registry.
+    """
+    overloads = []
+    if isinstance(op, OpOverload):
+        overloads.append(op)
+    else:
+        assert isinstance(op, OpOverloadPacket)
+        for ol in op.overloads():
+            overloads.append(getattr(op, ol))
+
+    for op_overload in overloads:
+        if op_overload in registry:
+            raise RuntimeError(f"duplicate registrations for {op_overload}")
+
+        # TorchScript dumps a bunch of extra nonsense overloads
+        # which don't have corresponding dispatcher entries, we need
+        # to filter those out, e.g aten.add.float_int
+        if torch._C._dispatch_has_kernel(op_overload.name()):
+            registry[op_overload] = fn
 
 
-def register_decomposition(aten_op, registry=None, *, disable_meta: bool = False):
+def register_decomposition(aten_op, registry=None, *, type="post_autograd"):
     """
     A decorator to register a function as a decomposition to the Python
     decomposition table.  Use it like this::
@@ -36,10 +71,11 @@ def register_decomposition(aten_op, registry=None, *, disable_meta: bool = False
     autograd) and not just backend tracing, where we then need to know if a
     decomposition can be used to simulate a transform.
 
-    By default, if the decomposition is for an operator that doesn't have
-    a Meta implementation, we will register it to the dispatcher.  Use
-    `disable_meta` to disable this behavior.
+    By default, we also will register it to the Meta key of dispatcher,
+    and replace the c++ Meta implementation if there is already one.
     """
+
+    assert type in {"post_autograd", "pre_autograd", "meta"}
 
     def decomposition_decorator(f: Callable) -> Callable:
         sig = inspect.signature(f)
@@ -86,66 +122,22 @@ def register_decomposition(aten_op, registry=None, *, disable_meta: bool = False
 
         nonlocal registry
         if registry is None:
-            registry = decomposition_table
+            registry = global_decomposition_table[type]
 
-        def add_op_to_table(aten_op):
-            overloads = []
-            if isinstance(aten_op, torch._ops.OpOverload):
-                overloads.append(aten_op)
-            else:
-                assert isinstance(aten_op, torch._ops.OpOverloadPacket)
-                for ol in aten_op.overloads():
-                    overloads.append(getattr(aten_op, ol))
-            for op_overload in overloads:
-                if op_overload in registry:
-                    raise RuntimeError(f"duplicate registrations for {op_overload}")
-                registry[op_overload] = fn
-                # TODO: factor this logic into OpOverload or Library API
-                name = op_overload._schema.name
-                if op_overload._schema.overload_name:
-                    name += "." + op_overload._schema.overload_name
-                if (
-                    not disable_meta
-                    # TorchScript dumps a bunch of extra nonsense overloads
-                    # which don't have corresponding dispatcher entries, we need
-                    # to filter those out
-                    and torch._C._dispatch_has_kernel(name)
-                    # Don't register a python meta kernel to any operator that has
-                    # should already work with meta tensors today.
-                    # We can check that by seeing if the "computed table" for the operator
-                    # has a registration to Meta;
-                    # either through a direct registration, or an indirect one through
-                    # an alias dispatch key (e.g. CompositeImplicitAutograd)
-                    and not torch._C._dispatch_has_computed_kernel_for_dispatch_key(
-                        name, "Meta"
-                    )
-                ):
-                    if any(
-                        a.alias_info is not None and not a.alias_info.is_write
-                        for a in op_overload._schema.arguments
-                    ):
-                        raise RuntimeError(
-                            f"""
-Attempting to register a python meta kernel for a view operator: {str(op_overload)}.
-We shouldn't do this, because the output will report as not having aliased storages.
-All view ops have meta kernels in C++ today, so we should use those instead.
-
-If you're registering an operator through the `@register_decomposition` decorator,
-Please set `disable_meta=True`.
-                        """
-                        )
-                    meta_lib.impl(op_overload, fn)
+        def register(op):
+            _add_op_to_registry(registry, op, fn)
 
         # To handle allowing multiple aten_ops at once
-        tree_map(add_op_to_table, aten_op)
+        tree_map(register, aten_op)
         return fn
 
     return decomposition_decorator
 
 
 def get_decompositions(
-    aten_ops: Sequence[Union[torch._ops.OpOverload, torch._ops.OpOverloadPacket]]
-) -> Dict[torch._ops.OpOverload, Callable]:
+    aten_ops: Sequence[Union[OpOverload, OpOverloadPacket]],
+    type: str = "post_autograd",
+) -> Dict[OpOverload, Callable]:
     """
     Retrieve a dictionary of decompositions corresponding to the list of
     operator overloads and overload packets passed as input.  Overload
@@ -157,19 +149,175 @@ def get_decompositions(
     they know how to implement, and we provide decompositions for everything
     not in this set.
     """
+    assert type in {"post_autograd", "pre_autograd", "meta"}
+
+    registry = global_decomposition_table[type]
     packets_to_overloads = defaultdict(list)
-    for opo in decomposition_table:
+    for opo in registry:
         packets_to_overloads[opo.overloadpacket].append(opo)
     decompositions = {}
     for op in aten_ops:
-        if isinstance(op, torch._ops.OpOverloadPacket) and op in packets_to_overloads:
+        if isinstance(op, OpOverloadPacket) and op in packets_to_overloads:
             for op_overload in packets_to_overloads[op]:
-                decompositions[op_overload] = decomposition_table[op_overload]
-        elif isinstance(op, torch._ops.OpOverload) and op in decomposition_table:
-            decompositions[op] = decomposition_table[op]
+                decompositions[op_overload] = registry[op_overload]
+        elif isinstance(op, OpOverload) and op in registry:
+            decompositions[op] = registry[op]
     return decompositions
 
 
 # populate the table
 import torch._decomp.decompositions
 import torch._refs
+
+# This list was copied from torch/_inductor/decomposition.py
+# excluding decompositions that results in prim ops
+# Resulting opset of decomposition is core aten ops
+def core_aten_decompositions() -> Dict[OpOverload, Callable]:
+    aten = torch.ops.aten
+    return get_decompositions(
+        [
+            aten._adaptive_avg_pool2d_backward,
+            aten.addcdiv,
+            aten.addcdiv_,
+            aten.addcmul,
+            aten.addcmul_,
+            aten.addr,
+            aten.avg_pool2d_backward,
+            aten.binary_cross_entropy,
+            aten.binary_cross_entropy_backward,
+            aten.binary_cross_entropy_with_logits,
+            aten.bucketize,
+            aten.celu,
+            aten.col2im,
+            aten.cudnn_batch_norm,
+            aten.cudnn_batch_norm_backward,
+            aten.detach,
+            aten.diag_embed,
+            aten.diagonal,
+            aten.dot,
+            aten.elu,
+            aten.elu_backward,
+            aten._embedding_bag,
+            aten.embedding_dense_backward,
+            aten.expand_as,
+            aten.eye,
+            aten.fill,
+            aten.frac,
+            aten._fused_moving_avg_obs_fq_helper,
+            aten.gelu,
+            aten.gelu_backward,
+            aten.glu_backward,
+            aten.grid_sampler_2d,
+            aten.hardshrink,
+            aten.hardshrink_backward,
+            aten.hardsigmoid,
+            aten.hardsigmoid_backward,
+            aten.hardswish,
+            aten.hardswish_,
+            aten.hardswish_backward,
+            aten.hardtanh,
+            aten.hardtanh_,
+            aten.hardtanh_backward,
+            aten.heaviside,
+            aten.huber_loss,
+            aten.huber_loss_backward,
+            aten.im2col,
+            aten.index_add,
+            aten.index_add_,
+            aten.index_copy,
+            aten.index_copy_,
+            aten.index_fill,
+            aten.index_fill_,
+            aten.index_select,
+            aten.isneginf,
+            aten.isposinf,
+            aten.l1_loss,
+            aten.leaky_relu,
+            aten.leaky_relu_,
+            aten.leaky_relu_backward,
+            aten.lerp,
+            aten.linspace,
+            aten.logaddexp,
+            aten.logit,
+            aten.logit_backward,
+            aten.log_sigmoid_backward,
+            aten.log_sigmoid_forward,
+            aten._log_softmax,
+            aten._log_softmax_backward_data,
+            aten.logspace,
+            aten.logsumexp.default,
+            aten.masked_fill,
+            aten.masked_fill_,
+            aten.max_pool2d_with_indices_backward,
+            aten.mish,
+            aten.mse_loss,
+            aten.mse_loss_backward,
+            aten.mv,
+            aten.mvlgamma,
+            aten.nan_to_num,
+            aten.narrow,
+            aten.native_batch_norm,
+            aten.native_batch_norm_backward,
+            aten._native_batch_norm_legit,
+            aten._native_batch_norm_legit_no_training,
+            aten._native_batch_norm_legit_functional,
+            aten.native_dropout_backward,
+            aten.native_group_norm,
+            aten.native_group_norm_backward,
+            aten.native_layer_norm,
+            aten.native_layer_norm_backward,
+            aten.new_empty,
+            aten.new_full,
+            aten.new_ones,
+            aten.new_zeros,
+            aten.nll_loss_backward,
+            aten.nll_loss_forward,
+            aten.norm,
+            aten.ones,
+            aten.ones_like,
+            aten._prelu_kernel,
+            aten._prelu_kernel_backward,
+            aten._reshape_alias,
+            aten.rot90,
+            aten.rsub.Scalar,
+            aten.rsub.Tensor,
+            aten.select_backward,
+            aten.select_scatter,
+            aten.sgn,
+            aten.sigmoid_backward,
+            aten.silu,
+            aten.silu_,
+            aten.silu_backward,
+            aten.sinc,
+            aten.slice_backward,
+            aten.soft_margin_loss,
+            aten.soft_margin_loss_backward,
+            aten._softmax,
+            aten._softmax_backward_data,
+            aten.softplus,
+            aten.softplus_backward,
+            aten.softshrink,
+            aten.softshrink_backward,
+            aten.special_entr,
+            aten.special_log_ndtr,
+            aten.special_xlog1py,
+            aten.stack,
+            aten.t,
+            aten.tanh_backward,
+            aten.threshold,
+            aten.threshold_backward,
+            aten.trace,
+            aten.transpose.int,
+            aten.tril.default,
+            aten.unfold,
+            aten.unfold_backward,
+            aten.upsample_bilinear2d,
+            aten.upsample_bilinear2d.vec,
+            aten.upsample_nearest2d_backward,
+            aten.xlogy,
+            aten.zero,
+            aten.zero_,
+            aten.zeros,
+            aten.zeros_like,
+        ]
+    )

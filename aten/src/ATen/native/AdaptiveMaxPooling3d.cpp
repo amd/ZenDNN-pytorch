@@ -1,9 +1,18 @@
-#include <ATen/ATen.h>
-#include <ATen/NativeFunctions.h>
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#include <ATen/core/Tensor.h>
+#include <ATen/Dispatch.h>
 #include <ATen/Parallel.h>
 #include <c10/util/irange.h>
 #include <tuple>
 
+#include <ATen/native/AdaptivePooling.h>
+
+#ifndef AT_PER_OPERATOR_HEADERS
+#include <ATen/NativeFunctions.h>
+#else
+#include <ATen/ops/adaptive_max_pool3d_backward_native.h>
+#include <ATen/ops/adaptive_max_pool3d_native.h>
+#endif
 
 namespace at {
 namespace meta {
@@ -58,6 +67,7 @@ TORCH_META_FUNC(adaptive_max_pool3d) (const Tensor& input, IntArrayRef output_si
 
 TORCH_META_FUNC(adaptive_max_pool3d_backward)
 (const Tensor& gradOutput, const Tensor& input, const Tensor& indices) {
+    at::native::adaptive_pool_empty_output_check(gradOutput, "adaptive_max_pool3d_backward");
     set_output_raw_strided(0, input.sizes(), {}, input.options());
 }
 } // namespace meta

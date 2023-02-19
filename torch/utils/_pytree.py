@@ -1,9 +1,12 @@
 from typing import NamedTuple, Callable, Any, Tuple, List, Dict, Type, cast, Optional, TypeVar, overload, Union
 import functools
 from collections import namedtuple, OrderedDict
+from dataclasses import dataclass
+
 
 T = TypeVar('T')
 S = TypeVar('S')
+U = TypeVar('U')
 R = TypeVar('R')
 
 """
@@ -108,32 +111,33 @@ def _is_leaf(pytree: PyTree) -> bool:
 # context: some context that is useful in unflattening the pytree
 # children_specs: specs for each child of the root Node
 # num_leaves: the number of leaves
+@dataclass
 class TreeSpec:
-    def __init__(self, typ: Any, context: Context, children_specs: List['TreeSpec']) -> None:
-        self.type = typ
-        self.context = context
-        self.children_specs = children_specs
-        self.num_leaves: int = sum([spec.num_leaves for spec in children_specs])
+    type: Any
+    context: Context
+    children_specs: List['TreeSpec']
 
-    def __repr__(self) -> str:
-        return f'TreeSpec({self.type.__name__}, {self.context}, {self.children_specs})'
+    def __post_init__(self) -> None:
+        self.num_leaves: int = sum([spec.num_leaves for spec in self.children_specs])
 
-    def __eq__(self, other: Any) -> bool:
-        result = self.type == other.type and self.context == other.context \
-            and self.children_specs == other.children_specs \
-            and self.num_leaves == other.num_leaves
-        # This should really not be necessary, but mypy errors out without it.
-        return cast(bool, result)
+    def __repr__(self, indent: int = 0) -> str:
+        repr_prefix: str = f'TreeSpec({self.type.__name__}, {self.context}, ['
+        children_specs_str: str = ''
+        if len(self.children_specs):
+            indent += len(repr_prefix)
+            children_specs_str += self.children_specs[0].__repr__(indent)
+            children_specs_str += ',' if len(self.children_specs) > 1 else ''
+            children_specs_str += ','.join(['\n' + ' ' * indent + child.__repr__(indent) for child in self.children_specs[1:]])
+        repr_suffix: str = f'{children_specs_str}])'
+        return repr_prefix + repr_suffix
 
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
 
 class LeafSpec(TreeSpec):
     def __init__(self) -> None:
         super().__init__(None, None, [])
         self.num_leaves = 1
 
-    def __repr__(self) -> str:
+    def __repr__(self, indent: int = 0) -> str:
         return '*'
 
 def tree_flatten(pytree: PyTree) -> Tuple[List[Any], TreeSpec]:
@@ -192,8 +196,10 @@ def tree_map(fn: Any, pytree: PyTree) -> PyTree:
     return tree_unflatten([fn(i) for i in flat_args], spec)
 
 Type2 = Tuple[Type[T], Type[S]]
+Type3 = Tuple[Type[T], Type[S], Type[U]]
 TypeAny = Union[Type[Any], Tuple[Type[Any], ...]]
 
+Fn3 = Callable[[Union[T, S, U]], R]
 Fn2 = Callable[[Union[T, S]], R]
 Fn = Callable[[T], R]
 FnAny = Callable[[Any], R]
@@ -252,6 +258,10 @@ def tree_map_only(ty: Type[T], fn: Fn[T, Any], pytree: PyTree) -> PyTree:
 def tree_map_only(ty: Type2[T, S], fn: Fn2[T, S, Any], pytree: PyTree) -> PyTree:
     ...
 
+@overload
+def tree_map_only(ty: Type3[T, S, U], fn: Fn3[T, S, U, Any], pytree: PyTree) -> PyTree:
+    ...
+
 def tree_map_only(ty: TypeAny, fn: FnAny[Any], pytree: PyTree) -> PyTree:
     return tree_map(map_only(ty)(fn), pytree)
 
@@ -269,6 +279,10 @@ def tree_all_only(ty: Type[T], pred: Fn[T, bool], pytree: PyTree) -> bool:
 
 @overload
 def tree_all_only(ty: Type2[T, S], pred: Fn2[T, S, bool], pytree: PyTree) -> bool:
+    ...
+
+@overload
+def tree_all_only(ty: Type3[T, S, U], pred: Fn3[T, S, U, bool], pytree: PyTree) -> bool:
     ...
 
 def tree_all_only(ty: TypeAny, pred: FnAny[bool], pytree: PyTree) -> bool:

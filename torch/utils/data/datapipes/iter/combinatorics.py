@@ -46,7 +46,7 @@ class SamplerIterDataPipe(IterDataPipe[T_co]):
 
     def __len__(self) -> int:
         # Dataset has been tested as `Sized`
-        if isinstance(self.sampler, Sized) and len(self.sampler) >= 0:
+        if isinstance(self.sampler, Sized):
             return len(self.sampler)
         raise TypeError("{} instance doesn't have valid length".format(type(self).__name__))
 
@@ -149,8 +149,6 @@ class ShufflerIterDataPipe(IterDataPipe[T_co]):
             self._seed = None
 
     def __getstate__(self):
-        if IterDataPipe.getstate_hook is not None:
-            return IterDataPipe.getstate_hook(self)
         state = (
             self.datapipe,
             self.buffer_size,
@@ -161,6 +159,8 @@ class ShufflerIterDataPipe(IterDataPipe[T_co]):
             self._valid_iterator_id,
             self._number_of_samples_yielded,
         )
+        if IterDataPipe.getstate_hook is not None:
+            return IterDataPipe.getstate_hook(state)
         return state
 
     def __setstate__(self, state):

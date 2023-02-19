@@ -158,7 +158,8 @@ at::_ops::${unambiguous_name}::call(${unpacked_args})"""
 SETUP_REPLAY_VIEW_IF_NOT_SUPPORT_AS_STRIDED_OR_VIEW_WITH_METADATA_CHANGE = CodeTemplate(
     """\
 std::function<at::Tensor(const at::Tensor&)> func=nullptr;
-if (${is_view_with_metadata_change} || !self.unsafeGetTensorImpl()->support_as_strided()) {
+if (${is_view_with_metadata_change} || !self.unsafeGetTensorImpl()->support_as_strided() ||
+    c10::AutogradState::get_tls_state().get_view_replay_enabled()) {
   ${replay_view_func}
 }
 """
@@ -327,6 +328,7 @@ def emit_view_lambda(f: NativeFunction, unpacked_bindings: List[Binding]) -> str
     known_view_arg_simple_types: List[CType] = [
         BaseCType(longT),
         OptionalCType(BaseCType(longT)),
+        BaseCType(SymIntT),
         OptionalCType(BaseCType(SymIntT)),
         BaseCType(boolT),
         BaseCType(intArrayRefT),

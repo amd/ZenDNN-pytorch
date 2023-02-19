@@ -3,7 +3,7 @@ import textwrap
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
-from typing_extensions import Literal
+from typing_extensions import Literal  # Python 3.8+
 
 import torchgen.api.cpp as cpp
 import torchgen.api.meta as meta
@@ -238,6 +238,11 @@ class RegisterDispatchKey:
     # Whether or not we are actually code-genning for ROCm
     rocm: bool
 
+    # Whether or not to generate symint registrations or not.  External users
+    # of codegen who don't care about symints can set this to false to get
+    # non-SymInt codegen
+    symint: bool
+
     # The class that all unstructured native functions live under. This is used to improve
     # compiler error messages when a kernel writer adds a native function with the wrong signature.
     # This is only used in unstructured kernels, since structured kernels already live in a class.
@@ -289,7 +294,9 @@ class RegisterDispatchKey:
     ) -> Union[NativeSignature, DispatcherSignature]:
         # The prefix is just to ensure uniqueness. The Dispatcher API doesn't guarantee unique kernel names.
         return DispatcherSignature.from_schema(
-            f.func, prefix=f"wrapper_{f.func.name.overload_name}_"
+            f.func,
+            prefix=f"wrapper_{self.backend_index.dispatch_key}_{f.func.name.overload_name}_",
+            symint=self.symint,
         )
 
     def gen_out_inplace_wrapper(
@@ -354,6 +361,7 @@ class RegisterDispatchKey:
             self.target,
             self.selector,
             self.rocm,
+            self.symint,
             self.class_method_name,
             self.skip_dispatcher_op_registration,
             g,
@@ -411,7 +419,7 @@ class RegisterDispatchKey:
             # TODO: dedupe this with the structured codegen
             if self.target is Target.NAMESPACED_DECLARATION:
                 result = ""
-                for cpp_sig in cpp_sig_group.signatures():
+                for cpp_sig in cpp_sig_group.signatures(symint=self.symint):
                     result += f"TORCH_API {cpp_sig.decl()};\n"
                 return result
             elif self.target is Target.NAMESPACED_DEFINITION:
@@ -424,7 +432,7 @@ return {sig.name()}({', '.join(e.expr for e in translate(cpp_sig.arguments(), si
 """
 
                 result = ""
-                for cpp_sig in cpp_sig_group.signatures():
+                for cpp_sig in cpp_sig_group.signatures(symint=self.symint):
                     result += generate_defn(cpp_sig)
                 return result
 
@@ -754,13 +762,13 @@ resize_out(out, sizes, strides, options);
         kern = self.backend_index.get_kernel(f)
         sig = NativeSignature(
             f.func,
-            prefix="wrapper_",
+            prefix=f"wrapper_{self.backend_index.dispatch_key}_",
             symint=kern is not None and kern.supports_symint(),
         )
 
         if self.target is Target.NAMESPACED_DECLARATION:
             result = ""
-            for cpp_sig in cpp_sig_group.signatures():
+            for cpp_sig in cpp_sig_group.signatures(symint=self.symint):
                 result += f"TORCH_API {cpp_sig.decl()};\n"
             return result
 
@@ -774,7 +782,7 @@ return {sig.name()}({', '.join(e.expr for e in translate(cpp_sig.arguments(), si
 """
 
             result = ""
-            for cpp_sig in cpp_sig_group.signatures():
+            for cpp_sig in cpp_sig_group.signatures(symint=self.symint):
                 result += generate_defn(cpp_sig)
             return result
 

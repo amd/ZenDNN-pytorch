@@ -1,4 +1,6 @@
-#include <ATen/ATen.h>
+#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+#include <ATen/core/Tensor.h>
+#include <ATen/Config.h>
 #include <ATen/Dispatch.h>
 #include <ATen/Parallel.h>
 #include <ATen/native/BatchLinearAlgebra.h>
@@ -7,6 +9,13 @@
 
 #include <c10/util/irange.h>
 
+#ifndef AT_PER_OPERATOR_HEADERS
+#include <ATen/Functions.h>
+#include <ATen/NativeFunctions.h>
+#else
+#include <ATen/ops/empty.h>
+#include <ATen/ops/empty_strided.h>
+#endif
 namespace at { namespace native {
 
 namespace {
@@ -441,15 +450,6 @@ Tensor& orgqr_kernel_impl(Tensor& result, const Tensor& tau) {
   return result;
 }
 
-// we use `enum class LapackLstsqDriverType` as keys in an unordered_map.
-// Clang5 and Gcc5 do not support std::hash for enum classes, hence
-// we provide our own hash function.
-struct LapackLstsqDriverTypeHash {
-  std::size_t operator()(const LapackLstsqDriverType& driver_type) const {
-    return static_cast<std::size_t>(driver_type);
-  }
-};
-
 /*
   Solves a least squares problem. That is minimizing ||B - A X||.
 
@@ -480,7 +480,7 @@ void apply_lstsq(const Tensor& A, Tensor& B, Tensor& rank, Tensor& singular_valu
 
   auto lapack_func = lapackLstsq<driver_t::Gelsd, scalar_t, value_t>;
   static auto driver_type_to_func
-    = std::unordered_map<driver_t, decltype(lapack_func), LapackLstsqDriverTypeHash>({
+    = std::unordered_map<driver_t, decltype(lapack_func)>({
     {driver_t::Gels, lapackLstsq<driver_t::Gels, scalar_t, value_t>},
     {driver_t::Gelsy, lapackLstsq<driver_t::Gelsy, scalar_t, value_t>},
     {driver_t::Gelsd, lapackLstsq<driver_t::Gelsd, scalar_t, value_t>},
@@ -914,12 +914,28 @@ void apply_lu_factor(const Tensor& input, const Tensor& pivots, const Tensor& in
   auto n = input.size(-1);
   auto leading_dimension = std::max<int64_t>(1, m);
 
-  for (const auto i : c10::irange(batch_size)) {
-    scalar_t* input_working_ptr = &input_data[i * input_matrix_stride];
-    int* pivots_working_ptr = &pivots_data[i * pivots_stride];
-    int* infos_working_ptr = &infos_data[i];
-    lapackLu<scalar_t>(m, n, input_working_ptr, leading_dimension, pivots_working_ptr, infos_working_ptr);
-  }
+  const auto loop = [&](int64_t start, int64_t end) {
+    for (const auto i : c10::irange(start, end)) {
+      scalar_t* input_working_ptr = &input_data[i * input_matrix_stride];
+      int* pivots_working_ptr = &pivots_data[i * pivots_stride];
+      int* infos_working_ptr = &infos_data[i];
+      lapackLu<scalar_t>(
+          m,
+          n,
+          input_working_ptr,
+          leading_dimension,
+          pivots_working_ptr,
+          infos_working_ptr);
+    }
+  };
+  // avoid overflow
+  float matrix_rank = float(std::min(m, n));
+  // A heuristic tested on a 32 core/socket ICX system
+  // https://github.com/pytorch/pytorch/pull/93037#discussion_r1090112948
+  int64_t chunk_size_per_thread = int64_t(
+      std::min(1.0, 3200.0 / (matrix_rank * matrix_rank * matrix_rank)));
+  int64_t grain_size = chunk_size_per_thread * at::get_num_threads();
+  at::parallel_for(0, batch_size, grain_size, loop);
 #endif
 }
 
@@ -991,6 +1007,15 @@ void apply_lu_solve(const Tensor& LU, const Tensor& pivots, const Tensor& B, Tra
 
 // This is a type dispatching helper function for 'apply_lu_solve'
 void lu_solve_kernel(const Tensor& LU, const Tensor& pivots, const Tensor& B, TransposeType trans) {
+  // Lapack will write into unrelated memory if pivots are not in the right range so we do
+  // some simple sanity checks here for the CPU version
+  TORCH_CHECK(pivots.gt(0).all().item<bool>(),
+              "Pivots given to lu_solve must all be greater or equal to 1. "
+              "Did you properly pass the result of lu_factor?");
+  TORCH_CHECK(pivots.le(LU.size(-2)).all().item<bool>(),
+              "Pivots given to lu_solve must all be smaller or equal to LU.size(-2). "
+              "Did you properly pass the result of lu_factor?");
+
   AT_DISPATCH_FLOATING_AND_COMPLEX_TYPES(LU.scalar_type(), "linalg.lu_solve_cpu", [&]{
     apply_lu_solve<scalar_t>(LU, pivots, B, trans);
   });
@@ -1076,7 +1101,7 @@ void svd_kernel(const Tensor& A,
   });
 }
 
-void unpack_pivots_cpu_kernel(TensorIterator& iter, const int64_t dim_size) {
+void unpack_pivots_cpu_kernel(TensorIterator& iter, const int64_t dim_size, const int64_t max_pivot) {
   if (iter.numel() == 0) {
     return;
   }
@@ -1092,9 +1117,13 @@ void unpack_pivots_cpu_kernel(TensorIterator& iter, const int64_t dim_size) {
       const auto pivots_data = reinterpret_cast<const int32_t*>(pivots_ptr);
 
       for (const auto i : c10::irange(dim_size)) {
+        auto new_idx = pivots_data[i] - 1;
+        TORCH_CHECK(new_idx >= 0 && new_idx < max_pivot,
+                    "pivots passed to lu_unpack must be between 1 and LU.size(-2) inclusive."
+                    "Did you properly pass the result of lu_factor?");
         std::swap(
           perm_data[i],
-          perm_data[pivots_data[i] - 1]
+          perm_data[new_idx]
         );
       }
 

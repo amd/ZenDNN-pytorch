@@ -45,7 +45,7 @@ list(APPEND ATen_CPU_TEST_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/undefined_tensor_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/variant_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/verify_api_visibility.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/vmap_test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/legacy_vmap_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/weakref_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/wrapdim_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xla_tensor_test.cpp
@@ -105,6 +105,11 @@ list(APPEND ATen_VEC_TEST_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/vec_test_all_types.cpp
   )
 
+list(APPEND ATen_MPS_TEST_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/mps_test_print.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mps_test_allocator.cpp
+  )
+
 # Caffe2 specific tests
 if(BUILD_CAFFE2)
   list(APPEND ATen_CPU_TEST_SRCS
@@ -122,3 +127,4 @@ set(ATen_HIP_TEST_SRCS ${ATen_HIP_TEST_SRCS} PARENT_SCOPE)
 set(ATen_VULKAN_TEST_SRCS ${ATen_VULKAN_TEST_SRCS} PARENT_SCOPE)
 set(ATen_MOBILE_TEST_SRCS ${ATen_MOBILE_TEST_SRCS} PARENT_SCOPE)
 set(ATen_VEC_TEST_SRCS ${ATen_VEC_TEST_SRCS} PARENT_SCOPE)
+set(ATen_MPS_TEST_SRCS ${ATen_MPS_TEST_SRCS} PARENT_SCOPE)

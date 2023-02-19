@@ -4,13 +4,13 @@ import torch
 import numpy as np
 
 import random
-from torch._six import nan
+from torch import nan
 from itertools import permutations, product
 
 from torch.testing import make_tensor
 from torch.testing._internal.common_dtype import all_types, all_types_and, floating_types_and
 from torch.testing._internal.common_utils import \
-    (TestCase, run_tests, skipIfTorchDynamo, slowTest)
+    (TestCase, run_tests, slowTest)
 from torch.testing._internal.common_device_type import \
     (instantiate_device_type_tests, dtypes, onlyNativeDeviceTypes,
      onlyCUDA, dtypesIfCUDA, dtypesIfCPU, onlyCPU, largeTensorTest)
@@ -357,7 +357,23 @@ class TestSortAndSelect(TestCase):
         for shape in shapes:
             test(shape)
 
-    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/982")
+    @dtypes(torch.float)
+    def test_sort_expanded_tensor(self, device, dtype):
+        # https://github.com/pytorch/pytorch/issues/91420
+        data = torch.scalar_tensor(True, device=device, dtype=dtype)
+        data = data.expand([1, 1, 1])
+        ref = torch.Tensor([[[True]]])
+        out = torch.sort(data, stable=True, dim=1, descending=True)
+        expected = torch.sort(ref, stable=True, dim=1, descending=True)
+        self.assertEqual(out, expected)
+
+        data = torch.randn(4, 1, 10, device=device, dtype=dtype)
+        data = data.expand([4, 8, 10])
+        ref = data.contiguous()
+        out = torch.sort(data, stable=True, dim=1, descending=True)
+        expected = torch.sort(ref, stable=True, dim=1, descending=True)
+        self.assertEqual(out, expected)
+
     def test_topk(self, device):
         def topKViaSort(t, k, dim, dir):
             sorted, indices = t.sort(dim, dir)
@@ -810,7 +826,7 @@ class TestSortAndSelect(TestCase):
                 self.assertEqual(expected_inverse.view(additional_shape), y_inverse)
                 self.assertEqual(expected_counts, y_counts)
 
-    @dtypesIfCPU(*all_types_and(torch.bool, torch.bfloat16))
+    @dtypesIfCPU(*all_types_and(torch.bool, torch.float16, torch.bfloat16))
     @dtypes(*all_types_and(torch.half, torch.bool))
     def test_unique(self, device, dtype):
         def ensure_tuple(x):
@@ -867,7 +883,7 @@ class TestSortAndSelect(TestCase):
                                 count += 1
                         self.assertEqual(j, count)
 
-    @dtypesIfCPU(*all_types_and(torch.bool, torch.bfloat16))
+    @dtypesIfCPU(*all_types_and(torch.bool, torch.float16, torch.bfloat16))
     @dtypes(*all_types_and(torch.half, torch.bool))
     def test_unique_consecutive(self, device, dtype):
         if dtype is torch.bool:

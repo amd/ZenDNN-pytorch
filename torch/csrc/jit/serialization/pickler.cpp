@@ -10,8 +10,7 @@
 #include <string>
 #include <type_traits>
 
-namespace torch {
-namespace jit {
+namespace torch::jit {
 
 using ::c10::IValue;
 
@@ -126,7 +125,7 @@ void Pickler::pushIValueImpl(const IValue& ivalue) {
   } else if (ivalue.isCapsule()) {
     std::stringstream err;
     err << "Cannot serialize custom bound C++ class";
-    if (memoized_class_types_ && memoized_class_types_->size()) {
+    if (memoized_class_types_ && !memoized_class_types_->empty()) {
       if (auto qualname = memoized_class_types_->back()->name()) {
         err << " " << qualname->qualifiedName();
       }
@@ -426,7 +425,6 @@ void Pickler::pushLiteralTensor(const IValue& ivalue) {
       "torch._utils", quantized ? "_rebuild_qtensor" : "_rebuild_tensor_v2");
 
   push<PickleOpCode>(PickleOpCode::MARK);
-
   pushStorageOfTensor(tensor);
 
   // storage offset
@@ -479,6 +477,20 @@ void Pickler::pushLiteralTensor(const IValue& ivalue) {
   push<PickleOpCode>(PickleOpCode::EMPTY_TUPLE);
   // Construct the collections.OrderedDict for the backward_hooks
   push<PickleOpCode>(PickleOpCode::REDUCE);
+
+  if (!quantized) {
+    // Only push it for regular tensor if the dictionary is not empty.
+    auto metadata = torch::jit::getTensorMetadata(tensor);
+    if (!metadata.empty()) {
+      // IValues based on std::unordered_map<K, V> are slow and deprecated.
+      // Thus, pass a c10::Dict to pushDict.
+      c10::Dict<std::string, bool> math_bits_;
+      for (const auto& pair : metadata) {
+        math_bits_.insert(pair.first, pair.second);
+      }
+      pushDict(math_bits_);
+    }
+  }
 
   push<PickleOpCode>(PickleOpCode::TUPLE);
 
@@ -567,7 +579,9 @@ void Pickler::pushTensorReference(const IValue& ivalue) {
 // ivalue to the stack as a string so we can preserve type tags across
 // serialization
 void Pickler::startTypeTag() {
-  pushGlobal("torch.jit._pickle", "restore_type_tag");
+  if (tag_aggregates_) {
+    pushGlobal("torch.jit._pickle", "restore_type_tag");
+  }
 }
 namespace {
 c10::optional<std::string> type_printer(const c10::Type& type) {
@@ -580,6 +594,9 @@ c10::optional<std::string> type_printer(const c10::Type& type) {
 
 // See startTypeTag
 void Pickler::endTypeTag(const IValue& ivalue) {
+  if (!tag_aggregates_) {
+    return;
+  }
   TORCH_INTERNAL_ASSERT(ivalue.isGenericDict() || ivalue.isList());
 
   // Push the dict type
@@ -769,5 +786,4 @@ bool checkHasValidSetGetState(const std::shared_ptr<c10::ClassType>& cls) {
   return true;
 }
 
-} // namespace jit
-} // namespace torch
+} // namespace torch::jit

@@ -6,6 +6,8 @@ from torch.fx.node import map_arg
 from torch.fx.passes.split_module import split_module
 
 
+__all__ = ['FoldedGraphModule', 'get_unique_attr_name_in_module', 'split_const_subgraphs']
+
 class FoldedGraphModule(torch.fx.GraphModule):
     """
     FoldedGraphModule is a GraphModule which also contains another
@@ -24,11 +26,6 @@ class FoldedGraphModule(torch.fx.GraphModule):
         fx_const_folded_attrs_name: str = None,
         device_for_folded_attrs: str = "cuda",
     ):
-        # In init, we set graph's owning module to root which will make graph's
-        # owning module be None because graph already have a owning module. We
-        # need owning module to run DCE. To work around we set the number of
-        # graph's owners to 0.
-        graph._owners = 0
         super().__init__(root, graph)
         self.const_subgraph_module = (
             None
