@@ -128,20 +128,6 @@
 namespace at {
 namespace native {
 
-inline ScalarType get_dtype_from_self(
-    const Tensor& self,
-    const optional<ScalarType>& dtype,
-    bool promote_integers) {
-  if (dtype.has_value()) {
-    return dtype.value();
-  }
-  ScalarType src_type = self.scalar_type();
-  if (promote_integers && at::isIntegralType(src_type, /*includeBool=*/true)) {
-    return kLong;
-  }
-  return src_type;
-}
-
 } // namespace native
 
 namespace meta {
@@ -919,6 +905,10 @@ static inline void diff_check(const Tensor& self, int64_t n, int64_t dim, const 
       self.dim() >= 1,
       "diff expects input to be at least one-dimensional");
 
+  TORCH_CHECK(
+      n >= 0,
+      "order must be non-negative but got ", n);
+
   diff_check_compatible_shape(self, prepend, dim);
   diff_check_compatible_shape(self, append, dim);
 }
@@ -1163,14 +1153,6 @@ std::vector<Tensor> gradient(const Tensor& self, IntArrayRef dim, int64_t edge_o
 
 // ALL REDUCE #################################################################
 
-inline ScalarType get_dtype_from_result(Tensor& result, optional<ScalarType> dtype) {
-  TORCH_CHECK(result.defined(), "Cannot create a new tensor inside a reduction op. You likely tried to call an operator with an out argument but the out argument was an undefined tensor.");
-  if (dtype.has_value()) {
-    return dtype.value();
-  } else {
-    return result.scalar_type();
-  }
-}
 
 TORCH_IMPL_FUNC(sum_out)
 (const Tensor& self,
@@ -1201,7 +1183,10 @@ Tensor& sum_out(const Tensor& self, DimnameList dim,
 
 Tensor& nansum_out(const Tensor& self, at::OptionalIntArrayRef dim,
                        bool keepdim, optional<ScalarType> opt_dtype, Tensor& result) {
-  TORCH_CHECK(!c10::isComplexType(self.scalar_type()), "nansum does not support complex inputs");
+  if (self.device().is_cpu()) {
+    TORCH_CHECK(!c10::isComplexType(self.scalar_type()), "nansum does not support complex inputs");
+  }
+
   // For integral types, use existing sum as
   // integral types don't have `Nan`.
   if (c10::isIntegralType(self.scalar_type(), true)){
@@ -1363,8 +1348,8 @@ Tensor& nanmean_out(
     c10::optional<ScalarType> opt_dtype,
     Tensor& result) {
   TORCH_CHECK(
-      self.is_floating_point(),
-      "nanmean(): expected input to have floating point dtype but got ",
+      self.is_floating_point() || self.is_complex(),
+      "nanmean(): expected input to have floating point or complex dtype but got ",
       self.scalar_type());
   const auto factor = at::native::isnan(self).logical_not_().sum(dim, keepdim);
   at::native::nansum_out(self, dim, keepdim, opt_dtype, result).div_(factor);
@@ -1377,8 +1362,8 @@ Tensor nanmean(
     bool keepdim,
     optional<ScalarType> opt_dtype) {
   TORCH_CHECK(
-      self.is_floating_point(),
-      "nanmean(): expected input to have floating point dtype but got ",
+      self.is_floating_point() || self.is_complex(),
+      "nanmean(): expected input to have floating point or complex dtype but got ",
       self.scalar_type());
   const auto factor =
       at::native::isnan(self.detach()).logical_not_().sum(dim, keepdim);
