@@ -305,6 +305,30 @@ class ProcessGroupNCCLTest(MultiProcessTestCase):
                 for tensor in xs:
                     self.assertEqual(tensor, expected_tensor)
 
+    @requires_nccl()
+    @sandcastle_skip_if(torch.cuda.device_count() < 2, "NCCL test requires 2+ GPUs")
+    def test_sparse_allreduce_ops(self):
+        store = c10d.FileStore(self.file_name, self.world_size)
+        device_count = torch.cuda.device_count()
+        pg = self._create_process_group_nccl(store, self.opts())
+        local_device_id = self.rank_to_GPU[self.rank][0]
+
+        def allreduce(tensors, op):
+            opts = c10d.AllreduceOptions()
+            opts.reduceOp = op
+            work = pg.allreduce(tensors, opts)
+            work.wait()
+
+        # Sum
+        tensors = [torch.tensor([self.rank + 1]).to_sparse().cuda(local_device_id)]
+
+        allreduce(tensors, c10d.ReduceOp.SUM)
+
+        ndev = self.world_size
+        self.assertEqual(
+            torch.tensor([ndev * (ndev + 1) // 2]),
+            tensors[0],
+        )
 
     @requires_nccl()
     @sandcastle_skip_if(torch.cuda.device_count() < 2, "NCCL test requires 2+ GPUs")
