@@ -434,22 +434,30 @@ class GuardBuilder(GuardBuilderBase):
             #
             # The list of tensor fields and calls we care about can be found in `terms` below.
             # TODO(voz): We are missing storage offset in all our tensor guards?
+            terms = []
+            code = []
             if self.check_fn_manager.output_graph.export:
                 self.TYPE_MATCH(guard)
-                code = []
-                terms = ["dtype", "device", "requires_grad", "ndimension()"]
+                terms.extend(["dtype", "device", "requires_grad", "ndimension()"])
                 if not config.dynamic_shapes:
                     terms.append("stride()")
                     # We need to do this to avoid the torch.Size type in guards
                     code.append(f"{tensor_name}.shape == {tuple(value.shape)}")
 
-                for term in terms:
-                    real_value = self.get(tensor_name + "." + term)
-                    code.append(f"{tensor_name}.{term} == {real_value}")
-                self._produce_guard_code(guard, code)
             else:
                 self.tensor_check_names.append(tensor_name)
                 self.tensor_check_examples.append(value)
+
+            if hasattr(value, "_dynamo_dynamic_indices"):
+                code.append(f"hasattr({tensor_name}, '_dynamo_dynamic_indices') == {value._dynamo_dynamic_indices}")
+                terms.append("_dynamo_dynamic_indices")
+
+            for term in terms:
+                real_value = self.get(tensor_name + "." + term)
+                code.append(f"{tensor_name}.{term} == {real_value}")
+                
+            if len(code) > 0:
+                self._produce_guard_code(guard, code)
 
     # A util that appends guarded code, or, in the case of export, adds data onto guards
     def _produce_guard_code(
