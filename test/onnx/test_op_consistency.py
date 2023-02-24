@@ -301,8 +301,12 @@ def reason_flaky() -> str:
 ALLOWLIST_OP: AbstractSet[str] = frozenset(
     [
         "ceil",
+        "div",
+        "floor_divide",
+        "remainder",
         "sqrt",
         "t",
+        "true_divide",
     ]
 )
 
@@ -321,7 +325,6 @@ EXPECTED_SKIPS_OR_FAILS: Tuple[DecorateMeta, ...] = (
         "ceil", dtypes=BOOL_TYPES + INT_TYPES,
         reason=reason_onnx_does_not_support("Ceil")
     ),
-    fixme("ceil", dtypes=[torch.float64], reason=reason_onnx_runtime_does_not_support("Ceil", ["f64"])),
     dont_care("sqrt", dtypes=BOOL_TYPES, reason=reason_onnx_does_not_support("Sqrt")),
 )
 # fmt: on
