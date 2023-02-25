@@ -235,7 +235,8 @@ class ModularIndexing(sympy.Function):
     is_integer = True
 
     @classmethod
-    def eval(cls, base, divisor, modulus):
+    def eval(cls, base, divisor, modulus, gen=0):
+        print("CURR GEN", gen)
         if base == 0 or modulus == 1:
             return sympy.Integer(0)
 
@@ -249,7 +250,8 @@ class ModularIndexing(sympy.Function):
         if divisor != 1:
             gcd = sympy.gcd(base, divisor)
             if gcd != 1:
-                return ModularIndexing(base / gcd, divisor / gcd, modulus)
+                breakpoint()
+                return ModularIndexing(base / gcd, divisor / gcd, modulus, gen + 1)
 
         if isinstance(base, sympy.Add):
             new_terms = []
