@@ -6,6 +6,8 @@ import torch.distributed as dist
 import torch.distributed._functional_collectives as ft_c
 import torch.distributed.distributed_c10d as c10d
 import torch.distributed._tensor as dt
+from torch.distributed._tensor import DeviceMesh, distribute_tensor, DTensor
+from torch.distributed._tensor.placement_types import _Partial, Replicate, Shard
 
 from functorch import make_fx
 
@@ -224,6 +226,74 @@ class TestTraceableCollectives(MultiThreadedTestCase):
         res2 = ft_c.all_reduce(tensor, "sum", (mesh, 1))
         self.assertEqual(res2, torch.tensor([2, 2, 2, 2], dtype=torch.float))
 
+    def test_all_reduce_af_backward(self):
+        mesh = dt.DeviceMesh("cpu", torch.arange(4))
+        
+        class AF(torch.autograd.Function):
+
+            @staticmethod
+            def forward(ctx, input):
+                ctx.save_for_backward(input)
+                return input
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                input, = ctx.saved_tensors
+                res = ft_c.all_reduce(input, "sum", mesh)
+                return res
+
+        tensor = torch.ones([4], requires_grad=True)
+
+        # with torch.no_grad():
+        out = AF.apply(tensor)
+        out.sum().backward()
+
+    def test_all_reduce_aot_module(self):
+        
+        from torch._functorch.aot_autograd import aot_module
+        class Model(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+            
+            def forward(self, input):
+                return input + 2 * input
+        m = Model()
+        def fw_compiler(gm, ex):
+            return gm
+
+        def bw_compiler(gm, ex):
+            mesh = dt.DeviceMesh("cpu", torch.arange(4))
+            input = ex[0]
+            x = ft_c.all_reduce(input, "sum", mesh)
+            return gm
+
+        compiled_m = aot_module(m, fw_compiler, bw_compiler)
+        batch = torch.ones([4], requires_grad=True)
+        output = compiled_m(batch)
+        output.sum().backward()
+
+
+    def test_all_reduce_dtensor_backward(self):
+        mesh = dt.DeviceMesh("cpu", torch.arange(4))
+        device_mesh = DeviceMesh('cuda', list(range(self.world_size)))
+        shard_spec = [_Partial()]
+        local_tensor = torch.randn(3, 3, requires_grad=True)
+        dist_tensor_shape = local_tensor.shape
+        dist_tensor = DTensor(
+            local_tensor,
+            device_mesh,
+            shard_spec,
+            shape=dist_tensor_shape,
+            dtype=local_tensor.dtype,
+            requires_grad=True,
+            stride=local_tensor.stride()
+        )
+
+        tensor = torch.ones([4], requires_grad=True)
+        out = tensor + dist_tensor
+        out.sum().backward()
+
+
 class TestMetaCollectives(TestCase):
     def test_all_reduce(self):
         x = torch.rand((2, 3, 4), device="meta")
@@ -243,8 +313,23 @@ class TestGradCollectives(MultiThreadedTestCase):
         x = torch.rand([4], requires_grad=True)
         y = torch.rand([4], requires_grad=True)
         out = ft_c.all_reduce(x, "sum", [0, 1])
+
+        # Runs ok. What is happening here, AsyncCollectiveTensor is somehow hiding the missing backwards ops?
         (out + y).sum().backward()
         self.assertIsNone(x.grad)
+
+    def test_all_reduce_op_backwards(self):
+        x = torch.rand([4], requires_grad=True)
+        y = torch.rand([4], requires_grad=True)
+        out = torch._C._nn.all_reduce(x, "sum", "tag", [0, 1], self.world_size)
+        out = torch._C._nn.wait_tensor(out)
+        
+        # raises
+        # RuntimeError: derivative for aten::wait_tensor is not implemented
+        (out + y).sum().backward()
+        self.assertIsNone(x.grad)
+
+
 
 class TestMakeFx(MultiThreadedTestCase):
     @property
