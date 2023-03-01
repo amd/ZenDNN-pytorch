@@ -919,6 +919,41 @@ Tensor _nested_view_from_buffer(
     std::vector<int64_t>(offsets.begin(), offsets.end()));
 }
 
+/**
+ * Create a [B, *, D] nested tensor that is a view of a 2D values tensor
+ * where offsets are the cumsum of the size along the ragged dimension
+ *
+ * @return Returns a nested tensor that
+ * aliases the same storage as values
+ */
+Tensor _nested_from_values_and_offsets(
+    const Tensor& values,
+    const Tensor& offsets) {
+  TORCH_CHECK(values.dim() == 2, "values must be a 2D tensor, got values.dim() ", values.dim(), ".");
+  TORCH_CHECK(values.is_contiguous(), "values must be contiguous.");
+  TORCH_CHECK(offsets.dim() == 1, "offsets must be a 1D tensor, got offsets.dim() ", offsets.dim(), ".");
+
+  TORCH_CHECK(offsets.select(0, 0).item<int64_t>() == 0,
+    "First element of offsets must be equal to 0, got ",
+    offsets.select(0, 0).item<int64_t>(),
+    ".");
+  TORCH_CHECK(offsets.select(0, -1).item<int64_t>() == values.size(0),
+    "Last element of offsets must be equal to values.size(0), got values.size(0) ",
+    values.size(0),
+    " last element of offsets ",
+    offsets.select(0, -1).item<int64_t>(),
+    ".");
+
+  Tensor nested_size_tensor = at::empty({offsets.size(0) - 1, 2}, TensorOptions().dtype(kLong));
+  nested_size_tensor.select(1, 0).copy_(offsets.diff());
+  nested_size_tensor.select(1, 1).fill_(values.size(1));
+
+  return at::detail::make_tensor<NestedTensorImpl>(
+    c10::TensorImpl::VIEW,
+    values,
+    nested_size_tensor);
+}
+
 // See Note [Special size rule for nested tensor]
 Tensor reshape_nested(const Tensor& self, IntArrayRef proposed_shape) {
   TORCH_CHECK(
