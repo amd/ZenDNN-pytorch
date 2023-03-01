@@ -559,13 +559,7 @@ class WrapperCodeGen(CodeGen):
 
         return result.getvalue()
 
-    def add_benchmark_harness(self, output):
-        """
-        Append a benchmark harness to generated code for debugging
-        """
-        if not config.benchmark_harness:
-            return
-
+    def benchmark_compiled_module(self, output):
         def add_fake_input(name, shape, stride, device, dtype):
             output.writeline(
                 f"{name} = rand_strided("
@@ -577,7 +571,7 @@ class WrapperCodeGen(CodeGen):
         def add_expr_input(name, val):
             output.writeline(f"{name} = {val}")
 
-        output.writelines(["", "", 'if __name__ == "__main__":'])
+        output.writelines(["", "", "def benchmark_compiled_module():"])
         with output.indent():
             output.splice(
                 """
@@ -605,6 +599,35 @@ class WrapperCodeGen(CodeGen):
             output.writeline(
                 f"print_performance(lambda: call([{', '.join(V.graph.graph_inputs.keys())}]))"
             )
+
+    def add_benchmark_harness(self, output):
+        """
+        Append a benchmark harness to generated code for debugging
+        """
+        if not config.benchmark_harness:
+            return
+
+        self.benchmark_compiled_module(output)
+
+        output.writelines(["", "", 'if __name__ == "__main__":'])
+        with output.indent():
+            output.writelines(
+                [
+                    "import argparse",
+                    "from torch._inductor.utils import benchmark_all_kernels",
+                    "",
+                    "parser = argparse.ArgumentParser()",
+                    'parser.add_argument("--benchmark-kernels", "-k", action="store_true", help="Whether to benchmark each individual kernels")',  # noqa: B950, line too long
+                    "args = parser.parse_args()",
+                    "",
+                    "if args.benchmark_kernels:",
+                ]
+            )
+            with output.indent():
+                output.writeline("benchmark_all_kernels()")
+            output.writeline("else:")
+            with output.indent():
+                output.writeline("benchmark_compiled_module()")
 
     def define_kernel(self, name: str, kernel: str, kernel_path: str = None):
         kernel_path_comment = f"# kernel path: {kernel_path}\n" if kernel_path else ""

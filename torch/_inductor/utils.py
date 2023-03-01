@@ -570,3 +570,40 @@ def get_num_bytes(*args):
         for arg in args
         if isinstance(arg, torch.Tensor)
     )
+
+
+def benchmark_all_kernels():
+    """
+    Run the kernel benchmarks for all the kernels cached in PyCodeCache.
+    Used in the compiled modules.
+
+    Put this method here rather than codegen it for convenience since its implementation
+    does not change based on different graph modules being compiled.
+    """
+    from torch._inductor.codecache import PyCodeCache
+
+    nfound = 0
+    for kernel_key, kernel_mod in PyCodeCache.cache.items():
+        if not hasattr(kernel_mod, "get_args") or not hasattr(kernel_mod, "call"):
+            continue
+        args = kernel_mod.get_args()
+        ms = do_bench(lambda: kernel_mod.call(args), rep=40, fast_flush=True)[0]
+        num_gb = get_num_bytes(*args) / 1e9
+        gb_per_s = num_gb / (ms / 1e3)
+
+        # follow what we do in DebugAutotuner
+        info_str = (
+            f"{kernel_key[:10]} {ms:.3f}ms    {num_gb:.3f}GB    {gb_per_s:.2f}GB/s"
+        )
+        import colorama
+
+        if ms > 0.012 and gb_per_s < 650:
+            print(colorama.Fore.RED + info_str + colorama.Fore.RESET)
+        else:
+            print(info_str)
+
+        nfound += 1
+    if nfound == 0:
+        print(
+            "No kernel with benchmark functionality found. Make sure you run inductor with config.benchmark_kernel being True"
+        )
