@@ -258,7 +258,7 @@ class OpOverload(PyOperatorABC):
         # NB: This name is hard-coded in torch/csrc/autograd/python_variable.cpp
         self._dispatch_cache = {}
 
-        # Logic replicated from aten/src/ATen/native/MathBitsFallback.h
+        # Logic replicated from aten/src/ATen/view/TransformFallback.h
         is_write = None
         for a in self._schema.arguments:
             if a.alias_info is None:
@@ -540,7 +540,7 @@ class _OpNamespace(types.ModuleType):
     """
 
     def __init__(self, name):
-        super(_OpNamespace, self).__init__("torch.ops." + name)
+        super().__init__("torch.ops." + name)
         self.name = name
         self._dir = []
 
@@ -584,7 +584,7 @@ class _OpNamespace(types.ModuleType):
 
 class _PyOpNamespace(_OpNamespace):
     def __init__(self):
-        super(_PyOpNamespace, self).__init__("torch.ops")
+        super().__init__("torch.ops")
         self.pyop_namespace = pyop_namespace
 
 
@@ -592,7 +592,7 @@ class _Ops(types.ModuleType):
     __file__ = "_ops.py"
 
     def __init__(self):
-        super(_Ops, self).__init__("torch.ops")
+        super().__init__("torch.ops")
         self.loaded_libraries = set()
         self.pyops = _PyOpNamespace()
         self._dir = []
