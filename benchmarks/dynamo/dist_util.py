@@ -6,6 +6,7 @@ import os
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+import torch.nn.functional as F
 from torch._dynamo.testing import reduce_to_scalar_loss
 from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
     apply_activation_checkpointing,
@@ -78,6 +79,22 @@ class ToyModel(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+class WeirdModel(nn.Module):
+    class Linear32(nn.Linear):
+        def forward(self, input):
+            return F.linear(input.float(), self.weight.float(), self.bias.float()).to(
+                input.dtype
+            )
+
+    def __init__(self):
+        super().__init__()
+        self.pre = self.Linear32(10,  10)
+        self.main = ToyModel()
+
+    def forward(self, input):
+        return self.main(self.pre(input))
+
+
 
 def model_iter_fn(model, example_inputs, collect_outputs=False):
     outputs = model(*example_inputs)
@@ -99,8 +116,9 @@ def get_model(args):
         )
         model, inputs = bm.get_module()
     elif args.toy_model:
-        model = ToyModel()
+        # model = ToyModel()
         inputs = (torch.randn(20, 10),)
+        model = WeirdModel()
     else:
         raise argparse.ArgumentError(
             args.torchbench_model, message="Must specify a model"
@@ -128,7 +146,7 @@ def fsdp_checkpointing_base(model, blocks):
 
 
 MODEL_FSDP_WRAP = {
-    "toy_model": (MyModule,),
+    "toy_model": (MyModule, WeirdModel.Linear32),
     "hf_Bert": (BertLayer, BertLMPredictionHead),
     "hf_T5": (T5Block,),
 }
@@ -137,7 +155,7 @@ MODEL_FSDP_WRAP = {
 def apply_fsdp(args, model, use_checkpointing=False, use_wrap_policy=True):
     wrap_policy = None
     blocks = MODEL_FSDP_WRAP[
-        "toy_model" if model.__class__ is ToyModel else args.torchbench_model
+        "toy_model"
     ]
     if use_wrap_policy:
         wrap_policy = ModuleWrapPolicy(blocks)
