@@ -25,7 +25,8 @@ jobs:
         uses: pytorch/pytorch/.github/actions/checkout-pytorch@master
         with:
           submodules: false
-          fetch-depth: 1
+          # A very high bound which should be more than we ever need.
+          fetch-depth: 200
 
       - name: Setup Linux
         uses: ./.github/actions/setup-linux
