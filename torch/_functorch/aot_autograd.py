@@ -2760,13 +2760,15 @@ def aot_module_simplified(
     if tracing_context:
         for name, _ in params.items():
             name = normalize_attr_name(name)
-            tracing_context.aot_autograd_arg_pos_to_source.append(tracing_context.param_and_attr_names_to_sources[name])
+            if name not in tracing_context.module_context.param_and_attr_names_to_sources:
+                breakpoint()
+            tracing_context.module_context.aot_autograd_arg_pos_to_source.append(tracing_context.module_context.param_and_attr_names_to_sources[name])
 
         if hasattr(mod, "graph"):
             for node in mod.graph.nodes:
                 if node.op == "placeholder":
                     name = normalize_attr_name(node.name)
-                    tracing_context.aot_autograd_arg_pos_to_source.append(tracing_context.param_and_attr_names_to_sources[name])
+                    tracing_context.module_context.aot_autograd_arg_pos_to_source.append(tracing_context.module_context.param_and_attr_names_to_sources[name])
 
     params_flat, params_spec = pytree.tree_flatten(params)
     params_flat = tuple(params_flat)

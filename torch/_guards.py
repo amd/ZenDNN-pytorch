@@ -4,7 +4,7 @@ import logging
 import weakref
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Callable, Generic, List, NamedTuple, Optional, Set, TypeVar
+from typing import Callable, Generic, List, NamedTuple, Optional, Set, TypeVar, Dict
 
 log = logging.getLogger(__name__)
 
@@ -274,6 +274,24 @@ class GuardsCheckpointState:
         return self.diff(other) is None
 
 
+class ModuleCheckpointState:
+    param_and_attr_names_to_sources: Dict[str, Source] = dict()
+
+    def __init__(self, param_and_attr_names_to_sources):
+        self.param_and_attr_names_to_sources = param_and_attr_names_to_sources
+
+    def diff(self, other):
+        other_keys = set(other.param_and_attr_names_to_sources.keys())
+        keys = set(self.param_and_attr_names_to_sources.keys())
+        r = keys.difference(other_keys)
+        if len(r) == 0:
+            return None
+        return r
+
+    def __eq__(self, other):
+        return self.diff(other) is None
+
+
 """
 A GuardsContext is a checkpointable representation of all the guards in the current tracing
 context. It's lifecycle is bound 1:1 to the tracing context, and it should never be instantiated
@@ -294,6 +312,25 @@ class GuardsContext(Checkpointable[GuardsCheckpointState]):
         assert isinstance(state, GuardsCheckpointState)
         self.dynamo_guards = state.dynamo_guards
 
+
+class ModuleContext(Checkpointable[ModuleCheckpointState]):
+    def __init__(self):
+        self.param_and_attr_names_to_sources: Dict[str, Source] = dict()
+        self.aot_autograd_arg_pos_to_source: List[Source] = list()
+
+    def copy_graphstate(self):
+        return ModuleCheckpointState(set(self.param_and_attr_names_to_sources))
+
+    def restore_graphstate(self, state):
+        assert isinstance(state, ModuleCheckpointState)
+        self.param_and_attr_names_to_sources = state.param_and_attr_names_to_sources
+
+    
+    def register(self, name: str, source: Source):
+        if name in self.param_and_attr_names_to_sources:
+            assert self.param_and_attr_names_to_sources[name] == source
+            return
+        self.param_and_attr_names_to_sources[name] = source
 
 _CURRENT_TRACING_CONTEXT = None
 
@@ -331,14 +368,7 @@ class TracingContext:
     def __init__(self, fake_mode):
         self.guards_context = GuardsContext()
         self.fake_mode = fake_mode
-        self.param_and_attr_names_to_sources: Dict[str, Source] = dict()
-        self.aot_autograd_arg_pos_to_source: List[Source] = list()
-
-    def register(self, name: str, source: Source):
-        if name in self.param_and_attr_names_to_sources:
-            assert self.param_and_attr_names_to_sources[name] == source
-            return
-        self.param_and_attr_names_to_sources[name] = source
+        self.module_context = ModuleContext()
 
 
 """
