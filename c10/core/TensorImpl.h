@@ -3077,16 +3077,6 @@ class C10_TensorImpl_Size_Check_Dummy_Class : private TensorImpl {
     return true;
   }
 
-  // Provides compile-time <= check that reveals what numbers
-  // were used and on which quantity
-  template <size_t Actual, size_t Expected, FieldNameEnum FiledName>
-  constexpr static bool is_le() {
-    static_assert(
-        Actual <= Expected,
-        "Actual and Expected sizes of a field did not match!");
-    return true;
-  }
-
  public:
   // Compile-time check that TensorImpl field sizes are as expected
   //
