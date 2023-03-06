@@ -4,6 +4,7 @@
 #include <c10/core/InferenceMode.h>
 #include <c10/core/SymIntArrayRef.h>
 #include <c10/core/WrapDimMinimal.h>
+#include <c10/core/impl/ExtraMeta.h>
 #include <c10/core/impl/LocalDispatchKeySet.h>
 #include <c10/core/impl/PyInterpreter.h>
 #include <c10/core/impl/TorchDispatchModeTLS.h>
@@ -120,6 +121,15 @@ TensorImpl::TensorImpl(
   // Inference tensor doesn't have version counter.
   if (!is_inference()) {
     version_counter_ = VariableVersion(/*version=*/0);
+  }
+}
+
+TensorImpl::TensorImpl(TensorImpl const& that)
+    : TensorImpl(ImplType::VIEW, Storage(that.storage()), that.key_set(), that.dtype()) {
+  if (key_set_.has(DispatchKey::CompositeView)) {
+    assert(that.extra_meta_ != nullptr);
+    assert(!that.extra_meta_.composite_views.empty());
+    extra_meta().composite_views = that.extra_meta_->composite_views;
   }
 }
 
@@ -268,6 +278,15 @@ normalize_sym_sizes_strides(SymIntArrayRef sizes, SymIntArrayRef strides) {
   return c10::make_optional(
       std::tuple<SymNode, std::vector<SymNode>, std::vector<SymNode>>(
           std::move(base), std::move(size_nodes), std::move(stride_nodes)));
+}
+
+SymInt TensorImpl::compute_sym_numel() const {
+  TORCH_INTERNAL_ASSERT_DEBUG_ONLY(has_symbolic_sizes_strides_);
+  SymInt numel = 1;
+  for (const auto& s : extra_meta_->sizes_) {
+    numel *= s;
+  }
+  return numel;
 }
 
 template <typename T>
@@ -440,6 +459,35 @@ bool TensorImpl::compute_non_overlapping_and_dense(identity<bool>) const {
       sizes_and_strides_.strides_arrayref());
 }
 
+void TensorImpl::sym_refresh_numel() {
+  assert(has_symbolic_sizes_strides_);
+  extra_meta_->numel_ = compute_sym_numel();
+}
+
+void TensorImpl::_set_is_contiguous(identity<SymBool>, SymBool b) {
+  extra_meta_->is_contiguous_ = std::move(b);
+}
+
+void TensorImpl::_set_is_channels_last_contiguous(identity<SymBool>, SymBool b) {
+  extra_meta_->is_channels_last_contiguous_ = std::move(b);
+}
+
+void TensorImpl::_set_is_channels_last_3d_contiguous(identity<SymBool>, SymBool b) {
+  extra_meta_->is_channels_last_3d_contiguous_ = std::move(b);
+}
+
+void TensorImpl::_set_is_channels_last(identity<SymBool>, SymBool b) {
+  extra_meta_->is_channels_last_ = std::move(b);
+}
+
+void TensorImpl::_set_is_channels_last_3d(identity<SymBool>, SymBool b) {
+  extra_meta_->is_channels_last_3d_ = std::move(b);
+}
+
+void TensorImpl::_set_is_non_overlapping_and_dense(identity<SymBool>, SymBool b) {
+  extra_meta_->is_non_overlapping_and_dense_ = std::move(b);
+}
+
 // Special treatment because of numel
 SymBool TensorImpl::compute_contiguous(identity<SymBool>) const {
   if (is_sparse()) {
@@ -571,6 +619,75 @@ void TensorImpl::release_resources() {
     storage_ = {};
   }
   pyobj_slot_.destroy_pyobj_if_needed();
+}
+
+SymIntArrayRef TensorImpl::sym_sizes_default() const {
+  if (has_symbolic_sizes_strides_) {
+    return extra_meta_->sizes_;
+  } else {
+    // Sizes guaranteed to be non-negative, so unchecked cast is OK
+    return c10::fromIntArrayRefKnownNonNegative(sizes_default());
+  }
+}
+
+c10::SymInt TensorImpl::sym_numel_default() const {
+  if (has_symbolic_sizes_strides_) {
+    return extra_meta_->numel_;
+  } else {
+    return c10::SymInt(SymInt::UNCHECKED, numel_);
+  }
+}
+
+int64_t TensorImpl::dim_default() const {
+  if (has_symbolic_sizes_strides_) {
+    return extra_meta_->sizes_.size();
+  } else {
+    return sizes_and_strides_.size();
+  }
+}
+
+c10::SymInt TensorImpl::sym_storage_offset_default() const {
+  if (has_symbolic_sizes_strides_) {
+    return extra_meta_->storage_offset_;
+  } else {
+    return c10::SymInt(SymInt::UNCHECKED, storage_offset_);
+  }
+}
+
+c10::SymIntArrayRef TensorImpl::sym_strides_default() const {
+  if (has_symbolic_sizes_strides_) {
+    return extra_meta_->strides_;
+  } else {
+    return c10::fromIntArrayRefKnownNonNegative(strides_default());
+  }
+}
+
+bool TensorImpl::sym_is_contiguous_default(at::MemoryFormat memory_format) const {
+  assert(has_symbolic_sizes_strides_);
+  if (memory_format == at::MemoryFormat::ChannelsLast) {
+    return extra_meta_->is_channels_last_contiguous_.guard_bool(
+        __FILE__, __LINE__);
+  } else if (memory_format == at::MemoryFormat::ChannelsLast3d) {
+    return extra_meta_->is_channels_last_3d_contiguous_.guard_bool(
+        __FILE__, __LINE__);
+  }
+  return extra_meta_->is_contiguous_.guard_bool(__FILE__, __LINE__);
+}
+
+bool TensorImpl::sym_is_strides_like_default(at::MemoryFormat memory_format) const {
+  assert(has_symbolic_sizes_strides_);
+  if (memory_format == at::MemoryFormat::ChannelsLast) {
+    return extra_meta_->is_channels_last_.guard_bool(__FILE__, __LINE__);
+  } else if (memory_format == at::MemoryFormat::ChannelsLast3d) {
+    return extra_meta_->is_channels_last_3d_.guard_bool(__FILE__, __LINE__);
+  } else {
+    return false;
+  }
+}
+
+bool TensorImpl::sym_is_non_overlapping_and_dense_default() const {
+  assert(has_symbolic_sizes_strides_);
+  return extra_meta_->is_non_overlapping_and_dense_.guard_bool(__FILE__, __LINE__);
 }
 
 #ifndef C10_DISABLE_TENSORIMPL_EXTENSIBILITY
@@ -755,6 +872,49 @@ c10::AutogradMetaInterface* TensorImpl::autograd_meta() const {
   return autograd_meta_.get();
 }
 
+void TensorImpl::set_named_tensor_meta(
+    std::unique_ptr<c10::NamedTensorMetaInterface> named_tensor_meta) {
+  TORCH_WARN_ONCE(
+      "Named tensors and all their associated APIs are an experimental feature ",
+      "and subject to change. Please do not use them for anything important ",
+      "until they are released as stable.");
+#ifdef DEBUG
+  if (named_tensor_meta) {
+    TORCH_INTERNAL_ASSERT(named_tensor_meta->slow_dim() == dim());
+  }
+#endif
+  if (named_tensor_meta) {
+    extra_meta().named_tensor_meta_ = std::move(named_tensor_meta);
+    key_set_ = key_set_.add(DispatchKey::Named);
+  } else {
+    if (extra_meta_) {
+      extra_meta_->named_tensor_meta_ = nullptr;
+    }
+    key_set_ = key_set_.remove(DispatchKey::Named);
+  }
+}
+
+const c10::NamedTensorMetaInterface* TensorImpl::named_tensor_meta() const {
+  if (!extra_meta_) {
+    return nullptr;
+  }
+  return extra_meta_->named_tensor_meta_.get();
+}
+
+c10::NamedTensorMetaInterface* TensorImpl::named_tensor_meta() {
+  if (!extra_meta_) {
+    return nullptr;
+  }
+  return extra_meta_->named_tensor_meta_.get();
+}
+
+bool TensorImpl::has_named_tensor_meta() const {
+  if (!extra_meta_) {
+    return false;
+  }
+  return extra_meta_->named_tensor_meta_ != nullptr;
+}
+
 template <typename VariableVersion>
 c10::intrusive_ptr<TensorImpl> TensorImpl::shallow_copy_and_detach_core(
     VariableVersion&& version_counter,
@@ -853,6 +1013,34 @@ void TensorImpl::copy_generic_tensor_metadata(
   dest_impl->refresh_sizes_strides_policy();
   dest_impl->refresh_layout_policy();
   dest_impl->refresh_device_policy();
+}
+
+void TensorImpl::add_composite_view(IntArrayRef sizes) {
+  // An infallible view, like any other view, never changes the number
+  // of elements.
+  assert(numel() == std::reduce(sizes.begin(), sizes.end(), std::int64_t{1}, std::multiplies<>()));
+
+  extra_meta().composite_views.push_back({sizes_and_strides_, storage_offset_, DimVector(sizes.begin(), sizes.end())});
+
+  // This is a new tensor that "appears" contiguous. Use the default
+  // strides for a strided tensor, e.g. if tensor is size (3, 5, 7)
+  // then the strides are (7 * 5, 7, 1).
+  DimVector strides(sizes.size());
+  strides.back() = 1;
+  std::partial_sum(
+      sizes.rbegin(), sizes.rend() - 1, // iterate from back() to the second element, skipping front()
+      strides.rbegin() + 1,             // skip back(), it is already initialized to 1
+      std::multiplies<>());
+
+  key_set_ = key_set_.add(DispatchKey::CompositeView);
+  set_sizes_and_strides(sizes, strides);
+}
+
+impl::ExtraMeta& TensorImpl::extra_meta() {
+  if (extra_meta_ == nullptr) {
+    extra_meta_ = std::make_unique<impl::ExtraMeta>();
+  }
+  return *extra_meta_;
 }
 
 void TensorImpl::copy_tensor_metadata_except_version_counter(
@@ -1131,7 +1319,7 @@ void TensorImpl::set_sizes_and_strides(
   has_symbolic_sizes_strides_ = true;
   refresh_sizes_strides_policy();
   if (!extra_meta_) {
-    extra_meta_ = std::make_unique<ExtraMeta>();
+    extra_meta_ = std::make_unique<impl::ExtraMeta>();
     if (!storage_offset.has_value()) {
       extra_meta_->storage_offset_ = storage_offset_;
     }
@@ -1160,7 +1348,7 @@ void TensorImpl::generic_set_sizes_contiguous(SymIntArrayRef sizes) {
   has_symbolic_sizes_strides_ = true;
   refresh_sizes_strides_policy();
   if (!extra_meta_) {
-    extra_meta_ = std::make_unique<ExtraMeta>();
+    extra_meta_ = std::make_unique<impl::ExtraMeta>();
     extra_meta_->storage_offset_ = storage_offset_;
   }
 
