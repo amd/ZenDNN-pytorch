@@ -1,3 +1,7 @@
+from collections import defaultdict
+from typing import Optional
+
+from torch.fx.experimental.symbolic_shapes import MinMaxConstraint
 from . import allowed_functions, convert_frame, eval_frame, resume_execution
 from .backends.registry import list_backends, register_backend
 from .convert_frame import replay
@@ -37,6 +41,7 @@ __all__ = [
     "is_compiling",
     "register_backend",
     "list_backends",
+    "mark_dynamic_constrained",
 ]
 
 
@@ -157,13 +162,99 @@ def mark_dynamic(t, index):
     before torch.compile.
 
     """
+    mark_dynamic_constrained(t, index, min=None, max=None)
+
+
+@forbid_in_graph
+def mark_dynamic_constrained(
+    t, index, *, min: Optional[int] = None, max: Optional[int] = None
+):
+    """
+    To fully understand this API, please read [Note - on the state of mark_dynamic] first,
+    as this API is an enrichment over that API.
+
+    In its current state, mark_dynamic_constrained fully subsumes mark_dynamic.
+
+    mark_dynamic_constrained allows users to provide a directive that the dimension will fall
+    within a given range. A range can be unbounded on either min, or max. Multiple calls to this API for
+    the same dimension will take the most conservative intersection of all ranges. At guard accumulation
+    time, we verify that the dimension fell within the specified range, and raise if it does not.
+
+    Example usage is as follow:
+
+    ```
+    x = torch.randn([7, 7, 7])
+
+    def my_dyn_fn(a):
+        if a.shape[0] > 5:
+            return a.cos()
+        return a.sin()
+
+    torch._dynamo.mark_dynamic_constrained(x, 0, min=4, max=10)
+    torch._dynamo.optimize("eager")(my_dyn_fn)(x)
+    ```
+
+    We will get a new guard, '4 <= a.size()[0] <= 10'
+
+    If we run it again, with a wider constraint, by adding these 2 lines:
+
+    ```
+    torch._dynamo.mark_dynamic_constrained(x, 0, min=4, max=10)
+    torch._dynamo.optimize("eager")(my_dyn_fn)(x)
+    ```
+
+    Nothing happens - mark_dynamic_constrained is sticky unless reset, so the range is still
+    at the narrowst intersection (4, 10)
+
+    If we delete the field first:
+
+    ```
+    torch._dynamo.clear_dynamic(x, 0)
+    torch._dynamo.mark_dynamic_constrained(x, 0, min=3, max=12)
+    torch._dynamo.optimize("eager")(my_dyn_fn)(x)
+    ```
+    We will recompile, and get a new guard, `3 <= a.size()[0] <= 12`
+
+    Alternatively, if our directive had been counter to the guards:
+
+    ```
+    x = torch.randn([7, 7, 7])
+
+    def my_dyn_fn(a):
+        if a.shape[0] > 5:
+            return a.cos()
+        return a.sin()
+
+    torch._dynamo.optimize("eager")(my_dyn_fn)(x)
+    torch._dynamo.mark_dynamic_constrained(x, 0, min=2, max=4)
+    ``` 
+
+    We would raise. 
+
+    This API behaves identically for eager and export.
+    """
     if isinstance(index, int):
         if not hasattr(t, "_dynamo_dynamic_indices"):
-            t._dynamo_dynamic_indices = set()
+            t._dynamo_dynamic_indices = defaultdict(MinMaxConstraint.NONE)
         # TODO(voz): Should we bounds check?
-        t._dynamo_dynamic_indices.add(index)
+        new_range = MinMaxConstraint(min=min, max=max)
+        curr_range = t._dynamo_dynamic_indices[index]
+        t._dynamo_dynamic_indices[index] = MinMaxConstraint.INTERSECT(
+            curr_range, new_range
+        )
         return
 
     assert isinstance(index, (list, tuple))
     for i in index:
-        mark_dynamic(t, i)
+        mark_dynamic_constrained(t, i, min=min, max=max)
+
+@forbid_in_graph
+def clear_dynamic(t, index):
+    if isinstance(index, int):
+        assert hasattr(t, "_dynamo_dynamic_indices"), "Illegal call to clear without dynamic dims"
+        delattr(t, "_dynamo_dynamic_indices")
+        return
+
+    assert isinstance(index, (list, tuple))
+    for i in index:
+        clear_dynamic(t, i)

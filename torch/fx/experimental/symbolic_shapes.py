@@ -194,7 +194,7 @@ def guard_scalar(a):
         raise AssertionError(f"unrecognized scalar {a}")
 
 # inclusive both ways
-def constrain_range(a, *, min: Optional[int], max: Optional[int] = None):
+def constrain_range(a, *, min: Optional[int], max: Optional[int] = None, user_directive=False):
     if min is None:
         min = -sympy.oo
     if max is None:
@@ -211,6 +211,8 @@ def constrain_range(a, *, min: Optional[int], max: Optional[int] = None):
     a.node.shape_env.var_to_range[a.node.expr] = ValueRanges(
         builtins.max(r.lower, min), builtins.min(r.upper, max)
     )
+    if user_directive:
+        a.node.shape_env.user_constrained.add(a.node.expr)
 
 
 def constrain_unify(a, b):
@@ -1210,6 +1212,8 @@ class ShapeEnv:
         # range may contain ints which may not actually appear in
         # practice
         self.var_to_range: Dict["sympy.Symbol", ValueRanges] = {}
+        # var_to_range entries which were modified by manual user directive
+        self.user_constrained: Set["sympy.Symbol"] = set()
         self.var_to_sources: Dict["sympy.Symbol", List[Source]] = {}
         self.var_to_stack: Dict["sympy.Symbol", str] = {}
         # Maps from sympy ints to expressions representing them
@@ -1253,9 +1257,10 @@ class ShapeEnv:
         for i, val in enumerate(ex.size()):
             is_dynamic = _is_dim_dynamic(ex, i)
             if _should_allocate(is_dynamic, self.assume_static_by_default):
-                size.append(self.create_symbol(
+                new_sym = self.create_symbol(
                     val, TensorPropertySource(source, TensorProperty.SIZE, i), is_dynamic
-                ))
+                )
+                size.append(new_sym)
             else:
                 size.append(sympy.Integer(val))
         return size
@@ -1301,6 +1306,14 @@ class ShapeEnv:
                 )
         assert all(x is not None for x in stride)
         sym_size = [self.create_symintnode(i, hint=hint) for i, hint in zip(size, ex.size())]
+
+        for i, syms in enumerate(sym_size):
+            is_dynamic = _is_dim_dynamic(ex, i)
+            if is_dynamic:
+                constraint = _dynamic_dim_range(ex, i)
+                if constraint != MinMaxConstraint.NONE():
+                    constrain_range(syms, min=constraint.min, max=constraint.max, user_directive=True)
+
         sym_stride = []
         for i, stride_expr in enumerate(stride):
             # NB: Don't duck size the stride; instead use the expression
@@ -1502,10 +1515,13 @@ class ShapeEnv:
             # user directives about relationships, we can remove this check from
             # verification.
             if len(expr.free_symbols) == 1:
-                srcs = symbol_to_source[expr.free_symbols.pop()]
-                for src in srcs:
-                    if src in dynamic_sources:
-                        raise RuntimeError(f"Attempting to introduce a guard {potential_expr} that violates user's mark_dynamic")
+                symbol = expr.free_symbols.pop()
+                # NOTE! Manual user directives override the rule around not allowing any constraining of dynamic dims
+                if symbol not in self.user_constrained:
+                    srcs = symbol_to_source[symbol]
+                    for src in srcs:
+                        if src in dynamic_sources:
+                            raise RuntimeError(f"Attempting to introduce a guard {potential_expr} that violates user's mark_dynamic")  # noqa: B950
 
         for t, source in zip(placeholders, sources):
             if isinstance(source, str):
@@ -1669,6 +1685,8 @@ class ShapeEnv:
         new_range_env = {}
         for idx, k in enumerate(symbols):
             vr = self.var_to_range[k]
+            if k in self.user_constrained:
+                self._verify_valid_range(k, vr, expr)
             # Don't do anything if we don't have a nontrivial lower bound
             # Also don't do anything if we asked only to simplify unbacked
             # SymInt
@@ -1872,6 +1890,25 @@ class ShapeEnv:
             self.evaluate_expr(eq_expr)
         return self.simplify(expr)
 
+    def _verify_valid_range(self, symbol, valid_range, expr):
+        context = {"symbol": symbol, "oo": sympy.oo, "-oo": -sympy.oo}
+        lt = eval(f"symbol >= {valid_range.lower}", context)
+        gt = eval(f"symbol <= {valid_range.upper}", context)
+
+        try:
+            sympy.And(lt, expr)
+            sympy.And(gt, expr)
+        except TypeError:
+            log.debug(f"Cannot do constraint verification! {symbol} is not boolean")
+        except Exception:
+            raise RuntimeError(f"Constraint contradiction! {symbol} from {expr} cannot be constrained to {valid_range}")
+        else:
+            log.debug(f"Constraint verification! {symbol} from {expr} constrained to {valid_range}")
+        # So far so good, We did not raise, so we need to check if the underlying expr is valid for the range
+        # free variables NYI, so, we have to size hint
+        if has_hint(symbol) and self.size_hint(symbol) not in valid_range:
+            raise RuntimeError(f"Valid range, {valid_range}, contradicts traced value of {symbol}, {self.size_hint(symbol)}")
+
     @lru_cache(256)
     def evaluate_expr(self, expr: "sympy.Expr", hint=None):
         """
@@ -1941,6 +1978,35 @@ def _should_allocate(user_marked_dynamic, assume_static_by_default):
 
 def _is_dim_dynamic(t, d):
     return hasattr(t, "_dynamo_dynamic_indices") and d in t._dynamo_dynamic_indices
+
+class MinMaxConstraint:
+    min: Optional[Union[int, sympy.core.numbers.NegativeInfinity]]
+    max: Optional[Union[int, sympy.core.numbers.Infinity]]
+
+    def __init__(self, min=None, max=None):
+        self.min = min if min else -sympy.oo
+        self.max = max if max else sympy.oo
+        assert self.min < self.max, f"Illegal intersection produced! {self.min} < {self.max}"
+
+    @staticmethod
+    def NONE():
+        return MinMaxConstraint(min=-sympy.oo, max=sympy.oo)
+
+    @staticmethod
+    def INTERSECT(a: "MinMaxConstraint", b: "MinMaxConstraint"):
+        return MinMaxConstraint(min=max(a.min, b.min), max=min(a.max, b.max))
+
+    def __repr__(self):
+        return f"({self.min}, {self.max})"
+
+    def __eq__(self, other):
+        return self.min == other.min and self.max == other.max
+
+
+def _dynamic_dim_range(t, d) -> MinMaxConstraint:
+    assert _is_dim_dynamic(t, d)
+    return t._dynamo_dynamic_indices[d]
+
 
 def _is_int(expr):
     if not isinstance(expr, SymInt):
