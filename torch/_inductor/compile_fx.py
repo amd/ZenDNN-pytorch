@@ -15,7 +15,7 @@ import torch.fx
 import torch.utils._pytree as pytree
 
 from torch._dynamo import logging as dynamo_logging, utils as dynamo_utils
-from torch._dynamo.utils import fake_mode_from_tensors
+from torch._dynamo.utils import dynamo_profiled, fake_mode_from_tensors
 from torch._functorch.aot_autograd import make_boxed_func
 from torch._ops import OpOverload
 from torch._subclasses.fake_tensor import FakeTensor

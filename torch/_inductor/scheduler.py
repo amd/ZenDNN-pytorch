@@ -937,6 +937,7 @@ class Scheduler:
         ) - combined_names
         return any(check(self.name_to_fused_node[n]) for n in combined_predecessors)
 
+    @functools.lru_cache
     def can_fuse(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode):
         """
         Determine if it is possible to combine node1 and node2 into a
@@ -1023,6 +1024,7 @@ class Scheduler:
                 return False
         return True
 
+    @functools.lru_cache
     def score_fusion(self, node1: BaseSchedulerNode, node2: BaseSchedulerNode):
         """
         Assign a score (higher comes first) to the fusion of node1

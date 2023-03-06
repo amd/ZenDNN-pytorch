@@ -1,5 +1,6 @@
 import collections
 import dataclasses
+import functools
 import itertools
 import logging
 import typing
@@ -75,6 +76,7 @@ class MemoryDep(typing.NamedTuple):
             return MemoryDep(renames[self.name], self.index, self.size)
         return self
 
+    @functools.lru_cache(maxsize=128)
     def numbytes_hint(self):
         vars = set(self.index.free_symbols)
         size_vars_used = []
