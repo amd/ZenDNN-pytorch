@@ -384,3 +384,112 @@ class TestAwait(JitTestCase):
         sm = torch.jit.load(iofile)
         script_out_load = sm(inp)
         self.assertTrue(torch.allclose(expected, script_out_load))
+
+    def test_await_then_base(self):
+        def gap(x: Tensor):
+            return x + 5
+
+        def delayed(x: Tensor) -> Tensor:
+            return -1 * x
+
+        def continuation_fn(aw: Await[Tensor], x: Tensor) -> Tensor:
+            return 5 * x
+
+        def main(x: Tensor) -> Tensor:
+            aw = torch.jit._awaitable(delayed, x)
+            z = gap(x)
+            torch.jit._awaitable_then(continuation_fn, aw)
+
+            y = torch.jit._awaitable_wait(aw)
+            return x + y + z
+
+        inp = torch.eye(2)
+        out = main(inp)
+
+        sm = torch.jit.script(main)
+        script_out = sm(inp)
+        expected = 5 * torch.ones(2) - 3 * torch.eye(2)
+        self.assertTrue(torch.allclose(expected, script_out))
+        self.assertTrue(torch.allclose(script_out, out))
+
+        iofile = io.BytesIO()
+        torch.jit.save(sm, iofile)
+        iofile.seek(0)
+        sm = torch.jit.load(iofile)
+        script_out_load = sm(inp)
+        self.assertTrue(torch.allclose(expected, script_out_load))
+
+    def test_await_then(self):
+        def gap(x: Tensor):
+            return x + 5
+
+        def delayed(x: Tensor) -> Tensor:
+            return -1 * x
+
+        def continuation_fn(aw: Await[Tensor], x: Tensor) -> Tensor:
+            return 5 * x
+
+        def continuation_fn2(aw: Await[Tensor], aw_out: Tensor) -> Tensor:
+            return 4 * aw_out
+
+        def main(x: Tensor) -> Tensor:
+            aw = torch.jit._awaitable(delayed, x)
+            l: List[Await[Tensor]] = torch.jit.annotate(List[Await[Tensor]], [])
+            l.append(aw)
+            z = gap(x)
+            torch.jit._awaitable_then(continuation_fn, l[0])
+            torch.jit._awaitable_then(continuation_fn2, l[0])
+
+            y = torch.jit._awaitable_wait(aw)
+            return x + y + z
+
+        inp = torch.eye(2)
+        out = main(inp)
+
+        sm = torch.jit.script(main)
+        script_out = sm(inp)
+        expected = 5 * torch.ones(2) - 18 * torch.eye(2)
+        self.assertTrue(torch.allclose(expected, script_out))
+        self.assertTrue(torch.allclose(script_out, out))
+
+        iofile = io.BytesIO()
+        torch.jit.save(sm, iofile)
+        iofile.seek(0)
+        sm = torch.jit.load(iofile)
+        script_out_load = sm(inp)
+        self.assertTrue(torch.allclose(expected, script_out_load))
+
+    def test_await_multiout_then(self):
+        def gap(x: Tensor):
+            return torch.relu(x) + torch.sin(x)
+
+        def delayed(x: Tensor) -> Tuple[Tensor, List[Tensor]]:
+            l = [x * i for i in range(5)]
+            return (100 * x, l)
+
+        def continuation_fn(aw: Await[Tuple[Tensor, List[Tensor]]], x: Tuple[Tensor, List[Tensor]]) -> Tuple[Tensor, List[Tensor]]:
+            (t, l) = x
+            return (t, [z * 2 for z in l])
+
+        def main(x: Tensor) -> Tensor:
+            aw = torch.jit._awaitable(delayed, x)
+            z = gap(x)
+            torch.jit._awaitable_then(continuation_fn, aw)
+            (_, l) = torch.jit._awaitable_wait(aw)
+            return l[3] + z
+
+        inp = torch.eye(2)
+
+        sm = torch.jit.script(main)
+        out = main(inp)
+        script_out = sm(inp)
+        expected = 7.8415 * torch.eye(2)
+        self.assertTrue(torch.allclose(expected, script_out))
+        self.assertTrue(torch.allclose(script_out, out))
+
+        iofile = io.BytesIO()
+        torch.jit.save(sm, iofile)
+        iofile.seek(0)
+        sm = torch.jit.load(iofile)
+        script_out_load = sm(inp)
+        self.assertTrue(torch.allclose(expected, script_out_load))

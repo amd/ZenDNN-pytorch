@@ -324,6 +324,14 @@ RegisterOperators reg({
           stack.emplace_back(aw->value());
         },
         aliasAnalysisSpecialCase()),
+    // Generating fake argument for awaitable_then to make graph valid
+    Operator(
+        "prim::awaitable_then_input(Await(t) self) -> t",
+        [](Stack& stack) {
+          stack.pop_back();
+          stack.emplace_back(IValue());
+        },
+        aliasAnalysisSpecialCase()),
     Operator(
         "prim::awaitable_nowait(t self) -> Await(t)",
         [](Stack& stack) {

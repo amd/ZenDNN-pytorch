@@ -3360,6 +3360,20 @@ struct to_ir {
         auto kwargs = emitAttributes(apply.attributes());
         return emitAwaitableExpr(apply.range(), awaited, args, kwargs);
       }
+      case prim::awaitable_then: {
+        auto tree = apply.inputs().tree();
+        if (!tree || tree->trees().size() != 2) {
+          throw ErrorReport(apply)
+              << "Expected exactly two arguments to awaitable_then()";
+        }
+        auto& trees = tree->trees();
+        auto await_then = emitSugaredExpr(Expr(trees[0]), 1);
+        TreeList sliced_trees(trees.begin() + 1, trees.end());
+        auto args = getNamedValues(sliced_trees, true);
+        auto kwargs = emitAttributes(apply.attributes());
+        auto loc = apply.range();
+        return emitAwaitableThenExpr(apply.range(), await_then, args, kwargs);
+      }
       case prim::annotate: {
         checkApplyNumInputs(apply, 2);
         TypePtr type = typeParser_.parseTypeFromExpr(apply.inputs()[0]);
@@ -4169,6 +4183,65 @@ struct to_ir {
     Value* node_output =
         await_node->output()->setType(AwaitType::create(out_type));
     return std::make_shared<SimpleValue>(node_output);
+  }
+
+  std::shared_ptr<SugaredValue> emitAwaitableThenExpr(
+      SourceRange loc,
+      const std::shared_ptr<SugaredValue>& await_then,
+      at::ArrayRef<NamedValue> args,
+      at::ArrayRef<NamedValue> kwargs) {
+    auto g = method.graph();
+    Value* aw = args[0].value(*g);
+    auto aw_element_type = aw->type()->expect<AwaitType>()->getElementType();
+    {
+      auto then_node = g->insertNode(g->create(prim::awaitableThenClosure, 0));
+      WithInsertPoint insert(then_node);
+
+      if (ClosureValue* sv = dynamic_cast<ClosureValue*>(await_then.get())) {
+        Value* closure_output = sv->asValue(loc, method);
+        Block* closure_block = closure_output->node()->blocks().at(0);
+        TORCH_INTERNAL_ASSERT(closure_block->outputs().size() == 1);
+        auto closure_out_type = closure_block->outputs().at(0)->type();
+        TORCH_INTERNAL_ASSERT(
+            *closure_out_type == *aw_element_type,
+            "Unexpected argument types for awaitable_then, expected (fn: Callable[[Await[T], T], T], aw_out: T)");
+        then_node->addInput(closure_output);
+      } else {
+        // emitClosure
+        std::shared_ptr<ClosureValue> closure_value;
+        {
+          Node* closure_node = g->insertNode(g->create(prim::Closure, 1));
+          closure_node->output()->setType(NoneType::get());
+          Block* block = closure_node->addBlock();
+          WithLoopStatus loop_guard(&loop_status_, LoopStatus::NOT_IN_LOOP);
+
+          Value* closure_input_aw = block->addInput("aw")->setType(aw->type());
+          Value* closure_input =
+              block->addInput("aw_out")->setType(aw_element_type);
+
+          {
+            WithInsertPoint guard(block);
+            pushFrame(block, /*starts_def=*/true);
+            auto then_fn_sugared_output = await_then->call(
+                loc, method, {closure_input_aw, closure_input}, {}, 1);
+            auto then_fn_simple_output =
+                then_fn_sugared_output->asValue(loc, method);
+            block->registerOutput(then_fn_simple_output);
+            TORCH_INTERNAL_ASSERT(
+                *then_fn_simple_output->type() == *aw_element_type,
+                "Function, provided to awaitable_then must output specified Await type");
+            popFrame(/*ends_def=*/true);
+          }
+          closure_value =
+              std::make_shared<ClosureValue>(closure_node->output());
+        }
+
+        then_node->addInput(closure_value->asValue(loc, method));
+      }
+      then_node->addInput(aw);
+    }
+
+    return {};
   }
 
   std::shared_ptr<SugaredValue> emitRpcExpr(const Apply& apply, Symbol rpc_op) {

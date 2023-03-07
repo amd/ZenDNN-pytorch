@@ -622,6 +622,17 @@ struct CodeImpl {
         AWAITABLE, function_table_.size() - 1, node->inputs().size());
   }
 
+  void emitAwaitableThen(Node* node) {
+    emitLoadInputs(node->inputs());
+    std::unique_ptr<GraphFunction> then_fn(new GraphFunction(
+        "<awaitable then function>", node->g(attr::Subgraph), nullptr));
+    // Adding then fns to the same list as await fns
+    awaited_functions_.emplace_back(std::move(then_fn));
+    function_table_.emplace_back(awaited_functions_.back().get());
+    insertInstruction(
+        AWAITABLE_THEN, function_table_.size() - 1, node->inputs().size());
+  }
+
   void emitWarn(Node* node) {
     if (FLAGS_torch_jit_disable_warning_prints) {
       return;
@@ -729,6 +740,9 @@ struct CodeImpl {
         break;
       case prim::awaitable:
         emitAwaitable(node);
+        break;
+      case prim::awaitable_then:
+        emitAwaitableThen(node);
         break;
       case aten::warn:
         emitWarn(node);

@@ -267,12 +267,18 @@ struct VISIBILITY_HIDDEN PythonAwaitWrapper
   explicit PythonAwaitWrapper(py::function pf, py::tuple args) {
     pyfg_ = std::make_shared<torch::jit::PythonFunctionGuard>(std::move(pf));
     args_ = std::move(args);
-    std::function<IValue()> f = [fg(pyfg_), &args(args_)]() {
-      pybind11::gil_scoped_acquire ag;
-      return toIValue(fg->func_(*args), PyObjectType::get());
-    };
-    aw_ = c10::make_intrusive<c10::ivalue::Await>(
-        PyObjectType::get(), std::move(f));
+    aw_ = c10::make_intrusive<c10::ivalue::Await>(PyObjectType::get());
+
+    std::function<IValue()> f =
+        [fg(pyfg_), &args(args_), &then_fns(aw_->thenFns())]() {
+          pybind11::gil_scoped_acquire ag;
+          auto result = toIValue(fg->func_(*args), PyObjectType::get());
+          for (const auto& fn : then_fns) {
+            result = fn(result);
+          }
+          return result;
+        };
+    aw_->setFn(std::move(f));
   }
 
   explicit PythonAwaitWrapper(const PythonAwaitWrapper&) = delete;
@@ -281,6 +287,17 @@ struct VISIBILITY_HIDDEN PythonAwaitWrapper
   py::object wait() {
     py::gil_scoped_acquire acquire;
     return toPyObject(aw_->wait());
+  }
+
+  void then(py::function pf) {
+    auto pyfg =
+        std::make_shared<torch::jit::PythonFunctionGuard>(std::move(pf));
+    std::function<IValue(IValue)> f =
+        [pyaw(this->getPtr()), fg(std::move(pyfg))](IValue x) -> IValue {
+      pybind11::gil_scoped_acquire ag;
+      return toIValue(fg->func_(pyaw, x), PyObjectType::get());
+    };
+    aw_->then(std::move(f));
   }
 
   // Nowait semantic means trivial case when Await is constructed from the

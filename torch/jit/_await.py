@@ -20,6 +20,14 @@ def _awaitable_wait(aw):
     """
     return torch._C._awaitable_wait(aw)
 
+def _awaitable_then(then_func, aw):
+    r"""
+    Adds continuation to specified Await[T] awaitable.
+    The function must be Callable[[T], T] type.
+    (This is also jit scriptable)
+    """
+    return torch._C._awaitable_then(then_func, aw)
+
 def _awaitable_nowait(o):
     r"""
     Creates completed Await with specified result.

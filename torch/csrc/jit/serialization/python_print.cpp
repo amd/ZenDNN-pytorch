@@ -247,7 +247,9 @@ struct PythonPrintImpl {
     // subgraph may use this more than once, so disable inlining
     if (use.user->kind() == prim::fork || use.user->kind() == prim::rpc_async ||
         use.user->kind() == prim::rpc_sync ||
-        use.user->kind() == prim::rpc_remote)
+        use.user->kind() == prim::rpc_remote ||
+        use.user->kind() == prim::awaitable ||
+        use.user->kind() == prim::awaitable_then)
       return false;
 
     // isinstance appearing in an if expression
@@ -844,6 +846,27 @@ struct PythonPrintImpl {
         std::stringstream ss;
         ss << "awaitable(" << name << ")";
         printOutputDefinition(node, ss.str());
+      } break;
+      case prim::awaitable_then_input: {
+      } break;
+      case prim::awaitable_then: {
+        auto name = genName("__awaitable_then_function");
+        auto graph = node->g(attr::Subgraph);
+        auto aw_arg_name = genName("aw");
+        assignValue(graph->inputs().at(0), aw_arg_name);
+        auto x_arg_name = genName("x");
+        assignValue(graph->inputs().at(1), x_arg_name);
+        indent();
+        auto awType = node->inputs().at(0)->type();
+        auto awElType = awType->expect<AwaitType>()->getElementType();
+        body_ << "def " << name << "(" << aw_arg_name << " : "
+              << awType->annotation_str(type_printer_) << ", " << x_arg_name
+              << " : " << awElType->annotation_str(type_printer_) << "):\n";
+        printBody(graph->block());
+        auto ss = std::make_shared<TaggedStringStream>(&source_range_stack_);
+        (*ss) << "awaitable_then(" << name << ", "
+              << useOf(node->inputs().at(0)) << ")";
+        printOutputDefinition(node, ss->str());
       } break;
       case prim::Enter: {
         const auto in = node->inputs().at(0);
