@@ -1016,6 +1016,7 @@ aten_cpu_source_non_codegen_list = [
     "aten/src/ATen/core/VariableHooksInterface.cpp",
     "aten/src/ATen/core/Vitals.cpp",
     "aten/src/ATen/core/boxing/KernelFunction.cpp",
+    "aten/src/ATen/core/copy_on_write.cpp",
     "aten/src/ATen/core/custom_class.cpp",
     "aten/src/ATen/core/dispatch/DispatchKeyExtractor.cpp",
     "aten/src/ATen/core/dispatch/Dispatcher.cpp",
