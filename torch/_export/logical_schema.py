@@ -1,4 +1,4 @@
-# type: ignore[assignment]
+# mypy: disable-error-code=assignment
 
 from dataclasses import dataclass
 from enum import auto, Enum
