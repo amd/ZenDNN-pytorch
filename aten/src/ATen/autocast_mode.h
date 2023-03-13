@@ -34,6 +34,10 @@ TORCH_API bool is_privateuseone_enabled();
 TORCH_API void set_privateuseone_enabled(bool enabled);
 TORCH_API at::ScalarType get_autocast_privateuseone_dtype();
 TORCH_API void set_autocast_privateuseone_dtype(at::ScalarType dtype);
+TORCH_API bool is_mps_enabled();
+TORCH_API void set_mps_enabled(bool enabled);
+TORCH_API at::ScalarType get_autocast_mps_dtype();
+TORCH_API void set_autocast_mps_dtype(at::ScalarType dtype);
 TORCH_API bool is_autocast_cache_enabled();
 TORCH_API void set_autocast_cache_enabled(bool enabled);
 
@@ -53,6 +57,8 @@ bool is_autocast_eligible(const Tensor& tensor, DeviceType device_type) {
     case DeviceType::PrivateUse1:
       return tensor.device().type() == DeviceType::PrivateUse1 &&
           tensor.is_floating_point();
+    case DeviceType::MPS:
+      return tensor.is_mps() && tensor.is_floating_point();
     default:
       return false;
   }
@@ -72,6 +78,8 @@ inline DispatchKey get_autocast_dispatch_key_from_device_type(
       return DispatchKey::AutocastHPU;
     case DeviceType::PrivateUse1:
       return DispatchKey::AutocastPrivateUse1;
+    case DeviceType::MPS:
+      return DispatchKey::AutocastMPS;
     default:
       throw std::runtime_error(
           "unknown device type for autocast in get_autocast_dispatch_key_from_device_type");
@@ -91,6 +99,8 @@ inline at::ScalarType get_lower_precision_fp_from_device_type(
       return get_autocast_hpu_dtype();
     case DeviceType::PrivateUse1:
       return get_autocast_privateuseone_dtype();
+    case DeviceType::MPS:
+      return get_autocast_mps_dtype();
     default:
       throw std::runtime_error(
           "unknown device type for autocast in get_lower_precision_fp_from_device_type");
@@ -618,6 +628,24 @@ copy pasted in from VariableTypeEverything.cpp with appropriate substitutions.
       REGISTER_SIGNATURE,                                    \
       REDISPATCH_SIGNATURE,                                  \
       POLICY)
+
+// KERNEL_MPS registration for AutocastMPS
+#define KERNEL_MPS(OP, POLICY) \
+  m.impl(TORCH_SELECTIVE_NAME("aten::" #OP),                  \
+    &WrapFunction<CastPolicy::POLICY,                         \
+    DeviceType::MPS,                                          \
+    decltype(ATEN_FN(OP)),                                    \
+    decltype(ATEN_FN(OP)),                                    \
+    &ATEN_FN(OP)>::type::call);
+
+#define KERNEL_MPS2(OP, OVERLOAD, POLICY)                     \
+  m.impl(TORCH_SELECTIVE_NAME("aten::" #OP "." #OVERLOAD),    \
+    &WrapFunction<CastPolicy::POLICY,                         \
+    DeviceType::MPS,                                          \
+    decltype(ATEN_FN2(OP, OVERLOAD)),                         \
+    decltype(ATEN_FN2(OP, OVERLOAD)),                         \
+    &ATEN_FN2(OP, OVERLOAD)>::type::call);
+
 
 } // namespace autocast
 } // namespace at
