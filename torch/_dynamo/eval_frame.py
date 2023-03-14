@@ -685,8 +685,13 @@ def export(
 
             graph_captured_input = graph_inputs
             assert graph is not None
-            graph_captured_result = graph(*graph_inputs)
-            return graph_captured_result
+            if tracing_mode != "symbolic":
+                graph_captured_result = graph(*graph_inputs)
+                return graph_captured_result
+            for node in graph.graph.nodes:
+                if node.op == "output":
+                    # If we are in symbolic, does it matter what we return?
+                    return tuple([torch.zeros([0]) for t in node._args])
 
         return result_capturing_wrapper
 
@@ -714,10 +719,6 @@ def export(
     matched_input_elements_positions = produce_matching(flat_args, graph_captured_input)
 
     flat_results_traced, out_spec_traced = pytree.tree_flatten(result_traced)
-
-    assert graph_captured_result is not None
-    flat_both = list(graph_captured_result) + flat_args
-    matched_output_elements_positions = produce_matching(flat_both, flat_results_traced)
 
     class ChangeInputOutputSignature(torch.fx.interpreter.Transformer):
         def __init__(
@@ -767,6 +768,26 @@ def export(
             tracing_mode=tracing_mode,
             _allow_non_fake_inputs=True,
         )(*graph_captured_input)
+
+    if tracing_mode == "symbolic":
+        # We do not harvest outputs in symbolic
+        assert graph_captured_result is None
+        assert graph is not None
+        if not hasattr(graph, "_out_spec"):
+            # No flattening needed
+            for node in graph.graph.nodes:
+                if node.op == "output":
+                    num_leaves = len(node._args)
+        else:
+            out_spec_traced = graph._out_spec
+            num_leaves = out_spec_traced.num_leaves
+        matched_output_elements_positions = list(range(0, num_leaves))
+    else:
+        assert graph_captured_result is not None
+        flat_both = list(graph_captured_result) + flat_args
+        matched_output_elements_positions = produce_matching(
+            flat_both, flat_results_traced
+        )
 
     new_graph = ChangeInputOutputSignature(
         graph,
