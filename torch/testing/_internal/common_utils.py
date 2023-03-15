@@ -573,9 +573,9 @@ CI_TEST_PREFIX = str(Path(os.getcwd()))
 CI_PT_ROOT = str(Path(os.getcwd()).parent)
 CI_FUNCTORCH_ROOT = str(os.path.join(Path(os.getcwd()).parent, "functorch"))
 
-def wait_for_process(p):
+def wait_for_process(p, timeout=None):
     try:
-        return p.wait()
+        return p.wait(timeout=timeout)
     except KeyboardInterrupt:
         # Give `p` a chance to handle KeyboardInterrupt. Without this,
         # `pytest` can't print errors it collected so far upon KeyboardInterrupt.
@@ -592,7 +592,7 @@ def wait_for_process(p):
         # Always call p.wait() to ensure exit
         p.wait()
 
-def shell(command, cwd=None, env=None, stdout=None, stderr=None):
+def shell(command, cwd=None, env=None, stdout=None, stderr=None, timeout=None):
     sys.stdout.flush()
     sys.stderr.flush()
     # The following cool snippet is copied from Py3 core library subprocess.call
@@ -604,7 +604,7 @@ def shell(command, cwd=None, env=None, stdout=None, stderr=None):
     # https://github.com/python/cpython/blob/71b6c1af727fbe13525fb734568057d78cea33f3/Lib/subprocess.py#L309-L323
     assert not isinstance(command, str), "Command to shell should be a list or tuple of tokens"
     p = subprocess.Popen(command, universal_newlines=True, cwd=cwd, env=env, stdout=stdout, stderr=stderr)
-    return wait_for_process(p)
+    return wait_for_process(p, timeout=timeout)
 
 
 def discover_test_cases_recursively(suite_or_case):
@@ -612,7 +612,7 @@ def discover_test_cases_recursively(suite_or_case):
         return [suite_or_case]
     rc = []
     for element in suite_or_case:
-        print(element)
+        # print(element)
         rc.extend(discover_test_cases_recursively(element))
     return rc
 
@@ -730,7 +730,6 @@ def run_tests(argv=UNITTEST_ARGS):
     suite = unittest.TestLoader().loadTestsFromModule(__main__)
     if not lint_test_case_extension(suite):
         sys.exit(1)
-
     if TEST_IN_SUBPROCESS:
         other_args = []
         if DISABLED_TESTS_FILE:
@@ -755,7 +754,12 @@ def run_tests(argv=UNITTEST_ARGS):
                 [test_case_full_name]
             )
             string_cmd = " ".join(cmd)
-            exitcode = shell(cmd)
+
+            try:
+                exitcode = shell(cmd, timeout=10 * 60)
+            except TimeoutError:
+                print(f"Running `{string_cmd}` is taking 10+ minutes, killing process and retrying")
+                exitcode = shell(cmd, timeout=10 * 60)
 
             if exitcode != 0:
                 # This is sort of hacky, but add on relevant env variables for distributed tests.
