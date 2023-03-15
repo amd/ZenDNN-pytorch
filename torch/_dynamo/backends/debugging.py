@@ -41,9 +41,9 @@ aot_eager_decomp_partition = aot_autograd(
     decompositions=lambda: import_module(
         "torch._inductor.compile_fx"
     ).select_decomp_table(),
-    partition_fn=functools.partial(
-        min_cut_rematerialization_partition, compiler="inductor"
-    ),
+    # partition_fn=functools.partial(
+    #     min_cut_rematerialization_partition, compiler="inductor"
+    # ),
 )
 register_backend(
     name="aot_eager_decomp_partition", compiler_fn=aot_eager_decomp_partition
