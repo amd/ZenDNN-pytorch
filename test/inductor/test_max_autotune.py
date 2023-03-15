@@ -124,7 +124,11 @@ class TestDoBench(TestCase):
         d = torch.randn(k, n).cuda()
 
         with config.patch(
-            {"max_autotune": True, "autotune_in_subproc": autotune_in_subproc}
+            {
+                "max_autotune": True,
+                "autotune_in_subproc": autotune_in_subproc,
+                "ignore_max_autotune_cache": True,
+            }
         ):
             torch.compile(mm_plus_mm)(a, b, c, d)
 
