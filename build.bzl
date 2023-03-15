@@ -7,12 +7,49 @@ load(
 
 def define_targets(rules):
     rules.cc_library(
+        name = "caffe2_core_common",
+        srcs = ["caffe2/core/common.cc"],
+        hdrs = ["caffe2/core/common.h"],
+        deps = [
+            ":caffe2_core_macros",
+            "//c10/macros",
+            "//c10/util:base",
+        ],
+    )
+
+    rules.cc_library(
+        name = "caffe2_core_logging",
+        hdrs = ["caffe2/core/logging.h"],
+        deps = [
+            ":caffe2_core_common",
+            "//c10/util:base",
+        ],
+    )
+
+    rules.cc_library(
+        name = "caffe2_core_macros",
+        hdrs = [":caffe2_core_macros_h"],
+        deps = [
+            ":caffe2_core_macros_h",
+            "//c10/macros",
+            "//c10/util:base",
+        ],
+    )
+
+    rules.cc_library(
         name = "caffe2_serialize",
         srcs = [
             "caffe2/serialize/file_adapter.cc",
             "caffe2/serialize/inline_container.cc",
             "caffe2/serialize/istream_adapter.cc",
             "caffe2/serialize/read_adapter_interface.cc",
+        ],
+        hdrs = [
+            "caffe2/serialize/file_adapter.h",
+            "caffe2/serialize/inline_container.h",
+            "caffe2/serialize/istream_adapter.h",
+            "caffe2/serialize/read_adapter_interface.h",
+            "caffe2/serialize/versions.h",
         ],
         copts = ["-fexceptions"],
         tags = [
@@ -23,10 +60,37 @@ def define_targets(rules):
         ],
         visibility = ["//visibility:public"],
         deps = [
-            ":caffe2_headers",
+            ":caffe2_core_common",
+            ":caffe2_core_logging",
             "@com_github_glog//:glog",
-            "//c10",
+            "//c10/core:CPUAllocator",
+            "//c10/core:base",
+            "//c10/macros",
+            "//c10/util:base",
             "//third_party/miniz-2.1.0:miniz",
+        ],
+    )
+
+    rules.cc_library(
+        name = "caffe2_core_types",
+        srcs = ["caffe2/core/types.cc"],
+        hdrs = ["caffe2/core/types.h"],
+        deps = [
+            ":caffe2_core_common",
+            ":caffe2_core_logging",
+            ":caffe2_proto_caffe2_pb",
+            "//c10/util:base",
+            "//c10/util:typeid",
+        ],
+    )
+
+    rules.cc_library(
+        name = "caffe2_proto_caffe2_pb",
+        hdrs = ["caffe2/proto/caffe2_pb.h"],
+        deps = [
+            ":caffe2_protos",
+            "//c10/core:base",
+            "//c10/util:base",
         ],
     )
 
