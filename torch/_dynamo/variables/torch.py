@@ -449,6 +449,23 @@ class TorchVariable(VariableTracker):
             return TorchVariable(torch.add, **options).call_function(
                 tx, [args[0], result], {}
             )
+        elif self.value == torch.distributed._functional_collectives.all_reduce:
+
+            tag_ranks_groupsize = tx.inline_user_function_return(
+                variables.UserFunctionVariable(
+                    torch.distributed._functional_collectives._expand_group, **options
+                ),
+                args[2:],
+                {},
+            )
+            ar_args = args[:2] + tag_ranks_groupsize.items
+            all_reduce = TorchVariable(
+                torch.ops.aten.all_reduce, **options
+            ).call_function(tx, ar_args, {})
+
+            return TorchVariable(torch._C._nn.wait_tensor, **options).call_function(
+                tx, [all_reduce], {}
+            )
         else:
             any_symints_or_symfloats = any(
                 [isinstance(x, SymNodeVariable) for x in args]

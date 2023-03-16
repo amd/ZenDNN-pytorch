@@ -22,8 +22,7 @@ import torch._dynamo.logging
 
 # LOL if you don't remember to import this, then the op isn't registered and it hits
 # the no-op C++ kernel that i am forced to implement despite not using it
-import torch.distributed._functional_collectives
-
+import torch.distributed._functional_collectives as _functional_collectives
 
 @requires_nccl()
 class TestCollectivesMultiProc(DynamoDistributedMultiProcTestCase):
@@ -320,8 +319,10 @@ class TestCollectivesInductor(DynamoDistributedSingleProcTestCase):
         assert same(out, correct)
 
     def test_dynamo_trace_allreduce(self):
+        # torch._inductor.config.debug = True
+
         def func(inp, *, tag, ranks, group_size):
-            ar = torch.ops.aten.all_reduce(inp, "sum", tag, ranks, group_size)
+            ar = _functional_collectives.all_reduce(inp, "sum", ranks, tag)
             return ar
 
         inputs = torch.ones(4, 4, device="cuda")
@@ -330,7 +331,9 @@ class TestCollectivesInductor(DynamoDistributedSingleProcTestCase):
         out = compiled(inputs, **self.get_world_trs())
         correct = func(inputs, **self.get_world_trs())
         assert counter.frame_count == 1
-        assert counter.op_count == 1
+
+        # should test more precisely, but the 2 is supposed to be (all_reduce, wait)
+        assert counter.op_count == 2
         assert same(out, correct)
 
     def test_backwards(self):
