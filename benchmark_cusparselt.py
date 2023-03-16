@@ -26,8 +26,9 @@ if __name__ == "__main__":
 
     shapes = [
         # distilbert shapes
-        (768, 3072, 768),
-        (3072, 768, 3072),
+        (64, 64, 64)
+        # (768, 3072, 768),
+        # (3072, 768, 3072),
         # jiecao shapes
         # (1024, 1536, 2048),
         # (1024, 9408, 2048),
@@ -56,7 +57,7 @@ if __name__ == "__main__":
         # (2048, 1024, 1024),
         # (2048, 2048, 2048),
     ]
-    batch_sizes = [1, 4, 16, 64, 256]
+    batch_sizes = [4, 16, 64, 256]
 
 
     for (m, k, n), batch_size in product(shapes, batch_sizes):

@@ -145,18 +145,29 @@ void CusparseLtLinear::prune() {
 }
 
 void CusparseLtLinear::compress() {
-  
-  size_t compressed_size, compressed_buffer_size;
-  CHECK_CUSPARSE(
-      cusparseLtSpMMACompressedSize2(&handle, &weight_descriptor, &compressed_size, &compressed_buffer_size))
-  
-  void* dA_compressedBuffer = nullptr;
+ 
+  // cusparselt 0.4.0
+  // size_t compressed_size, compressed_buffer_size;
+  // CHECK_CUSPARSE(
+  //     cusparseLtSpMMACompressedSize2(&handle, &weight_descriptor, &compressed_size, &compressed_buffer_size))
+  // 
+  // void* dA_compressedBuffer = nullptr;
 
+  // CHECK_CUDA(cudaMalloc((void**)&dA_compressed, compressed_size))
+  // CHECK_CUDA(cudaMalloc((void**)&dA_compressedBuffer, compressed_buffer_size))
+
+  // CHECK_CUSPARSE(
+  //   cusparseLtSpMMACompress2(&handle, &weight_descriptor, 1, opA, dA, dA_compressed, dA_compressedBuffer, stream))
+
+    // Compress the A matrix
+  size_t compressed_size;
+  CHECK_CUSPARSE(
+      cusparseLtSpMMACompressedSize2(&handle, &weight_descriptor, &compressed_size))
   CHECK_CUDA(cudaMalloc((void**)&dA_compressed, compressed_size))
-  CHECK_CUDA(cudaMalloc((void**)&dA_compressedBuffer, compressed_buffer_size))
 
   CHECK_CUSPARSE(
-    cusparseLtSpMMACompress2(&handle, &weight_descriptor, 1, opA, dA, dA_compressed, dA_compressedBuffer, stream))
+    cusparseLtSpMMACompress2(&handle, &weight_descriptor, true, opA, dA, dA_compressed, stream))
+
 }
 
 // this function assumes the weight tensor already has the mask applied
@@ -241,11 +252,13 @@ at::Tensor CusparseLtLinear::masked_mm(const at::Tensor& input) {
                                                    &dBias, sizeof(dBias)) )
   CHECK_CUSPARSE(cusparseLtMatmulAlgSelectionInit(
       &handle, &alg_sel, &matmul, CUSPARSELT_MATMUL_ALG_DEFAULT))
-
-  CHECK_CUSPARSE(cusparseLtMatmulPlanInit(
-      &handle, &plan, &matmul, &alg_sel))
-
+  // at run time. seems like a bug in cuSPARSELt internals
   size_t workspace_size = 0;
+  CHECK_CUSPARSE(cusparseLtMatmulPlanInit(
+      &handle, &plan, &matmul, &alg_sel, workspace_size))
+  // CHECK_CUSPARSE(cusparseLtMatmulPlanInit(
+  //     &handle, &plan, &matmul, &alg_sel))
+
   CHECK_CUSPARSE( cusparseLtMatmulGetWorkspace(&handle, &plan, &workspace_size) )
   CHECK_CUDA( cudaMalloc((void**) &d_workspace, workspace_size) )
 
