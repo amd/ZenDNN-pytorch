@@ -1023,7 +1023,7 @@ class FakeTensorMode(TorchDispatchMode):
         self,
         *,
         allow_fallback_kernels=True,
-        allow_non_fake_inputs=False,
+        allow_non_fake_inputs=True,
         shape_env=None,
     ):
         self.allow_fallback_kernels = allow_fallback_kernels

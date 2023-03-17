@@ -4,6 +4,7 @@ import itertools
 import logging
 import math
 import operator
+import re
 import types
 from typing import Dict, List
 
@@ -978,6 +979,9 @@ class BuiltinVariable(VariableTracker):
             return obj.var_getattr(tx, name).add_options(options)
         elif isinstance(obj, variables.TensorVariable) and name == "grad":
             if source:
+                symbol_name = re.sub(r"[^a-zA-Z0-9]+", "_", source.name())
+                if symbol_name in tx.symbolic_locals:
+                    return tx.symbolic_locals[symbol_name]
                 # We are going to be raising this tensor as grapharg. So, ensure
                 # that we have real grad value instead of fake tensor value.
                 # Walk through the inputs of the subgraph and find if we already
@@ -1051,6 +1055,19 @@ class BuiltinVariable(VariableTracker):
             )
         elif isinstance(obj, variables.NNModuleVariable):
             obj.convert_to_unspecialized(tx)
+        elif (
+            isinstance(obj, variables.TensorVariable)
+            and name_var.as_python_constant() == "grad"
+        ):
+            # Probably unacceptably hacky. Treating x.grad as a basically a new tensor x_grad.
+            # So this does not really do any mutation. We just remember that a new x_grad is just
+            # a new tensor, and later uses of this name will use this TensorVariable.
+
+            # Move this string manipulation to some helper function
+            name = f"{obj.source.name()}.grad"
+            name = re.sub(r"[^a-zA-Z0-9]+", "_", name)
+            tx.symbolic_locals[name] = val
+            return val.add_options(self, obj, name_var)
 
     def call_type(self, tx, obj: VariableTracker):
         from .builder import VariableBuilder

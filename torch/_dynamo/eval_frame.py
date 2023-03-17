@@ -955,8 +955,8 @@ class TorchPatcher:
             )
             opt.zero_grad = disable(opt.zero_grad)
 
-            if hasattr(opt, "_init_group"):
-                opt._init_group = disable(opt._init_group)
+            # if hasattr(opt, "_init_group"):
+            #     opt._init_group = disable(opt._init_group)
 
             # disable any currently set hooks
             # Note: we only want to disable the profiling hook

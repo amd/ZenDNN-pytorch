@@ -2544,7 +2544,7 @@ def create_aot_dispatcher_function(
         )
         # crappy version of dispatcher
         # TODO: Do this properly
-        if needs_autograd:
+        if False and needs_autograd:
             compiler_fn = aot_dispatch_autograd
         else:
             compiler_fn = aot_dispatch_base

@@ -243,6 +243,8 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             str, Optional[fx.Proxy]
         ] = collections.OrderedDict()
 
+        self.cached_fx_proxy: Dict[str, fx.Proxy] = {}
+
     @property
     def output(self):
         return self
@@ -396,12 +398,18 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
                 options["guards"].add(source.make_guard(GuardBuilder.TENSOR_MATCH))
 
             def wrap_name(module_key):
-                return wrap_fx_proxy(
+
+                if module_key in self.cached_fx_proxy:
+                    return self.cached_fx_proxy[module_key]
+
+                o = wrap_fx_proxy(
                     self.root_tx,
                     self.create_proxy("get_attr", module_key, tuple(), {}),
                     example_value=target,
                     **options,
                 )
+                self.cached_fx_proxy[module_key] = o
+                return o
 
         elif isinstance(target, torch.nn.Module):
             assert isinstance(target, torch.nn.Module)
@@ -612,6 +620,8 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         name = unique_id("__compiled_fn")
 
         assert_no_fake_params_or_buffers(gm)
+        gm.to_folder("joint_module")
+        print(gm)
         compiled_fn = self.call_user_compiler(gm)
         compiled_fn = disable(compiled_fn)
 
