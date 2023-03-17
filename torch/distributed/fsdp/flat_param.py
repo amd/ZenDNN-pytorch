@@ -1385,7 +1385,6 @@ class FlatParamHandle:
         )
         return views
 
-    @no_type_check
     def _use_unsharded_views(self, as_params: bool) -> None:
         """
         Unflattens the unsharded flattened parameter by setting the original
