@@ -23,14 +23,7 @@ pull-deps: clone-deps
 	(cd ../../../torchbenchmark && git reset --hard HEAD && git pull && git submodule update --init --recursive)
 	(cd ../../../triton         && git reset --hard HEAD && git fetch && git checkout $(TRITON_VERSION) && git submodule update --init --recursive)
 
-build-deps: clone-deps
-	# conda env remove --name torchdynamo
-	# conda create --name torchdynamo -y python=3.8
-	# conda activate torchdynamo
-	conda install -y astunparse numpy scipy ninja pyyaml mkl mkl-include setuptools cmake \
-		typing-extensions requests protobuf numba cython scikit-learn
-	conda install -y -c pytorch magma-cuda116
-	conda install -y -c conda-forge librosa
+build-deps:
 	(cd ../../../torchvision && python setup.py clean && python setup.py develop)
 	(cd ../../../torchdata && python setup.py install)
 	(cd ../../../torchtext   && python setup.py clean && python setup.py develop)

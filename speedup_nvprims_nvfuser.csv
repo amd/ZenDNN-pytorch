@@ -1,0 +1,3 @@
+dev,name,batch_size,speedup,abs_latency,compilation_latency,compression_ratio,eager_peak_mem,dynamo_peak_mem,calls_captured,unique_graphs,graph_breaks,unique_graph_breaks
+cuda,gluon_xception65,32,1.0450,47.4128,89.0576,1.4492,1.7863,1.2326,352,1,0,0
+cuda,mixnet_l,128,1.0828,55.3933,60.0032,1.1528,3.1013,2.6902,615,1,0,0

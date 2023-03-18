@@ -1,0 +1,3 @@
+dev,name,batch_size,_compile,OutputGraph.call_user_compiler,create_aot_dispatcher_function
+cuda,gluon_xception65,32,77.420395,74.847964,74.830271
+cuda,mixnet_l,128,42.564991,38.115869,38.098096
