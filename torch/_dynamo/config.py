@@ -69,7 +69,7 @@ dynamic_shapes = os.environ.get("TORCHDYNAMO_DYNAMIC_SHAPES") == "1"
 assume_static_by_default = False
 
 # Set this to False to assume nn.Modules() contents are immutable (similar assumption as freezing)
-guard_nn_modules = False
+guard_nn_modules = True
 
 # This feature doesn't really work.  We offer this flag for experimental
 # purposes / if you want to help us build out support.
@@ -206,6 +206,10 @@ allow_rnn = False
 # root folder of the project
 base_dir = dirname(dirname(dirname(abspath(__file__))))
 
+# If True, record autograd profiler events for dynamo cache lookups (guards)
+# TODO can we default this to True?
+# and how can we cause registration/deregestration to be sensitive to runtime change of this flag?
+profile_cache_lookup = True
 
 def is_fbcode():
     return not hasattr(torch.version, "git_version")

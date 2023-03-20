@@ -2305,6 +2305,11 @@ def run(runner, args, original_dir=None):
                     args.per_process_memory_fraction
                 )
 
+        with torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+            ]
+        ) as p:
             runner.run_one_model(
                 name,
                 model,
@@ -2314,6 +2319,7 @@ def run(runner, args, original_dir=None):
                 explain=args.explain,
                 tag=args.tag,
             )
+        print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
         if args.generate_aot_autograd_stats:
             stats_file = output_filename.split(".csv")[0] + "_stats.csv"
             output_csv(

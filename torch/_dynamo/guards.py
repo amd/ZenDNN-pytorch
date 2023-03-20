@@ -9,6 +9,7 @@ import weakref
 from inspect import currentframe, getframeinfo
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 from weakref import ReferenceType
+from functools import lru_cache
 
 import torch
 
@@ -99,6 +100,9 @@ class GuardBuilder(GuardBuilderBase):
         else:
             scope = dict()
         self.scope: Dict[str, object] = scope
+        self.cse_context: Dict[str, object] = {}
+        self.attr_remaps: Dict[str, str] = {}
+        self.cse_names: Dict[str, str] = {}
         self.scope["__builtins__"] = builtins.__dict__.copy()
         for (
             name,
@@ -135,6 +139,11 @@ class GuardBuilder(GuardBuilderBase):
         self.tensor_check_examples: List[torch.Tensor] = []
 
         self.check_fn_manager: CheckFunctionManager = check_fn_manager
+        # Instance scoped LRU cache, because we do not want cross frame pollution here
+        self.get = lru_cache(None)(self.get)
+        self.record_cse = lru_cache(None)(self.record_cse)
+        self.arg_ref = lru_cache(None)(self.arg_ref)
+        self.get_cse_name = lru_cache(None)(self.get_cse_name)
 
     # Warning: use this with care!  This lets you access what the current
     # value of the value you are guarding on is.  You probably don't want
@@ -142,8 +151,40 @@ class GuardBuilder(GuardBuilderBase):
     # to this frame!)  Instead, you should be reading out some property
     # (like its type) which is what you permanently install into the
     # guard code.
-    def get(self, name: str) -> Any:
+    def get(self, name) -> Any:
+        self.record_cse(name)
         return eval(name, self.scope, CLOSURE_VARS)
+
+    def get_cse_name(self, name):
+        # Not all names are in CSE, in particular, subscripts cannot be used with assignment expressions
+        return self.cse_names[name] if name in self.cse_names else name
+
+    def record_cse(self, name):
+        name_split = name.split(".")
+        if len(name_split) == 1:
+            return name
+        # This is a valid cse candidate, because the name used for local access
+        # goes through at least 1 property check.
+        # We will take everything before the last property access, as that is a valid cse slug.
+        # While we can have more complex CSE here in the future, where we look at other parts of the split,
+        # and use that to truncate the scope/search space, we don't need that for this.
+        param = name_split[-1]
+        cse_candidates = name_split[:-1]
+        if len(cse_candidates) == 1:
+            # foo.bar needs no cse
+            return name
+        cse_candidate = "_".join(map(str, cse_candidates))
+        # e.g. replace abc.xyz[123].qkv with abc.xyz_123.qkv
+        cse_candidate = re.sub(r"\[(\d+)\]", r"_\g<1>", cse_candidate)
+        # e.g. replace abc.xyz_123.qkv with abc_xyz_123_qkv
+        cse_candidate = re.sub(r"[^a-zA-Z0-9]", "_", cse_candidate)
+
+        real_name = ".".join(map(str, cse_candidates))
+        cse_name = f"{cse_candidate}.{param}"
+        if real_name not in self.attr_remaps:
+            self.attr_remaps[real_name] = cse_candidate
+        self.cse_names[name] = cse_name
+        return cse_name
 
     # Registers the usage of the source name referenced by the
     # string (or stored in the Guard) as being guarded upon.  It's important
@@ -162,7 +203,7 @@ class GuardBuilder(GuardBuilderBase):
                 log.warning(f"invalid var name: {guard}")
             self.argnames.append(base)
 
-        return name
+        return self.record_cse(name)
 
     def TYPE_MATCH(self, guard: Guard):
         # ___check_type_id is same as `id(type(x)) == y`
@@ -184,8 +225,9 @@ class GuardBuilder(GuardBuilderBase):
         # the purpose of using this guard, which itself is supposed to be a faster alternative
         # to DICT_KEYS.
         ref = self.arg_ref(guard)
+        real_obj = self.get(guard.name)
         code = f"not {ref}"
-        self._produce_guard_code(guard, [code])
+        self._produce_guard_code(guard, [code], provided_guarded_object=real_obj)
 
     def ID_MATCH(self, guard: Guard):
         # ___check_obj_id is same as `id(x) == y`
@@ -200,6 +242,7 @@ class GuardBuilder(GuardBuilderBase):
         self._produce_guard_code(guard, [code])
 
     def NAME_MATCH(self, guard: Guard):
+        ref = self.arg_ref(guard)
         obj = self.get(guard.name)
         code = f"{self.arg_ref(guard)}.__name__ == {obj.__name__}"
         self._produce_guard_code(guard, [code])
@@ -208,7 +251,7 @@ class GuardBuilder(GuardBuilderBase):
         m = re.match(r"^(.*)[.]([a-zA-Z0-9_]+)$", guard.name)
         assert m, f"invalid hasattr check {guard.name}"
         base, attr = m.group(1, 2)
-        ref = self.arg_ref(base)
+        ref = self.get_cse_name(self.arg_ref(base))
         val = hasattr(self.get(base), attr)
         code = None
         if val:
@@ -554,6 +597,7 @@ class GuardBuilder(GuardBuilderBase):
 
         # Not all guards have names, some can be installed globally (see asserts on HAS_GRAD)
         if provided_guarded_object is None:
+            # TODO(voz): Squash these cases, let's make provided_guarded_object required
             name_valid = guard.name is not None and guard.name != ""
 
             guarded_object = self.get(guard.name) if name_valid else None
@@ -721,6 +765,12 @@ class CheckFunctionManager:
             + list(SYMPY_INTERP.items())
         )
         closure_vars.update(CLOSURE_VARS)
+        cse_prefix = []
+        for name, value in local_builder.attr_remaps.items():
+            cse_prefix.append(f"({value} := {name})")
+        cse_prefix = " and ".join(cse_prefix)
+        if len(cse_prefix) > 0:
+            code = cse_prefix + " and " + code
         py_code = f"""\
 def ___make_guard_fn({','.join(closure_vars.keys())}):
     return lambda {args}: {code}
