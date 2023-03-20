@@ -13,6 +13,7 @@
 #include <c10/core/impl/LocalDispatchKeySet.h>
 #include <c10/core/impl/PyObjectSlot.h>
 #include <c10/core/impl/SizesAndStrides.h>
+#include <c10/core/impl/copy_on_write_simulator.h>
 #include <c10/util/DimVector.h>
 #include <c10/util/Exception.h>
 #include <c10/util/Flags.h>
@@ -25,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -61,6 +63,10 @@ struct Storage;
 } // namespace c10
 
 namespace c10 {
+
+namespace impl {
+class CopyOnWritePeer; // for friendship
+} // namespace impl
 
 /**
  * A utility function to convert vector<int> to vector<int64_t>.
@@ -571,7 +577,17 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
       const caffe2::TypeMeta data_type,
       c10::optional<c10::Device>);
 
+  // Private constructor for lazily copying/viewing tensors.
+  explicit TensorImpl(
+      const TensorImpl& that,
+      intrusive_ptr<impl::CopyOnWriteSimulator> copy_on_write_simulator);
+
  public:
+  // Takes a view of this tensor.
+  intrusive_ptr<TensorImpl> take_view() const;
+  // Simulates creating a lazy copy of this tensor.
+  intrusive_ptr<TensorImpl> simulate_copy_on_write() const;
+
   TensorImpl(const TensorImpl&) = delete;
   TensorImpl& operator=(const TensorImpl&) = delete;
   TensorImpl(TensorImpl&&) = delete;
@@ -2932,6 +2948,17 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   DispatchKeySet key_set_;
 
  private:
+  intrusive_ptr<impl::CopyOnWriteSimulator> copy_on_write_simulator_;
+
+  // We friend intrusive_ptr so that we may create an instance using a
+  // private constructor.
+  friend class intrusive_ptr<TensorImpl>;
+
+  // We friend this due to the temporary nature of the copy-on-write
+  // simulation, and so that we don't have any long-term accessors to
+  // what is logically private copy-on-write implementation details.
+  friend class impl::CopyOnWritePeer;
+
   // C10_TensorImpl_Size_Check_Dummy_Class needs to be friends with
   // TensorImpl so it can inspect the size of private fields
   template <

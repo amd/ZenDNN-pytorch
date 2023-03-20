@@ -7,7 +7,13 @@
 
 #include <c10/util/intrusive_ptr.h>
 
+#include <cstdint>
+
 namespace c10 {
+
+namespace impl {
+class CopyOnWritePeer; // for friendship
+} // namespace impl
 
 // A storage represents the underlying backing data buffer for a
 // tensor.  This concept was inherited from the original Torch7
@@ -222,7 +228,16 @@ struct C10_API StorageImpl : public c10::intrusive_ptr_target {
   // Identifies that Storage was received from another process and doesn't have
   // local to process cuda memory allocation
   bool received_cuda_;
+
+  // Represent's the copy-on-write simulator's storage generation number.
+  std::uint32_t generation_ = 0;
+
   Allocator* allocator_;
   impl::PyObjectSlot pyobj_slot_;
+
+  // We friend this due to the temporary nature of the copy-on-write
+  // simulation, and so that we don't have any long-term accessors to
+  // what is logically private copy-on-write implementation details.
+  friend class impl::CopyOnWritePeer;
 };
 } // namespace c10

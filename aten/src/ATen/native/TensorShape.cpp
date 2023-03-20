@@ -566,7 +566,9 @@ TORCH_IMPL_FUNC(cat_out_cpu)
   // fast path for single thread when both inputs and result are contiguous and not empty
   bool use_serial_kernel = result.numel() < at::internal::GRAIN_SIZE || at::get_num_threads() == 1;
   ScalarType dtype = materialized[valid].get().scalar_type();
-  bool serial_dtype = (dtype == ScalarType::Double || dtype == ScalarType::Float || dtype == ScalarType::BFloat16);
+  bool serial_dtype =
+      (dtype == ScalarType::Double || dtype == ScalarType::Float ||
+       dtype == ScalarType::BFloat16 || dtype == ScalarType::Half);
   if (use_serial_kernel && all_contiguous && all_same_dtype && serial_dtype) {
     cat_serial_stub(kCPU, result, materialized, dim);
     return;
@@ -1542,7 +1544,11 @@ template <typename Vec>
 Tensor alias_with_sizes_and_strides(
     const Tensor& self,
     const Vec& sizes,
-    const Vec& strides) {
+    const Vec& strides,
+    // If true, continue to return an alias, but instrument the
+    // TensorImpl such that it can detect if any future writes are
+    // subsequently read through this tensor.
+    bool simulate_copy_on_write) {
   //caller should make sure that sizes and strides are valid for self
   //(storage is sufficient, strides are non-negative, strides and sizes array size is the same)
   Tensor self_;
@@ -1553,8 +1559,10 @@ Tensor alias_with_sizes_and_strides(
     self_tmp_->set_storage_offset(self.storage_offset());
     self_tmp_->set_sizes_and_strides(sizes, strides);
   } else {
-    self_ = at::detail::make_tensor<TensorImpl>(
-      c10::TensorImpl::VIEW, Storage(self.storage()), self.key_set(), self.dtype());
+    const TensorImpl& tensor_impl = *self.unsafeGetTensorImpl();
+    intrusive_ptr<TensorImpl> new_tensor_impl = simulate_copy_on_write ? tensor_impl.simulate_copy_on_write()
+                                                                       : tensor_impl.take_view();
+    self_ = TensorBase::wrap_tensor_impl(std::move(new_tensor_impl));
     auto* self_tmp_ = self_.unsafeGetTensorImpl();
     self_tmp_->set_storage_offset(self.storage_offset());
     self_tmp_->set_sizes_and_strides(sizes, strides);
@@ -1566,10 +1574,6 @@ Tensor alias_with_sizes_and_strides(
 Tensor reshape_symint(const Tensor& self, c10::SymIntArrayRef proposed_shape) {
   if (self.is_sparse()) {
     AT_ERROR("reshape is not implemented for sparse tensors");
-  }
-
-  if (self.is_contiguous() && !self.is_mkldnn()) {
-    return self.view_symint(proposed_shape);
   }
 
   c10::SymDimVector shape = infer_size_dv(proposed_shape, self.sym_numel());
@@ -1670,7 +1674,7 @@ Tensor _reshape_alias(const Tensor& self, IntArrayRef sizes, IntArrayRef strides
   // to `view`. This removes the overhead of calling `view` which duplicates some of
   // the work that's already been done (`infer_size_dv` and `computeStride`).
 
-  return alias_with_sizes_and_strides(self, sizes, strides);
+  return alias_with_sizes_and_strides(self, sizes, strides, /*simulate_copy_on_write=*/true);
 }
 
 Tensor reshape_as(const Tensor& self, const Tensor& other) {
@@ -3262,7 +3266,7 @@ inline Tensor view_impl(const Tensor& self, IntArrayRef size) {
   TORCH_CHECK(stride.has_value(), "view size is "
     "not compatible with input tensor's size and stride (at least one dimension"
     " spans across two contiguous subspaces). Use .reshape(...) instead.");
-  return alias_with_sizes_and_strides(self, inferred_size, *stride);
+  return alias_with_sizes_and_strides(self, inferred_size, *stride, /*simulate_copy_on_write=*/false);
 
 }
 
@@ -3648,7 +3652,7 @@ Tensor view(const Tensor& self,
 }
 
 Tensor alias(const Tensor& self) {
-  return alias_with_sizes_and_strides(self, self.sizes(), self.strides());
+  return alias_with_sizes_and_strides(self, self.sizes(), self.strides(), /*simulate_copy_on_write=*/false);
 }
 
 Tensor detach(const Tensor& self) {
