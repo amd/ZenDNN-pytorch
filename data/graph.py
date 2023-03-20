@@ -64,18 +64,21 @@ def graph_delta(data1, data2, name1, name2):
 
 
 # Inductor, eval
-hf_inductor_eval = "data/hf_inductor_eval.log"
-timm_inductor_eval = "data/timm_inductor_eval.log"
-tb_inductor_eval = "data/tb_inductor_eval.log"
+hf_inductor_eval = parse_log("data/hf_inductor_eval.log")
+# timm_inductor_eval = parse_log("data/timm_inductor_eval.log")
+# tb_inductor_eval = parse_log("data/tb_inductor_eval.log")
 # NVFuser, eval
-hf_nvfuser_eval = "data/hf_nvfuser_eval.log"
-timm_nvfuser_eval = "data/timm_nvfuser_eval.log"
-tb_nvfuser_eval = "data/tb_nvfuser_eval.log"
+hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log")
+# timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log")
+# tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log")
 # Inductor, train
-hf_inductor_train = "data/hf_inductor_train.log"
-timm_inductor_train = "data/timm_inductor_train.log"
-tb_inductor_train = "data/tb_inductor_train.log"
+# hf_inductor_train = parse_log("data/hf_inductor_train.log")
+# timm_inductor_train = parse_log("data/timm_inductor_train.log")
+# tb_inductor_train = parse_log("data/tb_inductor_train.log")
 # NVFuser, train
-hf_nvfuser_train = "data/hf_nvfuser_train.log"
-timm_nvfuser_train = "data/timm_nvfuser_train.log"
-tb_nvfuser_train = "data/tb_nvfuser_train.log"
+# hf_nvfuser_train = parse_log("data/hf_nvfuser_train.log")
+# timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log")
+# tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log")
+
+graph_delta(hf_inductor_eval, hf_nvfuser_eval, "hf_inductor_eval", "hf_nvfuser_eval")
+graph_delta(timm_inductor_eval, hf_nvfuser_eval, "timm_nvfuser_eval", "hf_nvfuser_eval")
