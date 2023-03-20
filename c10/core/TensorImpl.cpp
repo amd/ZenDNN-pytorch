@@ -7,6 +7,7 @@
 #include <c10/core/impl/LocalDispatchKeySet.h>
 #include <c10/core/impl/PyInterpreter.h>
 #include <c10/core/impl/TorchDispatchModeTLS.h>
+#include <c10/core/impl/copy_on_write_peer.h>
 #include <c10/util/Optional.h>
 #include <c10/util/irange.h>
 
@@ -140,7 +141,9 @@ TensorImpl::TensorImpl(
 
       numel_(0),
       data_type_(data_type),
-      device_opt_(device_opt) {
+      device_opt_(device_opt),
+      copy_on_write_simulator_(make_intrusive<impl::CopyOnWriteSimulator>(
+          storage_ ? impl::CopyOnWritePeer::get_generation(storage_) : 0)) {
   init_bitfields();
 
   if (!key_set.empty()) {
@@ -182,6 +185,32 @@ TensorImpl::TensorImpl(
   }
   // we would also like to check that non-cpu devices have an index, but some
   // Caffe2 operators create Storages with default devices.
+}
+
+TensorImpl::TensorImpl(
+    const TensorImpl& that,
+    intrusive_ptr<impl::CopyOnWriteSimulator> copy_on_write_simulator)
+    : intrusive_ptr_target(),
+      storage_(that.storage()),
+      data_type_(that.dtype()),
+      device_opt_(that.device_opt()),
+      key_set_(that.key_set() - c10::python_ks),
+      copy_on_write_simulator_(std::move(copy_on_write_simulator)) {
+  init_bitfields();
+  // Inference tensor doesn't have version counter.
+  if (!is_inference()) {
+    version_counter_ = VariableVersion(/*version=*/0);
+  }
+}
+
+intrusive_ptr<TensorImpl> TensorImpl::take_view() const {
+  return make_intrusive<TensorImpl>(*this, copy_on_write_simulator_);
+}
+
+intrusive_ptr<TensorImpl> TensorImpl::simulate_copy_on_write() const {
+  return make_intrusive<TensorImpl>(
+      *this,
+      make_intrusive<impl::CopyOnWriteSimulator>(*copy_on_write_simulator_));
 }
 
 void TensorImpl::_change_backend_component_keys(c10::Device device) {
