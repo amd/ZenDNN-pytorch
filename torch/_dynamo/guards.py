@@ -169,22 +169,25 @@ class GuardBuilder(GuardBuilderBase):
         # While we can have more complex CSE here in the future, where we look at other parts of the split,
         # and use that to truncate the scope/search space, we don't need that for this.
         param = name_split[-1]
-        cse_candidates = name_split[:-1]
-        if len(cse_candidates) == 1:
+        base = name_split[:-1]
+        if len(base) == 1:
             # foo.bar needs no cse
             return name
-        cse_candidate = "_".join(map(str, cse_candidates))
-        # e.g. replace abc.xyz[123].qkv with abc.xyz_123.qkv
-        cse_candidate = re.sub(r"\[(\d+)\]", r"_\g<1>", cse_candidate)
-        # e.g. replace abc.xyz_123.qkv with abc_xyz_123_qkv
-        cse_candidate = re.sub(r"[^a-zA-Z0-9]", "_", cse_candidate)
 
-        real_name = ".".join(map(str, cse_candidates))
-        cse_name = f"{cse_candidate}.{param}"
-        if real_name not in self.attr_remaps:
-            self.attr_remaps[real_name] = cse_candidate
-        self.cse_names[name] = cse_name
-        return cse_name
+        base = ".".join(map(str, base))
+        if name in self.check_fn_manager.output_graph.source_name_to_cse:
+            # Params store their base
+            cse_base_name = self.check_fn_manager.output_graph.source_name_to_cse[name] 
+        elif base in self.check_fn_manager.output_graph.source_name_to_cse:
+            # Modules without params can still have property access
+            cse_base_name = self.check_fn_manager.output_graph.source_name_to_cse[base]
+        else:
+            breakpoint()
+        new_name = f"{cse_base_name}.{param}"
+        if cse_base_name not in self.attr_remaps:
+            self.attr_remaps[cse_base_name] = base
+        self.cse_names[name] = new_name
+        return new_name
 
     # Registers the usage of the source name referenced by the
     # string (or stored in the Guard) as being guarded upon.  It's important
@@ -767,7 +770,7 @@ class CheckFunctionManager:
         closure_vars.update(CLOSURE_VARS)
         cse_prefix = []
         for name, value in local_builder.attr_remaps.items():
-            cse_prefix.append(f"({value} := {name})")
+            cse_prefix.append(f"({name} := {value})")
         cse_prefix = " and ".join(cse_prefix)
         if len(cse_prefix) > 0:
             code = cse_prefix + " and " + code

@@ -226,7 +226,11 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         self.orig_graphargs: List[GraphArg] = self.graphargs
         self.nn_modules: Optional[Dict[str, torch.nn.Module]] = dict()
         # Stores the full fqn of a param or buffer to the relevant source.
+        # Note - the lifecycle here is 1:1 with the output_graph, we do not remove it
+        # at the end of instruction translation as we do with nn_modules, as it does not 
+        # cause us to retain modules or tensors, and we need it for CSE.
         self.param_name_to_source: Optional[Dict[str, Source]] = dict()
+        self.source_name_to_cse : Dict[str, str] = dict()
         self.side_effects = SideEffects()
         self.code_options = dict(code_options)
         self.output_instructions: List[Instruction] = []
@@ -474,13 +478,15 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         for i in itertools.count():
             if name not in self.nn_modules:
                 self.nn_modules[name] = target
+                self.source_name_to_cse[source.name()] = name
                 if isinstance(target, torch.nn.Module):
 
                     def register_leaf_name(leaf_name):
                         assert self.param_name_to_source is not None
                         new_source = ParamBufferSource(source, leaf_name)
                         new_name = f"{name}.{leaf_name}"
-                        self.param_name_to_source[new_name] = new_source
+                        self.param_name_to_source[new_name] = name
+                        self.source_name_to_cse[new_source.name()] = new_name
 
                     # annoying, but there are cases when we do not have parameters
                     # see test_nn_moduledict_contains
@@ -797,7 +803,6 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         # Note: generated fx graph will hold a reference to the nn_module,
         # So depending on the backend they may not be released
         self.nn_modules = None
-        self.param_name_to_source = None
 
         # Cleanup graphargs
         for graph_arg in self.graphargs:
