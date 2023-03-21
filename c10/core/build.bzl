@@ -62,6 +62,7 @@ def define_targets(rules):
             exclude = [
                 "CPUAllocator.cpp",
                 "impl/alloc_cpu.cpp",
+                "impl/copy_on_write_state.cpp",
             ],
         ),
         hdrs = rules.glob(
@@ -72,6 +73,8 @@ def define_targets(rules):
             exclude = [
                 "CPUAllocator.h",
                 "impl/alloc_cpu.h",
+                "impl/copy_on_write_simulator.h",
+                "impl/copy_on_write_state.h",
             ],
         ),
         # This library uses flags and registration. Do not let the
@@ -82,11 +85,23 @@ def define_targets(rules):
         visibility = ["//visibility:public"],
         deps = [
             ":ScalarType",
+            ":impl/copy_on_write",
             "//c10/macros:macros",
             "//c10/util:TypeCast",
             "//c10/util:base",
             "//c10/util:typeid",
         ],
+    )
+
+    rules.cc_library(
+        name = "impl/copy_on_write",
+        srcs = ["impl/copy_on_write_state.cpp"],
+        hdrs = [
+            "impl/copy_on_write_simulator.h",
+            "impl/copy_on_write_state.h",
+        ],
+        deps = ["//c10/util:base"],
+        visibility = ["//c10/test:__pkg__"],
     )
 
     rules.filegroup(
