@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 11, in <module>
+    import torch
+  File "/scratch/voz/work/pytorch/torch/__init__.py", line 1645, in <module>
+    _logging._init_logs()
+  File "/scratch/voz/work/pytorch/torch/_logging/_internal.py", line 391, in _init_logs
+    _update_log_state_from_env()
+  File "/scratch/voz/work/pytorch/torch/_logging/_internal.py", line 319, in _update_log_state_from_env
+    log_state = _parse_log_settings(log_setting)
+  File "/scratch/voz/work/pytorch/torch/_logging/_internal.py", line 264, in _parse_log_settings
+    raise ValueError(
+ValueError: Invalid log settings: -dynamo,-aot,-inductor, must be a comma separated list of registerered log or artifact names.
