@@ -15,6 +15,7 @@ def func(x):
 
 
 error_injection_str = """
+
 import torch._inductor.lowering
 
 def inject_error():
