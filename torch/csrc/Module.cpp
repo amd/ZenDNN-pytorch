@@ -17,6 +17,8 @@
 #include <ATen/dlpack.h>
 #include <ATen/native/ConvUtils.h>
 #include <c10/core/DispatchKeySet.h>
+#include <c10/core/impl/copy_on_write_simulator.h>
+#include <c10/core/impl/copy_on_write_spy.h>
 #include <c10/util/Logging.h>
 #include <c10/util/irange.h>
 #include <libshm.h>
@@ -1642,6 +1644,35 @@ Call this whenever a new thread is created in order to propagate values from
   ASSERT_TRUE(set_module_attr("_" C10_STRINGIZE(PYBIND11_BUILD_ABI), Py_None));
 #endif
 #undef SET_STR_DEFINE
+
+  py_module.def(
+      "has_same_copy_on_write_storage",
+      [](const at::Tensor& x, const at::Tensor& y) {
+        return c10::impl::CopyOnWriteSpy::get_simulator(
+                   *x.unsafeGetTensorImpl()) ==
+            c10::impl::CopyOnWriteSpy::get_simulator(*y.unsafeGetTensorImpl());
+      },
+      "Returns whether or not two tensors have the same copy on write simulators.");
+
+  py_module.def(
+      "get_copy_on_write_storage_generation",
+      [](const at::Tensor& x) -> std::optional<std::uint32_t> {
+        auto simulator =
+            c10::impl::CopyOnWriteSpy::get_simulator(*x.unsafeGetTensorImpl());
+        return simulator != nullptr
+            ? std::make_optional(
+                  const_cast<c10::impl::CopyOnWriteSimulator&>(*simulator)
+                      .storage_generation())
+            : std::nullopt;
+      },
+      "Gets the copy-on-write storage generation.");
+
+  py_module.def(
+      "get_storage_generation",
+      [](const at::Tensor& x) {
+        return c10::impl::CopyOnWriteSpy::get_generation(x.storage());
+      },
+      "Gets the generation of the underlying storage.");
 
   py_module.def(
       "_set_conj", [](const at::Tensor& x, bool conj) { x._set_conj(conj); });
