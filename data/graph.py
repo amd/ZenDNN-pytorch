@@ -5,7 +5,7 @@ def parse_log(file_name, slug):
     out = []
     with open(file_name, "r") as f:
         for line in f:
-            if line.startswith("slug"):
+            if line.startswith(slug):
                 out.append(line)
     out = [[item.split()[0], item.split()[1], item.split()[2], item.split()[3]] for item in out]
     return out
@@ -60,15 +60,17 @@ def graph_delta(data1, data2, name1, name2):
     ax.set_ylabel('Speedup')
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
-    plt.savefig(f'{name1}_{name2}.png')
+    name = f"data/{name1}_{name2}.png"
+    print(f"Saving to {name}")
+    plt.savefig(name)
 
 
 # Inductor, eval
-hf_inductor_eval = parse_log("data/hf_inductor_eval.log")
+hf_inductor_eval = parse_log("data/hf_inductor_eval.log", "cuda eval")
 # timm_inductor_eval = parse_log("data/timm_inductor_eval.log")
 # tb_inductor_eval = parse_log("data/tb_inductor_eval.log")
 # NVFuser, eval
-hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log")
+hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
 # timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log")
 # tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log")
 # Inductor, train
@@ -80,5 +82,6 @@ hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log")
 # timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log")
 # tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log")
 
+breakpoint()
 graph_delta(hf_inductor_eval, hf_nvfuser_eval, "hf_inductor_eval", "hf_nvfuser_eval")
-graph_delta(timm_inductor_eval, hf_nvfuser_eval, "timm_nvfuser_eval", "hf_nvfuser_eval")
+# graph_delta(timm_inductor_eval, hf_nvfuser_eval, "timm_nvfuser_eval", "hf_nvfuser_eval")

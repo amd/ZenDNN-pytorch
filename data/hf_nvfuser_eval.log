@@ -1,0 +1,614 @@
+WARNING:__main__:Running smaller batch size=4 for AlbertForMaskedLM, orig batch_size=8
+cuda eval  AlbertForMaskedLM                   1.265x p=0.00
+TIMING: entire_frame_compile:15.71954 backend_compile:14.17973
+STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:38227 | FakeTensor.__torch_dispatch__:2323 | ProxyTorchDispatchMode.__torch_dispatch__:31663
+Dynamo produced 1 graphs covering 439 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for AlbertForQuestionAnswering, orig batch_size=8
+cuda eval  AlbertForQuestionAnswering          1.273x p=0.00
+TIMING: entire_frame_compile:15.42846 backend_compile:13.46918
+STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:38328 | FakeTensor.__torch_dispatch__:2296 | ProxyTorchDispatchMode.__torch_dispatch__:31656
+Dynamo produced 1 graphs covering 439 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for AllenaiLongformerBase, orig batch_size=8
+cuda eval  AllenaiLongformerBase               ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 222, in make_nvfuser_fusion
+    out = FusionInterpreter(gm).run(*nv_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 136, in run
+    self.env[node] = self.run_node(node)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 184, in run_node
+    return super().run_node(node)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 177, in run_node
+    return getattr(self, n.op)(n.target, args, kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 202, in output
+    assert isinstance(
+AssertionError: output from codegen has to be tensor type
+
+While executing return (view, view_1, sub)
+Original traceback:
+None
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1848, in forward
+    outputs = self.longformer(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1750, in forward
+    encoder_outputs = self.encoder(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1294, in forward
+    is_global_attn = is_index_global_attn.flatten().any().item()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1326, in <graph break in forward>
+    layer_outputs = layer_module(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1249, in forward
+    self_attn_outputs = self.attention(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1185, in forward
+    self_outputs = self.self(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 574, in forward
+    attn_scores = self._sliding_chunks_query_key_matmul(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 821, in _sliding_chunks_query_key_matmul
+    def _sliding_chunks_query_key_matmul(self, query: torch.Tensor, key: torch.Tensor, window_overlap: int):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 488, in nvfuser_execute_partitioned
+    return nvfuser_execute(gm, *args, executor_parameters=executor_parameters)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+TypeError: __exit__(): incompatible function arguments. The following argument types are supported:
+    1. (self: nvfuser._C.FusionDefinition, arg0: capsule, arg1: capsule, arg2: capsule) -> None
+
+Invoked with: <nvfuser._C.FusionDefinition object at 0x7ff72d681a70>, <class 'AssertionError'>, AssertionError('output from codegen has to be tensor type\n\nWhile executing return (view, view_1, sub)\nOriginal traceback:\nNone'), <traceback object at 0x7ff72d682940>
+ERROR
+WARNING:__main__:Running smaller batch size=4 for BartForCausalLM, orig batch_size=8
+cuda eval  BartForCausalLM                     0.964x p=0.00
+TIMING: entire_frame_compile:16.44867 backend_compile:14.16285
+STATS: call_* op count: 482 | FakeTensorMode.__torch_dispatch__:39843 | FakeTensor.__torch_dispatch__:2334 | ProxyTorchDispatchMode.__torch_dispatch__:32140
+Dynamo produced 14 graphs covering 482 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=2 for BartForConditionalGeneration, orig batch_size=4
+cuda eval  BartForConditionalGeneration        0.245x p=0.00
+TIMING: entire_frame_compile:38.59222 backend_compile:34.93545
+STATS: call_* op count: 1258 | FakeTensorMode.__torch_dispatch__:101754 | FakeTensor.__torch_dispatch__:5711 | ProxyTorchDispatchMode.__torch_dispatch__:83310
+Dynamo produced 1 graphs covering 1258 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for BertForMaskedLM, orig batch_size=32
+cuda eval  BertForMaskedLM                     1.174x p=0.00
+TIMING: entire_frame_compile:16.19024 backend_compile:14.15813
+STATS: call_* op count: 370 | FakeTensorMode.__torch_dispatch__:40339 | FakeTensor.__torch_dispatch__:2605 | ProxyTorchDispatchMode.__torch_dispatch__:32293
+Dynamo produced 1 graphs covering 370 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for BertForQuestionAnswering, orig batch_size=32
+cuda eval  BertForQuestionAnswering            1.234x p=0.00
+TIMING: entire_frame_compile:15.17385 backend_compile:13.4557
+STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:40494 | FakeTensor.__torch_dispatch__:2578 | ProxyTorchDispatchMode.__torch_dispatch__:32255
+Dynamo produced 1 graphs covering 377 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for BlenderbotForCausalLM, orig batch_size=32
+cuda eval  BlenderbotForCausalLM               0.822x p=0.00
+TIMING: entire_frame_compile:29.65152 backend_compile:26.74826
+STATS: call_* op count: 934 | FakeTensorMode.__torch_dispatch__:77225 | FakeTensor.__torch_dispatch__:4434 | ProxyTorchDispatchMode.__torch_dispatch__:62858
+Dynamo produced 26 graphs covering 934 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForCausalLM, orig batch_size=256
+cuda eval  BlenderbotSmallForCausalLM          0.972x p=0.00
+TIMING: entire_frame_compile:10.61904 backend_compile:9.29758
+STATS: call_* op count: 327 | FakeTensorMode.__torch_dispatch__:27220 | FakeTensor.__torch_dispatch__:1634 | ProxyTorchDispatchMode.__torch_dispatch__:21793
+Dynamo produced 10 graphs covering 327 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForConditionalGeneration, orig batch_size=128
+cuda eval  BlenderbotSmallForConditionalGeneration  0.991x p=0.00
+TIMING: entire_frame_compile:25.47744 backend_compile:23.02405
+STATS: call_* op count: 840 | FakeTensorMode.__torch_dispatch__:68186 | FakeTensor.__torch_dispatch__:3840 | ProxyTorchDispatchMode.__torch_dispatch__:55892
+Dynamo produced 1 graphs covering 840 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for CamemBert, orig batch_size=32
+cuda eval  CamemBert                           1.171x p=0.00
+TIMING: entire_frame_compile:16.05058 backend_compile:14.25287
+STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:40599 | FakeTensor.__torch_dispatch__:2605 | ProxyTorchDispatchMode.__torch_dispatch__:32563
+Dynamo produced 1 graphs covering 377 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
+cuda eval  DebertaForMaskedLM                  ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 1072, in forward
+    outputs = self.deberta(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 983, in forward
+    encoder_outputs = self.encoder(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 445, in forward
+    attention_mask = self.get_attention_mask(attention_mask)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 419, in get_attention_mask
+    def get_attention_mask(self, attention_mask):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 488, in nvfuser_execute_partitioned
+    return nvfuser_execute(gm, *args, executor_parameters=executor_parameters)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: stride == cur_contig_stride || size == 1 || (still_rightmost && stride == 1) || (!still_rightmost && stride % word_size == 0) INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/executor_utils.cpp":621, please report a bug to PyTorch. Vectorization of T8_g[ iS111{( ceilDiv(( T8.size[0] * ( 1 * ( ( ceilDiv(T8.size[2], 32) ) * ( ceilDiv(1, 32) ) ) ) ), 1) )}, iS112{1}, iS134{( ceilDiv(( ceilDiv(( 32 * 32 ), 4) ), 128) )}, iS135{128}, iS133{4} ] with word size 4 not possible due to invalid stride. Domain: iS135{128}, stride: 0
+ERROR
+WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
+cuda eval  DebertaForQuestionAnswering         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 1401, in forward
+    outputs = self.deberta(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 983, in forward
+    encoder_outputs = self.encoder(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 445, in forward
+    attention_mask = self.get_attention_mask(attention_mask)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta/modeling_deberta.py", line 419, in get_attention_mask
+    def get_attention_mask(self, attention_mask):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 488, in nvfuser_execute_partitioned
+    return nvfuser_execute(gm, *args, executor_parameters=executor_parameters)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: stride == cur_contig_stride || size == 1 || (still_rightmost && stride == 1) || (!still_rightmost && stride % word_size == 0) INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/executor_utils.cpp":621, please report a bug to PyTorch. Vectorization of T8_g[ iS111{( ceilDiv(( T8.size[0] * ( 1 * ( ( ceilDiv(T8.size[2], 32) ) * ( ceilDiv(1, 32) ) ) ) ), 1) )}, iS112{1}, iS134{( ceilDiv(( ceilDiv(( 32 * 32 ), 4) ), 128) )}, iS135{128}, iS133{4} ] with word size 4 not possible due to invalid stride. Domain: iS135{128}, stride: 0
+ERROR
+WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
+cuda eval  DebertaV2ForMaskedLM                ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1171, in forward
+    outputs = self.deberta(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1083, in forward
+    encoder_outputs = self.encoder(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 488, in forward
+    attention_mask = self.get_attention_mask(attention_mask)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 452, in get_attention_mask
+    def get_attention_mask(self, attention_mask):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 488, in nvfuser_execute_partitioned
+    return nvfuser_execute(gm, *args, executor_parameters=executor_parameters)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: stride == cur_contig_stride || size == 1 || (still_rightmost && stride == 1) || (!still_rightmost && stride % word_size == 0) INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/executor_utils.cpp":621, please report a bug to PyTorch. Vectorization of T8_g[ iS109{( ceilDiv(( 1 * ( 1 * ( ( ceilDiv(T8.size[2], 32) ) * ( ceilDiv(1, 32) ) ) ) ), 1) )}, iS110{1}, iS132{( ceilDiv(( ceilDiv(( 32 * 32 ), 2) ), 128) )}, iS133{128}, iS131{2} ] with word size 2 not possible due to invalid stride. Domain: iS133{128}, stride: 0
+ERROR
+WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
+cuda eval  DebertaV2ForQuestionAnswering       ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1501, in forward
+    outputs = self.deberta(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1083, in forward
+    encoder_outputs = self.encoder(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 488, in forward
+    attention_mask = self.get_attention_mask(attention_mask)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 452, in get_attention_mask
+    def get_attention_mask(self, attention_mask):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 488, in nvfuser_execute_partitioned
+    return nvfuser_execute(gm, *args, executor_parameters=executor_parameters)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: stride == cur_contig_stride || size == 1 || (still_rightmost && stride == 1) || (!still_rightmost && stride % word_size == 0) INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/executor_utils.cpp":621, please report a bug to PyTorch. Vectorization of T8_g[ iS111{( ceilDiv(( T8.size[0] * ( 1 * ( ( ceilDiv(T8.size[2], 32) ) * ( ceilDiv(1, 32) ) ) ) ), 1) )}, iS112{1}, iS134{( ceilDiv(( ceilDiv(( 32 * 32 ), 4) ), 128) )}, iS135{128}, iS133{4} ] with word size 4 not possible due to invalid stride. Domain: iS135{128}, stride: 0
+ERROR
+WARNING:__main__:Running smaller batch size=128 for DistilBertForMaskedLM, orig batch_size=256
+WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
+cuda eval  DistilBertForMaskedLM               0.702x p=0.00
+TIMING: entire_frame_compile:9.73282 backend_compile:7.31539
+STATS: call_* op count: 206 | FakeTensorMode.__torch_dispatch__:21384 | FakeTensor.__torch_dispatch__:1163 | ProxyTorchDispatchMode.__torch_dispatch__:17431
+Dynamo produced 1 graphs covering 206 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=256 for DistilBertForQuestionAnswering, orig batch_size=512
+WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
+cuda eval  DistilBertForQuestionAnswering      0.612x p=0.00
+TIMING: entire_frame_compile:8.2038 backend_compile:7.3984
+STATS: call_* op count: 214 | FakeTensorMode.__torch_dispatch__:21539 | FakeTensor.__torch_dispatch__:1136 | ProxyTorchDispatchMode.__torch_dispatch__:17393
+Dynamo produced 1 graphs covering 214 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for DistillGPT2, orig batch_size=32
+cuda eval  DistillGPT2                         1.301x p=0.00
+TIMING: entire_frame_compile:7.08376 backend_compile:6.12427
+STATS: call_* op count: 330 | FakeTensorMode.__torch_dispatch__:18377 | FakeTensor.__torch_dispatch__:794 | ProxyTorchDispatchMode.__torch_dispatch__:13501
+Dynamo produced 1 graphs covering 330 ops with 0 graph breaks (0 unique)
+If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=32 for ElectraForCausalLM, orig batch_size=64
+cuda eval  ElectraForCausalLM                  1.172x p=0.00
+TIMING: entire_frame_compile:15.54704 backend_compile:13.77635
+STATS: call_* op count: 375 | FakeTensorMode.__torch_dispatch__:40882 | FakeTensor.__torch_dispatch__:2640 | ProxyTorchDispatchMode.__torch_dispatch__:32618
+Dynamo produced 4 graphs covering 375 ops with 3 graph breaks (2 unique)
+WARNING:__main__:Running smaller batch size=64 for ElectraForQuestionAnswering, orig batch_size=128
+cuda eval  ElectraForQuestionAnswering         1.350x p=0.00
+TIMING: entire_frame_compile:15.24593 backend_compile:13.47779
+STATS: call_* op count: 378 | FakeTensorMode.__torch_dispatch__:40760 | FakeTensor.__torch_dispatch__:2602 | ProxyTorchDispatchMode.__torch_dispatch__:32443
+Dynamo produced 1 graphs covering 378 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for GPT2ForSequenceClassification, orig batch_size=8
+cuda eval  GPT2ForSequenceClassification       1.490x p=0.00
+TIMING: entire_frame_compile:13.76963 backend_compile:12.07698
+STATS: call_* op count: 644 | FakeTensorMode.__torch_dispatch__:34715 | FakeTensor.__torch_dispatch__:1531 | ProxyTorchDispatchMode.__torch_dispatch__:25557
+Dynamo produced 1 graphs covering 644 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for GoogleFnet, orig batch_size=32
+cuda eval  GoogleFnet                          1.745x p=0.00
+TIMING: entire_frame_compile:8.69067 backend_compile:7.71331
+STATS: call_* op count: 209 | FakeTensorMode.__torch_dispatch__:20254 | FakeTensor.__torch_dispatch__:883 | ProxyTorchDispatchMode.__torch_dispatch__:17601
+Dynamo produced 28 graphs covering 209 ops with 41 graph breaks (4 unique)
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForMaskedLM, orig batch_size=32
+cuda eval  LayoutLMForMaskedLM                 1.194x SAME
+TIMING: entire_frame_compile:17.49178 backend_compile:13.91331
+STATS: call_* op count: 396 | FakeTensorMode.__torch_dispatch__:42165 | FakeTensor.__torch_dispatch__:3095 | ProxyTorchDispatchMode.__torch_dispatch__:32838
+Dynamo produced 1 graphs covering 396 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForSequenceClassification, orig batch_size=32
+cuda eval  LayoutLMForSequenceClassification   1.247x p=0.00
+TIMING: entire_frame_compile:15.38967 backend_compile:13.43962
+STATS: call_* op count: 394 | FakeTensorMode.__torch_dispatch__:41582 | FakeTensor.__torch_dispatch__:3063 | ProxyTorchDispatchMode.__torch_dispatch__:32326
+Dynamo produced 1 graphs covering 394 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for M2M100ForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  M2M100ForConditionalGeneration      0.787x p=0.00
+TIMING: entire_frame_compile:39.57257 backend_compile:34.63738
+STATS: call_* op count: 1266 | FakeTensorMode.__torch_dispatch__:101319 | FakeTensor.__torch_dispatch__:5843 | ProxyTorchDispatchMode.__torch_dispatch__:81872
+Dynamo produced 19 graphs covering 1266 ops with 13 graph breaks (4 unique)
+WARNING:__main__:Running smaller batch size=4 for MBartForCausalLM, orig batch_size=8
+cuda eval  MBartForCausalLM                    0.956x p=0.00
+TIMING: entire_frame_compile:16.54854 backend_compile:13.63375
+STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:39835 | FakeTensor.__torch_dispatch__:2337 | ProxyTorchDispatchMode.__torch_dispatch__:32139
+Dynamo produced 14 graphs covering 481 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=2 for MBartForConditionalGeneration, orig batch_size=4
+cuda eval  MBartForConditionalGeneration       0.921x p=0.00
+TIMING: entire_frame_compile:38.48116 backend_compile:35.052
+STATS: call_* op count: 1263 | FakeTensorMode.__torch_dispatch__:102526 | FakeTensor.__torch_dispatch__:5731 | ProxyTorchDispatchMode.__torch_dispatch__:84122
+Dynamo produced 1 graphs covering 1263 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for MT5ForConditionalGeneration, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  MT5ForConditionalGeneration         0.909x p=0.00
+TIMING: entire_frame_compile:19.16519 backend_compile:15.80056
+STATS: call_* op count: 1173 | FakeTensorMode.__torch_dispatch__:52288 | FakeTensor.__torch_dispatch__:4420 | ProxyTorchDispatchMode.__torch_dispatch__:33244
+Dynamo produced 1 graphs covering 1173 ops with 0 graph breaks (0 unique)
+If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=4 for MegatronBertForCausalLM, orig batch_size=16
+cuda eval  MegatronBertForCausalLM             1.132x p=0.00
+TIMING: entire_frame_compile:30.23483 backend_compile:26.47676
+STATS: call_* op count: 721 | FakeTensorMode.__torch_dispatch__:78568 | FakeTensor.__torch_dispatch__:5101 | ProxyTorchDispatchMode.__torch_dispatch__:62892
+Dynamo produced 1 graphs covering 721 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=8 for MegatronBertForQuestionAnswering, orig batch_size=16
+cuda eval  MegatronBertForQuestionAnswering    1.185x p=0.00
+TIMING: entire_frame_compile:29.94372 backend_compile:26.78092
+STATS: call_* op count: 724 | FakeTensorMode.__torch_dispatch__:78507 | FakeTensor.__torch_dispatch__:5074 | ProxyTorchDispatchMode.__torch_dispatch__:62723
+Dynamo produced 1 graphs covering 724 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=64 for MobileBertForMaskedLM, orig batch_size=256
+cuda eval  MobileBertForMaskedLM               ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/mobilebert/modeling_mobilebert.py", line 1067, in forward
+    @add_start_docstrings_to_model_forward(MOBILEBERT_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 968 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
+cuda eval  MobileBertForQuestionAnswering      ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/mobilebert/modeling_mobilebert.py", line 1363, in forward
+    @add_start_docstrings_to_model_forward(MOBILEBERT_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 968 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
+cuda eval  OPTForCausalLM                      0.674x p=0.00
+TIMING: entire_frame_compile:15.81335 backend_compile:13.48843
+STATS: call_* op count: 533 | FakeTensorMode.__torch_dispatch__:39638 | FakeTensor.__torch_dispatch__:2267 | ProxyTorchDispatchMode.__torch_dispatch__:31660
+Dynamo produced 14 graphs covering 533 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
+cuda eval  PLBartForCausalLM                   0.969x p=0.00
+TIMING: entire_frame_compile:8.57274 backend_compile:7.29997
+STATS: call_* op count: 254 | FakeTensorMode.__torch_dispatch__:20955 | FakeTensor.__torch_dispatch__:1278 | ProxyTorchDispatchMode.__torch_dispatch__:16588
+Dynamo produced 8 graphs covering 254 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
+cuda eval  PLBartForConditionalGeneration      0.974x p=0.00
+TIMING: entire_frame_compile:21.85326 backend_compile:18.10851
+STATS: call_* op count: 658 | FakeTensorMode.__torch_dispatch__:55362 | FakeTensor.__torch_dispatch__:3744 | ProxyTorchDispatchMode.__torch_dispatch__:42635
+Dynamo produced 10 graphs covering 658 ops with 10 graph breaks (4 unique)
+WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
+WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
+cuda eval  PegasusForCausalLM                  0.978x p=0.00
+TIMING: entire_frame_compile:15.08228 backend_compile:13.46626
+STATS: call_* op count: 478 | FakeTensorMode.__torch_dispatch__:39209 | FakeTensor.__torch_dispatch__:2245 | ProxyTorchDispatchMode.__torch_dispatch__:31757
+Dynamo produced 16 graphs covering 478 ops with 8 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  PegasusForConditionalGeneration     0.978x p=0.00
+TIMING: entire_frame_compile:40.73977 backend_compile:37.04077
+STATS: call_* op count: 1244 | FakeTensorMode.__torch_dispatch__:101389 | FakeTensor.__torch_dispatch__:5727 | ProxyTorchDispatchMode.__torch_dispatch__:83055
+Dynamo produced 7 graphs covering 1244 ops with 11 graph breaks (3 unique)
+If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
+cuda eval  RobertaForCausalLM                  1.165x p=0.00
+TIMING: entire_frame_compile:16.23063 backend_compile:14.44294
+STATS: call_* op count: 381 | FakeTensorMode.__torch_dispatch__:40785 | FakeTensor.__torch_dispatch__:2605 | ProxyTorchDispatchMode.__torch_dispatch__:32673
+Dynamo produced 1 graphs covering 381 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
+cuda eval  RobertaForQuestionAnswering         1.234x p=0.00
+TIMING: entire_frame_compile:15.38892 backend_compile:13.66026
+STATS: call_* op count: 384 | FakeTensorMode.__torch_dispatch__:40724 | FakeTensor.__torch_dispatch__:2578 | ProxyTorchDispatchMode.__torch_dispatch__:32504
+Dynamo produced 1 graphs covering 384 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
+WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
+cuda eval  Speech2Text2ForCausalLM             1.011x SAME
+TIMING: entire_frame_compile:8.19401 backend_compile:7.12718
+STATS: call_* op count: 261 | FakeTensorMode.__torch_dispatch__:20375 | FakeTensor.__torch_dispatch__:1196 | ProxyTorchDispatchMode.__torch_dispatch__:16139
+Dynamo produced 10 graphs covering 261 ops with 8 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
+cuda eval  T5ForConditionalGeneration          1.074x p=0.00
+TIMING: entire_frame_compile:14.23519 backend_compile:11.69417
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:37090 | FakeTensor.__torch_dispatch__:3116 | ProxyTorchDispatchMode.__torch_dispatch__:24025
+Dynamo produced 1 graphs covering 798 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
+cuda eval  T5Small                             1.090x p=0.00
+TIMING: entire_frame_compile:15.61637 backend_compile:11.20787
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:37090 | FakeTensor.__torch_dispatch__:3116 | ProxyTorchDispatchMode.__torch_dispatch__:24025
+Dynamo produced 1 graphs covering 798 ops with 0 graph breaks (0 unique)
+WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
+cuda eval  TrOCRForCausalLM                    1.008x p=0.00
+TIMING: entire_frame_compile:16.34323 backend_compile:14.55908
+STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:39535 | FakeTensor.__torch_dispatch__:2337 | ProxyTorchDispatchMode.__torch_dispatch__:32067
+Dynamo produced 14 graphs covering 481 ops with 7 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
+cuda eval  XGLMForCausalLM                     0.159x p=0.00
+TIMING: entire_frame_compile:30.07422 backend_compile:27.06295
+STATS: call_* op count: 998 | FakeTensorMode.__torch_dispatch__:77952 | FakeTensor.__torch_dispatch__:4364 | ProxyTorchDispatchMode.__torch_dispatch__:63615
+Dynamo produced 28 graphs covering 998 ops with 8 graph breaks (5 unique)
+WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
+cuda eval  XLNetLMHeadModel                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
+    return mod(**inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/xlnet/modeling_xlnet.py", line 1357, in forward
+    @add_start_docstrings_to_model_forward(XLNET_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 968 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
+cuda eval  YituTechConvBert                    1.058x p=0.00
+TIMING: entire_frame_compile:23.25638 backend_compile:20.71688
+STATS: call_* op count: 634 | FakeTensorMode.__torch_dispatch__:60806 | FakeTensor.__torch_dispatch__:3804 | ProxyTorchDispatchMode.__torch_dispatch__:45837
+Dynamo produced 4 graphs covering 634 ops with 3 graph breaks (2 unique)
+speedup             gmean=1.09x mean=1.099x
+abs_latency         gmean=nanx mean=49.735x
+compilation_latency mean=21.887 seconds
+compression_ratio   mean=0.993x
+eager_peak_mem      gmean=nanx mean=4.062x
+dynamo_peak_mem     gmean=nanx mean=4.164x
+calls_captured      gmean=nanx mean=592.605x
+unique_graphs       gmean=nanx mean=6.526x
+graph_breaks        gmean=nanx mean=4.632x
+unique_graph_breaks gmean=nanx mean=2.395x
