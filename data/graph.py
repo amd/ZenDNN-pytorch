@@ -32,7 +32,7 @@ def describe_delta(data1, data2, name1, name2):
     print(f"Geomean {name2} : {sum(performances2)/len(performances2)}")
     
     
-def graph_delta(data1, data2, name1, name2):
+def graph_delta(data1, data2, name1, name2, title):
     # Filter out the rows with bad data
     for d in [data1, data2]:
         for row in d:
@@ -45,10 +45,16 @@ def graph_delta(data1, data2, name1, name2):
     performances2 = []
 
     for row1, row2 in zip(data1, data2):
-        assert row1[2] == row2[2]  # Make sure model names match between the two datasets
+        assert row1[2] == row2[2], f"row1: {row1}, row2: {row2}"  # Make sure model names match between the two datasets
         model_names.append(row1[2])
-        performances1.append(float(row1[3].replace('x', '')) if row1[3] is not None else float('nan'))
-        performances2.append(float(row2[3].replace('x', '')) if row2[3] is not None else float('nan'))
+        try:
+            performances1.append(float(row1[3].replace('x', '')) if row1[3] is not None else float('nan'))
+        except:
+            performances1.append(float('nan'))
+        try:
+            performances2.append(float(row2[3].replace('x', '')) if row2[3] is not None else float('nan'))
+        except:
+            performances2.append(float('nan'))
 
     # Plot the performances for the two datasets
     fig, ax = plt.subplots(figsize=(20, 8))
@@ -60,7 +66,7 @@ def graph_delta(data1, data2, name1, name2):
     ax.set_ylabel('Speedup')
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
-    name = f"data/{name1}_{name2}.png"
+    name = f"data/{title}.png"
     print(f"Saving to {name}")
     plt.savefig(name)
 
@@ -82,6 +88,5 @@ hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
 # timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log")
 # tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log")
 
-breakpoint()
-graph_delta(hf_inductor_eval, hf_nvfuser_eval, "hf_inductor_eval", "hf_nvfuser_eval")
+graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "inductor_nvfuser_inference_gpu")
 # graph_delta(timm_inductor_eval, hf_nvfuser_eval, "timm_nvfuser_eval", "hf_nvfuser_eval")
