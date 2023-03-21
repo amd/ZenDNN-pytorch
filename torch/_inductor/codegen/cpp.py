@@ -2037,16 +2037,27 @@ class CppKernelProxy(CppKernel):
                         # Since we always convert the load/store value to float if the tensor is bfloat16.
                         # Therefore, the reduction should never work with bfloat16 value. Hence, we update
                         # the bfloat16 reduction by updating the dtype and src_dtype to float.
-                        assert dtype in [torch.float, torch.bfloat16]
-                        _node.args = (
-                            ops,
-                            name,
-                            torch.float,
-                            torch.float,
-                            reduction_type,
-                            index,
-                            value,
-                        )
+                        assert dtype in [torch.float, torch.bfloat16, torch.int64]
+                        if dtype == torch.int64:
+                            _node.args = (
+                                ops,
+                                name,
+                                torch.int64,
+                                torch.float,
+                                reduction_type,
+                                index,
+                                value,
+                            )
+                        else:
+                            _node.args = (
+                                ops,
+                                name,
+                                torch.float,
+                                torch.float,
+                                reduction_type,
+                                index,
+                                value,
+                            )
                 elif _node.target == "to_dtype" and _node.args[-1] in [torch.bfloat16]:
                     (ops, x, _) = _node.args
                     from_load = _node.all_input_nodes[-1].target == "load"
