@@ -484,3 +484,211 @@ Traceback (most recent call last):
     visited.add(node)
 RecursionError: maximum recursion depth exceeded while calling a Python object
 ERROR
+WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
+cuda train MobileBertForQuestionAnswering      ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 487, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 488, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 490, in <graph break in forward_and_backward_pass>
+    pred = mod(**cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/mobilebert/modeling_mobilebert.py", line 1363, in forward
+    @add_start_docstrings_to_model_forward(MOBILEBERT_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 960 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
+cuda train OPTForCausalLM                      0.915x p=0.00
+TIMING: entire_frame_compile:40.21859 backend_compile:37.27259
+STATS: call_* op count: 533 | FakeTensorMode.__torch_dispatch__:96593 | FakeTensor.__torch_dispatch__:9656 | ProxyTorchDispatchMode.__torch_dispatch__:91987
+Dynamo produced 14 graphs covering 533 ops with 11 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
+cuda train PLBartForCausalLM                   0.967x p=0.00
+TIMING: entire_frame_compile:24.19062 backend_compile:22.0684
+STATS: call_* op count: 254 | FakeTensorMode.__torch_dispatch__:53271 | FakeTensor.__torch_dispatch__:5351 | ProxyTorchDispatchMode.__torch_dispatch__:50443
+Dynamo produced 8 graphs covering 254 ops with 11 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
+cuda train PLBartForConditionalGeneration      0.989x p=0.00
+TIMING: entire_frame_compile:57.93094 backend_compile:52.86722
+STATS: call_* op count: 658 | FakeTensorMode.__torch_dispatch__:137383 | FakeTensor.__torch_dispatch__:13675 | ProxyTorchDispatchMode.__torch_dispatch__:128777
+Dynamo produced 10 graphs covering 658 ops with 14 graph breaks (7 unique)
+WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
+WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
+cuda train PegasusForCausalLM                  0.963x p=0.00
+TIMING: entire_frame_compile:41.52686 backend_compile:38.56229
+STATS: call_* op count: 478 | FakeTensorMode.__torch_dispatch__:98465 | FakeTensor.__torch_dispatch__:10188 | ProxyTorchDispatchMode.__torch_dispatch__:94024
+Dynamo produced 16 graphs covering 478 ops with 12 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
+cuda train PegasusForConditionalGeneration     0.994x p=0.00
+TIMING: entire_frame_compile:104.5826 backend_compile:101.12173
+STATS: call_* op count: 1244 | FakeTensorMode.__torch_dispatch__:245998 | FakeTensor.__torch_dispatch__:9623 | ProxyTorchDispatchMode.__torch_dispatch__:243344
+Dynamo produced 7 graphs covering 1244 ops with 14 graph breaks (5 unique)
+If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
+cuda train RobertaForCausalLM                  1.075x p=0.00
+TIMING: entire_frame_compile:44.25472 backend_compile:41.35854
+STATS: call_* op count: 381 | FakeTensorMode.__torch_dispatch__:102703 | FakeTensor.__torch_dispatch__:9539 | ProxyTorchDispatchMode.__torch_dispatch__:98937
+Dynamo produced 1 graphs covering 381 ops with 4 graph breaks (3 unique)
+WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
+cuda train RobertaForQuestionAnswering         1.125x p=0.00
+TIMING: entire_frame_compile:44.8851 backend_compile:41.97025
+STATS: call_* op count: 384 | FakeTensorMode.__torch_dispatch__:101701 | FakeTensor.__torch_dispatch__:9418 | ProxyTorchDispatchMode.__torch_dispatch__:97668
+Dynamo produced 1 graphs covering 384 ops with 4 graph breaks (3 unique)
+WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
+WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
+cuda train Speech2Text2ForCausalLM             0.970x p=0.00
+TIMING: entire_frame_compile:21.04613 backend_compile:19.32209
+STATS: call_* op count: 261 | FakeTensorMode.__torch_dispatch__:49458 | FakeTensor.__torch_dispatch__:5185 | ProxyTorchDispatchMode.__torch_dispatch__:46558
+Dynamo produced 10 graphs covering 261 ops with 12 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
+cuda train T5ForConditionalGeneration          0.933x p=0.00
+TIMING: entire_frame_compile:42.86862 backend_compile:38.97496
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:105685 | FakeTensor.__torch_dispatch__:8605 | ProxyTorchDispatchMode.__torch_dispatch__:92317
+Dynamo produced 1 graphs covering 798 ops with 4 graph breaks (3 unique)
+WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
+cuda train T5Small                             0.931x p=0.00
+TIMING: entire_frame_compile:42.56448 backend_compile:39.27119
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:105685 | FakeTensor.__torch_dispatch__:8605 | ProxyTorchDispatchMode.__torch_dispatch__:92317
+Dynamo produced 1 graphs covering 798 ops with 4 graph breaks (3 unique)
+WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
+cuda train TrOCRForCausalLM                    0.980x p=0.00
+TIMING: entire_frame_compile:42.47009 backend_compile:39.03195
+STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:99683 | FakeTensor.__torch_dispatch__:10304 | ProxyTorchDispatchMode.__torch_dispatch__:95346
+Dynamo produced 14 graphs covering 481 ops with 11 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
+cuda train XGLMForCausalLM                     0.293x p=0.00
+TIMING: entire_frame_compile:85.33556 backend_compile:79.919
+STATS: call_* op count: 998 | FakeTensorMode.__torch_dispatch__:201111 | FakeTensor.__torch_dispatch__:19171 | ProxyTorchDispatchMode.__torch_dispatch__:193658
+Dynamo produced 28 graphs covering 998 ops with 12 graph breaks (8 unique)
+WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
+cuda train XLNetLMHeadModel                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 487, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 488, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 490, in <graph break in forward_and_backward_pass>
+    pred = mod(**cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/xlnet/modeling_xlnet.py", line 1357, in forward
+    @add_start_docstrings_to_model_forward(XLNET_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 960 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
+cuda train YituTechConvBert                    1.022x p=0.00
+TIMING: entire_frame_compile:63.42913 backend_compile:59.32193
+STATS: call_* op count: 634 | FakeTensorMode.__torch_dispatch__:143019 | FakeTensor.__torch_dispatch__:13748 | ProxyTorchDispatchMode.__torch_dispatch__:131289
+Dynamo produced 4 graphs covering 634 ops with 7 graph breaks (5 unique)
+speedup             gmean=1.06x mean=1.063x
+abs_latency         gmean=nanx mean=137.312x
+compilation_latency mean=79.184 seconds
+compression_ratio   mean=0.939x
+eager_peak_mem      gmean=nanx mean=14.008x
+dynamo_peak_mem     gmean=nanx mean=15.149x
+calls_captured      gmean=nanx mean=590.868x
+unique_graphs       gmean=nanx mean=6.500x
+graph_breaks        gmean=nanx mean=8.026x
+unique_graph_breaks gmean=nanx mean=4.789x
