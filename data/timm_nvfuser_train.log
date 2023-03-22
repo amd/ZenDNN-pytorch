@@ -9045,4 +9045,1887 @@ Invoked with: <nvfuser._C.FusionDefinition object at 0x7f972e21be70>, <class 'Ru
 ERROR
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train dpn107                              
+cuda train dpn107                              ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train eca_botnext26ts_256                 ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/byobnet.py", line 1683, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.6480", line 482, in forward
+    fused_26 = self.fused_26(primals_174, transpose_7, primals_175, broadcast_in_dim_232, broadcast_in_dim_233);  primals_174 = transpose_7 = primals_175 = broadcast_in_dim_232 = broadcast_in_dim_233 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+RuntimeError: Reducing a tensor once it's gone under transformations is not permitted at this time. Please set reductions before calling split/merge/computeAt.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train eca_halonext26ts                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/byobnet.py", line 1683, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.6631", line 489, in forward
+    fused_26 = self.fused_26(primals_177, transpose_9, primals_178, broadcast_in_dim_232, broadcast_in_dim_233);  primals_177 = transpose_9 = primals_178 = broadcast_in_dim_232 = broadcast_in_dim_233 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+RuntimeError: Reducing a tensor once it's gone under transformations is not permitted at this time. Please set reductions before calling split/merge/computeAt.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train ese_vovnet19b_dw                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.4453", line 314, in forward
+    fused_8 = self.fused_8(convolution_29, broadcast_in_dim_349, broadcast_in_dim_166, broadcast_in_dim_164, primals_33, broadcast_in_dim_172, broadcast_in_dim_173, slice_8);  convolution_29 = broadcast_in_dim_349 = broadcast_in_dim_166 = broadcast_in_dim_164 = primals_33 = broadcast_in_dim_172 = broadcast_in_dim_173 = slice_8 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x479{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y484{( ceilDiv(( ceilDiv(( 1 * i14 ), 1) ), blockDim.y) )}, ithreadIdx.y485{blockDim.y}, iUS483{1}, rS478{4}, rthreadIdx.x480{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y489{( ceilDiv(( ceilDiv(( 1 * i14 ), 1) ), blockDim.y) )}, ithreadIdx.y490{blockDim.y}, iUS488{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train fbnetc_100                          1.170x p=0.00
+TIMING: entire_frame_compile:63.99972 backend_compile:60.56885
+STATS: call_* op count: 381 | FakeTensor.__torch_dispatch__:6467 | FakeTensorMode.__torch_dispatch__:119281 | ProxyTorchDispatchMode.__torch_dispatch__:118738
+Dynamo produced 2 graphs covering 381 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train fbnetv3_b                           ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/mobilenetv3.py", line 156, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 960 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gernet_l                            1.073x p=0.00
+TIMING: entire_frame_compile:55.57927 backend_compile:52.73516
+STATS: call_* op count: 407 | FakeTensor.__torch_dispatch__:5683 | FakeTensorMode.__torch_dispatch__:106581 | ProxyTorchDispatchMode.__torch_dispatch__:105997
+Dynamo produced 2 graphs covering 407 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train ghostnet_100                        ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.15140", line 1009, in forward
+    fused_37 = self.fused_37(convolution_65, broadcast_in_dim_580, broadcast_in_dim_578, broadcast_in_dim_1199, primals_193, broadcast_in_dim_586, broadcast_in_dim_587, slice_221);  convolution_65 = broadcast_in_dim_580 = broadcast_in_dim_578 = broadcast_in_dim_1199 = primals_193 = broadcast_in_dim_586 = broadcast_in_dim_587 = slice_221 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x479{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y484{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y485{blockDim.y}, iUS483{1}, rS478{4}, rthreadIdx.x480{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y489{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y490{blockDim.y}, iUS488{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gluon_inception_v3                  ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.16561", line 1179, in forward
+    fused_44 = self.fused_44(convolution_60, broadcast_in_dim_1506, broadcast_in_dim_602, broadcast_in_dim_600, primals_182, broadcast_in_dim_608, broadcast_in_dim_609, slice_20);  convolution_60 = broadcast_in_dim_1506 = broadcast_in_dim_602 = broadcast_in_dim_600 = primals_182 = broadcast_in_dim_608 = broadcast_in_dim_609 = slice_20 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x413{( ceilDiv(( ceilDiv(1, blockDim.x) ), 4) )}, iblockIdx.y416{( ceilDiv(( 1 * i14 ), 1) )}, iUS417{1}, rS414{4}, rthreadIdx.x412{blockDim.x} ] produce_pos( 3)) and TV16(T16_l[ iblockIdx.y419{( ceilDiv(( 1 * i14 ), 1) )}, iUS420{1} ] ca_pos( 2 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gluon_xception65                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gmixer_24_224                       1.072x p=0.00
+TIMING: entire_frame_compile:63.89931 backend_compile:60.63328
+STATS: call_* op count: 633 | FakeTensor.__torch_dispatch__:11612 | FakeTensorMode.__torch_dispatch__:135501 | ProxyTorchDispatchMode.__torch_dispatch__:134093
+Dynamo produced 2 graphs covering 633 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gmlp_s16_224                        1.122x p=0.00
+TIMING: entire_frame_compile:69.15868 backend_compile:66.20451
+STATS: call_* op count: 489 | FakeTensor.__torch_dispatch__:11726 | FakeTensorMode.__torch_dispatch__:139899 | ProxyTorchDispatchMode.__torch_dispatch__:144275
+Dynamo produced 2 graphs covering 489 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train hrnet_w18                           ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train inception_v3                        ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.16561", line 1179, in forward
+    fused_44 = self.fused_44(convolution_60, broadcast_in_dim_1506, broadcast_in_dim_600, broadcast_in_dim_602, primals_182, broadcast_in_dim_608, broadcast_in_dim_609, slice_20);  convolution_60 = broadcast_in_dim_1506 = broadcast_in_dim_600 = broadcast_in_dim_602 = primals_182 = broadcast_in_dim_608 = broadcast_in_dim_609 = slice_20 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x413{( ceilDiv(( ceilDiv(1, blockDim.x) ), 4) )}, iblockIdx.y416{( ceilDiv(( 1 * i10 ), 1) )}, iUS417{1}, rS414{4}, rthreadIdx.x412{blockDim.x} ] produce_pos( 3)) and TV16(T16_l[ iblockIdx.y419{( ceilDiv(( 1 * i10 ), 1) )}, iUS420{1} ] ca_pos( 2 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train jx_nest_base                        1.172x p=0.00
+TIMING: entire_frame_compile:73.62009 backend_compile:69.75927
+STATS: call_* op count: 860 | FakeTensor.__torch_dispatch__:13738 | FakeTensorMode.__torch_dispatch__:154740 | ProxyTorchDispatchMode.__torch_dispatch__:151546
+Dynamo produced 2 graphs covering 860 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train lcnet_050                           ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.6631", line 448, in forward
+    fused_9 = self.fused_9(broadcast_in_dim_220, convolution_22, broadcast_in_dim_351, broadcast_in_dim_222, primals_45, broadcast_in_dim_228, broadcast_in_dim_229, getitem_78);  broadcast_in_dim_220 = convolution_22 = broadcast_in_dim_351 = broadcast_in_dim_222 = primals_45 = broadcast_in_dim_228 = broadcast_in_dim_229 = getitem_78 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x533{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y538{( ceilDiv(( ceilDiv(( 1 * i1 ), 1) ), blockDim.y) )}, ithreadIdx.y539{blockDim.y}, iUS537{1}, rS532{4}, rthreadIdx.x534{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y543{( ceilDiv(( ceilDiv(( 1 * i1 ), 1) ), blockDim.y) )}, ithreadIdx.y544{blockDim.y}, iUS542{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train levit_128                           ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/levit.py", line 654, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 960 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mixer_b16_224                       0.923x p=0.00
+TIMING: entire_frame_compile:32.42992 backend_compile:30.85373
+STATS: call_* op count: 225 | FakeTensor.__torch_dispatch__:5876 | FakeTensorMode.__torch_dispatch__:67077 | ProxyTorchDispatchMode.__torch_dispatch__:69437
+Dynamo produced 2 graphs covering 225 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mixnet_l                            ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.11945", line 1617, in forward
+    fused_82 = self.fused_82(convolution_12, broadcast_in_dim_72, broadcast_in_dim_70, broadcast_in_dim_1499, primals_15, broadcast_in_dim_78, broadcast_in_dim_79, cat_77);  convolution_12 = broadcast_in_dim_72 = broadcast_in_dim_70 = broadcast_in_dim_1499 = primals_15 = broadcast_in_dim_78 = broadcast_in_dim_79 = cat_77 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x407{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y410{( ceilDiv(( 1 * i10 ), 1) )}, iUS411{1}, rS406{4}, rthreadIdx.x408{blockDim.x} ] produce_pos( 3)) and TV16(T16_l[ iblockIdx.y413{( ceilDiv(( 1 * i10 ), 1) )}, iUS414{1} ] ca_pos( 2 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mnasnet_100                         1.147x p=0.00
+TIMING: entire_frame_compile:50.37566 backend_compile:47.86255
+STATS: call_* op count: 302 | FakeTensor.__torch_dispatch__:5193 | FakeTensorMode.__torch_dispatch__:95565 | ProxyTorchDispatchMode.__torch_dispatch__:95123
+Dynamo produced 2 graphs covering 302 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilenetv2_100                     1.220x p=0.00
+TIMING: entire_frame_compile:57.41364 backend_compile:54.88837
+STATS: call_* op count: 302 | FakeTensor.__torch_dispatch__:5228 | FakeTensorMode.__torch_dispatch__:107605 | ProxyTorchDispatchMode.__torch_dispatch__:113393
+Dynamo produced 2 graphs covering 302 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilenetv3_large_100               ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.9897", line 600, in forward
+    fused_23 = self.fused_23(convolution_46, broadcast_in_dim_372, broadcast_in_dim_370, broadcast_in_dim_640, primals_73, broadcast_in_dim_378, broadcast_in_dim_379, getitem_137);  convolution_46 = broadcast_in_dim_372 = broadcast_in_dim_370 = broadcast_in_dim_640 = primals_73 = broadcast_in_dim_378 = broadcast_in_dim_379 = getitem_137 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x533{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y538{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y539{blockDim.y}, iUS537{1}, rS532{4}, rthreadIdx.x534{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y543{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y544{blockDim.y}, iUS542{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilevit_s                         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/byobnet.py", line 1683, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.10333", line 467, in forward
+    fused_29 = self.fused_29(transpose, broadcast_in_dim_174, broadcast_in_dim_175);  transpose = broadcast_in_dim_174 = broadcast_in_dim_175 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+RuntimeError: Reducing a tensor once it's gone under transformations is not permitted at this time. Please set reductions before calling split/merge/computeAt.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train nfnet_l0                            ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 222, in make_nvfuser_fusion
+    out = FusionInterpreter(gm).run(*nv_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 136, in run
+    self.env[node] = self.run_node(node)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 184, in run_node
+    return super().run_node(node)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 177, in run_node
+    return getattr(self, n.op)(n.target, args, kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 194, in call_function
+    return target(*args, **kwargs)
+  File "<string>", line 6, in _mul_nvfuser
+RuntimeError: The fusion definition has exceeded 1024operations.  The max_length for FusionDefintion's might need to be increased if the definition is created as expected.
+
+While executing %mul_188 : [#users=1] = call_function[target=torch.ops.nvprims.mul.default](args = (%mul_187, %broadcast_in_dim_374), kwargs = {})
+Original traceback:
+None
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/nfnet.py", line 694, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.9096", line 63, in forward
+    fused_77 = self.fused_77(view_21, primals_23, primals_26, view_24, view_27, primals_29, view_30, primals_32, primals_35, view_33, primals_38, view_36, view_39, primals_41, primals_44, view_42, view_45, primals_47, primals_50, view_48, view_159, primals_53, view_51, view_54, primals_56, primals_59, view_57, view_60, primals_62, view_63, primals_65, primals_68, view_66, view_168, primals_170, primals_71, view_69, view_72, primals_74, primals_167, primals_77, primals_164, view_156, view_75, view_165, view_162, primals_80, view_78, primals_161, primals_149, primals_155, primals_158, view_120, primals_152, view_129, view_135, primals_128, view_108, view_153, primals_131, primals_122, primals_143, primals_134, view_114, view_147, view_117, view_150, primals_146, view_144, view_132, view_141, primals_116, primals_110, primals_113, view_138, view_111, primals_140, view_123, primals_107, primals_137, primals_125, primals_119, view_126, view_105, view_96, view_18, primals_20, primals_92, primals_14, view_12, view_81, primals_17, view_99, view_15, primals_98, view_9, primals_11, view, primals_2, primals_104, view_93, view_102, primals_86, view_84, primals_95, view_87, primals_101, view_3, primals_5, view_90, primals_8, view_6, primals_83, primals_89)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+TypeError: __exit__(): incompatible function arguments. The following argument types are supported:
+    1. (self: nvfuser._C.FusionDefinition, arg0: capsule, arg1: capsule, arg2: capsule) -> None
+
+Invoked with: <nvfuser._C.FusionDefinition object at 0x7f331d7563b0>, <class 'RuntimeError'>, RuntimeError("The fusion definition has exceeded 1024operations.  The max_length for FusionDefintion's might need to be increased if the definition is created as expected.\n\nWhile executing %mul_188 : [#users=1] = call_function[target=torch.ops.nvprims.mul.default](args = (%mul_187, %broadcast_in_dim_374), kwargs = {})\nOriginal traceback:\nNone"), <traceback object at 0x7f331d72bd40>
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train pit_b_224                           0.984x p=0.00
+TIMING: entire_frame_compile:35.09087 backend_compile:32.91791
+STATS: call_* op count: 385 | FakeTensor.__torch_dispatch__:7097 | FakeTensorMode.__torch_dispatch__:73323 | ProxyTorchDispatchMode.__torch_dispatch__:73429
+Dynamo produced 2 graphs covering 385 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train pnasnet5large                       0.990x p=0.00
+TIMING: entire_frame_compile:204.91267 backend_compile:200.20543
+STATS: call_* op count: 956 | FakeTensor.__torch_dispatch__:6528 | FakeTensorMode.__torch_dispatch__:394637 | ProxyTorchDispatchMode.__torch_dispatch__:387890
+Dynamo produced 2 graphs covering 956 ops with 3 graph breaks (2 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train poolformer_m36                      ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train regnety_002                         0.939x p=0.00
+TIMING: entire_frame_compile:47.13035 backend_compile:44.55839
+STATS: call_* op count: 366 | FakeTensor.__torch_dispatch__:6307 | FakeTensorMode.__torch_dispatch__:91500 | ProxyTorchDispatchMode.__torch_dispatch__:87978
+Dynamo produced 2 graphs covering 366 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train repvgg_a2                           1.066x p=0.00
+TIMING: entire_frame_compile:58.234 backend_compile:55.416
+STATS: call_* op count: 395 | FakeTensor.__torch_dispatch__:5393 | FakeTensorMode.__torch_dispatch__:109496 | ProxyTorchDispatchMode.__torch_dispatch__:109767
+Dynamo produced 2 graphs covering 395 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2net101_26w_4s                   ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2net50_14w_8s                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.26475", line 2178, in forward
+    fused_26 = self.fused_26(convolution_121, broadcast_in_dim_1212, broadcast_in_dim_1210, broadcast_in_dim_1954, primals_365, broadcast_in_dim_1218, broadcast_in_dim_1219, cat_18);  convolution_121 = broadcast_in_dim_1212 = broadcast_in_dim_1210 = broadcast_in_dim_1954 = primals_365 = broadcast_in_dim_1218 = broadcast_in_dim_1219 = cat_18 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x479{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y484{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y485{blockDim.y}, iUS483{1}, rS478{4}, rthreadIdx.x480{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y489{( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) )}, ithreadIdx.y490{blockDim.y}, iUS488{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2next50                          ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.15115", line 1186, in forward
+    fused_14 = self.fused_14(convolution_69, broadcast_in_dim_1110, broadcast_in_dim_690, broadcast_in_dim_692, primals_209, broadcast_in_dim_698, broadcast_in_dim_699, cat_18);  convolution_69 = broadcast_in_dim_1110 = broadcast_in_dim_690 = broadcast_in_dim_692 = primals_209 = broadcast_in_dim_698 = broadcast_in_dim_699 = cat_18 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x525{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iS532{( ceilDiv(( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) ), 65535) )}, iblockIdx.y533{65535}, ithreadIdx.y531{blockDim.y}, iUS529{1}, rS524{4}, rthreadIdx.x526{blockDim.x} ] produce_pos( 5)) and TV16(T16_l[ iS539{( ceilDiv(( ceilDiv(( ceilDiv(( 1 * i10 ), 1) ), blockDim.y) ), 65535) )}, iblockIdx.y540{65535}, ithreadIdx.y538{blockDim.y}, iUS536{1} ] ca_pos( 4 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train resmlp_12_224                       1.281x p=0.00
+TIMING: entire_frame_compile:18.04505 backend_compile:16.33129
+STATS: call_* op count: 201 | FakeTensor.__torch_dispatch__:5400 | FakeTensorMode.__torch_dispatch__:39474 | ProxyTorchDispatchMode.__torch_dispatch__:34776
+Dynamo produced 2 graphs covering 201 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train resnest101e                         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/resnet.py", line 834, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 960 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train rexnet_100                          1.136x p=0.00
+TIMING: entire_frame_compile:69.35852 backend_compile:65.90853
+STATS: call_* op count: 402 | FakeTensor.__torch_dispatch__:7671 | FakeTensorMode.__torch_dispatch__:132590 | ProxyTorchDispatchMode.__torch_dispatch__:131740
+Dynamo produced 2 graphs covering 402 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train sebotnet33ts_256                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/byobnet.py", line 1683, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.8096", line 491, in forward
+    fused_56 = self.fused_56(transpose_7, primals_205, primals_204, broadcast_in_dim_200, broadcast_in_dim_201);  transpose_7 = primals_205 = primals_204 = broadcast_in_dim_200 = broadcast_in_dim_201 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+RuntimeError: Reducing a tensor once it's gone under transformations is not permitted at this time. Please set reductions before calling split/merge/computeAt.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train selecsls42b                         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.7284", line 390, in forward
+    fused_5 = self.fused_5(broadcast_in_dim_350, convolution_35, broadcast_in_dim_352, broadcast_in_dim_500, primals_107, broadcast_in_dim_358, broadcast_in_dim_359, slice_3);  broadcast_in_dim_350 = convolution_35 = broadcast_in_dim_352 = broadcast_in_dim_500 = primals_107 = broadcast_in_dim_358 = broadcast_in_dim_359 = slice_3 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x479{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y484{( ceilDiv(( ceilDiv(( 1 * i1 ), 1) ), blockDim.y) )}, ithreadIdx.y485{blockDim.y}, iUS483{1}, rS478{4}, rthreadIdx.x480{blockDim.x} ] produce_pos( 4)) and TV16(T16_l[ iblockIdx.y489{( ceilDiv(( ceilDiv(( 1 * i1 ), 1) ), blockDim.y) )}, ithreadIdx.y490{blockDim.y}, iUS488{1} ] ca_pos( 3 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train spnasnet_100                        1.141x p=0.00
+TIMING: entire_frame_compile:60.8466 backend_compile:57.6205
+STATS: call_* op count: 374 | FakeTensor.__torch_dispatch__:6369 | FakeTensorMode.__torch_dispatch__:117393 | ProxyTorchDispatchMode.__torch_dispatch__:116867
+Dynamo produced 2 graphs covering 374 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train swin_base_patch4_window7_224        ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train swsl_resnext101_32x16d              ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tf_efficientnet_b0                  1.189x p=0.00
+TIMING: entire_frame_compile:57.88937 backend_compile:54.88753
+STATS: call_* op count: 369 | FakeTensor.__torch_dispatch__:7431 | FakeTensorMode.__torch_dispatch__:108810 | ProxyTorchDispatchMode.__torch_dispatch__:104520
+Dynamo produced 2 graphs covering 369 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tf_mixnet_l                         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.12131", line 1628, in forward
+    fused_82 = self.fused_82(convolution_12, broadcast_in_dim_1499, broadcast_in_dim_72, broadcast_in_dim_70, primals_19, broadcast_in_dim_78, broadcast_in_dim_79, cat_77);  convolution_12 = broadcast_in_dim_1499 = broadcast_in_dim_72 = broadcast_in_dim_70 = primals_19 = broadcast_in_dim_78 = broadcast_in_dim_79 = cat_77 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV15 (T15_l[ rblockIdx.x407{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y410{( ceilDiv(( 1 * i14 ), 1) )}, iUS411{1}, rS406{4}, rthreadIdx.x408{blockDim.x} ] produce_pos( 3)) and TV16(T16_l[ iblockIdx.y413{( ceilDiv(( 1 * i14 ), 1) )}, iUS414{1} ] ca_pos( 2 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tinynet_a                           1.184x p=0.00
+TIMING: entire_frame_compile:66.84176 backend_compile:63.1174
+STATS: call_* op count: 433 | FakeTensor.__torch_dispatch__:8787 | FakeTensorMode.__torch_dispatch__:127997 | ProxyTorchDispatchMode.__torch_dispatch__:122777
+Dynamo produced 2 graphs covering 433 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tnt_s_patch16_224                   ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/tnt.py", line 265, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.16686", line 405, in forward
+    fused_98 = self.fused_98(transpose, broadcast_in_dim, broadcast_in_dim_18, broadcast_in_dim_5, broadcast_in_dim_19, broadcast_in_dim_6);  transpose = broadcast_in_dim = broadcast_in_dim_18 = broadcast_in_dim_5 = broadcast_in_dim_19 = broadcast_in_dim_6 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 250, in nvfuser_execute
+    fusion, unflatten_spec = make_nvfuser_fusion(gm, *nv_template_args)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 152, in make_nvfuser_fusion
+    with FusionDefinition(fusion) as fd:
+RuntimeError: Reducing a tensor once it's gone under transformations is not permitted at this time. Please set reductions before calling split/merge/computeAt.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train twins_pcpvt_base                    ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train visformer_small                     ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/visformer.py", line 330, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.6221", line 214, in forward
+    fused_80 = self.fused_80(primals_128, primals_125, primals_129, convolution_1, primals_126, broadcast_in_dim_18, broadcast_in_dim_19, broadcast_in_dim_20, broadcast_in_dim_29, broadcast_in_dim_30);  primals_128 = primals_125 = primals_129 = primals_126 = broadcast_in_dim_18 = broadcast_in_dim_19 = broadcast_in_dim_20 = broadcast_in_dim_29 = broadcast_in_dim_30 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: producer->getMemoryType() == MemoryType::Global INTERNAL ASSERT FAILED at "../third_party/nvfuser/csrc/lower_sync_information.cpp":437, please report a bug to PyTorch. Inconsistent parallelization found between TV54 (T54_l[ rblockIdx.x432{( ceilDiv(( ceilDiv(1, 4) ), blockDim.x) )}, iblockIdx.y435{( ceilDiv(( 1 * i5 ), 1) )}, iUS436{1}, rS431{4}, rthreadIdx.x433{blockDim.x} ] produce_pos( 3)) and TV55(T55_l[ iblockIdx.y438{( ceilDiv(( 1 * i5 ), 1) )}, iUS439{1} ] ca_pos( 2 )). Producer is required to be in Global Memory based on parallelization strategy.
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train vit_base_patch16_224                0.960x p=0.00
+TIMING: entire_frame_compile:33.91777 backend_compile:29.63111
+STATS: call_* op count: 339 | FakeTensor.__torch_dispatch__:6256 | FakeTensorMode.__torch_dispatch__:65378 | ProxyTorchDispatchMode.__torch_dispatch__:66029
+Dynamo produced 2 graphs covering 339 ops with 4 graph breaks (3 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train volo_d1_224                         ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 332, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/timm-0.8.15.dev0-py3.10.egg/timm/models/volo.py", line 642, in forward
+    def forward(self, x):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2819, in forward
+    return compiled_fn(full_args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2386, in debug_compiled_function
+    return compiled_function(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1898, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2151, in forward
+    fw_outs = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 486, in nvfuser_execute_partitioned
+    return gm(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 662, in call_wrapped
+    return self._wrapped_call(self, *args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 281, in __call__
+    raise e
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/graph_module.py", line 271, in __call__
+    return super(self.cls, obj).__call__(*args, **kwargs)  # type: ignore[misc]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "<eval_with_key>.11959", line 386, in forward
+    fused_82 = self.fused_82(view_4, broadcast_in_dim_36);  view_4 = broadcast_in_dim_36 = None
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 330, in __call__
+    return nvfuser_execute(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 278, in nvfuser_execute
+    fusion.execute(concrete_fusion_inputs),  # type: ignore[has-type]
+RuntimeError: CUDA driver error: misaligned address
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 331, in <graph break in forward_and_backward_pass>
+    with self.autocast():
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
+    return callback(frame, cache_size, hooks)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
+    result = inner_convert(frame, cache_size, hooks)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 100, in _fn
+    cuda_rng_state = torch.cuda.get_rng_state()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/cuda/random.py", line 31, in get_rng_state
+    return default_generator.get_state()
+RuntimeError: CUDA error: misaligned address
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+ERROR
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda train xcit_large_24_p8_224                ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
+    fn(model, example_inputs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 329, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 330, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 336, in <graph break in forward_and_backward_pass>
+    self.grad_scaler.scale(loss).backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
+    return user_fn(self, *args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
+    out = call_compiled_backward()
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2324, in call_compiled_backward
+    out = call_func_with_args(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1247, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
+    return fn(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1222, in g
+    return f(*args)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/executor.py", line 25, in execute
+    return nvfuser_execute_partitioned(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 477, in nvfuser_execute_partitioned
+    gm, is_partitioned = maybe_partition_graph(
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_prims/nvfuser_executor.py", line 422, in maybe_partition_graph
+    partitioned_graph = partitioner.fuse_partitions(partitions)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/infra/partitioner.py", line 217, in fuse_partitions
+    return fuse_by_partitions(self.graph_module, [list(partition.nodes) for partition in partitions])
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 204, in fuse_by_partitions
+    sub_gm, orig_inputs, orig_outputs = fuse_as_graphmodule(gm, sorted_nodes, submodule_name)
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 106, in fuse_as_graphmodule
+    assert validate_partition(nodes), "Invalid partition, found dependency cycles"
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 69, in validate_partition
+    if dfs_find_cycle(output_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 64, in dfs_find_cycle
+    if dfs_find_cycle(user_node):
+  [Previous line repeated 981 more times]
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/passes/utils/fuser_utils.py", line 61, in dfs_find_cycle
+    visited.add(node)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+ERROR
+cuda             gmean=nanx mean=440.417x
+adv_inception_v3 gmean=nanx mean=2.000x
+0                gmean=nanx mean=3.958x
+0.0000           gmean=nanx mean=2.958x
