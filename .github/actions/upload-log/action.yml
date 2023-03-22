@@ -1,0 +1,25 @@
+name: Upload the log file while running
+
+description: Upload the log file while the job runs
+
+inputs:
+  job-id:
+    description: Job id
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Upload log file in background
+      shell: bash
+      continue-on-error: true
+      env:
+        JOB_ID: ${{ inputs.job-id }}
+      run: |
+        set -x
+        # Complete job name: shows up in the Set up job step
+        file_name=$(grep -R "Complete job name:" "${{ runner.workspace }}/../../_diag/pages" -l)
+        while true; do
+          aws s3 cp "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}" --content-type "text/plain"
+          sleep 60
+        done &

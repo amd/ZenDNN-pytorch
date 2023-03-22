@@ -92,18 +92,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload log file
-        shell: bash
-        continue-on-error: false
-        env:
-          JOB_ID: ${{ steps.get-job-id.outputs.job-id }}
-        run: |
-          set -x
-          # Complete job name: shows up in the Set up job step
-          file_name=$(grep -R "Complete job name:" "${{ runner.workspace }}/../../_diag/pages" -l)
-          for i in $(seq 180); do
-            aws s3 cp "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}" --content-type "text/plain"
-            sleep 60
-          done &
+        uses: ./.github/actions/upload-log
+        with:
+          job-id: ${{ steps.get-job-id.outputs.job-id }}
 
       - name: Pull docker image
         uses: pytorch/test-infra/.github/actions/pull-docker-image@main
