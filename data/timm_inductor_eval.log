@@ -1,0 +1,384 @@
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  adv_inception_v3                    1.355x p=0.00
+TIMING: entire_frame_compile:13.5827 backend_compile:11.89858
+STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:1610 | FakeTensorMode.__torch_dispatch__:29339 | ProxyTorchDispatchMode.__torch_dispatch__:6881
+Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  beit_base_patch16_224               0.997x p=0.00
+TIMING: entire_frame_compile:8.49329 backend_compile:6.67468
+STATS: call_* op count: 468 | FakeTensor.__torch_dispatch__:1067 | FakeTensorMode.__torch_dispatch__:15278 | ProxyTorchDispatchMode.__torch_dispatch__:3229
+Dynamo produced 1 graphs covering 468 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  botnet26t_256                       1.488x p=0.00
+TIMING: entire_frame_compile:10.04283 backend_compile:8.8164
+STATS: call_* op count: 305 | FakeTensor.__torch_dispatch__:475 | FakeTensorMode.__torch_dispatch__:12644 | ProxyTorchDispatchMode.__torch_dispatch__:2978
+Dynamo produced 1 graphs covering 305 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  cait_m36_384                        1.451x p=0.00
+TIMING: entire_frame_compile:20.10695 backend_compile:16.81531
+STATS: call_* op count: 1341 | FakeTensor.__torch_dispatch__:4053 | FakeTensorMode.__torch_dispatch__:53136 | ProxyTorchDispatchMode.__torch_dispatch__:11588
+Dynamo produced 1 graphs covering 1341 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  coat_lite_mini                      1.482x p=0.00
+TIMING: entire_frame_compile:9.11976 backend_compile:7.93685
+STATS: call_* op count: 459 | FakeTensor.__torch_dispatch__:1116 | FakeTensorMode.__torch_dispatch__:15340 | ProxyTorchDispatchMode.__torch_dispatch__:3150
+Dynamo produced 1 graphs covering 459 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  convit_base                         1.276x p=0.00
+TIMING: entire_frame_compile:8.68296 backend_compile:7.47107
+STATS: call_* op count: 497 | FakeTensor.__torch_dispatch__:1133 | FakeTensorMode.__torch_dispatch__:16778 | ProxyTorchDispatchMode.__torch_dispatch__:3878
+Dynamo produced 1 graphs covering 497 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  convmixer_768_32                    1.244x p=0.00
+TIMING: entire_frame_compile:10.46937 backend_compile:7.7543
+STATS: call_* op count: 230 | FakeTensor.__torch_dispatch__:1377 | FakeTensorMode.__torch_dispatch__:22111 | ProxyTorchDispatchMode.__torch_dispatch__:5126
+Dynamo produced 1 graphs covering 230 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  convnext_base                       1.367x p=0.00
+TIMING: entire_frame_compile:9.05016 backend_compile:7.54812
+STATS: call_* op count: 494 | FakeTensor.__torch_dispatch__:1707 | FakeTensorMode.__torch_dispatch__:16677 | ProxyTorchDispatchMode.__torch_dispatch__:4114
+Dynamo produced 1 graphs covering 494 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  crossvit_9_240                      1.191x p=0.00
+TIMING: entire_frame_compile:10.74545 backend_compile:9.15142
+STATS: call_* op count: 563 | FakeTensor.__torch_dispatch__:1560 | FakeTensorMode.__torch_dispatch__:23270 | ProxyTorchDispatchMode.__torch_dispatch__:5128
+Dynamo produced 1 graphs covering 563 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  cspdarknet53                        1.215x p=0.00
+TIMING: entire_frame_compile:11.40928 backend_compile:8.94835
+STATS: call_* op count: 371 | FakeTensor.__torch_dispatch__:950 | FakeTensorMode.__torch_dispatch__:21144 | ProxyTorchDispatchMode.__torch_dispatch__:5035
+Dynamo produced 1 graphs covering 371 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  deit_base_distilled_patch16_224     1.022x p=0.00
+TIMING: entire_frame_compile:5.96877 backend_compile:5.04108
+STATS: call_* op count: 340 | FakeTensor.__torch_dispatch__:831 | FakeTensorMode.__torch_dispatch__:10378 | ProxyTorchDispatchMode.__torch_dispatch__:2029
+Dynamo produced 1 graphs covering 340 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  dla102                              1.439x p=0.00
+TIMING: entire_frame_compile:14.58021 backend_compile:11.56516
+STATS: call_* op count: 415 | FakeTensor.__torch_dispatch__:1798 | FakeTensorMode.__torch_dispatch__:32839 | ProxyTorchDispatchMode.__torch_dispatch__:7697
+Dynamo produced 1 graphs covering 415 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  dm_nfnet_f0                         1.819x p=0.00
+TIMING: entire_frame_compile:10.97353 backend_compile:8.85407
+STATS: call_* op count: 615 | FakeTensorMode.__torch_dispatch__:19872 | FakeTensor.__torch_dispatch__:1113 | ProxyTorchDispatchMode.__torch_dispatch__:4522
+Dynamo produced 1 graphs covering 615 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  dpn107                              1.292x p=0.00
+TIMING: entire_frame_compile:18.71895 backend_compile:14.08333
+STATS: call_* op count: 631 | FakeTensor.__torch_dispatch__:1447 | FakeTensorMode.__torch_dispatch__:39357 | ProxyTorchDispatchMode.__torch_dispatch__:9042
+Dynamo produced 1 graphs covering 631 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  eca_botnext26ts_256                 1.385x p=0.00
+TIMING: entire_frame_compile:10.36811 backend_compile:9.07187
+STATS: call_* op count: 335 | FakeTensor.__torch_dispatch__:574 | FakeTensorMode.__torch_dispatch__:13611 | ProxyTorchDispatchMode.__torch_dispatch__:3260
+Dynamo produced 1 graphs covering 335 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  eca_halonext26ts                    1.368x p=0.00
+TIMING: entire_frame_compile:13.60058 backend_compile:11.00389
+STATS: call_* op count: 359 | FakeTensor.__torch_dispatch__:601 | FakeTensorMode.__torch_dispatch__:13947 | ProxyTorchDispatchMode.__torch_dispatch__:3345
+Dynamo produced 1 graphs covering 359 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  ese_vovnet19b_dw                    1.363x p=0.00
+TIMING: entire_frame_compile:6.91064 backend_compile:5.39056
+STATS: call_* op count: 133 | FakeTensor.__torch_dispatch__:489 | FakeTensorMode.__torch_dispatch__:8263 | ProxyTorchDispatchMode.__torch_dispatch__:1887
+Dynamo produced 1 graphs covering 133 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  fbnetc_100                          1.309x p=0.00
+TIMING: entire_frame_compile:9.47518 backend_compile:7.69387
+STATS: call_* op count: 314 | FakeTensor.__torch_dispatch__:857 | FakeTensorMode.__torch_dispatch__:19619 | ProxyTorchDispatchMode.__torch_dispatch__:4599
+Dynamo produced 1 graphs covering 314 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  fbnetv3_b                           1.169x p=0.00
+TIMING: entire_frame_compile:15.10992 backend_compile:12.25161
+STATS: call_* op count: 519 | FakeTensor.__torch_dispatch__:1770 | FakeTensorMode.__torch_dispatch__:32247 | ProxyTorchDispatchMode.__torch_dispatch__:8454
+Dynamo produced 1 graphs covering 519 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  gernet_l                            1.344x p=0.00
+TIMING: entire_frame_compile:8.81303 backend_compile:7.01072
+STATS: call_* op count: 348 | FakeTensor.__torch_dispatch__:753 | FakeTensorMode.__torch_dispatch__:17301 | ProxyTorchDispatchMode.__torch_dispatch__:4065
+Dynamo produced 1 graphs covering 348 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  ghostnet_100                        1.376x p=0.00
+TIMING: entire_frame_compile:13.28193 backend_compile:10.3896
+STATS: call_* op count: 323 | FakeTensor.__torch_dispatch__:1559 | FakeTensorMode.__torch_dispatch__:28979 | ProxyTorchDispatchMode.__torch_dispatch__:6630
+Dynamo produced 1 graphs covering 323 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  gluon_inception_v3                  1.355x p=0.00
+TIMING: entire_frame_compile:13.6136 backend_compile:11.70864
+STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:1610 | FakeTensorMode.__torch_dispatch__:29339 | ProxyTorchDispatchMode.__torch_dispatch__:6881
+Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  gluon_xception65                    1.173x p=0.00
+TIMING: entire_frame_compile:15.06955 backend_compile:12.96033
+STATS: call_* op count: 352 | FakeTensor.__torch_dispatch__:2256 | FakeTensorMode.__torch_dispatch__:40981 | ProxyTorchDispatchMode.__torch_dispatch__:9558
+Dynamo produced 1 graphs covering 352 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  gmixer_24_224                       1.351x p=0.00
+TIMING: entire_frame_compile:9.92742 backend_compile:8.30633
+STATS: call_* op count: 631 | FakeTensor.__torch_dispatch__:1716 | FakeTensorMode.__torch_dispatch__:21694 | ProxyTorchDispatchMode.__torch_dispatch__:4475
+Dynamo produced 1 graphs covering 631 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  gmlp_s16_224                        1.581x p=0.00
+TIMING: entire_frame_compile:9.47115 backend_compile:8.14871
+STATS: call_* op count: 487 | FakeTensor.__torch_dispatch__:1776 | FakeTensorMode.__torch_dispatch__:19816 | ProxyTorchDispatchMode.__torch_dispatch__:4409
+Dynamo produced 1 graphs covering 487 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  hrnet_w18                           1.311x p=0.00
+TIMING: entire_frame_compile:39.78456 backend_compile:32.40357
+STATS: call_* op count: 1369 | FakeTensor.__torch_dispatch__:5677 | FakeTensorMode.__torch_dispatch__:106584 | ProxyTorchDispatchMode.__torch_dispatch__:25306
+Dynamo produced 1 graphs covering 1369 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  inception_v3                        1.355x p=0.00
+TIMING: entire_frame_compile:14.51873 backend_compile:11.67479
+STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:1610 | FakeTensorMode.__torch_dispatch__:29339 | ProxyTorchDispatchMode.__torch_dispatch__:6881
+Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  jx_nest_base                        1.424x p=0.00
+TIMING: entire_frame_compile:13.30087 backend_compile:11.50379
+STATS: call_* op count: 674 | FakeTensor.__torch_dispatch__:1809 | FakeTensorMode.__torch_dispatch__:23969 | ProxyTorchDispatchMode.__torch_dispatch__:6150
+Dynamo produced 1 graphs covering 674 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  lcnet_050                           1.115x p=0.00
+TIMING: entire_frame_compile:7.65412 backend_compile:5.4751
+STATS: call_* op count: 137 | FakeTensor.__torch_dispatch__:480 | FakeTensorMode.__torch_dispatch__:9584 | ProxyTorchDispatchMode.__torch_dispatch__:2550
+Dynamo produced 1 graphs covering 137 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  levit_128                           1.813x p=0.00
+TIMING: entire_frame_compile:11.81152 backend_compile:10.01479
+STATS: call_* op count: 565 | FakeTensor.__torch_dispatch__:1148 | FakeTensorMode.__torch_dispatch__:28395 | ProxyTorchDispatchMode.__torch_dispatch__:7169
+Dynamo produced 1 graphs covering 565 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mixer_b16_224                       1.111x p=0.00
+TIMING: entire_frame_compile:5.89945 backend_compile:5.12379
+STATS: call_* op count: 223 | FakeTensor.__torch_dispatch__:876 | FakeTensorMode.__torch_dispatch__:9238 | ProxyTorchDispatchMode.__torch_dispatch__:2051
+Dynamo produced 1 graphs covering 223 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mixnet_l                            1.279x p=0.00
+TIMING: entire_frame_compile:13.84184 backend_compile:11.00666
+STATS: call_* op count: 615 | FakeTensor.__torch_dispatch__:1863 | FakeTensorMode.__torch_dispatch__:29089 | ProxyTorchDispatchMode.__torch_dispatch__:5670
+Dynamo produced 1 graphs covering 615 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mnasnet_100                         1.322x p=0.00
+TIMING: entire_frame_compile:8.32511 backend_compile:6.80934
+STATS: call_* op count: 248 | FakeTensor.__torch_dispatch__:688 | FakeTensorMode.__torch_dispatch__:15703 | ProxyTorchDispatchMode.__torch_dispatch__:3678
+Dynamo produced 1 graphs covering 248 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mobilenetv2_100                     1.412x p=0.00
+TIMING: entire_frame_compile:9.74962 backend_compile:6.97338
+STATS: call_* op count: 248 | FakeTensor.__torch_dispatch__:723 | FakeTensorMode.__torch_dispatch__:15843 | ProxyTorchDispatchMode.__torch_dispatch__:3923
+Dynamo produced 1 graphs covering 248 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mobilenetv3_large_100               1.288x p=0.00
+TIMING: entire_frame_compile:9.45156 backend_compile:7.93101
+STATS: call_* op count: 265 | FakeTensor.__torch_dispatch__:869 | FakeTensorMode.__torch_dispatch__:16212 | ProxyTorchDispatchMode.__torch_dispatch__:4038
+Dynamo produced 1 graphs covering 265 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  mobilevit_s                         1.114x p=0.00
+TIMING: entire_frame_compile:15.45476 backend_compile:13.817
+STATS: call_* op count: 456 | FakeTensor.__torch_dispatch__:1114 | FakeTensorMode.__torch_dispatch__:18451 | ProxyTorchDispatchMode.__torch_dispatch__:4082
+Dynamo produced 1 graphs covering 456 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  nfnet_l0                            1.583x p=0.00
+TIMING: entire_frame_compile:10.82546 backend_compile:8.41486
+STATS: call_* op count: 546 | FakeTensor.__torch_dispatch__:1121 | FakeTensorMode.__torch_dispatch__:19661 | ProxyTorchDispatchMode.__torch_dispatch__:4403
+Dynamo produced 1 graphs covering 546 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  pit_b_224                           1.030x p=0.00
+TIMING: entire_frame_compile:6.59143 backend_compile:5.60028
+STATS: call_* op count: 383 | FakeTensor.__torch_dispatch__:935 | FakeTensorMode.__torch_dispatch__:11781 | ProxyTorchDispatchMode.__torch_dispatch__:2333
+Dynamo produced 1 graphs covering 383 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  pnasnet5large                       1.279x p=0.00
+TIMING: entire_frame_compile:32.80373 backend_compile:27.04685
+STATS: call_* op count: 953 | FakeTensor.__torch_dispatch__:4925 | FakeTensorMode.__torch_dispatch__:73419 | ProxyTorchDispatchMode.__torch_dispatch__:16490
+Dynamo produced 1 graphs covering 953 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  poolformer_m36                      1.558x p=0.00
+TIMING: entire_frame_compile:17.57684 backend_compile:15.79723
+STATS: call_* op count: 695 | FakeTensor.__torch_dispatch__:2165 | FakeTensorMode.__torch_dispatch__:17664 | ProxyTorchDispatchMode.__torch_dispatch__:4841
+Dynamo produced 1 graphs covering 695 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  regnety_002                         1.374x p=0.00
+TIMING: entire_frame_compile:8.46219 backend_compile:7.01946
+STATS: call_* op count: 320 | FakeTensor.__torch_dispatch__:922 | FakeTensorMode.__torch_dispatch__:15472 | ProxyTorchDispatchMode.__torch_dispatch__:3530
+Dynamo produced 1 graphs covering 320 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  repvgg_a2                           1.370x p=0.00
+TIMING: entire_frame_compile:9.52474 backend_compile:7.16709
+STATS: call_* op count: 332 | FakeTensor.__torch_dispatch__:652 | FakeTensorMode.__torch_dispatch__:17769 | ProxyTorchDispatchMode.__torch_dispatch__:4271
+Dynamo produced 1 graphs covering 332 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  res2net101_26w_4s                   1.369x p=0.00
+TIMING: entire_frame_compile:22.81187 backend_compile:19.59437
+STATS: call_* op count: 803 | FakeTensor.__torch_dispatch__:2902 | FakeTensorMode.__torch_dispatch__:63050 | ProxyTorchDispatchMode.__torch_dispatch__:13012
+Dynamo produced 1 graphs covering 803 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  res2net50_14w_8s                    1.414x p=0.00
+TIMING: entire_frame_compile:22.55504 backend_compile:19.59597
+STATS: call_* op count: 699 | FakeTensor.__torch_dispatch__:2545 | FakeTensorMode.__torch_dispatch__:61701 | ProxyTorchDispatchMode.__torch_dispatch__:11445
+Dynamo produced 1 graphs covering 699 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  res2next50                          1.423x p=0.00
+TIMING: entire_frame_compile:13.17274 backend_compile:11.41863
+STATS: call_* op count: 395 | FakeTensor.__torch_dispatch__:1457 | FakeTensorMode.__torch_dispatch__:31413 | ProxyTorchDispatchMode.__torch_dispatch__:6501
+Dynamo produced 1 graphs covering 395 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  resmlp_12_224                       1.305x p=0.00
+TIMING: entire_frame_compile:5.18173 backend_compile:4.26957
+STATS: call_* op count: 199 | FakeTensor.__torch_dispatch__:605 | FakeTensorMode.__torch_dispatch__:7620 | ProxyTorchDispatchMode.__torch_dispatch__:1633
+Dynamo produced 1 graphs covering 199 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  resnest101e                         1.494x p=0.00
+TIMING: entire_frame_compile:20.65963 backend_compile:17.24031
+STATS: call_* op count: 1018 | FakeTensor.__torch_dispatch__:2936 | FakeTensorMode.__torch_dispatch__:52455 | ProxyTorchDispatchMode.__torch_dispatch__:12262
+Dynamo produced 1 graphs covering 1018 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  rexnet_100                          1.251x p=0.00
+TIMING: entire_frame_compile:12.80137 backend_compile:9.25579
+STATS: call_* op count: 351 | FakeTensor.__torch_dispatch__:1125 | FakeTensorMode.__torch_dispatch__:21677 | ProxyTorchDispatchMode.__torch_dispatch__:5136
+Dynamo produced 1 graphs covering 351 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  sebotnet33ts_256                    1.655x p=0.00
+TIMING: entire_frame_compile:12.37206 backend_compile:10.78116
+STATS: call_* op count: 422 | FakeTensor.__torch_dispatch__:810 | FakeTensorMode.__torch_dispatch__:17284 | ProxyTorchDispatchMode.__torch_dispatch__:4094
+Dynamo produced 1 graphs covering 422 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  selecsls42b                         1.263x p=0.00
+TIMING: entire_frame_compile:6.78111 backend_compile:5.94786
+STATS: call_* op count: 132 | FakeTensor.__torch_dispatch__:709 | FakeTensorMode.__torch_dispatch__:12802 | ProxyTorchDispatchMode.__torch_dispatch__:2995
+Dynamo produced 1 graphs covering 132 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  spnasnet_100                        1.337x p=0.00
+TIMING: entire_frame_compile:9.66416 backend_compile:7.7149
+STATS: call_* op count: 308 | FakeTensor.__torch_dispatch__:844 | FakeTensorMode.__torch_dispatch__:19311 | ProxyTorchDispatchMode.__torch_dispatch__:4526
+Dynamo produced 1 graphs covering 308 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  swin_base_patch4_window7_224        1.095x p=0.00
+TIMING: entire_frame_compile:19.1017 backend_compile:16.4296
+STATS: call_* op count: 1194 | FakeTensor.__torch_dispatch__:1964 | FakeTensorMode.__torch_dispatch__:33722 | ProxyTorchDispatchMode.__torch_dispatch__:7347
+Dynamo produced 1 graphs covering 1194 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  swsl_resnext101_32x16d              1.222x p=0.00
+TIMING: entire_frame_compile:12.93694 backend_compile:10.90789
+STATS: call_* op count: 411 | FakeTensor.__torch_dispatch__:1780 | FakeTensorMode.__torch_dispatch__:32239 | ProxyTorchDispatchMode.__torch_dispatch__:7546
+Dynamo produced 1 graphs covering 411 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  tf_efficientnet_b0                  1.311x p=0.00
+TIMING: entire_frame_compile:9.8461 backend_compile:8.19207
+STATS: call_* op count: 318 | FakeTensor.__torch_dispatch__:1153 | FakeTensorMode.__torch_dispatch__:18163 | ProxyTorchDispatchMode.__torch_dispatch__:4223
+Dynamo produced 1 graphs covering 318 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  tf_mixnet_l                         1.313x p=0.00
+TIMING: entire_frame_compile:14.36904 backend_compile:11.32618
+STATS: call_* op count: 630 | FakeTensor.__torch_dispatch__:1833 | FakeTensorMode.__torch_dispatch__:29239 | ProxyTorchDispatchMode.__torch_dispatch__:5715
+Dynamo produced 1 graphs covering 630 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  tinynet_a                           1.245x p=0.00
+TIMING: entire_frame_compile:10.74245 backend_compile:8.78257
+STATS: call_* op count: 373 | FakeTensor.__torch_dispatch__:1376 | FakeTensorMode.__torch_dispatch__:21437 | ProxyTorchDispatchMode.__torch_dispatch__:4982
+Dynamo produced 1 graphs covering 373 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  tnt_s_patch16_224                   1.395x p=0.00
+TIMING: entire_frame_compile:15.60606 backend_compile:11.9012
+STATS: call_* op count: 822 | FakeTensor.__torch_dispatch__:2243 | FakeTensorMode.__torch_dispatch__:30827 | ProxyTorchDispatchMode.__torch_dispatch__:6906
+Dynamo produced 1 graphs covering 822 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  twins_pcpvt_base                    1.171x p=0.00
+TIMING: entire_frame_compile:16.85585 backend_compile:14.18125
+STATS: call_* op count: 1018 | FakeTensor.__torch_dispatch__:3045 | FakeTensorMode.__torch_dispatch__:40150 | ProxyTorchDispatchMode.__torch_dispatch__:8354
+Dynamo produced 1 graphs covering 1018 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  visformer_small                     1.068x p=0.00
+TIMING: entire_frame_compile:7.64179 backend_compile:6.63027
+STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:831 | FakeTensorMode.__torch_dispatch__:13548 | ProxyTorchDispatchMode.__torch_dispatch__:3172
+Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  vit_base_patch16_224                1.023x p=0.00
+TIMING: entire_frame_compile:5.98432 backend_compile:5.0531
+STATS: call_* op count: 337 | FakeTensor.__torch_dispatch__:819 | FakeTensorMode.__torch_dispatch__:10193 | ProxyTorchDispatchMode.__torch_dispatch__:1996
+Dynamo produced 1 graphs covering 337 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  volo_d1_224                         1.564x p=0.00
+TIMING: entire_frame_compile:12.16287 backend_compile:10.58551
+STATS: call_* op count: 614 | FakeTensor.__torch_dispatch__:1669 | FakeTensorMode.__torch_dispatch__:22144 | ProxyTorchDispatchMode.__torch_dispatch__:5668
+Dynamo produced 1 graphs covering 614 ops with 0 graph breaks (0 unique)
+/scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
+  warn(f"Failed to load image Python extension: {e}")
+cuda eval  xcit_large_24_p8_224                1.487x p=0.00
+TIMING: entire_frame_compile:20.5016 backend_compile:17.20411
+STATS: call_* op count: 1191 | FakeTensor.__torch_dispatch__:3444 | FakeTensorMode.__torch_dispatch__:48864 | ProxyTorchDispatchMode.__torch_dispatch__:11410
+Dynamo produced 1 graphs covering 1191 ops with 0 graph breaks (0 unique)
+speedup             gmean=1.32x mean=1.332x
+abs_latency         gmean=31.03x mean=36.418x
+compilation_latency mean=12.850 seconds
+compression_ratio   mean=0.624x
+eager_peak_mem      gmean=1.69x mean=1.828x
+dynamo_peak_mem     gmean=2.96x mean=3.549x
+calls_captured      gmean=434.86x mean=500.742x
+unique_graphs       gmean=1.00x mean=1.000x
+graph_breaks        gmean=1.00x mean=1.000x
+unique_graph_breaks gmean=1.00x mean=1.000x
