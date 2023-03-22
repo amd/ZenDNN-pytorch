@@ -16,10 +16,17 @@ runs:
       env:
         JOB_ID: ${{ inputs.job-id }}
       run: |
-        set -x
+        set -ex
+
+        # Determine if this is an ec2 runner
+        curl --head http://169.254.169.254/latest/meta-data/
+
         # Complete job name: shows up in the Set up job step
         file_name=$(grep -R "Complete job name:" "${{ runner.workspace }}/../../_diag/pages" -l)
-        while true; do
-          aws s3 cp "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}" --content-type "text/plain"
-          sleep 60
-        done &
+
+        if [[ -f "${file_name}" ]]; then
+          while true; do
+            aws s3 sync "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}" --content-type "text/plain"
+            sleep 60
+          done &
+        fi
