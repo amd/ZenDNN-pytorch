@@ -19,6 +19,7 @@ class TORCH_API LazyGraphExecutor {
 
     int64_t tensor_id = 0;
     bool read_only = false;
+    int64_t alias_id = 0;
   };
 
   // Register a lazy graph executor instance that can be retrieved using Get()

@@ -152,7 +152,7 @@ class TORCH_API LazyTensor : public c10::intrusive_ptr_target {
       const at::Tensor& tensor,
       const BackendDevice& device) const;
 
-  Value CreateTensorNode(BackendDataPtr data, bool read_only) const;
+  Value CreateTensorNode(BackendDataPtr data, bool read_only, c10::optional<int64_t> alias_id = c10::nullopt) const;
 
  private:
   LazyTensor(const at::Tensor& tensor, const BackendDevice& device);

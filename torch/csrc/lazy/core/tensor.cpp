@@ -293,9 +293,13 @@ void LazyTensor::UpdateFromTensorOut(const LazyTensorPtr& tensor) {
   SetIrValue(tensor->GetIrValue());
 }
 
-Value LazyTensor::CreateTensorNode(BackendDataPtr data, bool read_only) const {
-  data->SetInfo(std::make_shared<LazyGraphExecutor::DeviceDataInfo>(
-      GetUniqueId(), read_only));
+Value LazyTensor::CreateTensorNode(BackendDataPtr data, bool read_only, c10::optional<int64_t> alias_id) const {
+  auto info = std::make_shared<LazyGraphExecutor::DeviceDataInfo>(
+      GetUniqueId(), read_only);
+  if (alias_id) {
+    info->alias_id = *alias_id;
+  }
+  data->SetInfo(std::move(info));
   return MakeDeviceData(std::move(data));
 }
 
