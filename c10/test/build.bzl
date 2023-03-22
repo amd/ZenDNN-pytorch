@@ -10,12 +10,22 @@ def define_targets(rules):
     )
 
     rules.cc_test(
+        name = "core/impl/copy_on_write_test",
+        size = "small",
+        srcs = ["core/impl/copy_on_write_test.cpp"],
+        deps = [
+            "@com_google_googletest//:gtest_main",
+            "//c10/core:impl/copy_on_write",
+        ],
+    )
+
+    rules.cc_test(
         name = "core_tests",
         size = "small",
         srcs = rules.glob([
             "core/*.cpp",
             "core/impl/*.cpp",
-        ]),
+        ], exclude=["core/impl/copy_on_write_test.cpp"]),
         copts = ["-Wno-deprecated-declarations"],
         deps = [
             "@com_google_googletest//:gtest_main",
