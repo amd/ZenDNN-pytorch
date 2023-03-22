@@ -92,7 +92,7 @@ jobs:
           JOB_ID: ${{ steps.get-job-id.outputs.job-id }}
         run: |
           # Complete job name: shows up in the Set up job step
-          file_name=$(grep -R "Complete job name:" .)
+          file_name=$(grep -R "Complete job name:" . -l)
           aws s3 cp "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}"
         shell: bash
         continue-on-error: false
