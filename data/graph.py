@@ -8,7 +8,6 @@ def parse_log(file_name, slug):
             if line.startswith(slug):
                 out.append(line)
     out = [[item.split()[0], item.split()[1], item.split()[2], item.split()[3]] for item in out]
-    breakpoint()
     return out
 
 def describe_delta(data1, data2, name1, name2):
@@ -74,21 +73,22 @@ def graph_delta(data1, data2, name1, name2, title):
 
 # Inductor, eval
 # hf_inductor_eval = parse_log("data/hf_inductor_eval.log", "cuda eval")
-timm_inductor_eval = parse_log("data/timm_inductor_eval.log", "cuda eval")
+# timm_inductor_eval = parse_log("data/timm_inductor_eval.log", "cuda eval")
 # tb_inductor_eval = parse_log("data/tb_inductor_eval.log")
 # NVFuser, eval
 # hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
-timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log", "cuda eval")
+# timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log", "cuda eval")
 # tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log")
 # Inductor, train
-# hf_inductor_train = parse_log("data/hf_inductor_train.log", "cuda training")
-# timm_inductor_train = parse_log("data/timm_inductor_train.log")
+hf_inductor_train = parse_log("data/hf_inductor_train.log", "cuda train")
+timm_inductor_train = parse_log("data/timm_inductor_train.log", "cuda train")
 # tb_inductor_train = parse_log("data/tb_inductor_train.log")
 # NVFuser, train
-# hf_nvfuser_train = parse_log("data/hf_nvfuser_train.log", "cuda training")
-# timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log")
+hf_nvfuser_train = parse_log("data/hf_nvfuser_train.log", "cuda train")
+timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log", "cuda train")
 # tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log")
 
 # graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
-graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
-# graph_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
+# graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
+graph_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
+graph_delta(timm_inductor_train, timm_nvfuser_train, "Inductor", "NVFuser", "timm_inductor_nvfuser_train_gpu")
