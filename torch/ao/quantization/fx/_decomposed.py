@@ -3,6 +3,40 @@ from torch.library import Library, impl
 from torch.ao.quantization.utils import determine_qparams, validate_qmin_qmax
 from typing import Tuple
 
+def _quantize_per_channel_impl(
+        input: torch.Tensor,
+        scales: torch.Tensor,
+        zero_points: torch.Tensor,
+        axis: int,
+        quant_min: int,
+        quant_max: int,
+        dtype: torch.dtype
+) -> torch.Tensor:
+    input = input.transpose(axis, -1)
+    output = torch.clamp(torch.round(input * (1.0 / scales)) + zero_points, quant_min, quant_max)
+    output = output.transpose(axis, -1)
+    return output.to(dtype)
+
+def _dequantize_per_channel_impl(
+        input: torch.Tensor,
+        scales: torch.Tensor,
+        zero_points: torch.Tensor,
+        axis: int,
+        quant_min: int,
+        quant_max: int,
+        dtype: torch.dtype
+) -> torch.Tensor:
+    input = input.transpose(axis, -1)
+    input = input.to(torch.float32)
+
+    # TODO: investigate why
+    # (input - zero_points).to(torch.float32) * scales
+    # failed the test
+    output = (input - zero_points) * scales
+
+    output = output.transpose(axis, -1)
+    return output
+
 
 # Note: decomposed means decomposed quantized tensor, using decomposed so that the
 # name is not too long
@@ -59,8 +93,18 @@ def quantize_per_tensor(
     assert input.dtype == torch.float32, f"Expecting input to have dtype torch.float32, but got dtype: {input.dtype}"
     _quant_min_max_bounds_check(quant_min, quant_max, dtype)
 
-    inv_scale = 1.0 / scale
-    return torch.clamp(torch.round(input * inv_scale) + zero_point, quant_min, quant_max).to(dtype)
+    return _quantize_per_tensor_impl(input, scale, zero_point, quant_min, quant_max, dtype)
+
+@register_decomposition(torch.ops.quantized_decomposed.quantize_per_tensor)
+def quantize_per_tensor_decomp(
+    input: torch.Tensor,
+    scale: float,
+    zero_point: int,
+    quant_min: int,
+    quant_max: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    return _quantize_per_tensor_impl(input, scale, zero_point, quant_min, quant_max, dtype)
 
 quantized_decomposed_lib.define(
     "quantize_per_tensor.tensor(Tensor input, Tensor scale, Tensor zero_point, "
@@ -84,13 +128,16 @@ def quantize_per_tensor_tensor(
     assert scale.numel() == 1, f"Exepecting scale tensor to be one element, but received : {scale.numel()}"
     return quantize_per_tensor(input, scale.item(), zero_point.item(), quant_min, quant_max, dtype)
 
-@impl(quantized_decomposed_lib, "quantize_per_tensor.tensor", "Meta")
-def quantize_per_tensor_tensor_meta(input, scale, zero_point, quant_min, quant_max, dtype):
-    assert zero_point.numel() == 1, f"Exepecting zero_point tensor to be one element, but received : {zero_point.numel()}"
-    assert scale.numel() == 1, f"Exepecting scale tensor to be one element, but received : {scale.numel()}"
-    assert input.dtype == torch.float32, f"Expecting input to have dtype torch.float32, but got dtype: {input.dtype}"
-    _quant_min_max_bounds_check(quant_min, quant_max, dtype)
-    return torch.empty_like(input, dtype=dtype)
+@register_decomposition(torch.ops.quantized_decomposed.quantize_per_tensor.tensor)
+def quantize_per_tensor_tensor_decomp(
+    input: torch.Tensor,
+    scale: torch.Tensor,
+    zero_point: torch.Tensor,
+    quant_min: int,
+    quant_max: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    return _quantize_per_tensor_impl(input, scale.item(), zero_point.item(), quant_min, quant_max, dtype)  # type: ignore[arg-type]
 
 # Note: quant_min/quant_max/dtype are not used in the operator, but for now it's kept in
 # the signature as metadata for the input Tensor, this might be useful for pattern
@@ -143,6 +190,17 @@ def dequantize_per_tensor(
         raise ValueError(f"Unsupported dtype in dequantize_per_tensor: {dtype}")
 
 
+@register_decomposition(torch.ops.quantized_decomposed.dequantize_per_tensor)
+def dequantize_per_tensor_decomp(
+    input: torch.Tensor,
+    scale: float,
+    zero_point: int,
+    quant_min: int,
+    quant_max: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    return _dequantize_per_tensor_impl(input, scale, zero_point, quant_min, quant_max, dtype)
+
 quantized_decomposed_lib.define(
     "dequantize_per_tensor.tensor(Tensor input, Tensor scale, Tensor zero_point, "
     "int quant_min, int quant_max, ScalarType dtype) -> Tensor")
@@ -179,6 +237,19 @@ def dequantize_per_tensor_tensor_meta(input, scale, zero_point, quant_min, quant
 quantized_decomposed_lib.define(
     "choose_qparams.tensor(Tensor input, int quant_min, int quant_max, "
     "float eps, ScalarType dtype) -> (Tensor, Tensor)")
+
+
+@register_decomposition(torch.ops.quantized_decomposed.dequantize_per_tensor.tensor)
+def dequantize_per_tensor_tensor_decomp(
+    input: torch.Tensor,
+    scale: torch.Tensor,
+    zero_point: torch.Tensor,
+    quant_min: int,
+    quant_max: int,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    return _dequantize_per_tensor_impl(
+        input, scale.item(), zero_point.item(), quant_min, quant_max, dtype)  # type: ignore[arg-type]
 
 @impl(quantized_decomposed_lib, "choose_qparams.tensor", "CompositeExplicitAutograd")
 def choose_qparams_tensor(
@@ -275,13 +346,6 @@ def choose_qparams_symmetric_tensor_meta(
         dtype: torch.dtype
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     return torch.empty(1, dtype=torch.float, device=input.device), torch.empty(1, dtype=torch.int32, device=input.device)
-# Helper function used to implement per-channel quantization against any axis
-def _permute_to_axis_zero(x, axis):
-    new_axis_list = list(range(x.dim()))
-    new_axis_list[axis] = 0
-    new_axis_list[0] = axis
-    y = x.permute(tuple(new_axis_list))
-    return y, new_axis_list
 
 quantized_decomposed_lib.define(
     "quantize_per_channel(Tensor input, Tensor scales, Tensor zero_points, int axis, "
@@ -317,21 +381,10 @@ def quantize_per_channel(
     assert input.dtype == torch.float32, f"Expecting input to have dtype torch.float32, but got dtype: {input.dtype}"
     assert axis < input.dim(), f"Expecting axis to be < {input.dim()}"
     _quant_min_max_bounds_check(quant_min, quant_max, dtype)
-    input, permute_axis_list = _permute_to_axis_zero(input, axis)
-    res = torch.zeros_like(input)
+    return _quantize_per_channel_impl(input, scales, zero_points, axis, quant_min, quant_max, dtype)
 
-    for i in range(input.size(0)):
-        res[i] = torch.clamp(
-            torch.round(input[i] * (1.0 / scales[i])) + zero_points[i],
-            quant_min,
-            quant_max
-        )
-
-    out = res.permute(tuple(permute_axis_list))
-    return out.to(dtype)
-
-@impl(quantized_decomposed_lib, "quantize_per_channel", "Meta")
-def quantize_per_channel_meta(
+@register_decomposition(torch.ops.quantized_decomposed.quantize_per_channel)
+def quantize_per_channel_decomp(
         input: torch.Tensor,
         scales: torch.Tensor,
         zero_points: torch.Tensor,
@@ -340,10 +393,7 @@ def quantize_per_channel_meta(
         quant_max: int,
         dtype: torch.dtype
 ) -> torch.Tensor:
-    assert input.dtype == torch.float32, f"Expecting input to have dtype torch.float32, but got dtype: {input.dtype}"
-    assert axis < input.dim(), f"Expecting axis to be < {input.dim()}"
-    _quant_min_max_bounds_check(quant_min, quant_max, dtype)
-    return torch.empty_like(input, dtype=dtype)
+    return _quantize_per_channel_impl(input, scales, zero_points, axis, quant_min, quant_max, dtype)
 
 # Note: quant_min/quant_max/dtype are not used in the operator, but for now it's kept in
 # the signature as metadata for the input Tensor, this might be useful for pattern
@@ -392,20 +442,10 @@ def dequantize_per_channel(
     assert input.dtype == dtype, f"Expecting input to have dtype {dtype}, but got dtype: {input.dtype}"
     assert axis < input.dim(), f"Expecting axis to be < {input.dim()}"
     _quant_min_max_bounds_check(quant_min, quant_max, dtype)
-    input, permute_axis_list = _permute_to_axis_zero(input, axis)
-    res = torch.zeros_like(input, dtype=torch.float32)
+    return _dequantize_per_channel_impl(input, scales, zero_points, axis, quant_min, quant_max, dtype)
 
-    for i in range(input.size(0)):
-        # TODO: investigate why
-        # (input[i] - zero_points[i]).to(torch.float32) * scales[i]
-        # failed the test
-        res[i] = (input[i].to(torch.float32) - zero_points[i]) * scales[i]
-
-    out = res.permute(tuple(permute_axis_list))
-    return out
-
-@impl(quantized_decomposed_lib, "dequantize_per_channel", "Meta")
-def dequantize_per_channel_meta(
+@register_decomposition(torch.ops.quantized_decomposed.dequantize_per_channel)
+def dequantize_per_channel_decomp(
         input: torch.Tensor,
         scales: torch.Tensor,
         zero_points: torch.Tensor,
@@ -414,7 +454,4 @@ def dequantize_per_channel_meta(
         quant_max: int,
         dtype: torch.dtype
 ) -> torch.Tensor:
-    assert input.dtype == dtype, f"Expecting input to have dtype {dtype}, but got dtype: {input.dtype}"
-    assert axis < input.dim(), f"Expecting axis to be < {input.dim()}"
-    _quant_min_max_bounds_check(quant_min, quant_max, dtype)
-    return torch.empty_like(input, dtype=torch.float32)
+    return _dequantize_per_channel_impl(input, scales, zero_points, axis, quant_min, quant_max, dtype)
