@@ -4,6 +4,10 @@
 
 namespace c10 {
 
+namespace impl {
+class CopyOnWriteSimulator;
+} // namespace impl
+
 struct C10_API Storage {
  public:
   struct use_byte_size_t {};
@@ -176,6 +180,20 @@ struct C10_API Storage {
     storage_impl_->UniqueStorageShareExternalPointer(
         std::move(data_ptr), capacity);
   }
+
+  // Simulates the copy on write on the storage.
+  //
+  // The simulator argument is optional. If present, this copy was
+  // taken on an instance that was produced by a previous copy on
+  // write, hence we would inherit its storage generation.
+  intrusive_ptr<impl::CopyOnWriteSimulator> simulate_copy_on_write(
+      impl::CopyOnWriteSimulator* simulator) const;
+
+  // Bumps the copy on write generation of the storage and the shadow
+  // storage, if a copy on write is being simulated. Otherwise, does
+  // nothing.
+  void maybe_bump_copy_on_write_generation(
+      impl::CopyOnWriteSimulator* simulator);
 
  protected:
   c10::intrusive_ptr<StorageImpl> storage_impl_;
