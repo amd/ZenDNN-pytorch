@@ -140,15 +140,13 @@ STATS: call_* op count: 354 | FakeTensor.__torch_dispatch__:13543 | FakeTensorMo
 Dynamo produced 2 graphs covering 354 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train gmixer_24_224                       [2023-03-21 19:14:09,649] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.273x p=0.00
+cuda train gmixer_24_224                       1.273x p=0.00
 TIMING: entire_frame_compile:20.3843 backend_compile:16.14005
 STATS: call_* op count: 633 | FakeTensor.__torch_dispatch__:9863 | FakeTensorMode.__torch_dispatch__:44260 | ProxyTorchDispatchMode.__torch_dispatch__:19924
 Dynamo produced 2 graphs covering 633 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train gmlp_s16_224                        [2023-03-21 19:15:14,616] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.232x p=0.00
+cuda train gmlp_s16_224                        1.232x p=0.00
 TIMING: entire_frame_compile:20.25176 backend_compile:16.09767
 STATS: call_* op count: 489 | FakeTensor.__torch_dispatch__:10235 | FakeTensorMode.__torch_dispatch__:41512 | ProxyTorchDispatchMode.__torch_dispatch__:19294
 Dynamo produced 2 graphs covering 489 ops with 4 graph breaks (3 unique)
@@ -166,8 +164,7 @@ STATS: call_* op count: 315 | FakeTensor.__torch_dispatch__:9667 | FakeTensorMod
 Dynamo produced 2 graphs covering 315 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train jx_nest_base                        [2023-03-21 19:20:08,824] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.185x p=0.00
+cuda train jx_nest_base                        1.185x p=0.00
 TIMING: entire_frame_compile:25.37618 backend_compile:21.81126
 STATS: call_* op count: 860 | FakeTensor.__torch_dispatch__:10449 | FakeTensorMode.__torch_dispatch__:55224 | ProxyTorchDispatchMode.__torch_dispatch__:27367
 Dynamo produced 2 graphs covering 860 ops with 4 graph breaks (3 unique)
@@ -179,15 +176,13 @@ STATS: call_* op count: 166 | FakeTensor.__torch_dispatch__:3132 | FakeTensorMod
 Dynamo produced 2 graphs covering 166 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train levit_128                           [2023-03-21 19:22:43,177] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.406x p=0.00
+cuda train levit_128                           1.406x p=0.00
 TIMING: entire_frame_compile:25.66931 backend_compile:22.59766
 STATS: call_* op count: 581 | FakeTensor.__torch_dispatch__:7065 | FakeTensorMode.__torch_dispatch__:55004 | ProxyTorchDispatchMode.__torch_dispatch__:24687
 Dynamo produced 2 graphs covering 581 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train mixer_b16_224                       [2023-03-21 19:23:44,469] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.062x p=0.00
+cuda train mixer_b16_224                       1.062x p=0.00
 TIMING: entire_frame_compile:11.99817 backend_compile:10.21899
 STATS: call_* op count: 225 | FakeTensor.__torch_dispatch__:5039 | FakeTensorMode.__torch_dispatch__:19816 | ProxyTorchDispatchMode.__torch_dispatch__:9280
 Dynamo produced 2 graphs covering 225 ops with 4 graph breaks (3 unique)
@@ -277,8 +272,7 @@ STATS: call_* op count: 397 | FakeTensor.__torch_dispatch__:8749 | FakeTensorMod
 Dynamo produced 2 graphs covering 397 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train resmlp_12_224                       [2023-03-21 19:41:00,588] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.026x p=0.00
+cuda train resmlp_12_224                       1.026x p=0.00
 TIMING: entire_frame_compile:9.42486 backend_compile:7.71668
 STATS: call_* op count: 201 | FakeTensor.__torch_dispatch__:4744 | FakeTensorMode.__torch_dispatch__:16661 | ProxyTorchDispatchMode.__torch_dispatch__:7494
 Dynamo produced 2 graphs covering 201 ops with 4 graph breaks (3 unique)
@@ -314,8 +308,7 @@ STATS: call_* op count: 374 | FakeTensor.__torch_dispatch__:6351 | FakeTensorMod
 Dynamo produced 2 graphs covering 374 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train swin_base_patch4_window7_224        [2023-03-21 19:47:23,290] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.139x p=0.00
+cuda train swin_base_patch4_window7_224        1.139x p=0.00
 TIMING: entire_frame_compile:33.71839 backend_compile:28.90637
 STATS: call_* op count: 1380 | FakeTensor.__torch_dispatch__:11274 | FakeTensorMode.__torch_dispatch__:72493 | ProxyTorchDispatchMode.__torch_dispatch__:34085
 Dynamo produced 2 graphs covering 1380 ops with 4 graph breaks (3 unique)
@@ -375,8 +368,7 @@ STATS: call_* op count: 616 | FakeTensor.__torch_dispatch__:8734 | FakeTensorMod
 Dynamo produced 2 graphs covering 616 ops with 4 graph breaks (3 unique)
 /scratch/voz/work/torchvision/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /scratch/voz/work/torchvision/torchvision/image.so: undefined symbol: _ZN3c107WarningC1ENS_7variantIJNS0_11UserWarningENS0_18DeprecationWarningEEEERKNS_14SourceLocationENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
   warn(f"Failed to load image Python extension: {e}")
-cuda train xcit_large_24_p8_224                [2023-03-21 20:00:27,893] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.219x p=0.00
+cuda train xcit_large_24_p8_224                1.219x p=0.00
 TIMING: entire_frame_compile:41.73629 backend_compile:35.16718
 STATS: call_* op count: 1193 | FakeTensor.__torch_dispatch__:20939 | FakeTensorMode.__torch_dispatch__:99850 | ProxyTorchDispatchMode.__torch_dispatch__:45970
 Dynamo produced 2 graphs covering 1193 ops with 4 graph breaks (3 unique)
