@@ -1,0 +1,113 @@
+WARNING:__main__:Running smaller batch size=4 for AlbertForMaskedLM, orig batch_size=8
+cuda eval  AlbertForMaskedLM                   1.303x p=0.00
+WARNING:__main__:Running smaller batch size=4 for AlbertForQuestionAnswering, orig batch_size=8
+cuda eval  AlbertForQuestionAnswering          1.301x p=0.00
+WARNING:__main__:Running smaller batch size=4 for AllenaiLongformerBase, orig batch_size=8
+cuda eval  AllenaiLongformerBase               1.109x p=0.00
+WARNING:__main__:Running smaller batch size=4 for BartForCausalLM, orig batch_size=8
+cuda eval  BartForCausalLM                     1.344x p=0.00
+WARNING:__main__:Running smaller batch size=2 for BartForConditionalGeneration, orig batch_size=4
+cuda eval  BartForConditionalGeneration        1.165x p=0.00
+WARNING:__main__:Running smaller batch size=16 for BertForMaskedLM, orig batch_size=32
+cuda eval  BertForMaskedLM                     1.337x p=0.00
+WARNING:__main__:Running smaller batch size=16 for BertForQuestionAnswering, orig batch_size=32
+cuda eval  BertForQuestionAnswering            1.353x p=0.00
+WARNING:__main__:Running smaller batch size=4 for BlenderbotForCausalLM, orig batch_size=32
+cuda eval  BlenderbotForCausalLM               1.061x p=0.00
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForCausalLM, orig batch_size=256
+cuda eval  BlenderbotSmallForCausalLM          1.341x p=0.00
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForConditionalGeneration, orig batch_size=128
+cuda eval  BlenderbotSmallForConditionalGeneration  1.230x p=0.00
+WARNING:__main__:Running smaller batch size=16 for CamemBert, orig batch_size=32
+cuda eval  CamemBert                           1.339x p=0.00
+WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
+cuda eval  DebertaForMaskedLM                  1.108x p=0.00
+WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
+cuda eval  DebertaForQuestionAnswering         1.048x p=0.00
+WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
+cuda eval  DebertaV2ForMaskedLM                1.100x p=0.00
+WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
+cuda eval  DebertaV2ForQuestionAnswering       0.920x p=0.00
+WARNING:__main__:Running smaller batch size=128 for DistilBertForMaskedLM, orig batch_size=256
+WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
+cuda eval  DistilBertForMaskedLM               1.233x p=0.00
+WARNING:__main__:Running smaller batch size=256 for DistilBertForQuestionAnswering, orig batch_size=512
+WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
+cuda eval  DistilBertForQuestionAnswering      1.204x p=0.00
+WARNING:__main__:Running smaller batch size=16 for DistillGPT2, orig batch_size=32
+cuda eval  DistillGPT2                         1.715x p=0.00
+If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=32 for ElectraForCausalLM, orig batch_size=64
+cuda eval  ElectraForCausalLM                  1.650x p=0.00
+WARNING:__main__:Running smaller batch size=64 for ElectraForQuestionAnswering, orig batch_size=128
+cuda eval  ElectraForQuestionAnswering         1.486x p=0.00
+WARNING:__main__:Running smaller batch size=4 for GPT2ForSequenceClassification, orig batch_size=8
+cuda eval  GPT2ForSequenceClassification       1.871x p=0.00
+WARNING:__main__:Running smaller batch size=16 for GoogleFnet, orig batch_size=32
+cuda eval  GoogleFnet                          1.619x p=0.00
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForMaskedLM, orig batch_size=32
+cuda eval  LayoutLMForMaskedLM                 1.361x p=0.00
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForSequenceClassification, orig batch_size=32
+cuda eval  LayoutLMForSequenceClassification   1.381x p=0.00
+WARNING:__main__:Running smaller batch size=16 for M2M100ForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  M2M100ForConditionalGeneration      1.135x p=0.00
+WARNING:__main__:Running smaller batch size=4 for MBartForCausalLM, orig batch_size=8
+cuda eval  MBartForCausalLM                    1.328x p=0.00
+WARNING:__main__:Running smaller batch size=2 for MBartForConditionalGeneration, orig batch_size=4
+cuda eval  MBartForConditionalGeneration       1.150x p=0.00
+WARNING:__main__:Running smaller batch size=16 for MT5ForConditionalGeneration, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  MT5ForConditionalGeneration         2.198x p=0.00
+If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=4 for MegatronBertForCausalLM, orig batch_size=16
+cuda eval  MegatronBertForCausalLM             1.253x p=0.00
+WARNING:__main__:Running smaller batch size=8 for MegatronBertForQuestionAnswering, orig batch_size=16
+cuda eval  MegatronBertForQuestionAnswering    1.249x p=0.00
+WARNING:__main__:Running smaller batch size=64 for MobileBertForMaskedLM, orig batch_size=256
+cuda eval  MobileBertForMaskedLM               1.583x p=0.00
+WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
+cuda eval  MobileBertForQuestionAnswering      1.242x p=0.00
+WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
+cuda eval  OPTForCausalLM                      1.890x p=0.00
+WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
+cuda eval  PLBartForCausalLM                   1.635x p=0.00
+WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
+cuda eval  PLBartForConditionalGeneration      1.285x p=0.00
+WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
+WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
+cuda eval  PegasusForCausalLM                  1.161x p=0.00
+WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
+cuda eval  PegasusForConditionalGeneration     1.098x p=0.00
+If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
+cuda eval  RobertaForCausalLM                  1.387x p=0.00
+WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
+cuda eval  RobertaForQuestionAnswering         1.355x p=0.00
+WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
+WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
+cuda eval  Speech2Text2ForCausalLM             1.461x p=0.00
+WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
+cuda eval  T5ForConditionalGeneration          1.828x p=0.00
+WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
+cuda eval  T5Small                             1.824x p=0.00
+WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
+cuda eval  TrOCRForCausalLM                    1.200x p=0.00
+WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
+cuda eval  XGLMForCausalLM                     1.512x p=0.00
+WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
+cuda eval  XLNetLMHeadModel                    2.325x p=0.00
+WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
+cuda eval  YituTechConvBert                    1.385x p=0.00
+speedup             gmean=1.37x mean=1.394x
+abs_latency         gmean=29.29x mean=32.529x
+compilation_latency mean=15.707 seconds
+compression_ratio   mean=1.157x
+eager_peak_mem      gmean=3.30x mean=3.983x
+dynamo_peak_mem     gmean=3.04x mean=3.764x
+calls_captured      gmean=582.55x mean=678.652x
+unique_graphs       gmean=3.86x mean=15.609x
+graph_breaks        gmean=3.26x mean=12.283x
+unique_graph_breaks gmean=2.04x mean=2.870x

@@ -1,0 +1,767 @@
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train adv_inception_v3                   PASS
+TIMING: entire_frame_compile:58.5871 backend_compile:38.79503
+Dynamo produced 3 graph(s) covering 883 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train beit_base_patch16_224              WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s4**2, 197) - 0, s4)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s4**2//197 - 197, s4)
+PASS
+TIMING: entire_frame_compile:27.82518 backend_compile:17.4354
+Dynamo produced 3 graph(s) covering 913 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train botnet26t_256                      PASS
+TIMING: entire_frame_compile:17.22373 backend_compile:12.25426
+Dynamo produced 3 graph(s) covering 648 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train cait_m36_384                       PASS
+TIMING: entire_frame_compile:77.00728 backend_compile:60.53101
+Dynamo produced 3 graph(s) covering 2930 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train coat_lite_mini                     PASS
+TIMING: entire_frame_compile:21.84069 backend_compile:16.93932
+Dynamo produced 3 graph(s) covering 955 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train convit_base                        WARNING:common:fp64 golden ref were not generated for convit_base. Setting accuracy check to cosine
+PASS
+TIMING: entire_frame_compile:53.63478 backend_compile:39.7888
+Dynamo produced 59 graph(s) covering 1492 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train convmixer_768_32                   PASS
+TIMING: entire_frame_compile:25.19057 backend_compile:20.28162
+Dynamo produced 2 graph(s) covering 232 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train convnext_base                      WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 4)//4)*(Mod(((s2 - 4)//4)**2/((s2 - 4)//4 + 1) + 2*((s2 - 4)//4)/((s2 - 4)//4 + 1) + 1/((s2 - 4)//4 + 1), 1)) + Mod(((s2 - 4)//4)**2/((s2 - 4)//4 + 1) + 2*((s2 - 4)//4)/((s2 - 4)//4 + 1) + 1/((s2 - 4)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 4)//4 - 1)//2)**2 + 2*(((s2 - 4)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 4)//4 - 1)//2)*(Mod((((s2 - 4)//4 - 1)//2)**2/(((s2 - 4)//4 - 1)//2 + 1) + 2*(((s2 - 4)//4 - 1)//2)/(((s2 - 4)//4 - 1)//2 + 1) + 1/(((s2 - 4)//4 - 1)//2 + 1), 1)) + Mod((((s2 - 4)//4 - 1)//2)**2/(((s2 - 4)//4 - 1)//2 + 1) + 2*(((s2 - 4)//4 - 1)//2)/(((s2 - 4)//4 - 1)//2 + 1) + 1/(((s2 - 4)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2 + 2*((((s2 - 4)//4 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 4)//4 - 1)//2 - 1)//2)*(Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 2*((((s2 - 4)//4 - 1)//2 - 1)//2)/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 1/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1), 1)) + Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 2*((((s2 - 4)//4 - 1)//2 - 1)//2)/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 1/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2 + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)*(Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1), 1)) + Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 4)//4)*(Mod(((s2 - 4)//4)**2/((s2 - 4)//4 + 1) + 2*((s2 - 4)//4)/((s2 - 4)//4 + 1) + 1/((s2 - 4)//4 + 1), 1)) + Mod(((s2 - 4)//4)**2/((s2 - 4)//4 + 1) + 2*((s2 - 4)//4)/((s2 - 4)//4 + 1) + 1/((s2 - 4)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 4)//4 - 1)//2)**2 + 2*(((s2 - 4)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 4)//4 - 1)//2)*(Mod((((s2 - 4)//4 - 1)//2)**2/(((s2 - 4)//4 - 1)//2 + 1) + 2*(((s2 - 4)//4 - 1)//2)/(((s2 - 4)//4 - 1)//2 + 1) + 1/(((s2 - 4)//4 - 1)//2 + 1), 1)) + Mod((((s2 - 4)//4 - 1)//2)**2/(((s2 - 4)//4 - 1)//2 + 1) + 2*(((s2 - 4)//4 - 1)//2)/(((s2 - 4)//4 - 1)//2 + 1) + 1/(((s2 - 4)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2 + 2*((((s2 - 4)//4 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 4)//4 - 1)//2 - 1)//2)*(Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 2*((((s2 - 4)//4 - 1)//2 - 1)//2)/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 1/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1), 1)) + Mod(((((s2 - 4)//4 - 1)//2 - 1)//2)**2/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 2*((((s2 - 4)//4 - 1)//2 - 1)//2)/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1) + 1/((((s2 - 4)//4 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2 + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)*(Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1), 1)) + Mod((((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)**2/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2)/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 4)//4 - 1)//2 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+PASS
+TIMING: entire_frame_compile:161.2267 backend_compile:69.26482
+Dynamo produced 4 graph(s) covering 1678 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train crossvit_9_240                     ERROR:common:
+
+from user code:
+   File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/crossvit.py", line 395, in forward_features
+    x_ = scale_image(x_, ss, self.crop_scale)
+  File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/crossvit.py", line 282, in scale_image
+    x = torch.nn.functional.interpolate(x, size=ss, mode='bicubic', align_corners=False)
+
+Set torch._dynamo.config.verbose=True for more information
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1155, in run_node
+    return node.target(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/nn/functional.py", line 3966, in interpolate
+    return torch._C._nn.upsample_bicubic2d(input, output_size, align_corners, scale_factors)
+RuntimeError: Cannot call sizes() on tensor with symbolic sizes/strides
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1114, in get_fake_value
+    return wrap_fake_exception(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 776, in wrap_fake_exception
+    return fn()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1115, in <lambda>
+    lambda: run_node(tx.output, node, args, kwargs, nnmodule)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1167, in run_node
+    raise RuntimeError(
+RuntimeError: Failed running call_function <function interpolate at 0x7f230e8b15a0>(*(FakeTensor(FakeTensor(..., device='meta', size=(s0, 3, 240, 240)), cuda:0),), **{'size': (224, 224), 'mode': 'bicubic', 'align_corners': False}):
+Cannot call sizes() on tensor with symbolic sizes/strides
+(scroll up for backtrace)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1238, in check_accuracy
+    new_result = optimized_model_iter_fn(model_copy, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 211, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1120, in run_n_iterations
+    self.model_iter_fn(mod, inputs, collect_outputs=False)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 320, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 321, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 323, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1488, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 332, in catch_errors
+    return callback(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 403, in _convert_frame
+    result = inner_convert(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 103, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 261, in _convert_frame_assert
+    return _compile(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 153, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 323, in _compile
+    out_code = transform_code_object(code, transform)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/bytecode_transformation.py", line 341, in transform_code_object
+    transformations(instructions, code_options)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 310, in transform
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1692, in run
+    super().run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 285, in call_function
+    return super().call_function(tx, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 255, in call_function
+    return super(UserFunctionVariable, self).call_function(tx, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 88, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 255, in call_function
+    return super(UserFunctionVariable, self).call_function(tx, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 88, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1023, in CALL_FUNCTION_KW
+    self.call_function(fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/torch.py", line 471, in call_function
+    tensor_variable = wrap_fx_proxy(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/builder.py", line 756, in wrap_fx_proxy
+    return wrap_fx_proxy_cls(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/builder.py", line 791, in wrap_fx_proxy_cls
+    example_value = get_fake_value(proxy.node, tx)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1134, in get_fake_value
+    raise TorchRuntimeError() from e
+torch._dynamo.exc.TorchRuntimeError: 
+
+from user code:
+   File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/crossvit.py", line 395, in forward_features
+    x_ = scale_image(x_, ss, self.crop_scale)
+  File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/crossvit.py", line 282, in scale_image
+    x = torch.nn.functional.interpolate(x, size=ss, mode='bicubic', align_corners=False)
+
+Set torch._dynamo.config.verbose=True for more information
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+
+TorchDynamo optimized model failed to run because of following error
+FAIL
+TIMING: entire_frame_compile:0.42326
+Dynamo produced 0 graph(s) covering 0 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train cspdarknet53                       PASS
+TIMING: entire_frame_compile:28.86343 backend_compile:20.42766
+Dynamo produced 3 graph(s) covering 846 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train deit_base_distilled_patch16_224    PASS
+TIMING: entire_frame_compile:20.89304 backend_compile:15.0703
+Dynamo produced 3 graph(s) covering 759 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train dla102                             PASS
+TIMING: entire_frame_compile:54.49653 backend_compile:41.02999
+Dynamo produced 3 graph(s) covering 1051 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train dm_nfnet_f0                        PASS
+TIMING: entire_frame_compile:78.42656 backend_compile:53.93916
+Dynamo produced 4 graph(s) covering 1968 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train dpn107                             PASS
+TIMING: entire_frame_compile:84.32933 backend_compile:64.8533
+Dynamo produced 3 graph(s) covering 1412 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train eca_botnext26ts_256                PASS
+TIMING: entire_frame_compile:21.78949 backend_compile:16.26512
+Dynamo produced 3 graph(s) covering 708 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train eca_halonext26ts                   WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s3**2, 64) - 0, s3)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 + 1)//(s2/8))**2, (((128*s0)//((s0*((s2 - 1)//2)**2 + 2*s0*((s2 - 1)//2) + s0)//(s2**2/32)))*(((s2 - 1)//2 + 1)//(s2/8))**2*((s0*((s2 - 1)//2)**2 + 2*s0*((s2 - 1)//2) + s0)//(s2**2/32)))//(128*s0)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 + 1)//(s2/8))**2, 4) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 + 1)//(s2/8))**2//4 - 4, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(4*(Mod((((s2 - 1)//2 + 1)//(s2/8))**2//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 + 1)//(s2/8))**2, (((128*s0)//((s0*((s2 - 1)//2)**2 + 2*s0*((s2 - 1)//2) + s0)//(s2**2/32)))*(((s2 - 1)//2 + 1)//(s2/8))**2*((s0*((s2 - 1)//2)**2 + 2*s0*((s2 - 1)//2) + s0)//(s2**2/32)))//(128*s0)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 + 1)//(s2/8))**2, 4) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 + 1)//(s2/8))**2//4 - 4, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(4*(Mod((((s2 - 1)//2 + 1)//(s2/8))**2//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((128*s0)//((s0*((s2 - 1)//2)**2 + 2*s0*((s2 - 1)//2) + s0)//(s2**2/32)))*((((s2 - 1)//2)**2 + 2*((s2 - 1)//2) + 1)//(s2**2/32)), 128) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s3**2, 16) - 0, s3)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s3**2, 64) - 0, s3)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s0**3, 64) - 0, s0)
+PASS
+TIMING: entire_frame_compile:196.25946 backend_compile:46.46808
+Dynamo produced 35 graph(s) covering 673 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train ese_vovnet19b_dw                   PASS
+TIMING: entire_frame_compile:14.41296 backend_compile:8.17879
+Dynamo produced 3 graph(s) covering 344 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train fbnetc_100                         PASS
+TIMING: entire_frame_compile:32.84302 backend_compile:23.51689
+Dynamo produced 3 graph(s) covering 775 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train fbnetv3_b                          PASS
+TIMING: entire_frame_compile:54.29945 backend_compile:38.50333
+Dynamo produced 3 graph(s) covering 1280 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gernet_l                           [2023-01-23 04:32:18,090] torch._dynamo.utils: [ERROR] RMSE (res-fp64): 0.05851, (ref-fp64): 0.00663 and shape=torch.Size([160])
+[2023-01-23 04:32:18,091] torch._dynamo.utils: [ERROR] Accuracy failed for key name stages.2.2.conv1_1x1.bn.running_var
+FAIL
+TIMING: entire_frame_compile:29.03515 backend_compile:21.17602
+Dynamo produced 3 graph(s) covering 753 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train ghostnet_100                       PASS
+TIMING: entire_frame_compile:50.76631 backend_compile:39.43584
+Dynamo produced 3 graph(s) covering 870 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gluon_inception_v3                 PASS
+TIMING: entire_frame_compile:57.20212 backend_compile:38.66749
+Dynamo produced 3 graph(s) covering 883 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gluon_xception65                   PASS
+TIMING: entire_frame_compile:54.37689 backend_compile:41.39923
+Dynamo produced 3 graph(s) covering 1150 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gmixer_24_224                      PASS
+TIMING: entire_frame_compile:28.4192 backend_compile:21.95621
+Dynamo produced 3 graph(s) covering 1228 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train gmlp_s16_224                       PASS
+TIMING: entire_frame_compile:27.76012 backend_compile:20.86159
+Dynamo produced 3 graph(s) covering 1108 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train hrnet_w18                          PASS
+TIMING: entire_frame_compile:138.36762 backend_compile:113.30291
+Dynamo produced 2 graph(s) covering 1371 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train inception_v3                       PASS
+TIMING: entire_frame_compile:56.55907 backend_compile:38.19029
+Dynamo produced 3 graph(s) covering 883 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train jx_nest_base                       PASS
+TIMING: entire_frame_compile:48.58786 backend_compile:38.74859
+Dynamo produced 3 graph(s) covering 1850 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train lcnet_050                          PASS
+TIMING: entire_frame_compile:22.77428 backend_compile:16.99279
+Dynamo produced 3 graph(s) covering 352 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train levit_128                          ERROR:common:
+
+from user code:
+   File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/levit.py", line 293, in forward
+    q, k, v = self.qkv(x).view(
+  File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/levit.py", line 172, in forward
+    return self.bn(x.flatten(0, 1)).reshape_as(x)
+
+Set torch._dynamo.config.verbose=True for more information
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1157, in run_node
+    return getattr(args[0], node.target)(*args[1:], **kwargs)
+RuntimeError: Cannot call sizes() on tensor with symbolic sizes/strides
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1114, in get_fake_value
+    return wrap_fake_exception(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 776, in wrap_fake_exception
+    return fn()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1115, in <lambda>
+    lambda: run_node(tx.output, node, args, kwargs, nnmodule)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1167, in run_node
+    raise RuntimeError(
+RuntimeError: Failed running call_method reshape_as(*(FakeTensor(FakeTensor(..., device='meta',
+           size=(s0*((s2 - 1)//16)**2 + 2*s0*((s2 - 1)//16) + s0, 256),
+           grad_fn=<NativeBatchNormLegitBackward0>), cuda:0), FakeTensor(FakeTensor(..., device='meta',
+           size=(s0, ((s2 - 1)//16)**2 + 2*((s2 - 1)//16) + 1, 256),
+           grad_fn=<ViewBackward0>), cuda:0)), **{}):
+Cannot call sizes() on tensor with symbolic sizes/strides
+(scroll up for backtrace)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1238, in check_accuracy
+    new_result = optimized_model_iter_fn(model_copy, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 211, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1120, in run_n_iterations
+    self.model_iter_fn(mod, inputs, collect_outputs=False)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 320, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 321, in <graph break in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/timm_models.py", line 323, in <graph break in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1488, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 332, in catch_errors
+    return callback(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 403, in _convert_frame
+    result = inner_convert(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 103, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 261, in _convert_frame_assert
+    return _compile(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 153, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 323, in _compile
+    out_code = transform_code_object(code, transform)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/bytecode_transformation.py", line 341, in transform_code_object
+    transformations(instructions, code_options)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 310, in transform
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1692, in run
+    super().run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 285, in call_function
+    return super().call_function(tx, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 255, in call_function
+    return super(UserFunctionVariable, self).call_function(tx, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/functions.py", line 88, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/nn_module.py", line 184, in call_function
+    tx.call_function(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/nn_module.py", line 229, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/nn_module.py", line 229, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/nn_module.py", line 229, in call_function
+    return tx.inline_user_function_return(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 471, in inline_user_function_return
+    result = InliningInstructionTranslator.inline_call(self, fn, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1770, in inline_call
+    return cls.inline_call_(parent, func, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1826, in inline_call_
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 538, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 501, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 307, in wrapper
+    return inner_fn(self, inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 974, in CALL_FUNCTION
+    self.call_function(fn, args, {})
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 435, in call_function
+    self.push(fn.call_function(self, args, kwargs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/misc.py", line 668, in call_function
+    return self.obj.call_method(tx, self.name, args, kwargs).add_options(self)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/tensor.py", line 388, in call_method
+    return wrap_fx_proxy(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/builder.py", line 756, in wrap_fx_proxy
+    return wrap_fx_proxy_cls(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/variables/builder.py", line 791, in wrap_fx_proxy_cls
+    example_value = get_fake_value(proxy.node, tx)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 1134, in get_fake_value
+    raise TorchRuntimeError() from e
+torch._dynamo.exc.TorchRuntimeError: 
+
+from user code:
+   File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/levit.py", line 293, in forward
+    q, k, v = self.qkv(x).view(
+  File "/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/timm/models/levit.py", line 172, in forward
+    return self.bn(x.flatten(0, 1)).reshape_as(x)
+
+Set torch._dynamo.config.verbose=True for more information
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+
+TorchDynamo optimized model failed to run because of following error
+FAIL
+TIMING: entire_frame_compile:0.39664
+Dynamo produced 0 graph(s) covering 0 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mixer_b16_224                      PASS
+TIMING: entire_frame_compile:14.64114 backend_compile:10.18367
+Dynamo produced 3 graph(s) covering 532 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mixnet_l                           PASS
+TIMING: entire_frame_compile:61.21801 backend_compile:47.02539
+Dynamo produced 3 graph(s) covering 1285 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mnasnet_100                        PASS
+TIMING: entire_frame_compile:26.37092 backend_compile:18.46229
+Dynamo produced 3 graph(s) covering 618 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilenetv2_100                    PASS
+TIMING: entire_frame_compile:33.37072 backend_compile:24.48949
+Dynamo produced 3 graph(s) covering 618 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilenetv3_large_100              PASS
+TIMING: entire_frame_compile:33.1855 backend_compile:23.70872
+Dynamo produced 3 graph(s) covering 661 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train mobilevit_s                        PASS
+TIMING: entire_frame_compile:31.05893 backend_compile:23.19872
+Dynamo produced 3 graph(s) covering 1061 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train nfnet_l0                           PASS
+TIMING: entire_frame_compile:31.08149 backend_compile:23.10085
+Dynamo produced 3 graph(s) covering 990 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train pit_b_224                          WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 14)//7)*(Mod(((s2 - 14)//7)**2/((s2 - 14)//7 + 1) + 2*((s2 - 14)//7)/((s2 - 14)//7 + 1) + 1/((s2 - 14)//7 + 1), 1)) + Mod(((s2 - 14)//7)**2/((s2 - 14)//7 + 1) + 2*((s2 - 14)//7)/((s2 - 14)//7 + 1) + 1/((s2 - 14)//7 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 14)//14)*(Mod(((s2 - 14)//14)**2/((s2 - 14)//14 + 1) + 2*((s2 - 14)//14)/((s2 - 14)//14 + 1) + 1/((s2 - 14)//14 + 1), 1)) + Mod(((s2 - 14)//14)**2/((s2 - 14)//14 + 1) + 2*((s2 - 14)//14)/((s2 - 14)//14 + 1) + 1/((s2 - 14)//14 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 14)//28)*(Mod(((s2 - 14)//28)**2/((s2 - 14)//28 + 1) + 2*((s2 - 14)//28)/((s2 - 14)//28 + 1) + 1/((s2 - 14)//28 + 1), 1)) + Mod(((s2 - 14)//28)**2/((s2 - 14)//28 + 1) + 2*((s2 - 14)//28)/((s2 - 14)//28 + 1) + 1/((s2 - 14)//28 + 1), 1) - 0, s2)
+PASS
+TIMING: entire_frame_compile:52.20606 backend_compile:27.57655
+Dynamo produced 3 graph(s) covering 856 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train pnasnet5large                      PASS
+TIMING: entire_frame_compile:471.44093 backend_compile:341.26471
+Dynamo produced 3 graph(s) covering 4198 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train poolformer_m36                     WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//4)*(Mod(((s2 - 3)//4)**2/((s2 - 3)//4 + 1) + 2*((s2 - 3)//4)/((s2 - 3)//4 + 1) + 1/((s2 - 3)//4 + 1), 1)) + Mod(((s2 - 3)//4)**2/((s2 - 3)//4 + 1) + 2*((s2 - 3)//4)/((s2 - 3)//4 + 1) + 1/((s2 - 3)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//8)*(Mod(((s2 - 3)//8)**2/((s2 - 3)//8 + 1) + 2*((s2 - 3)//8)/((s2 - 3)//8 + 1) + 1/((s2 - 3)//8 + 1), 1)) + Mod(((s2 - 3)//8)**2/((s2 - 3)//8 + 1) + 2*((s2 - 3)//8)/((s2 - 3)//8 + 1) + 1/((s2 - 3)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//16)*(Mod(((s2 - 3)//16)**2/((s2 - 3)//16 + 1) + 2*((s2 - 3)//16)/((s2 - 3)//16 + 1) + 1/((s2 - 3)//16 + 1), 1)) + Mod(((s2 - 3)//16)**2/((s2 - 3)//16 + 1) + 2*((s2 - 3)//16)/((s2 - 3)//16 + 1) + 1/((s2 - 3)//16 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//32)*(Mod(((s2 - 3)//32)**2/((s2 - 3)//32 + 1) + 2*((s2 - 3)//32)/((s2 - 3)//32 + 1) + 1/((s2 - 3)//32 + 1), 1)) + Mod(((s2 - 3)//32)**2/((s2 - 3)//32 + 1) + 2*((s2 - 3)//32)/((s2 - 3)//32 + 1) + 1/((s2 - 3)//32 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//4)*(Mod(((s2 - 3)//4)**2/((s2 - 3)//4 + 1) + 2*((s2 - 3)//4)/((s2 - 3)//4 + 1) + 1/((s2 - 3)//4 + 1), 1)) + Mod(((s2 - 3)//4)**2/((s2 - 3)//4 + 1) + 2*((s2 - 3)//4)/((s2 - 3)//4 + 1) + 1/((s2 - 3)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//8)*(Mod(((s2 - 3)//8)**2/((s2 - 3)//8 + 1) + 2*((s2 - 3)//8)/((s2 - 3)//8 + 1) + 1/((s2 - 3)//8 + 1), 1)) + Mod(((s2 - 3)//8)**2/((s2 - 3)//8 + 1) + 2*((s2 - 3)//8)/((s2 - 3)//8 + 1) + 1/((s2 - 3)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//16)*(Mod(((s2 - 3)//16)**2/((s2 - 3)//16 + 1) + 2*((s2 - 3)//16)/((s2 - 3)//16 + 1) + 1/((s2 - 3)//16 + 1), 1)) + Mod(((s2 - 3)//16)**2/((s2 - 3)//16 + 1) + 2*((s2 - 3)//16)/((s2 - 3)//16 + 1) + 1/((s2 - 3)//16 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 3)//32)*(Mod(((s2 - 3)//32)**2/((s2 - 3)//32 + 1) + 2*((s2 - 3)//32)/((s2 - 3)//32 + 1) + 1/((s2 - 3)//32 + 1), 1)) + Mod(((s2 - 3)//32)**2/((s2 - 3)//32 + 1) + 2*((s2 - 3)//32)/((s2 - 3)//32 + 1) + 1/((s2 - 3)//32 + 1), 1) - 0, s2)
+PASS
+TIMING: entire_frame_compile:138.83805 backend_compile:82.26201
+Dynamo produced 4 graph(s) covering 2136 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train regnety_002                        PASS
+TIMING: entire_frame_compile:26.54633 backend_compile:18.88245
+Dynamo produced 3 graph(s) covering 738 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train repvgg_a2                          PASS
+TIMING: entire_frame_compile:26.82492 backend_compile:19.56011
+Dynamo produced 3 graph(s) covering 731 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2net101_26w_4s                  PASS
+TIMING: entire_frame_compile:95.23827 backend_compile:77.44102
+Dynamo produced 3 graph(s) covering 1829 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2net50_14w_8s                   PASS
+TIMING: entire_frame_compile:94.37284 backend_compile:78.60888
+Dynamo produced 3 graph(s) covering 1599 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train res2next50                         PASS
+TIMING: entire_frame_compile:48.13305 backend_compile:38.25197
+Dynamo produced 3 graph(s) covering 911 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train resmlp_12_224                      PASS
+TIMING: entire_frame_compile:10.85432 backend_compile:7.86034
+Dynamo produced 3 graph(s) covering 508 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train resnest101e                        PASS
+TIMING: entire_frame_compile:74.70624 backend_compile:58.03681
+Dynamo produced 3 graph(s) covering 2320 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train rexnet_100                         PASS
+TIMING: entire_frame_compile:44.37813 backend_compile:31.47644
+Dynamo produced 3 graph(s) covering 856 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train sebotnet33ts_256                   PASS
+TIMING: entire_frame_compile:23.03398 backend_compile:18.00485
+Dynamo produced 2 graph(s) covering 606 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train selecsls42b                        PASS
+TIMING: entire_frame_compile:20.75576 backend_compile:14.61726
+Dynamo produced 3 graph(s) covering 384 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train spnasnet_100                       PASS
+TIMING: entire_frame_compile:32.41445 backend_compile:23.15036
+Dynamo produced 3 graph(s) covering 762 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train swin_base_patch4_window7_224       WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(s3**2, 49) - 0, s3)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s3**2//49 - 49, s3)
+PASS
+TIMING: entire_frame_compile:111.52448 backend_compile:76.93595
+Dynamo produced 3 graph(s) covering 2671 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train swsl_resnext101_32x16d             PASS
+TIMING: entire_frame_compile:47.30133 backend_compile:36.73991
+Dynamo produced 3 graph(s) covering 1041 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tf_efficientnet_b0                 PASS
+TIMING: entire_frame_compile:96.85125 backend_compile:72.5946
+Dynamo produced 4 graph(s) covering 1512 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tf_mixnet_l                        PASS
+TIMING: entire_frame_compile:176.83847 backend_compile:129.37093
+Dynamo produced 4 graph(s) covering 3038 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tinynet_a                          PASS
+TIMING: entire_frame_compile:34.88761 backend_compile:24.83199
+Dynamo produced 3 graph(s) covering 937 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train tnt_s_patch16_224                  PASS
+TIMING: entire_frame_compile:43.09756 backend_compile:33.36722
+Dynamo produced 3 graph(s) covering 1658 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train twins_pcpvt_base                   WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1, s2//4) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(64*s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(128*s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//4)*((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((s2//4)*((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4)), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1, s2//8) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(128*s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(256*s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//8)*((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1, s2//16) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(320*s0*(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(640*s0*(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//16)*((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(1024*s0*(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2 + 1, s2//32) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//32)*((((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2 + 1)//(s2//32)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(1024*s0*(Mod((s2//32)*((((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2 + 1)//(s2//32)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1, s2//4) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(64*s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(128*s0*(Mod(((s2//4 - 8)//8)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8) + (s2//4 - 8)//8 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 8)//8, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//4)*((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((s2//4)*((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4)), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1, s2//8) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(128*s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(256*s0*(Mod(((s2//8 - 4)//4)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4) + (s2//8 - 4)//4 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 4)//4, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((s2//8)*((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8)), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1, s2//16) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(320*s0*(Mod(((s2//16 - 2)//2)*(((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2) + (s2//16 - 2)//2 + ((((s2//8 - 2)//2)*(((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2) + (s2//8 - 2)//2 + ((((s2//4 - 2)//2)*(((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2) + (s2//4 - 2)//2 + ((((s2 - 4)//4)**2 + 2*((s2 - 4)//4) + 1)//(s2//4) - 2)//2 + 1)//(s2//8) - 2)//2 + 1)//(s2//16) - 2)//2, 1)) - 0, s2)
+TIMEOUT
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train visformer_small                    WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(1152*s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 1)//2 - 3)//4 - 1)//2)*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1)) + Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(2304*s0*(Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2 + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)*(Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1), 1)) + Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(1152*s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 1)//2 - 3)//4 - 1)//2)*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1)) + Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(2304*s0*(Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2 + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)*(Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1), 1)) + Mod((((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)**2/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 2*(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2)/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1) + 1/(((((s2 - 1)//2 - 3)//4 - 1)//2 - 1)//2 + 1), 1) - 0, s2)
+PASS
+TIMING: entire_frame_compile:109.66015 backend_compile:44.43563
+Dynamo produced 4 graph(s) covering 976 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train vit_base_patch16_224               PASS
+TIMING: entire_frame_compile:19.25311 backend_compile:14.9968
+Dynamo produced 3 graph(s) covering 748 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train volo_d1_224                        WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//4)**2 + 2*(((s2 - 1)//2 - 3)//4), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//4)*(Mod((((s2 - 1)//2 - 3)//4)**2/(((s2 - 1)//2 - 3)//4 + 1) + 2*(((s2 - 1)//2 - 3)//4)/(((s2 - 1)//2 - 3)//4 + 1) + 1/(((s2 - 1)//2 - 3)//4 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//4)**2/(((s2 - 1)//2 - 3)//4 + 1) + 2*(((s2 - 1)//2 - 3)//4)/(((s2 - 1)//2 - 3)//4 + 1) + 1/(((s2 - 1)//2 - 3)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//8)*(Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8) + 1, ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 1)//2 - 3)//4 - 1)//2)*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1)) + Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(384*s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*s0*(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, (((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8) + 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, ((s2 - 1)//2 - 3)//8 + 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//8)*(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2//(((s2 - 1)//2 - 3)//8 + 1)) + ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2//(((s2 - 1)//2 - 3)//8 + 1), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//8)*(Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//4)**2 + 2*(((s2 - 1)//2 - 3)//4), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//4)*(Mod((((s2 - 1)//2 - 3)//4)**2/(((s2 - 1)//2 - 3)//4 + 1) + 2*(((s2 - 1)//2 - 3)//4)/(((s2 - 1)//2 - 3)//4 + 1) + 1/(((s2 - 1)//2 - 3)//4 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//4)**2/(((s2 - 1)//2 - 3)//4 + 1) + 2*(((s2 - 1)//2 - 3)//4)/(((s2 - 1)//2 - 3)//4 + 1) + 1/(((s2 - 1)//2 - 3)//4 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//8)*(Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8) + 1, ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*(Mod((((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((((s2 - 1)//2 - 3)//4 - 1)//2)*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1)) + Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 2*((((s2 - 1)//2 - 3)//4 - 1)//2)/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1) + 1/((((s2 - 1)//2 - 3)//4 - 1)//2 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(384*s0*(Mod(((((s2 - 1)//2 - 3)//4 - 1)//2)**2 + 2*((((s2 - 1)//2 - 3)//4 - 1)//2), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*s0*(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, (((s2 - 1)//2 - 3)//8)**2 + 2*(((s2 - 1)//2 - 3)//8) + 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(6*(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(Mod(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2, ((s2 - 1)//2 - 3)//8 + 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(s0*(Mod((((s2 - 1)//2 - 3)//8)*(ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2//(((s2 - 1)//2 - 3)//8 + 1)) + ceiling((((s2 - 1)//2 - 3)//4)/2 + 1/2)**2//(((s2 - 1)//2 - 3)//8 + 1), 1)) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve((((s2 - 1)//2 - 3)//8)*(Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1)) + Mod((((s2 - 1)//2 - 3)//8)**2/(((s2 - 1)//2 - 3)//8 + 1) + 2*(((s2 - 1)//2 - 3)//8)/(((s2 - 1)//2 - 3)//8 + 1) + 1/(((s2 - 1)//2 - 3)//8 + 1), 1) - 0, s2)
+[2023-01-23 05:51:10,443] torch._dynamo.utils: [ERROR] RMSE (res-fp64): 0.00361, (ref-fp64): 0.00018 and shape=torch.Size([64, 3, 7, 7])
+[2023-01-23 05:51:10,443] torch._dynamo.utils: [ERROR] Accuracy failed for key name patch_embed.conv.0.weight.grad
+FAIL
+TIMING: entire_frame_compile:347.18235 backend_compile:200.14379
+Dynamo produced 4 graph(s) covering 2070 ops
+/data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: /data/home/voz/miniconda/envs/torch4/lib/python3.10/site-packages/torchvision-0.15.0a0+93df9a5-py3.10-linux-x86_64.egg/torchvision/image.so: undefined symbol: _ZN3c104cuda29c10_cuda_check_implementationEPKcS2_ib
+  warn(f"Failed to load image Python extension: {e}")
+cuda train xcit_large_24_p8_224               WARNING:common:fp64 golden ref were not generated for xcit_large_24_p8_224. Setting accuracy check to cosine
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 1)//8)*(Mod(((s2 - 1)//8)**2/((s2 - 1)//8 + 1) + 2*((s2 - 1)//8)/((s2 - 1)//8 + 1) + 1/((s2 - 1)//8 + 1), 1)) + Mod(((s2 - 1)//8)**2/((s2 - 1)//8 + 1) + 2*((s2 - 1)//8)/((s2 - 1)//8 + 1) + 1/((s2 - 1)//8 + 1), 1) - 0, s2)
+WARNING:torch.fx.experimental.symbolic_shapes:RecursionError in sympy.solve(((s2 - 1)//8)*(Mod(((s2 - 1)//8)**2/((s2 - 1)//8 + 1) + 2*((s2 - 1)//8)/((s2 - 1)//8 + 1) + 1/((s2 - 1)//8 + 1), 1)) + Mod(((s2 - 1)//8)**2/((s2 - 1)//8 + 1) + 2*((s2 - 1)//8)/((s2 - 1)//8 + 1) + 1/((s2 - 1)//8 + 1), 1) - 0, s2)
+[2023-01-23 05:55:04,432] torch._dynamo.utils: [WARNING] Similarity score=0.9628373980522156
+[2023-01-23 05:55:04,432] torch._dynamo.utils: [ERROR] Accuracy failed for key name patch_embed.proj.0.0.weight.grad
+FAIL
+TIMING: entire_frame_compile:206.01051 backend_compile:160.95521
+Dynamo produced 4 graph(s) covering 4120 ops

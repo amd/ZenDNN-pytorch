@@ -1,0 +1,157 @@
+cuda train AlbertForMaskedLM                  PASS
+TIMING: entire_frame_compile:18.47555 backend_compile:14.73068
+Dynamo produced 2 graph(s) covering 645 ops
+cuda train AlbertForQuestionAnswering         PASS
+TIMING: entire_frame_compile:18.3174 backend_compile:14.61519
+Dynamo produced 2 graph(s) covering 642 ops
+cuda train AllenaiLongformerBase              [2023-01-23 03:34:37,621] torch._dynamo.variables.torch: [WARNING] Calling <built-in method div of type object at 0x7f7fdb7a17a0> on only torch.SymInt arguments is not yet supported.
+To support this behavior, we need to allow const-propping tensors that store symint data.
+For now, dynamo will explicitly graph break when it encounters user code with this behavior.
+
+[2023-01-23 03:34:40,113] torch._dynamo.variables.torch: [WARNING] Calling <built-in method div of type object at 0x7f7fdb7a17a0> on only torch.SymInt arguments is not yet supported.
+To support this behavior, we need to allow const-propping tensors that store symint data.
+For now, dynamo will explicitly graph break when it encounters user code with this behavior.
+
+PASS
+TIMING: entire_frame_compile:30.93401 backend_compile:17.78702
+Dynamo produced 67 graph(s) covering 915 ops
+cuda train BartForCausalLM                    PASS
+TIMING: entire_frame_compile:20.87834 backend_compile:12.50076
+Dynamo produced 28 graph(s) covering 814 ops
+cuda train BartForConditionalGeneration       PASS
+TIMING: entire_frame_compile:49.47723 backend_compile:32.73145
+Dynamo produced 78 graph(s) covering 2171 ops
+cuda train BertForMaskedLM                    PASS
+TIMING: entire_frame_compile:20.45156 backend_compile:15.18776
+Dynamo produced 2 graph(s) covering 973 ops
+cuda train BertForQuestionAnswering           PASS
+TIMING: entire_frame_compile:20.23547 backend_compile:15.04055
+Dynamo produced 2 graph(s) covering 977 ops
+cuda train BlenderbotForCausalLM              PASS
+TIMING:
+Dynamo produced 0 graph(s) covering 0 ops
+cuda train BlenderbotSmallForCausalLM         PASS
+TIMING: entire_frame_compile:17.1944 backend_compile:9.57143
+Dynamo produced 20 graph(s) covering 547 ops
+cuda train BlenderbotSmallForConditionalGeneration PASS
+TIMING: entire_frame_compile:38.43947 backend_compile:24.57102
+Dynamo produced 53 graph(s) covering 1444 ops
+cuda train CamemBert                          PASS
+TIMING: entire_frame_compile:20.20301 backend_compile:15.07936
+Dynamo produced 2 graph(s) covering 978 ops
+cuda train DebertaForMaskedLM                 PASS
+TIMING: entire_frame_compile:31.21488 backend_compile:19.40242
+Dynamo produced 54 graph(s) covering 1249 ops
+cuda train DebertaForQuestionAnswering        PASS
+TIMING: entire_frame_compile:30.7835 backend_compile:19.31617
+Dynamo produced 54 graph(s) covering 1253 ops
+cuda train DebertaV2ForMaskedLM               PASS
+TIMING:
+Dynamo produced 0 graph(s) covering 0 ops
+cuda train DebertaV2ForQuestionAnswering      PASS
+TIMING: entire_frame_compile:80.67633 backend_compile:44.88801
+Dynamo produced 102 graph(s) covering 2406 ops
+WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
+cuda train DistilBertForMaskedLM              PASS
+TIMING: entire_frame_compile:10.64771 backend_compile:7.86713
+Dynamo produced 2 graph(s) covering 437 ops
+WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
+cuda train DistilBertForQuestionAnswering     PASS
+TIMING: entire_frame_compile:10.63769 backend_compile:7.89103
+Dynamo produced 2 graph(s) covering 441 ops
+cuda train DistillGPT2                        PASS
+TIMING: entire_frame_compile:15.1686 backend_compile:8.77135
+Dynamo produced 32 graph(s) covering 623 ops
+If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
+cuda train ElectraForCausalLM                 PASS
+TIMING: entire_frame_compile:21.02422 backend_compile:15.40478
+Dynamo produced 5 graph(s) covering 981 ops
+cuda train ElectraForQuestionAnswering        PASS
+TIMING: entire_frame_compile:20.28849 backend_compile:15.06216
+Dynamo produced 2 graph(s) covering 981 ops
+cuda train GPT2ForSequenceClassification      PASS
+TIMING: entire_frame_compile:28.98125 backend_compile:17.08313
+Dynamo produced 63 graph(s) covering 1234 ops
+cuda train GoogleFnet                         PASS
+TIMING: entire_frame_compile:13.09283 backend_compile:8.96145
+Dynamo produced 28 graph(s) covering 429 ops
+cuda train LayoutLMForMaskedLM                PASS
+TIMING: entire_frame_compile:21.06078 backend_compile:15.48289
+Dynamo produced 2 graph(s) covering 1005 ops
+cuda train LayoutLMForSequenceClassification  PASS
+TIMING: entire_frame_compile:20.59556 backend_compile:15.07304
+Dynamo produced 3 graph(s) covering 1001 ops
+WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
+cuda train M2M100ForConditionalGeneration     PASS
+TIMING: entire_frame_compile:63.30332 backend_compile:37.11577
+Dynamo produced 102 graph(s) covering 2192 ops
+cuda train MBartForCausalLM                   PASS
+TIMING: entire_frame_compile:20.7122 backend_compile:12.70876
+Dynamo produced 40 graph(s) covering 818 ops
+cuda train MBartForConditionalGeneration      PASS
+TIMING: entire_frame_compile:50.46872 backend_compile:33.26531
+Dynamo produced 102 graph(s) covering 2183 ops
+WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
+cuda train MT5ForConditionalGeneration        PASS
+TIMING: entire_frame_compile:37.66885 backend_compile:29.77575
+Dynamo produced 2 graph(s) covering 1660 ops
+If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
+cuda train MegatronBertForCausalLM            PASS
+TIMING: entire_frame_compile:43.14436 backend_compile:31.39409
+Dynamo produced 2 graph(s) covering 1900 ops
+cuda train MegatronBertForQuestionAnswering   PASS
+TIMING: entire_frame_compile:42.31132 backend_compile:30.59251
+Dynamo produced 2 graph(s) covering 1900 ops
+cuda train MobileBertForMaskedLM              PASS
+TIMING: entire_frame_compile:55.01955 backend_compile:43.32977
+Dynamo produced 1 graph(s) covering 1834 ops
+cuda train MobileBertForQuestionAnswering     PASS
+TIMING: entire_frame_compile:55.27215 backend_compile:43.50511
+Dynamo produced 1 graph(s) covering 1841 ops
+cuda train OPTForCausalLM                     PASS
+TIMING: entire_frame_compile:22.72034 backend_compile:13.26451
+Dynamo produced 40 graph(s) covering 866 ops
+cuda train PLBartForCausalLM                  PASS
+TIMING: entire_frame_compile:12.5186 backend_compile:7.26977
+Dynamo produced 16 graph(s) covering 424 ops
+cuda train PLBartForConditionalGeneration     PASS
+TIMING: entire_frame_compile:32.7707 backend_compile:18.5347
+Dynamo produced 42 graph(s) covering 1120 ops
+WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
+cuda train PegasusForCausalLM                 PASS
+TIMING: entire_frame_compile:24.65331 backend_compile:14.25044
+Dynamo produced 40 graph(s) covering 813 ops
+WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
+cuda train PegasusForConditionalGeneration    PASS
+TIMING: entire_frame_compile:47.53675 backend_compile:33.18409
+Dynamo produced 101 graph(s) covering 1140 ops
+If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
+cuda train RobertaForCausalLM                 PASS
+TIMING: entire_frame_compile:20.75169 backend_compile:15.26719
+Dynamo produced 2 graph(s) covering 982 ops
+cuda train RobertaForQuestionAnswering        PASS
+TIMING: entire_frame_compile:20.32381 backend_compile:15.09255
+Dynamo produced 2 graph(s) covering 982 ops
+WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
+cuda train Speech2Text2ForCausalLM            PASS
+TIMING: entire_frame_compile:12.16912 backend_compile:7.40073
+Dynamo produced 16 graph(s) covering 436 ops
+cuda train T5ForConditionalGeneration         PASS
+TIMING: entire_frame_compile:25.93148 backend_compile:20.53223
+Dynamo produced 2 graph(s) covering 1145 ops
+cuda train T5Small                            PASS
+TIMING: entire_frame_compile:25.76829 backend_compile:20.34314
+Dynamo produced 2 graph(s) covering 1145 ops
+cuda train TrOCRForCausalLM                   PASS
+TIMING: entire_frame_compile:23.38791 backend_compile:14.09972
+Dynamo produced 28 graph(s) covering 826 ops
+WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
+cuda train XGLMForCausalLM                    PASS
+TIMING: entire_frame_compile:45.15677 backend_compile:28.65793
+Dynamo produced 76 graph(s) covering 1617 ops
+cuda train XLNetLMHeadModel                   PASS
+TIMING: entire_frame_compile:69.0758 backend_compile:54.9446
+Dynamo produced 5 graph(s) covering 1738 ops
+cuda train YituTechConvBert                   PASS
+TIMING: entire_frame_compile:32.48148 backend_compile:24.52139
+Dynamo produced 5 graph(s) covering 1415 ops

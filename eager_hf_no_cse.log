@@ -1,0 +1,113 @@
+WARNING:__main__:Running smaller batch size=4 for AlbertForMaskedLM, orig batch_size=8
+cuda train AlbertForMaskedLM                   1.000x SAME
+WARNING:__main__:Running smaller batch size=4 for AlbertForQuestionAnswering, orig batch_size=8
+cuda train AlbertForQuestionAnswering          0.999x p=0.05
+WARNING:__main__:Running smaller batch size=4 for AllenaiLongformerBase, orig batch_size=8
+cuda train AllenaiLongformerBase               0.991x p=0.00
+WARNING:__main__:Running smaller batch size=4 for BartForCausalLM, orig batch_size=8
+cuda train BartForCausalLM                     0.998x p=0.02
+WARNING:__main__:Running smaller batch size=2 for BartForConditionalGeneration, orig batch_size=4
+cuda train BartForConditionalGeneration        0.958x p=0.00
+WARNING:__main__:Running smaller batch size=16 for BertForMaskedLM, orig batch_size=32
+cuda train BertForMaskedLM                     0.962x p=0.00
+WARNING:__main__:Running smaller batch size=16 for BertForQuestionAnswering, orig batch_size=32
+cuda train BertForQuestionAnswering            0.953x p=0.00
+WARNING:__main__:Running smaller batch size=4 for BlenderbotForCausalLM, orig batch_size=32
+cuda train BlenderbotForCausalLM               0.996x p=0.00
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForCausalLM, orig batch_size=256
+cuda train BlenderbotSmallForCausalLM          0.996x p=0.00
+WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForConditionalGeneration, orig batch_size=128
+cuda train BlenderbotSmallForConditionalGeneration  0.964x p=0.00
+WARNING:__main__:Running smaller batch size=16 for CamemBert, orig batch_size=32
+cuda train CamemBert                           0.961x p=0.00
+WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
+cuda train DebertaForMaskedLM                  0.870x p=0.00
+WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
+cuda train DebertaForQuestionAnswering         0.995x p=0.00
+WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
+cuda train DebertaV2ForMaskedLM 0.804x p=0.00
+WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
+cuda train DebertaV2ForQuestionAnswering 0.919x p=0.00
+WARNING:__main__:Running smaller batch size=128 for DistilBertForMaskedLM, orig batch_size=256
+WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
+cuda train DistilBertForMaskedLM               0.988x p=0.00
+WARNING:__main__:Running smaller batch size=256 for DistilBertForQuestionAnswering, orig batch_size=512
+WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
+cuda train DistilBertForQuestionAnswering      0.991x p=0.00
+WARNING:__main__:Running smaller batch size=16 for DistillGPT2, orig batch_size=32
+cuda train DistillGPT2                         0.983x p=0.00
+If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=32 for ElectraForCausalLM, orig batch_size=64
+cuda train ElectraForCausalLM                  0.950x p=0.00
+WARNING:__main__:Running smaller batch size=64 for ElectraForQuestionAnswering, orig batch_size=128
+cuda train ElectraForQuestionAnswering         0.959x p=0.00
+WARNING:__main__:Running smaller batch size=4 for GPT2ForSequenceClassification, orig batch_size=8
+cuda train GPT2ForSequenceClassification       0.965x p=0.00
+WARNING:__main__:Running smaller batch size=16 for GoogleFnet, orig batch_size=32
+cuda train GoogleFnet                          0.999x p=0.00
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForMaskedLM, orig batch_size=32
+cuda train LayoutLMForMaskedLM                 0.962x p=0.00
+WARNING:__main__:Running smaller batch size=16 for LayoutLMForSequenceClassification, orig batch_size=32
+cuda train LayoutLMForSequenceClassification   0.953x p=0.00
+WARNING:__main__:Running smaller batch size=16 for M2M100ForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
+cuda train M2M100ForConditionalGeneration      1.022x p=0.00
+WARNING:__main__:Running smaller batch size=4 for MBartForCausalLM, orig batch_size=8
+cuda train MBartForCausalLM                    0.997x p=0.00
+WARNING:__main__:Running smaller batch size=2 for MBartForConditionalGeneration, orig batch_size=4
+cuda train MBartForConditionalGeneration       0.958x p=0.00
+WARNING:__main__:Running smaller batch size=16 for MT5ForConditionalGeneration, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
+cuda train MT5ForConditionalGeneration         0.904x p=0.00
+If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=4 for MegatronBertForCausalLM, orig batch_size=16
+cuda train MegatronBertForCausalLM             0.906x p=0.00
+WARNING:__main__:Running smaller batch size=8 for MegatronBertForQuestionAnswering, orig batch_size=16
+cuda train MegatronBertForQuestionAnswering    0.941x p=0.00
+WARNING:__main__:Running smaller batch size=64 for MobileBertForMaskedLM, orig batch_size=256
+cuda train MobileBertForMaskedLM               0.767x p=0.00
+WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
+cuda train MobileBertForQuestionAnswering      0.787x p=0.00
+WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
+cuda train OPTForCausalLM                      0.998x SAME
+WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
+cuda train PLBartForCausalLM                   0.997x p=0.00
+WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
+cuda train PLBartForConditionalGeneration      0.989x p=0.00
+WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
+WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
+cuda train PegasusForCausalLM                  0.996x p=0.00
+WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
+WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
+cuda train PegasusForConditionalGeneration     0.976x p=0.00
+If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
+WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
+cuda train RobertaForCausalLM                  0.964x p=0.00
+WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
+cuda train RobertaForQuestionAnswering         0.953x p=0.00
+WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
+WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
+cuda train Speech2Text2ForCausalLM             0.996x SAME
+WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
+cuda train T5ForConditionalGeneration          0.938x p=0.00
+WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
+cuda train T5Small                             0.937x p=0.00
+WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
+cuda train TrOCRForCausalLM                    0.998x p=0.01
+WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
+WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
+cuda train XGLMForCausalLM                     0.957x p=0.00
+WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
+cuda train XLNetLMHeadModel                    0.984x p=0.00
+WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
+cuda train YituTechConvBert                    0.957x p=0.00
+speedup             gmean=1.00x mean=1.000x
+abs_latency         gmean=129.75x mean=142.269x
+compilation_latency mean=5.573 seconds
+compression_ratio   mean=0.988x
+eager_peak_mem      gmean=13.06x mean=13.533x
+dynamo_peak_mem     gmean=13.22x mean=13.687x
+calls_captured      gmean=581.61x mean=676.870x
+unique_graphs       gmean=4.05x mean=20.543x
+graph_breaks        gmean=8.85x mean=28.413x
+unique_graph_breaks gmean=4.61x mean=5.348x
