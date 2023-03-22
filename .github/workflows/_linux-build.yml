@@ -96,7 +96,7 @@ jobs:
           set -x
           # Complete job name: shows up in the Set up job step
           file_name=$(grep -R "Complete job name:" "${{ runner.workspace }}/../../_diag/pages" -l)
-          while i in $(seq 3); do
+          for i in $(seq 3); do
             aws s3 cp "${file_name}" "s3://ossci-raw-job-status/log/${JOB_ID}"
             sleep 60
           done &
