@@ -731,6 +731,7 @@ class BuildExtension(build_ext):
                         cflags = COMMON_MSVC_FLAGS + self.cflags
                         cmd += cflags
 
+                append_std17_if_no_std_present(cmd)
                 return original_spawn(cmd)
 
             try:
