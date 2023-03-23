@@ -29,6 +29,7 @@ file(GLOB C10_SRCS
         *.cpp
         core/*.cpp
         core/impl/*.cpp
+        core/impl/cow/*.cpp
         mobile/*.cpp
         macros/*.cpp
         util/*.cpp
