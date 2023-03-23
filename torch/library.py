@@ -100,12 +100,12 @@ class Library:
             raise RuntimeError("impl should be passed either a name or an OpOverload object as the first argument")
 
         key = self.ns + "/" + name.split("::")[-1] + "/" + dispatch_key
-        if key in _impls:
-            # TODO: in future, add more info about where the existing function is registered (this info is
-            # today already returned by the C++ warning when impl is called but we error out before that)
-            raise RuntimeError("This is not allowed since there's already a kernel registered from python overriding {}"
-                               "'s behavior for {} dispatch key and {} namespace.".
-                               format(name.split("::")[-1], dispatch_key, self.ns))
+        # if key in _impls:
+        #     # TODO: in future, add more info about where the existing function is registered (this info is
+        #     # today already returned by the C++ warning when impl is called but we error out before that)
+        #     raise RuntimeError("This is not allowed since there's already a kernel registered from python overriding {}"
+        #                        "'s behavior for {} dispatch key and {} namespace.".
+        #                        format(name.split("::")[-1], dispatch_key, self.ns))
 
         if dispatch_key == "Meta":
             dispatcher_op_name = name
