@@ -325,6 +325,7 @@ intern_build_aten_ops(
     copts = ATEN_COPTS,
     deps = [
         ":aten_headers",
+        "//c10",
         "@sleef",
         "@fbgemm",
         "@mkl",
