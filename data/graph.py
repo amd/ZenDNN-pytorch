@@ -10,10 +10,10 @@ def parse_log(file_name, slug):
     out = [[item.split()[0], item.split()[1], item.split()[2], item.split()[3]] for item in out]
     return out
 
-def describe_delta(data1, data2, name1, name2):
+def describe_delta(data1, data2, name1, name2, run_name):
     for d in [data1, data2]:
         for row in d:
-            if row[3] and 'ERROR' in row[3]:
+            if row[3] and ('ERROR' in row[3] or 'Traceback' in row[3]):
                 row[3] = None
     
     model_names = []
@@ -24,10 +24,17 @@ def describe_delta(data1, data2, name1, name2):
         assert row1[2] == row2[2]  # Make sure model names match between the two datasets
         model_names.append(row1[2])
         if row1[3] is not None:
-            performances1.append(float(row1[3].replace('x', '')))
+            try:
+                performances1.append(float(row1[3].replace('x', '')))
+            except:
+                pass
         if row2[3] is not None:
-            performances2.append(float(row2[3].replace('x', '')))
+            try:
+                performances2.append(float(row2[3].replace('x', '')))
+            except:
+                pass
     
+    print(f"==== {run_name} ====")
     print(f"Geomean {name1} : {sum(performances1)/len(performances1)}")
     print(f"Geomean {name2} : {sum(performances2)/len(performances2)}")
     
@@ -36,7 +43,7 @@ def graph_delta(data1, data2, name1, name2, title):
     # Filter out the rows with bad data
     for d in [data1, data2]:
         for row in d:
-            if row[3] and 'ERROR' in row[3]:
+            if row[3] and ('ERROR' in row[3] or 'Traceback' in row[3]):
                 row[3] = None
 
     # Extract the model names and their corresponding performances from the data
@@ -72,27 +79,31 @@ def graph_delta(data1, data2, name1, name2, title):
     plt.savefig(name, bbox_inches='tight')
 
 
-# Inductor, eval
-hf_inductor_eval = parse_log("data/hf_inductor_eval.log", "cuda eval")
-timm_inductor_eval = parse_log("data/timm_inductor_eval.log", "cuda eval")
-tb_inductor_eval = parse_log("data/tb_inductor_eval.log", "cuda eval")
-# NVFuser, eval
-hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
-timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log", "cuda eval")
-tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log", "cuda eval")
-# Inductor, train
-hf_inductor_train = parse_log("data/hf_inductor_train.log", "cuda train")
-timm_inductor_train = parse_log("data/timm_inductor_train.log", "cuda train")
-tb_inductor_train = parse_log("data/tb_inductor_train.log", "cuda train")
-# NVFuser, train
-hf_nvfuser_train = parse_log("data/hf_nvfuser_train.log", "cuda train")
-timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log", "cuda train")
-tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log", "cuda train")
+benches = ["hf", "timm", "tb"]
+kinds = ["eval", "train"]
+for bench in benches:
+    for kind in kinds:
+        try:
+            inductor = parse_log(f"data/{bench}_inductor_{kind}.log", f"cuda {kind}")
+            nvfuser = parse_log(f"data/{bench}_nvfuser_{kind}.log", f"cuda {kind}")
+            describe_delta(inductor, nvfuser, "Inductor", "NVFuser", f"{bench}_inductor_nvfuser_{kind}_gpu")
+            graph_delta(inductor, nvfuser, "Inductor", "NVFuser", f"{bench}_inductor_nvfuser_{kind}_gpu")
+        except Exception as e:
+            print(f"Failed {bench} {kind}")
+            raise e
 
-graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
-graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
-graph_delta(tb_inductor_eval, tb_nvfuser_eval, "Inductor", "NVFuser", "tb_inductor_nvfuser_inference_gpu")
+# describe_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
+# # describe_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
+# # describe_delta(tb_inductor_eval, tb_nvfuser_eval, "Inductor", "NVFuser", "tb_inductor_nvfuser_inference_gpu")
 
-graph_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
-graph_delta(timm_inductor_train, timm_nvfuser_train, "Inductor", "NVFuser", "timm_inductor_nvfuser_train_gpu")
-graph_delta(tb_nvfuser_eval, tb_nvfuser_train, "Inductor", "NVFuser", "tb_inductor_nvfuser_train_gpu")
+# # describe_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
+# # describe_delta(timm_inductor_train, timm_nvfuser_train, "Inductor", "NVFuser", "timm_inductor_nvfuser_train_gpu")
+# describe_delta(tb_inductor_train, tb_nvfuser_train, "Inductor", "NVFuser", "tb_inductor_nvfuser_train_gpu")
+
+# # graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
+# # graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
+# # graph_delta(tb_inductor_eval, tb_nvfuser_eval, "Inductor", "NVFuser", "tb_inductor_nvfuser_inference_gpu")
+
+# # graph_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
+# # graph_delta(timm_inductor_train, timm_nvfuser_train, "Inductor", "NVFuser", "timm_inductor_nvfuser_train_gpu")
+# graph_delta(tb_inductor_train, tb_nvfuser_train, "Inductor", "NVFuser", "tb_inductor_nvfuser_train_gpu")

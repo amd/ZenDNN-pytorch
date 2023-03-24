@@ -1,13 +1,13 @@
-cuda train BERT_pytorch                        1.390x p=0.00
-TIMING: entire_frame_compile:17.06336 backend_compile:14.50502
+cuda train BERT_pytorch                        1.385x p=0.00
+TIMING: entire_frame_compile:19.80903 backend_compile:17.20112
 STATS: call_* op count: 538 | FakeTensorMode.__torch_dispatch__:43886 | FakeTensor.__torch_dispatch__:6521 | ProxyTorchDispatchMode.__torch_dispatch__:19951
 Dynamo produced 1 graphs covering 538 ops with 5 graph breaks (4 unique)
 cuda train Background_Matting                  1.054x p=0.00
-TIMING: entire_frame_compile:17.72566 backend_compile:13.87574
+TIMING: entire_frame_compile:17.7363 backend_compile:14.90063
 STATS: call_* op count: 183 | FakeTensorMode.__torch_dispatch__:28585 | FakeTensor.__torch_dispatch__:6090 | ProxyTorchDispatchMode.__torch_dispatch__:10925
 Dynamo produced 1 graphs covering 183 ops with 5 graph breaks (4 unique)
 cuda train LearningToPaint                     1.132x p=0.00
-TIMING: entire_frame_compile:8.66671 backend_compile:7.76268
+TIMING: entire_frame_compile:9.73412 backend_compile:8.85382
 STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:2216 | FakeTensorMode.__torch_dispatch__:10710 | ProxyTorchDispatchMode.__torch_dispatch__:4051
 Dynamo produced 1 graphs covering 71 ops with 5 graph breaks (4 unique)
 WARNING:root:Super_SloMo failed to load
@@ -36,8 +36,8 @@ Traceback (most recent call last):
     raise NotImplementedError("Eager model failed to run") from e
 NotImplementedError: Eager model failed to run
 
-cuda train alexnet                             1.085x p=0.00
-TIMING: entire_frame_compile:4.27503 backend_compile:3.90845
+cuda train alexnet                             1.086x p=0.00
+TIMING: entire_frame_compile:6.91158 backend_compile:4.52418
 STATS: call_* op count: 22 | FakeTensor.__torch_dispatch__:567 | FakeTensorMode.__torch_dispatch__:1798 | ProxyTorchDispatchMode.__torch_dispatch__:691
 Dynamo produced 1 graphs covering 22 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -81,8 +81,8 @@ Traceback (most recent call last):
     self._handle = _dlopen(self._name, mode)
 OSError: /scratch/voz/work/torchtext/torchtext/lib/libtorchtext.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ERROR
-cuda train dcgan                               1.168x p=0.00
-TIMING: entire_frame_compile:4.58599 backend_compile:4.22726
+cuda train dcgan                               1.205x p=0.00
+TIMING: entire_frame_compile:6.24182 backend_compile:5.33418
 STATS: call_* op count: 13 | FakeTensor.__torch_dispatch__:396 | FakeTensorMode.__torch_dispatch__:1740 | ProxyTorchDispatchMode.__torch_dispatch__:667
 Dynamo produced 1 graphs covering 13 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -120,466 +120,44 @@ Traceback (most recent call last):
     raise RuntimeError(f'{base_error_msg}'
 RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (8, 5, 0) but found runtime version (8, 4, 1). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN.Looks like your LD_LIBRARY_PATH contains incompatible version of cudnnPlease either remove it from the path or install cudnn (8, 5, 0)
 ERROR
-cuda train densenet121                         ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2133, in aot_dispatch_autograd
-    compiled_fw_func = aot_config.fw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/hm/chmz74dpseomabaerourh6l7cmou5qnn67d7dduuflldb6sgc4yy.py", line 9782, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1792, in RETURN_VALUE
-    self.output.compile_subgraph(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 517, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, list(reversed(stack_values)), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train dlrm                                1.110x p=0.00
-TIMING: entire_frame_compile:12.78083 backend_compile:12.42058
+cuda train densenet121                         2.218x p=0.00
+TIMING: entire_frame_compile:38.91581 backend_compile:34.79912
+STATS: call_* op count: 431 | FakeTensor.__torch_dispatch__:12376 | FakeTensorMode.__torch_dispatch__:67962 | ProxyTorchDispatchMode.__torch_dispatch__:28492
+Dynamo produced 1 graphs covering 431 ops with 5 graph breaks (4 unique)
+cuda train dlrm                                1.107x p=0.00
+TIMING: entire_frame_compile:14.94855 backend_compile:14.57824
 STATS: call_* op count: 36 | FakeTensor.__torch_dispatch__:303 | FakeTensorMode.__torch_dispatch__:2614 | ProxyTorchDispatchMode.__torch_dispatch__:1139
 Dynamo produced 1 graphs covering 36 ops with 4 graph breaks (3 unique)
-cuda train drq                                 ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2133, in aot_dispatch_autograd
-    compiled_fw_func = aot_config.fw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/4m/c4mv46pp5fxjhlxdgdd74id4leaerpbrot7li3jmoxrwugq3m45s.py", line 265, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1792, in RETURN_VALUE
-    self.output.compile_subgraph(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 541, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train fastNLP_Bert                        ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1326, in aot_dispatch_base
-    compiled_fw = aot_config.fw_compiler(fw_module, flat_args_with_views_handled)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/nr/cnrnkljojkkrhyogfxt4cgisp7znralngefsxekn3zzgvkd4lk2s.py", line 112, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/fastNLP/models/bert.py", line 265, in forward
-    sequence_output = self.bert(words)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/fastNLP/embeddings/bert_embedding.py", line 137, in forward
-    outputs = self.model(words)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 372, in wrapper
-    self.output.compile_subgraph(self, reason=reason)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 541, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train hf_Albert                           1.581x p=0.00
-TIMING: entire_frame_compile:12.21049 backend_compile:10.58092
+cuda train drq                                 1.414x p=0.00
+TIMING: entire_frame_compile:7.29557 backend_compile:5.1199
+STATS: call_* op count: 30 | FakeTensorMode.__torch_dispatch__:2082 | FakeTensor.__torch_dispatch__:658 | ProxyTorchDispatchMode.__torch_dispatch__:894
+Dynamo produced 2 graphs covering 30 ops with 4 graph breaks (3 unique)
+cuda train fastNLP_Bert                        1.404x p=0.00
+TIMING: entire_frame_compile:18.88437 backend_compile:16.0855
+STATS: call_* op count: 445 | FakeTensorMode.__torch_dispatch__:40097 | FakeTensor.__torch_dispatch__:7270 | ProxyTorchDispatchMode.__torch_dispatch__:17652
+Dynamo produced 6 graphs covering 445 ops with 9 graph breaks (6 unique)
+cuda train hf_Albert                           1.582x p=0.00
+TIMING: entire_frame_compile:14.71857 backend_compile:10.97417
 STATS: call_* op count: 436 | FakeTensorMode.__torch_dispatch__:32425 | FakeTensor.__torch_dispatch__:2281 | ProxyTorchDispatchMode.__torch_dispatch__:16285
 Dynamo produced 1 graphs covering 436 ops with 4 graph breaks (3 unique)
 cuda train hf_Bart                             1.095x p=0.00
-TIMING: entire_frame_compile:19.44358 backend_compile:14.1414
+TIMING: entire_frame_compile:22.11709 backend_compile:15.5745
 STATS: call_* op count: 642 | FakeTensorMode.__torch_dispatch__:58035 | FakeTensor.__torch_dispatch__:11273 | ProxyTorchDispatchMode.__torch_dispatch__:22777
 Dynamo produced 9 graphs covering 642 ops with 15 graph breaks (7 unique)
-cuda train hf_Bert                             1.131x p=0.00
-TIMING: entire_frame_compile:14.63842 backend_compile:11.96634
+cuda train hf_Bert                             1.148x p=0.00
+TIMING: entire_frame_compile:14.99162 backend_compile:12.25553
 STATS: call_* op count: 367 | FakeTensorMode.__torch_dispatch__:38299 | FakeTensor.__torch_dispatch__:7267 | ProxyTorchDispatchMode.__torch_dispatch__:16812
 Dynamo produced 1 graphs covering 367 ops with 4 graph breaks (3 unique)
-cuda train hf_BigBird                          2.097x p=0.00
-TIMING: entire_frame_compile:54.7419 backend_compile:45.64247
+cuda train hf_BigBird                          2.063x p=0.00
+TIMING: entire_frame_compile:56.78447 backend_compile:47.59449
 STATS: call_* op count: 2905 | FakeTensorMode.__torch_dispatch__:172782 | FakeTensor.__torch_dispatch__:9804 | ProxyTorchDispatchMode.__torch_dispatch__:81885
 Dynamo produced 64 graphs covering 2905 ops with 60 graph breaks (8 unique)
-cuda train hf_DistilBert                       1.113x p=0.00
-TIMING: entire_frame_compile:8.97846 backend_compile:7.62566
+cuda train hf_DistilBert                       1.114x p=0.00
+TIMING: entire_frame_compile:9.19341 backend_compile:7.84609
 STATS: call_* op count: 203 | FakeTensorMode.__torch_dispatch__:18952 | FakeTensor.__torch_dispatch__:3573 | ProxyTorchDispatchMode.__torch_dispatch__:8556
 Dynamo produced 1 graphs covering 203 ops with 4 graph breaks (3 unique)
-cuda train hf_GPT2                             1.352x p=0.00
-TIMING: entire_frame_compile:14.67176 backend_compile:12.12394
+cuda train hf_GPT2                             1.351x p=0.00
+TIMING: entire_frame_compile:14.15835 backend_compile:11.70399
 STATS: call_* op count: 635 | FakeTensorMode.__torch_dispatch__:35211 | FakeTensor.__torch_dispatch__:4852 | ProxyTorchDispatchMode.__torch_dispatch__:15251
 Dynamo produced 1 graphs covering 635 ops with 4 graph breaks (3 unique)
 cuda train hf_Longformer                       Traceback (most recent call last):
@@ -781,196 +359,24 @@ You can suppress this exception and fall back to eager by setting:
     torch._dynamo.config.suppress_errors = True
 
 ERROR
-cuda train hf_Reformer                         ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/k6/ck6xws6rjquaby7xoxxu2frgojwcqqpalwc7tsfhksr74wjkh3st.py", line 200, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
-cuda train hf_T5                               ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/ox/cox2wd5tdbm2qiexplpplhtfdcoc4uw6ysi7fqsgkuhv4zi44m47.py", line 4532, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
-cuda train maml_omniglot                       1.436x p=0.00
-TIMING: entire_frame_compile:4.27212 backend_compile:3.90682
+cuda train hf_Reformer                         1.104x p=0.00
+TIMING: entire_frame_compile:11.00732 backend_compile:8.01809
+STATS: call_* op count: 550 | FakeTensorMode.__torch_dispatch__:16945 | FakeTensor.__torch_dispatch__:3114 | ProxyTorchDispatchMode.__torch_dispatch__:3844
+Dynamo produced 105 graphs covering 550 ops with 38 graph breaks (9 unique)
+cuda train hf_T5                               1.366x p=0.00
+TIMING: entire_frame_compile:18.09677 backend_compile:14.8315
+STATS: call_* op count: 795 | FakeTensorMode.__torch_dispatch__:50887 | FakeTensor.__torch_dispatch__:5531 | ProxyTorchDispatchMode.__torch_dispatch__:24684
+Dynamo produced 1 graphs covering 795 ops with 4 graph breaks (3 unique)
+cuda train maml_omniglot                       1.360x p=0.00
+TIMING: entire_frame_compile:5.53015 backend_compile:3.89682
 STATS: call_* op count: 14 | FakeTensor.__torch_dispatch__:473 | FakeTensorMode.__torch_dispatch__:1913 | ProxyTorchDispatchMode.__torch_dispatch__:720
 Dynamo produced 1 graphs covering 14 ops with 5 graph breaks (4 unique)
-cuda train mnasnet1_0                          1.186x p=0.00
-TIMING: entire_frame_compile:17.37429 backend_compile:13.52094
+cuda train mnasnet1_0                          1.250x p=0.00
+TIMING: entire_frame_compile:15.81455 backend_compile:14.01048
 STATS: call_* op count: 152 | FakeTensor.__torch_dispatch__:5378 | FakeTensorMode.__torch_dispatch__:25651 | ProxyTorchDispatchMode.__torch_dispatch__:9498
 Dynamo produced 1 graphs covering 152 ops with 5 graph breaks (4 unique)
 cuda train mobilenet_v2                        1.354x p=0.00
-TIMING: entire_frame_compile:16.8437 backend_compile:15.007
+TIMING: entire_frame_compile:16.63469 backend_compile:14.81397
 STATS: call_* op count: 153 | FakeTensor.__torch_dispatch__:5413 | FakeTensorMode.__torch_dispatch__:26205 | ProxyTorchDispatchMode.__torch_dispatch__:9892
 Dynamo produced 1 graphs covering 153 ops with 5 graph breaks (4 unique)
 cuda train mobilenet_v2_quantized_qat          ERROR:common:Backend dynamo failed in warmup()
@@ -995,8 +401,8 @@ Traceback (most recent call last):
     list(ctx.symints) + list(ctx.saved_tensors) + list(contiguous_args)
 RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [32]] is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
 ERROR
-cuda train mobilenet_v3_large                  1.376x p=0.00
-TIMING: entire_frame_compile:16.60157 backend_compile:14.69578
+cuda train mobilenet_v3_large                  1.382x p=0.00
+TIMING: entire_frame_compile:16.36335 backend_compile:14.43869
 STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:6012 | FakeTensorMode.__torch_dispatch__:27516 | ProxyTorchDispatchMode.__torch_dispatch__:10662
 Dynamo produced 1 graphs covering 187 ops with 5 graph breaks (4 unique)
 cuda train moco                                   function: '<graph break in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
@@ -1057,7 +463,7 @@ Traceback (most recent call last):
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_subclasses/fake_tensor.py", line 1212, in validate
     raise Exception(
 Exception: Please convert all Tensors to FakeTensors first or instantiate FakeTensorMode with 'allow_non_fake_inputs'. Found in c10d.allgather_.default(*([[_to_functional_tensor(FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0),
-       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7fb00152e1f0>, -1), **{}) 
+       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7f890c697fb0>, -1), **{}) 
 
 While executing %all_gather : [#users=0] = call_function[target=torch.distributed.distributed_c10d.all_gather](args = ([%ones_like], %tensor), kwargs = {async_op: False})
 Original traceback:
@@ -1129,7 +535,7 @@ Traceback (most recent call last):
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
     raise BackendCompilerFailed(self.compiler_fn, e) from e
 torch._dynamo.exc.BackendCompilerFailed: compile_fn raised Exception: Please convert all Tensors to FakeTensors first or instantiate FakeTensorMode with 'allow_non_fake_inputs'. Found in c10d.allgather_.default(*([[_to_functional_tensor(FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0),
-       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7fb00152e1f0>, -1), **{}) 
+       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7f890c697fb0>, -1), **{}) 
 
 While executing %all_gather : [#users=0] = call_function[target=torch.distributed.distributed_c10d.all_gather](args = ([%ones_like], %tensor), kwargs = {async_op: False})
 Original traceback:
@@ -1187,150 +593,12 @@ Traceback (most recent call last):
     self._handle = _dlopen(self._name, mode)
 OSError: /scratch/voz/work/torchtext/torchtext/lib/libtorchtext.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ERROR
-cuda train pytorch_CycleGAN_and_pix2pix        ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2133, in aot_dispatch_autograd
-    compiled_fw_func = aot_config.fw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/ac/cacjsqagqostcrrkj6k6z6p7zw5oqhslov7gjxs27pcx6fpjjbzc.py", line 692, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1792, in RETURN_VALUE
-    self.output.compile_subgraph(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 517, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, list(reversed(stack_values)), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train pytorch_stargan                     1.191x p=0.00
-TIMING: entire_frame_compile:8.11937 backend_compile:7.30677
+cuda train pytorch_CycleGAN_and_pix2pix        1.313x p=0.00
+TIMING: entire_frame_compile:8.3554 backend_compile:7.5775
+STATS: call_* op count: 91 | FakeTensorMode.__torch_dispatch__:11186 | FakeTensor.__torch_dispatch__:1809 | ProxyTorchDispatchMode.__torch_dispatch__:4577
+Dynamo produced 1 graphs covering 91 ops with 5 graph breaks (4 unique)
+cuda train pytorch_stargan                     1.190x p=0.00
+TIMING: entire_frame_compile:8.14922 backend_compile:7.3166
 STATS: call_* op count: 56 | FakeTensorMode.__torch_dispatch__:12560 | FakeTensor.__torch_dispatch__:2056 | ProxyTorchDispatchMode.__torch_dispatch__:5015
 Dynamo produced 1 graphs covering 56 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -1375,15 +643,15 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
 cuda train pytorch_unet                        1.209x p=0.00
-TIMING: entire_frame_compile:9.25961 backend_compile:8.27097
+TIMING: entire_frame_compile:9.64859 backend_compile:8.64306
 STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:2551 | FakeTensorMode.__torch_dispatch__:13881 | ProxyTorchDispatchMode.__torch_dispatch__:5501
 Dynamo produced 1 graphs covering 71 ops with 5 graph breaks (4 unique)
-cuda train resnet18                            1.156x p=0.00
-TIMING: entire_frame_compile:8.89318 backend_compile:8.00909
+cuda train resnet18                            1.142x p=0.00
+TIMING: entire_frame_compile:8.50894 backend_compile:7.65325
 STATS: call_* op count: 69 | FakeTensor.__torch_dispatch__:2114 | FakeTensorMode.__torch_dispatch__:10163 | ProxyTorchDispatchMode.__torch_dispatch__:3848
 Dynamo produced 1 graphs covering 69 ops with 5 graph breaks (4 unique)
-cuda train resnet50                            1.114x p=0.00
-TIMING: entire_frame_compile:17.37649 backend_compile:13.57281
+cuda train resnet50                            1.113x p=0.00
+TIMING: entire_frame_compile:15.76172 backend_compile:13.87392
 STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:5480 | FakeTensorMode.__torch_dispatch__:26429 | ProxyTorchDispatchMode.__torch_dispatch__:9995
 Dynamo produced 1 graphs covering 175 ops with 5 graph breaks (4 unique)
 cuda train resnet50_quantized_qat              ERROR:common:Backend dynamo failed in warmup()
@@ -1408,98 +676,12 @@ Traceback (most recent call last):
     list(ctx.symints) + list(ctx.saved_tensors) + list(contiguous_args)
 RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [64]] is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
 ERROR
-cuda train resnext50_32x4d                     ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/l3/cl3qipxfxj6lotrzxg3ql5ms64rnsjat6mm2av5jt6ctzvdptxvk.py", line 2439, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
+cuda train resnext50_32x4d                     1.159x p=0.00
+TIMING: entire_frame_compile:14.65408 backend_compile:12.83149
+STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:5480 | FakeTensorMode.__torch_dispatch__:26429 | ProxyTorchDispatchMode.__torch_dispatch__:9995
+Dynamo produced 1 graphs covering 175 ops with 5 graph breaks (4 unique)
 cuda train shufflenet_v2_x1_0                  1.335x p=0.00
-TIMING: entire_frame_compile:17.39095 backend_compile:15.34997
+TIMING: entire_frame_compile:17.26396 backend_compile:15.22025
 STATS: call_* op count: 271 | FakeTensor.__torch_dispatch__:5786 | FakeTensorMode.__torch_dispatch__:30411 | ProxyTorchDispatchMode.__torch_dispatch__:11450
 Dynamo produced 1 graphs covering 271 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -1530,579 +712,37 @@ Traceback (most recent call last):
   [Previous line repeated 1 more time]
 AttributeError: 'PendulumEnv' object has no attribute 'seed'
 ERROR
-cuda train speech_transformer                  ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2133, in aot_dispatch_autograd
-    compiled_fw_func = aot_config.fw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/dp/cdpsuv5h25kkhof4opulbccjnvbssmqatpaeucwzhwc4rnou3rka.py", line 1779, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/speech_transformer/speech_transformer/transformer/transformer.py", line 28, in forward
-    encoder_padded_outputs, *_ = self.encoder(padded_input, input_lengths)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/speech_transformer/speech_transformer/transformer/encoder.py", line 48, in forward
-    non_pad_mask = get_non_pad_mask(padded_input, input_lengths=input_lengths)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/speech_transformer/speech_transformer/transformer/encoder.py", line 50, in <graph break in forward>
-    slf_attn_mask = get_attn_pad_mask(padded_input, input_lengths, length)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1792, in RETURN_VALUE
-    self.output.compile_subgraph(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 541, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train squeezenet1_1                       1.273x p=0.00
-TIMING: entire_frame_compile:5.51961 backend_compile:4.88579
+cuda train speech_transformer                  1.193x p=0.00
+TIMING: entire_frame_compile:19.92485 backend_compile:16.47414
+STATS: call_* op count: 749 | FakeTensorMode.__torch_dispatch__:51429 | ProxyTorchDispatchMode.__torch_dispatch__:22566 | FakeTensor.__torch_dispatch__:8909
+Dynamo produced 9 graphs covering 749 ops with 14 graph breaks (6 unique)
+cuda train squeezenet1_1                       1.275x p=0.00
+TIMING: entire_frame_compile:7.45597 backend_compile:4.84924
 STATS: call_* op count: 66 | FakeTensor.__torch_dispatch__:1854 | FakeTensorMode.__torch_dispatch__:4618 | ProxyTorchDispatchMode.__torch_dispatch__:1788
 Dynamo produced 1 graphs covering 66 ops with 5 graph breaks (4 unique)
 ERROR
-cuda train timm_efficientnet                   ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/l7/cl72fgigdsrvtrl3n54numz2l4cjiljvt5eky2nxqauecaajkb7h.py", line 5034, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
+cuda train timm_efficientnet                   1.276x p=0.00
+TIMING: entire_frame_compile:19.38201 backend_compile:16.43871
+STATS: call_* op count: 362 | FakeTensor.__torch_dispatch__:7246 | FakeTensorMode.__torch_dispatch__:31943 | ProxyTorchDispatchMode.__torch_dispatch__:12177
+Dynamo produced 1 graphs covering 362 ops with 5 graph breaks (4 unique)
 cuda train timm_nfnet                          1.405x p=0.00
-TIMING: entire_frame_compile:19.00218 backend_compile:15.59598
+TIMING: entire_frame_compile:18.74382 backend_compile:15.30066
 STATS: call_* op count: 615 | FakeTensorMode.__torch_dispatch__:38859 | FakeTensor.__torch_dispatch__:7736 | ProxyTorchDispatchMode.__torch_dispatch__:16545
 Dynamo produced 1 graphs covering 615 ops with 5 graph breaks (4 unique)
-cuda train timm_regnet                         ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/nc/cnczxe35ikavpzyckchbsd52plknjvzh2iwtrcpou7glvdzb33sx.py", line 3434, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
-cuda train timm_resnest                        ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2133, in aot_dispatch_autograd
-    compiled_fw_func = aot_config.fw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/3h/c3hdn4zmvwoj5tyifzgeqtqgxa3eusxt4jq6v3xvrxc7h5ifr4y4.py", line 3245, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 369, in <graph break in forward_and_backward_pass>
-    pred = mod(*cloned_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1792, in RETURN_VALUE
-    self.output.compile_subgraph(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 517, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, list(reversed(stack_values)), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda train timm_vision_transformer             ERROR:common:Backend dynamo failed in warmup()
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/process.py", line 246, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 549, in _worker_compile
-    kernel.precompile(warm_cache_only_with_cc=cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 69, in precompile
-    self.launchers = [
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 70, in <listcomp>
-    self._precompile_config(c, warm_cache_only_with_cc)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/triton_ops/autotune.py", line 83, in _precompile_config
-    triton.compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1588, in compile
-    so_path = make_stub(name, signature, constants)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1477, in make_stub
-    so = _build(name, src_path, tmpdir)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/triton/compiler.py", line 1392, in _build
-    ret = subprocess.check_call(cc_cmd)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 364, in check_call
-    retcode = call(*popenargs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 345, in call
-    with Popen(*popenargs, **kwargs) as p:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 971, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/subprocess.py", line 1847, in _execute_child
-    raise child_exception_type(errno_num, err_msg, err_filename)
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-"""
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 366, in forward_and_backward_pass
-    cloned_inputs = clone_inputs(inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 367, in <graph break in forward_and_backward_pass>
-    self.optimizer_zero_grad(mod)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 371, in <graph break in forward_and_backward_pass>
-    self.grad_scaler.scale(loss).backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
-    torch.autograd.backward(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
-    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/autograd/function.py", line 274, in apply
-    return user_fn(self, *args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2348, in backward
-    out = call_compiled_backward()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2319, in call_compiled_backward
-    CompiledFunction.compiled_bw = aot_config.bw_compiler(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 38, in _wrapped_bw_compiler
-    return eval_frame.disable(eval_frame.disable(bw_compiler)(*args, **kwargs))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 441, in bw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 177, in compile_fx_inner
-    compiled_fn = graph.compile_to_fn()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 586, in compile_to_fn
-    return self.compile_to_module().call
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 575, in compile_to_module
-    mod = PyCodeCache.load(code)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 528, in load
-    exec(code, mod.__dict__, mod.__dict__)
-  File "/tmp/torchinductor_voz/uy/cuy5ar7r42xf3gbwid5rloifw5k7v4fmqxoksc7vtwf62r7k4wac.py", line 894, in <module>
-    async_compile.wait(globals())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 715, in wait
-    scope[key] = result.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
-    self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
-    return self.__get_result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
-    raise self._exception
-FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
-ERROR
+cuda train timm_regnet                         1.098x p=0.00
+TIMING: entire_frame_compile:30.80518 backend_compile:22.57853
+STATS: call_* op count: 728 | FakeTensor.__torch_dispatch__:12336 | FakeTensorMode.__torch_dispatch__:53286 | ProxyTorchDispatchMode.__torch_dispatch__:20651
+Dynamo produced 1 graphs covering 728 ops with 5 graph breaks (4 unique)
+cuda train timm_resnest                        1.384x p=0.00
+TIMING: entire_frame_compile:11.70192 backend_compile:10.5218
+STATS: call_* op count: 148 | FakeTensor.__torch_dispatch__:2828 | FakeTensorMode.__torch_dispatch__:13955 | ProxyTorchDispatchMode.__torch_dispatch__:5427
+Dynamo produced 1 graphs covering 148 ops with 5 graph breaks (4 unique)
+cuda train timm_vision_transformer             1.189x p=0.00
+TIMING: entire_frame_compile:10.01323 backend_compile:8.31686
+STATS: call_* op count: 337 | FakeTensor.__torch_dispatch__:5139 | FakeTensorMode.__torch_dispatch__:20703 | ProxyTorchDispatchMode.__torch_dispatch__:9132
+Dynamo produced 1 graphs covering 337 ops with 5 graph breaks (4 unique)
 cuda train timm_vovnet                         1.098x p=0.00
-TIMING: entire_frame_compile:13.6703 backend_compile:11.68187
+TIMING: entire_frame_compile:13.80448 backend_compile:11.82113
 STATS: call_* op count: 208 | FakeTensor.__torch_dispatch__:3896 | FakeTensorMode.__torch_dispatch__:19893 | ProxyTorchDispatchMode.__torch_dispatch__:7693
 Dynamo produced 1 graphs covering 208 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -2145,7 +785,7 @@ Traceback (most recent call last):
 RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (8, 5, 0) but found runtime version (8, 4, 1). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN.Looks like your LD_LIBRARY_PATH contains incompatible version of cudnnPlease either remove it from the path or install cudnn (8, 5, 0)
 ERROR
 cuda train vgg16                               1.154x p=0.00
-TIMING: entire_frame_compile:4.92063 backend_compile:4.43281
+TIMING: entire_frame_compile:4.94805 backend_compile:4.46932
 STATS: call_* op count: 40 | FakeTensor.__torch_dispatch__:1135 | FakeTensorMode.__torch_dispatch__:3092 | ProxyTorchDispatchMode.__torch_dispatch__:1175
 Dynamo produced 1 graphs covering 40 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -2178,17 +818,17 @@ Traceback (most recent call last):
   File "pycocotools/_mask.pyx", line 1, in init pycocotools._mask
 ValueError: numpy.ndarray size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
 ERROR
-cuda train yolov3                              1.124x p=0.00
-TIMING: entire_frame_compile:24.50818 backend_compile:19.64297
+cuda train yolov3                              1.128x p=0.00
+TIMING: entire_frame_compile:24.92141 backend_compile:19.8759
 STATS: call_* op count: 262 | FakeTensor.__torch_dispatch__:7756 | FakeTensorMode.__torch_dispatch__:38085 | ProxyTorchDispatchMode.__torch_dispatch__:14717
 Dynamo produced 1 graphs covering 262 ops with 5 graph breaks (4 unique)
-speedup             gmean=1.12x mean=1.134x
-abs_latency         gmean=nanx mean=42.552x
-compilation_latency mean=19.055 seconds
-compression_ratio   mean=0.876x
-eager_peak_mem      gmean=nanx mean=4.244x
-dynamo_peak_mem     gmean=nanx mean=4.827x
-calls_captured      gmean=nanx mean=322.692x
-unique_graphs       gmean=nanx mean=3.731x
-graph_breaks        gmean=nanx mean=7.308x
-unique_graph_breaks gmean=nanx mean=4.077x
+speedup             gmean=1.20x mean=1.217x
+abs_latency         gmean=nanx mean=40.509x
+compilation_latency mean=23.180 seconds
+compression_ratio   mean=0.867x
+eager_peak_mem      gmean=nanx mean=3.967x
+dynamo_peak_mem     gmean=nanx mean=4.514x
+calls_captured      gmean=nanx mean=348.184x
+unique_graphs       gmean=nanx mean=5.974x
+graph_breaks        gmean=nanx mean=7.737x
+unique_graph_breaks gmean=nanx mean=4.237x
