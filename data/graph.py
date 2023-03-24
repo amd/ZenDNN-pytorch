@@ -57,7 +57,8 @@ def graph_delta(data1, data2, name1, name2, title):
             performances2.append(float('nan'))
 
     # Plot the performances for the two datasets
-    fig, ax = plt.subplots(figsize=(20, 8))
+    fig, ax = plt.subplots(figsize=(24, 14))
+    plt.rc('xtick', labelsize=4)    # fontsize of the tick labels
     ax.bar(model_names, performances1, width=-0.4, align='edge', label=name1)
     ax.bar(model_names, performances2, width=0.4, align='edge', label=name2)
     ax.axhline(y=1, color='r', linestyle='--')
@@ -68,27 +69,30 @@ def graph_delta(data1, data2, name1, name2, title):
     ax.legend()
     name = f"data/{title}.png"
     print(f"Saving to {name}")
-    plt.savefig(name)
+    plt.savefig(name, bbox_inches='tight')
 
 
 # Inductor, eval
-# hf_inductor_eval = parse_log("data/hf_inductor_eval.log", "cuda eval")
-# timm_inductor_eval = parse_log("data/timm_inductor_eval.log", "cuda eval")
-# tb_inductor_eval = parse_log("data/tb_inductor_eval.log")
+hf_inductor_eval = parse_log("data/hf_inductor_eval.log", "cuda eval")
+timm_inductor_eval = parse_log("data/timm_inductor_eval.log", "cuda eval")
+tb_inductor_eval = parse_log("data/tb_inductor_eval.log", "cuda eval")
 # NVFuser, eval
-# hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
-# timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log", "cuda eval")
-# tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log")
+hf_nvfuser_eval = parse_log("data/hf_nvfuser_eval.log", "cuda eval")
+timm_nvfuser_eval = parse_log("data/timm_nvfuser_eval.log", "cuda eval")
+tb_nvfuser_eval = parse_log("data/tb_nvfuser_eval.log", "cuda eval")
 # Inductor, train
 hf_inductor_train = parse_log("data/hf_inductor_train.log", "cuda train")
 timm_inductor_train = parse_log("data/timm_inductor_train.log", "cuda train")
-# tb_inductor_train = parse_log("data/tb_inductor_train.log")
+tb_inductor_train = parse_log("data/tb_inductor_train.log", "cuda train")
 # NVFuser, train
 hf_nvfuser_train = parse_log("data/hf_nvfuser_train.log", "cuda train")
 timm_nvfuser_train = parse_log("data/timm_nvfuser_train.log", "cuda train")
-# tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log")
+tb_nvfuser_train = parse_log("data/tb_nvfuser_train.log", "cuda train")
 
-# graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
-# graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
+graph_delta(hf_inductor_eval, hf_nvfuser_eval, "Inductor", "NVFuser", "hf_inductor_nvfuser_inference_gpu")
+graph_delta(timm_inductor_eval, timm_nvfuser_eval, "Inductor", "NVFuser", "timm_inductor_nvfuser_inference_gpu")
+graph_delta(tb_inductor_eval, tb_nvfuser_eval, "Inductor", "NVFuser", "tb_inductor_nvfuser_inference_gpu")
+
 graph_delta(hf_inductor_train, hf_nvfuser_train, "Inductor", "NVFuser", "hf_inductor_nvfuser_train_gpu")
 graph_delta(timm_inductor_train, timm_nvfuser_train, "Inductor", "NVFuser", "timm_inductor_nvfuser_train_gpu")
+graph_delta(tb_nvfuser_eval, tb_nvfuser_train, "Inductor", "NVFuser", "tb_inductor_nvfuser_train_gpu")

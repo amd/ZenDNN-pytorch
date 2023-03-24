@@ -1,13 +1,13 @@
-cuda train BERT_pytorch                        1.389x p=0.00
-TIMING: entire_frame_compile:19.0684 backend_compile:16.46557
+cuda train BERT_pytorch                        1.390x p=0.00
+TIMING: entire_frame_compile:17.06336 backend_compile:14.50502
 STATS: call_* op count: 538 | FakeTensorMode.__torch_dispatch__:43886 | FakeTensor.__torch_dispatch__:6521 | ProxyTorchDispatchMode.__torch_dispatch__:19951
 Dynamo produced 1 graphs covering 538 ops with 5 graph breaks (4 unique)
-cuda train Background_Matting                  1.055x p=0.00
-TIMING: entire_frame_compile:16.3466 backend_compile:14.36334
+cuda train Background_Matting                  1.054x p=0.00
+TIMING: entire_frame_compile:17.72566 backend_compile:13.87574
 STATS: call_* op count: 183 | FakeTensorMode.__torch_dispatch__:28585 | FakeTensor.__torch_dispatch__:6090 | ProxyTorchDispatchMode.__torch_dispatch__:10925
 Dynamo produced 1 graphs covering 183 ops with 5 graph breaks (4 unique)
 cuda train LearningToPaint                     1.132x p=0.00
-TIMING: entire_frame_compile:10.56842 backend_compile:7.59551
+TIMING: entire_frame_compile:8.66671 backend_compile:7.76268
 STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:2216 | FakeTensorMode.__torch_dispatch__:10710 | ProxyTorchDispatchMode.__torch_dispatch__:4051
 Dynamo produced 1 graphs covering 71 ops with 5 graph breaks (4 unique)
 WARNING:root:Super_SloMo failed to load
@@ -36,8 +36,8 @@ Traceback (most recent call last):
     raise NotImplementedError("Eager model failed to run") from e
 NotImplementedError: Eager model failed to run
 
-cuda train alexnet                             1.086x p=0.00
-TIMING: entire_frame_compile:4.9022 backend_compile:4.53189
+cuda train alexnet                             1.085x p=0.00
+TIMING: entire_frame_compile:4.27503 backend_compile:3.90845
 STATS: call_* op count: 22 | FakeTensor.__torch_dispatch__:567 | FakeTensorMode.__torch_dispatch__:1798 | ProxyTorchDispatchMode.__torch_dispatch__:691
 Dynamo produced 1 graphs covering 22 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -81,8 +81,8 @@ Traceback (most recent call last):
     self._handle = _dlopen(self._name, mode)
 OSError: /scratch/voz/work/torchtext/torchtext/lib/libtorchtext.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
 ERROR
-cuda train dcgan                               1.147x p=0.00
-TIMING: entire_frame_compile:5.10945 backend_compile:3.95674
+cuda train dcgan                               1.168x p=0.00
+TIMING: entire_frame_compile:4.58599 backend_compile:4.22726
 STATS: call_* op count: 13 | FakeTensor.__torch_dispatch__:396 | FakeTensorMode.__torch_dispatch__:1740 | ProxyTorchDispatchMode.__torch_dispatch__:667
 Dynamo produced 1 graphs covering 13 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -262,8 +262,8 @@ You can suppress this exception and fall back to eager by setting:
     torch._dynamo.config.suppress_errors = True
 
 ERROR
-cuda train dlrm                                1.107x p=0.00
-TIMING: entire_frame_compile:12.58803 backend_compile:12.22292
+cuda train dlrm                                1.110x p=0.00
+TIMING: entire_frame_compile:12.78083 backend_compile:12.42058
 STATS: call_* op count: 36 | FakeTensor.__torch_dispatch__:303 | FakeTensorMode.__torch_dispatch__:2614 | ProxyTorchDispatchMode.__torch_dispatch__:1139
 Dynamo produced 1 graphs covering 36 ops with 4 graph breaks (3 unique)
 cuda train drq                                 ERROR:common:Backend dynamo failed in warmup()
@@ -346,7 +346,7 @@ Traceback (most recent call last):
     scope[key] = result.result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
     self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
     return self.__get_result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
     raise self._exception
@@ -488,7 +488,7 @@ Traceback (most recent call last):
     scope[key] = result.result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
     self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
     return self.__get_result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
     raise self._exception
@@ -559,27 +559,27 @@ You can suppress this exception and fall back to eager by setting:
 
 ERROR
 cuda train hf_Albert                           1.581x p=0.00
-TIMING: entire_frame_compile:12.83548 backend_compile:11.13284
+TIMING: entire_frame_compile:12.21049 backend_compile:10.58092
 STATS: call_* op count: 436 | FakeTensorMode.__torch_dispatch__:32425 | FakeTensor.__torch_dispatch__:2281 | ProxyTorchDispatchMode.__torch_dispatch__:16285
 Dynamo produced 1 graphs covering 436 ops with 4 graph breaks (3 unique)
-cuda train hf_Bart                             1.094x p=0.00
-TIMING: entire_frame_compile:22.30108 backend_compile:16.87007
+cuda train hf_Bart                             1.095x p=0.00
+TIMING: entire_frame_compile:19.44358 backend_compile:14.1414
 STATS: call_* op count: 642 | FakeTensorMode.__torch_dispatch__:58035 | FakeTensor.__torch_dispatch__:11273 | ProxyTorchDispatchMode.__torch_dispatch__:22777
 Dynamo produced 9 graphs covering 642 ops with 15 graph breaks (7 unique)
-cuda train hf_Bert                             1.132x p=0.00
-TIMING: entire_frame_compile:14.98735 backend_compile:12.21085
+cuda train hf_Bert                             1.131x p=0.00
+TIMING: entire_frame_compile:14.63842 backend_compile:11.96634
 STATS: call_* op count: 367 | FakeTensorMode.__torch_dispatch__:38299 | FakeTensor.__torch_dispatch__:7267 | ProxyTorchDispatchMode.__torch_dispatch__:16812
 Dynamo produced 1 graphs covering 367 ops with 4 graph breaks (3 unique)
-cuda train hf_BigBird                          2.087x p=0.00
-TIMING: entire_frame_compile:56.56606 backend_compile:47.41709
+cuda train hf_BigBird                          2.097x p=0.00
+TIMING: entire_frame_compile:54.7419 backend_compile:45.64247
 STATS: call_* op count: 2905 | FakeTensorMode.__torch_dispatch__:172782 | FakeTensor.__torch_dispatch__:9804 | ProxyTorchDispatchMode.__torch_dispatch__:81885
 Dynamo produced 64 graphs covering 2905 ops with 60 graph breaks (8 unique)
 cuda train hf_DistilBert                       1.113x p=0.00
-TIMING: entire_frame_compile:10.31423 backend_compile:8.96987
+TIMING: entire_frame_compile:8.97846 backend_compile:7.62566
 STATS: call_* op count: 203 | FakeTensorMode.__torch_dispatch__:18952 | FakeTensor.__torch_dispatch__:3573 | ProxyTorchDispatchMode.__torch_dispatch__:8556
 Dynamo produced 1 graphs covering 203 ops with 4 graph breaks (3 unique)
-cuda train hf_GPT2                             1.335x p=0.00
-TIMING: entire_frame_compile:15.91076 backend_compile:13.38325
+cuda train hf_GPT2                             1.352x p=0.00
+TIMING: entire_frame_compile:14.67176 backend_compile:12.12394
 STATS: call_* op count: 635 | FakeTensorMode.__torch_dispatch__:35211 | FakeTensor.__torch_dispatch__:4852 | ProxyTorchDispatchMode.__torch_dispatch__:15251
 Dynamo produced 1 graphs covering 635 ops with 4 graph breaks (3 unique)
 cuda train hf_Longformer                       Traceback (most recent call last):
@@ -961,16 +961,16 @@ Traceback (most recent call last):
     raise self._exception
 FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
 ERROR
-cuda train maml_omniglot                       1.370x p=0.00
-TIMING: entire_frame_compile:4.42047 backend_compile:4.05053
+cuda train maml_omniglot                       1.436x p=0.00
+TIMING: entire_frame_compile:4.27212 backend_compile:3.90682
 STATS: call_* op count: 14 | FakeTensor.__torch_dispatch__:473 | FakeTensorMode.__torch_dispatch__:1913 | ProxyTorchDispatchMode.__torch_dispatch__:720
 Dynamo produced 1 graphs covering 14 ops with 5 graph breaks (4 unique)
-cuda train mnasnet1_0                          1.185x p=0.00
-TIMING: entire_frame_compile:15.83027 backend_compile:14.07712
+cuda train mnasnet1_0                          1.186x p=0.00
+TIMING: entire_frame_compile:17.37429 backend_compile:13.52094
 STATS: call_* op count: 152 | FakeTensor.__torch_dispatch__:5378 | FakeTensorMode.__torch_dispatch__:25651 | ProxyTorchDispatchMode.__torch_dispatch__:9498
 Dynamo produced 1 graphs covering 152 ops with 5 graph breaks (4 unique)
-cuda train mobilenet_v2                        1.353x p=0.00
-TIMING: entire_frame_compile:16.85906 backend_compile:15.03586
+cuda train mobilenet_v2                        1.354x p=0.00
+TIMING: entire_frame_compile:16.8437 backend_compile:15.007
 STATS: call_* op count: 153 | FakeTensor.__torch_dispatch__:5413 | FakeTensorMode.__torch_dispatch__:26205 | ProxyTorchDispatchMode.__torch_dispatch__:9892
 Dynamo produced 1 graphs covering 153 ops with 5 graph breaks (4 unique)
 cuda train mobilenet_v2_quantized_qat          ERROR:common:Backend dynamo failed in warmup()
@@ -995,8 +995,8 @@ Traceback (most recent call last):
     list(ctx.symints) + list(ctx.saved_tensors) + list(contiguous_args)
 RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [32]] is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
 ERROR
-cuda train mobilenet_v3_large                  1.381x p=0.00
-TIMING: entire_frame_compile:16.56803 backend_compile:14.64048
+cuda train mobilenet_v3_large                  1.376x p=0.00
+TIMING: entire_frame_compile:16.60157 backend_compile:14.69578
 STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:6012 | FakeTensorMode.__torch_dispatch__:27516 | ProxyTorchDispatchMode.__torch_dispatch__:10662
 Dynamo produced 1 graphs covering 187 ops with 5 graph breaks (4 unique)
 cuda train moco                                   function: '<graph break in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
@@ -1057,7 +1057,7 @@ Traceback (most recent call last):
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_subclasses/fake_tensor.py", line 1212, in validate
     raise Exception(
 Exception: Please convert all Tensors to FakeTensors first or instantiate FakeTensorMode with 'allow_non_fake_inputs'. Found in c10d.allgather_.default(*([[_to_functional_tensor(FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0),
-       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7feb3c2f8bb0>, -1), **{}) 
+       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7fb00152e1f0>, -1), **{}) 
 
 While executing %all_gather : [#users=0] = call_function[target=torch.distributed.distributed_c10d.all_gather](args = ([%ones_like], %tensor), kwargs = {async_op: False})
 Original traceback:
@@ -1129,7 +1129,7 @@ Traceback (most recent call last):
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
     raise BackendCompilerFailed(self.compiler_fn, e) from e
 torch._dynamo.exc.BackendCompilerFailed: compile_fn raised Exception: Please convert all Tensors to FakeTensors first or instantiate FakeTensorMode with 'allow_non_fake_inputs'. Found in c10d.allgather_.default(*([[_to_functional_tensor(FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0),
-       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7feb3c2f8bb0>, -1), **{}) 
+       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7fb00152e1f0>, -1), **{}) 
 
 While executing %all_gather : [#users=0] = call_function[target=torch.distributed.distributed_c10d.all_gather](args = ([%ones_like], %tensor), kwargs = {async_op: False})
 Original traceback:
@@ -1329,8 +1329,8 @@ You can suppress this exception and fall back to eager by setting:
     torch._dynamo.config.suppress_errors = True
 
 ERROR
-cuda train pytorch_stargan                     1.189x p=0.00
-TIMING: entire_frame_compile:8.41739 backend_compile:7.59061
+cuda train pytorch_stargan                     1.191x p=0.00
+TIMING: entire_frame_compile:8.11937 backend_compile:7.30677
 STATS: call_* op count: 56 | FakeTensorMode.__torch_dispatch__:12560 | FakeTensor.__torch_dispatch__:2056 | ProxyTorchDispatchMode.__torch_dispatch__:5015
 Dynamo produced 1 graphs covering 56 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -1375,15 +1375,15 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
 cuda train pytorch_unet                        1.209x p=0.00
-TIMING: entire_frame_compile:9.76445 backend_compile:8.77626
+TIMING: entire_frame_compile:9.25961 backend_compile:8.27097
 STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:2551 | FakeTensorMode.__torch_dispatch__:13881 | ProxyTorchDispatchMode.__torch_dispatch__:5501
 Dynamo produced 1 graphs covering 71 ops with 5 graph breaks (4 unique)
-cuda train resnet18                            1.218x p=0.00
-TIMING: entire_frame_compile:8.8858 backend_compile:8.00703
+cuda train resnet18                            1.156x p=0.00
+TIMING: entire_frame_compile:8.89318 backend_compile:8.00909
 STATS: call_* op count: 69 | FakeTensor.__torch_dispatch__:2114 | FakeTensorMode.__torch_dispatch__:10163 | ProxyTorchDispatchMode.__torch_dispatch__:3848
 Dynamo produced 1 graphs covering 69 ops with 5 graph breaks (4 unique)
-cuda train resnet50                            1.112x p=0.00
-TIMING: entire_frame_compile:15.44728 backend_compile:13.55383
+cuda train resnet50                            1.114x p=0.00
+TIMING: entire_frame_compile:17.37649 backend_compile:13.57281
 STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:5480 | FakeTensorMode.__torch_dispatch__:26429 | ProxyTorchDispatchMode.__torch_dispatch__:9995
 Dynamo produced 1 graphs covering 175 ops with 5 graph breaks (4 unique)
 cuda train resnet50_quantized_qat              ERROR:common:Backend dynamo failed in warmup()
@@ -1498,8 +1498,8 @@ Traceback (most recent call last):
     raise self._exception
 FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
 ERROR
-cuda train shufflenet_v2_x1_0                  1.338x p=0.00
-TIMING: entire_frame_compile:17.81177 backend_compile:15.77115
+cuda train shufflenet_v2_x1_0                  1.335x p=0.00
+TIMING: entire_frame_compile:17.39095 backend_compile:15.34997
 STATS: call_* op count: 271 | FakeTensor.__torch_dispatch__:5786 | FakeTensorMode.__torch_dispatch__:30411 | ProxyTorchDispatchMode.__torch_dispatch__:11450
 Dynamo produced 1 graphs covering 271 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -1610,7 +1610,7 @@ Traceback (most recent call last):
     scope[key] = result.result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 573, in result
     self.future.result()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 458, in result
     return self.__get_result()
   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
     raise self._exception
@@ -1680,8 +1680,8 @@ You can suppress this exception and fall back to eager by setting:
     torch._dynamo.config.suppress_errors = True
 
 ERROR
-cuda train squeezenet1_1                       1.294x p=0.00
-TIMING: entire_frame_compile:5.76642 backend_compile:5.11484
+cuda train squeezenet1_1                       1.273x p=0.00
+TIMING: entire_frame_compile:5.51961 backend_compile:4.88579
 STATS: call_* op count: 66 | FakeTensor.__torch_dispatch__:1854 | FakeTensorMode.__torch_dispatch__:4618 | ProxyTorchDispatchMode.__torch_dispatch__:1788
 Dynamo produced 1 graphs covering 66 ops with 5 graph breaks (4 unique)
 ERROR
@@ -1776,7 +1776,7 @@ Traceback (most recent call last):
 FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
 ERROR
 cuda train timm_nfnet                          1.405x p=0.00
-TIMING: entire_frame_compile:18.55481 backend_compile:15.20993
+TIMING: entire_frame_compile:19.00218 backend_compile:15.59598
 STATS: call_* op count: 615 | FakeTensorMode.__torch_dispatch__:38859 | FakeTensor.__torch_dispatch__:7736 | ProxyTorchDispatchMode.__torch_dispatch__:16545
 Dynamo produced 1 graphs covering 615 ops with 5 graph breaks (4 unique)
 cuda train timm_regnet                         ERROR:common:Backend dynamo failed in warmup()
@@ -2101,8 +2101,8 @@ Traceback (most recent call last):
     raise self._exception
 FileNotFoundError: [Errno 2] No such file or directory: 'clang-8'
 ERROR
-cuda train timm_vovnet                         1.097x p=0.00
-TIMING: entire_frame_compile:16.50649 backend_compile:12.81989
+cuda train timm_vovnet                         1.098x p=0.00
+TIMING: entire_frame_compile:13.6703 backend_compile:11.68187
 STATS: call_* op count: 208 | FakeTensor.__torch_dispatch__:3896 | FakeTensorMode.__torch_dispatch__:19893 | ProxyTorchDispatchMode.__torch_dispatch__:7693
 Dynamo produced 1 graphs covering 208 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -2145,7 +2145,7 @@ Traceback (most recent call last):
 RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (8, 5, 0) but found runtime version (8, 4, 1). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN.Looks like your LD_LIBRARY_PATH contains incompatible version of cudnnPlease either remove it from the path or install cudnn (8, 5, 0)
 ERROR
 cuda train vgg16                               1.154x p=0.00
-TIMING: entire_frame_compile:4.80775 backend_compile:4.31932
+TIMING: entire_frame_compile:4.92063 backend_compile:4.43281
 STATS: call_* op count: 40 | FakeTensor.__torch_dispatch__:1135 | FakeTensorMode.__torch_dispatch__:3092 | ProxyTorchDispatchMode.__torch_dispatch__:1175
 Dynamo produced 1 graphs covering 40 ops with 5 graph breaks (4 unique)
 Traceback (most recent call last):
@@ -2179,15 +2179,15 @@ Traceback (most recent call last):
 ValueError: numpy.ndarray size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
 ERROR
 cuda train yolov3                              1.124x p=0.00
-TIMING: entire_frame_compile:24.50223 backend_compile:21.38691
+TIMING: entire_frame_compile:24.50818 backend_compile:19.64297
 STATS: call_* op count: 262 | FakeTensor.__torch_dispatch__:7756 | FakeTensorMode.__torch_dispatch__:38085 | ProxyTorchDispatchMode.__torch_dispatch__:14717
 Dynamo produced 1 graphs covering 262 ops with 5 graph breaks (4 unique)
 speedup             gmean=1.12x mean=1.134x
-abs_latency         gmean=nanx mean=42.174x
-compilation_latency mean=23.956 seconds
-compression_ratio   mean=0.871x
+abs_latency         gmean=nanx mean=42.552x
+compilation_latency mean=19.055 seconds
+compression_ratio   mean=0.876x
 eager_peak_mem      gmean=nanx mean=4.244x
-dynamo_peak_mem     gmean=nanx mean=4.834x
+dynamo_peak_mem     gmean=nanx mean=4.827x
 calls_captured      gmean=nanx mean=322.692x
 unique_graphs       gmean=nanx mean=3.731x
 graph_breaks        gmean=nanx mean=7.308x
