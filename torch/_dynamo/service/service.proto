@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message TestInput {
+  optional int32 num = 1;
+}
+
+message Result {
+  optional int32 num = 1;
+}
+
+service Dynamo {
+    rpc Optimize(TestInput) returns (Result) {}
+}
