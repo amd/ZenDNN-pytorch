@@ -20,6 +20,7 @@ import torch._dynamo.config as dynamo_config
 
 import torch.fx
 import torch.utils._pytree as pytree
+from torch._inductor.triton_backend import all_triton_backend_name
 from torch._prims_common import (
     is_boolean_dtype,
     is_float_dtype,
@@ -30,8 +31,8 @@ from torch.fx.experimental.symbolic_shapes import FloorDiv
 
 from . import config, dependencies
 from .codegen.common import index_prevent_reordering
-from .cuda_properties import get_device_properties
 from .dependencies import extract_read_writes, var_builder
+from .triton_backend import get_triton_backend, TritonBackend
 from .utils import (
     argsort,
     cache_on_self,
@@ -313,7 +314,7 @@ def get_device_type(x):
 
 
 def is_triton(x):
-    return get_device_type(x) == "cuda"
+    return get_device_type(x) in all_triton_backend_name()
 
 
 def is_cpu(x):
@@ -551,7 +552,8 @@ class Reduction(Loops):
         reduction_type,
         reduction_numel,
     ):
-        num_sm = get_device_properties(device).multi_processor_count
+        _triton_backend: TritonBackend = get_triton_backend(device_type=device.type)
+        num_sm = _triton_backend.processor_count(device.index)
         min_elements_per_thread = 32
         max_elements_per_thread = 512
         threads_per_sm = 2048
@@ -3838,12 +3840,7 @@ class ConvolutionTransposeUnary(ExternKernelAlloc):
     ):
         kernel = "torch.ops.mkldnn._convolution_transpose_pointwise"
         transposed = True
-        (
-            inputs,
-            constant_args,
-            kernel_layout,
-            _,
-        ) = _prepare_convolution_fusion_create(
+        (inputs, constant_args, kernel_layout, _,) = _prepare_convolution_fusion_create(
             cls,
             x,
             weight,

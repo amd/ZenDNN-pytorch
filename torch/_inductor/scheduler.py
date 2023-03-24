@@ -16,6 +16,7 @@ from torch._dynamo.utils import dynamo_timed
 from . import config, dependencies, ir, metrics
 from .dependencies import StarDep, WeakDep
 from .sizevars import SimplifyIndexing
+from .triton_backend import all_triton_backend_name, get_triton_backend
 from .utils import cache_on_self, cmp, free_symbol_has, has_triton
 from .virtualized import V
 
@@ -1141,7 +1142,7 @@ class Scheduler:
 
     def create_backend(self, device: torch.device):
         assert (
-            device.type != "cuda" or device.index is not None
+            device.type not in all_triton_backend_name() or device.index is not None
         ), f"{device} should have been normalized in lowering"
         V.graph.device_types.add(device.type)
         if device.type == "cpu":
@@ -1149,19 +1150,22 @@ class Scheduler:
 
             return CppScheduling(self)
         else:
+            _triton_backend = get_triton_backend(device.type)
+            assert _triton_backend
+
             if not has_triton():
-                device_props = torch.cuda.get_device_properties(device)
-                if device_props.major < 7:
-                    raise RuntimeError(
-                        f"Found {device_props.name} which is too old to be supported by the triton GPU compiler, which is used as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability {device_props.major}.{device_props.minor}"  # noqa: B950
-                    )
-                else:
+                if _triton_backend.compatible_with_triton():
                     raise RuntimeError(
                         "Cannot find a working triton installation. More information on installing Triton can be found at https://github.com/openai/triton"  # noqa: B950
                     )
+                else:
+                    raise RuntimeError(
+                        f"Found {_triton_backend.device_name(device)} which is too old to be supported by the triton GPU compiler, which is used as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability {device_props.major}.{device_props.minor}"  # noqa: B950
+                    )
+
             from .codegen.triton import TritonScheduling
 
-            return TritonScheduling(self)
+            return TritonScheduling(self, _triton_backend)
 
     def get_backend(self, device: torch.device):
         if device not in self.backends:
@@ -1194,15 +1198,17 @@ class Scheduler:
                 ):
                     self.flush()
                 if device != self.current_device:
-                    if device.type == "cuda":
-                        if self.current_device and self.current_device.type == "cuda":
-                            V.graph.wrapper_code.codegen_cuda_device_guard_exit()
+                    if (
+                        self.current_device
+                        and self.current_device.type in all_triton_backend_name()
+                    ):
+                        V.graph.wrapper_code.codegen_device_guard_exit(device)
+
+                    if device.type in all_triton_backend_name():
+                        # The device should be a accelerator device like CUDA
                         assert device.index is not None, "device should have an index"
-                        V.graph.wrapper_code.codegen_cuda_device_guard_enter(
-                            device.index
-                        )
-                    elif self.current_device and self.current_device.type == "cuda":
-                        V.graph.wrapper_code.codegen_cuda_device_guard_exit()
+                        V.graph.wrapper_code.codegen_device_guard_enter(device)
+
                     self.current_device = device
 
             self.buffer_names_to_free.update(node.last_usage)

@@ -9,10 +9,13 @@ from typing import Any, Dict, List, Tuple
 import sympy
 from sympy import Expr
 
+import torch
+
 from torch._dynamo.utils import dynamo_timed
 
 from .. import codecache, config, ir
 from ..codecache import code_hash, cpp_compile_command, get_code_path
+from ..triton_backend import get_triton_backend, triton_backends
 from ..utils import (
     cache_on_self,
     get_benchmark_name,
@@ -62,16 +65,21 @@ class MemoryPlanningState:
 
 
 @dataclasses.dataclass
-class EnterCudaDeviceContextManagerLine:
-    device_idx: int
+class EnterDeviceContextManagerLine:
+    device: torch.device
 
     def codegen(self, code: IndentedBuffer):
         # Note _DeviceGuard has less overhead than device, but only accepts
         # integers
-        code.writeline(f"with torch.cuda._DeviceGuard({self.device_idx}):")
+        assert isinstance(self.device, torch.device)
+        _triton_backend = get_triton_backend(self.device.type)
+        assert _triton_backend
+        assert self.device.index is not None
+        package_name, attr_fn = _triton_backend.gen_codegen_string("_DeviceGuard")
+        code.writeline(f"with {package_name}.{attr_fn}({self.device.index}):")
 
 
-class ExitCudaDeviceContextManagerLine:
+class ExitDeviceContextManagerLine:
     pass
 
 
@@ -187,9 +195,7 @@ class WrapperCodeGen(CodeGen):
         # maps from reusing buffer to reused buffer
         self.reuses = dict()
 
-        self.write_get_cuda_stream = functools.lru_cache(None)(
-            self.write_get_cuda_stream
-        )
+        self.write_get_stream = functools.lru_cache(None)(self.write_get_stream)
 
         @functools.lru_cache(None)
         def add_import_once(line):
@@ -222,9 +228,13 @@ class WrapperCodeGen(CodeGen):
                 import triton
                 import triton.language as tl
                 from torch._inductor.triton_ops.autotune import grid, start_graph, end_graph
-                from torch._C import _cuda_getCurrentRawStream as get_cuda_stream
                 """
             )
+            for _triton_backend in triton_backends:
+                if _triton_backend:
+                    self.header.splice(
+                        f"from torch._C import _{_triton_backend.name()}_getCurrentRawStream as get_{_triton_backend.name()}_stream"
+                    )
 
     def add_meta_once(self, meta):
         meta = repr(meta)
@@ -238,6 +248,12 @@ class WrapperCodeGen(CodeGen):
     def get_output_refs(self):
         return [x.codegen_reference() for x in V.graph.graph_outputs]
 
+    def write_sync_for_device(self, indented_buffer: IndentedBuffer):
+        for device_backend in triton_backends:
+            if device_backend:
+                package_name, attr_fn = device_backend.gen_codegen_string("synchronize")
+                indented_buffer.writeline(f"{package_name}.{attr_fn}()")
+
     def write_prefix(self):
         self.prefix.splice(
             """
@@ -250,7 +266,8 @@ class WrapperCodeGen(CodeGen):
         )
         with self.prefix.indent():
             if config.triton.debug_sync_graph:
-                self.prefix.writeline("torch.cuda.synchronize()")
+                self.write_sync_for_device(self.prefix)
+
             inp_len = len(V.graph.graph_inputs.keys())
             if inp_len != 0:
                 lhs = f"{', '.join(V.graph.graph_inputs.keys())}{'' if inp_len != 1 else ','}"
@@ -266,19 +283,20 @@ class WrapperCodeGen(CodeGen):
         with self.prefix.indent():
             self.codegen_precomputed_sizes(self.prefix)
 
-    def write_get_cuda_stream(self, index):
-        name = f"stream{index}"
-        self.writeline(f"{name} = get_cuda_stream({index})")
+    def write_get_stream(self, device: torch.device):
+        _triton_backend = get_triton_backend(device_type=device.type)
+        name = f"stream{device.index}"
+        self.writeline(f"{name} = get_{_triton_backend.name()}_stream({device.index})")
         return name
 
     def next_kernel_suffix(self):
         return f"{next(self._names_iter)}"
 
-    def codegen_cuda_device_guard_enter(self, device_idx):
-        self.writeline(EnterCudaDeviceContextManagerLine(device_idx))
+    def codegen_device_guard_enter(self, device):
+        self.writeline(EnterDeviceContextManagerLine(device))
 
-    def codegen_cuda_device_guard_exit(self):
-        self.writeline(ExitCudaDeviceContextManagerLine())
+    def codegen_device_guard_exit(self, device):
+        self.writeline(ExitDeviceContextManagerLine())
 
     def generate_return(self, output_refs):
         if output_refs:
@@ -335,20 +353,25 @@ class WrapperCodeGen(CodeGen):
             for line in self.lines:
                 if isinstance(line, MemoryPlanningLine):
                     line.codegen(self.wrapper_call)
-                elif isinstance(line, EnterCudaDeviceContextManagerLine):
+                elif isinstance(line, EnterDeviceContextManagerLine):
+                    _triton_backend = get_triton_backend(line.device.type)
+                    assert _triton_backend
+                    package_name, attr_fn = _triton_backend.gen_codegen_string(
+                        "set_device"
+                    )
                     line.codegen(self.wrapper_call)
                     device_cm_stack.enter_context(self.wrapper_call.indent())
                     self.wrapper_call.writeline(
-                        f"torch.cuda.set_device({line.device_idx}) # no-op to ensure context"
+                        f"{package_name}.{attr_fn}({line.device.index}) # no-op to ensure context"
                     )
-                elif isinstance(line, ExitCudaDeviceContextManagerLine):
+                elif isinstance(line, ExitDeviceContextManagerLine):
                     device_cm_stack.close()
                 else:
                     self.wrapper_call.writeline(line)
 
             output_refs = self.get_output_refs()
             if config.triton.debug_sync_graph:
-                self.wrapper_call.writeline("torch.cuda.synchronize()")
+                self.write_sync_for_device(self.wrapper_call)
 
             if config.profile_bandwidth:
                 self.wrapper_call.writeline("end_graph()")

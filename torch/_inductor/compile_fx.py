@@ -26,6 +26,7 @@ from .debug import DebugContext
 from .decomposition import select_decomp_table
 from .graph import GraphLowering
 from .mkldnn import convert_outplace_to_inplace
+from .triton_backend import all_triton_backend_name, get_triton_backend
 from .utils import developer_warning, get_dtype_size, has_incompatible_cudagraph_ops
 from .virtualized import V
 
@@ -240,18 +241,25 @@ def clone_preserve_strides(x):
 
 
 def align_inputs(model, inputs, static_input_idxs=()):
-    def is_aligned(storage_offset, dtype):
-        return (storage_offset * get_dtype_size(dtype)) % ALIGNMENT == 0
+    def is_aligned(storage_offset, dtype, device_type):
+        _triton_backend = get_triton_backend(device_type=device_type)
+        assert _triton_backend
+        return (
+            storage_offset * get_dtype_size(dtype)
+        ) % _triton_backend.mem_alignment() == 0
 
+    _all_triton_backend_name = all_triton_backend_name()
     check_inputs = [
         i
         for i in range(len(inputs))
         if isinstance(inputs[i], torch.Tensor)
+        and inputs[i].device.type in _all_triton_backend_name
         and (
             i not in static_input_idxs
-            or not is_aligned(inputs[i].storage_offset(), inputs[i].dtype)
+            or not is_aligned(
+                inputs[i].storage_offset(), inputs[i].dtype, inputs[i].device.type
+            )
         )
-        and inputs[i].device.type == "cuda"
     ]
 
     if len(check_inputs) == 0:
@@ -259,7 +267,9 @@ def align_inputs(model, inputs, static_input_idxs=()):
 
     def run(new_inputs):
         for i in check_inputs:
-            if new_inputs[i].data_ptr() % ALIGNMENT:
+            _triton_backend = get_triton_backend(device_type=new_inputs[i].device.type)
+            assert _triton_backend
+            if new_inputs[i].data_ptr() % _triton_backend.mem_alignment():
                 new_inputs[i] = clone_preserve_strides(new_inputs[i])
         return model(new_inputs)
 

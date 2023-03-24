@@ -27,6 +27,11 @@ from torch._dynamo.testing import rand_strided, same
 from torch._inductor.codegen.cpp import CppVecKernelChecker
 from torch._inductor.graph import GraphLowering
 from torch._inductor.ir import InterpreterShim
+from torch._inductor.triton_backend import (
+    register_triton_backend,
+    triton_backends,
+    TritonBackend,
+)
 from torch._inductor.utils import run_and_get_triton_code
 from torch._inductor.virtualized import V
 from torch.fx.experimental.proxy_tensor import make_fx
@@ -5690,6 +5695,97 @@ class CommonTemplate:
 
         # Constant must not get matched as constant
         self.common(fn, [torch.randn(3, 1, 1, 1, 1), 9132])
+
+    def test_backend_device(self):
+        class MockDeviceBackend(TritonBackend):
+            def create_stream(self):
+                return "create_stream"
+
+            def get_device_capability(self, device=None):
+                return (0, 0)
+
+            def get_device_properties(self, device):
+                return "get_device_properties"
+
+            def current_stream(self):
+                return "current_stream"
+
+            def wait_stream(self, stream):
+                return "wait_stream"
+
+            def device_count(self):
+                return 123
+
+            def synchronize(self):
+                return "synchronize"
+
+            def current_device(self):
+                return "current_device"
+
+            def set_device(self, index):
+                return "set_device"
+
+            def vinfo(self):
+                return "vinfo"
+
+            def allow_tf32(self):
+                return "allow_tf32"
+
+            def tf32_min_version(self):
+                return (0, 1)
+
+            def processor_count(self, index):
+                return 1
+
+            def is_available(self) -> bool:
+                return True
+
+            def namespace(self):
+                return "torch.mock"
+
+            def _DeviceGuard(self, index):
+                return "_DeviceGuard"
+
+            def name(self):
+                return "mock"
+
+            def device_name(self, device: torch.device) -> str:
+                return "mock_device"
+
+            def compatible_with_triton(self):
+                return True
+
+            def mem_alignment(self):
+                return 16
+
+            def target_version(self):
+                return 11
+
+            def codegen_check(self):
+                return True
+
+            def gen_codegen_string(self, attr: str):
+                return "", ""
+
+        triton_backends_copy = list(triton_backends)
+        triton_backends.clear()
+
+        mock_device_backend = MockDeviceBackend()
+        res = register_triton_backend(mock_device_backend)
+        self.assertTrue(res)
+        self.assertTrue(mock_device_backend in triton_backends)
+
+        # Only allow one instance for a particular device backend.
+        #  Since mock_device_backend has been registered to ALL_DEVICE_BACKENDS,
+        #  the new device backend registration does nothing.
+        mock_device_backend1 = MockDeviceBackend()
+        res = register_triton_backend(mock_device_backend1)
+        self.assertFalse(res)
+        self.assertTrue(mock_device_backend1 not in triton_backends)
+
+        triton_backends.clear()
+        for item in triton_backends_copy:
+            register_triton_backend(item)
 
     @unittest.skipIf(HAS_CUDA, "test in_out_ptr for CppKernel")
     def test_in_out_buffer(self):

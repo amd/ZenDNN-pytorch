@@ -21,7 +21,7 @@ import torch
 from torch.fx.immutable_collections import immutable_dict, immutable_list
 
 from . import config
-from .cuda_properties import get_device_capability
+from .triton_backend import triton_backends
 
 log = logging.getLogger(__name__)
 
@@ -38,12 +38,17 @@ except ImportError:
 
 @functools.lru_cache(None)
 def has_triton():
-    if not torch.cuda.is_available():
+    if all(not (_triton_backend) for (_triton_backend) in triton_backends):
         return False
+
     try:
         import triton
 
-        return triton is not None and get_device_capability() >= (7, 0)
+        compatible_with_triton = all(
+            _triton_backend.compatible_with_triton()
+            for _triton_backend in triton_backends
+        )
+        return triton is not None and compatible_with_triton
     except ImportError:
         return False
 
@@ -154,8 +159,9 @@ def gen_gm_and_inputs(target, args, kwargs):
 
 
 def synchronize():
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
+    for _triton_backend in triton_backends:
+        assert _triton_backend
+        _triton_backend.synchronize()
 
 
 def timed(model, example_inputs, times=1):
