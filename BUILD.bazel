@@ -1625,7 +1625,10 @@ TORCH_COPTS = COMMON_COPTS + [
 cu_library(
     name = "torch_distributed_cuda",
     srcs = ["torch/csrc/distributed/c10d/quantization/quantization_gpu.cu"],
-    deps = [":torch_headers"],
+    deps = [
+        ":torch_headers",
+        "//c10/core:base",
+    ],
 )
 
 torch_sources = ({
