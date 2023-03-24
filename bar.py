@@ -11,10 +11,23 @@ def get_library(ns):
         USER_LIBS[ns] = library.Library(ns, "DEF")
     return USER_LIBS[ns]
 
-def def_impl(ns, opname):
+def def_impl(ns, opname, devices=('cpu', 'cuda')):
+    for device in devices:
+        # Only ones supported for now.
+        # In theory we could support all.
+        assert device in ('cpu', 'cuda', 'meta')
+
+    backend_to_key = {
+        'cpu': 'CPU',
+        'cuda': 'CUDA',
+        'meta': 'Meta',
+    }
+
     def inner(f):
         lib = get_library(ns)
-        library.impl(lib, opname, 'CompositeExplicitAutograd')(f)
+        for device in devices:
+            key = backend_to_key[device]
+            library.impl(lib, opname, key)(f)
         return f
     return inner
 
@@ -38,11 +51,16 @@ def old_def_autograd(ns, opname):
         return f
     return inner
 
+def parse_schema(schema):
+    # TODO: schema parsing validation
+    ns, rest = schema.split('::')
+    opname, *_ = rest.split('(')
+    return ns, rest, opname
+
 class custom_op:
     def __init__(self, schema):
         # TODO: schema parsing validation
-        ns, rest = schema.split('::')
-        opname, *_ = rest.split('(')
+        ns, rest, opname = parse_schema(schema)
 
         lib = get_library(ns)
         lib.define(rest)
@@ -60,7 +78,7 @@ class custom_op:
     def def_impl(self, f):
         return def_impl(self.namespace, self.opname)(f)
 
-    def def_autograd(self, save_fn, call_fn):
+    def def_autograd_old(self, save_fn, call_fn):
         # TODO: what else do people specify?
         # Make sure the autograd.Function options are available...
         # - mark_dirty
@@ -87,8 +105,38 @@ class custom_op:
         lib = get_library(self.namespace)
         library.impl(lib, self.opname, 'Autograd')(even_inner)
 
+    def def_autograd(self, dct):
+        # TODO(rzou): this is just for the demo, lol
+        class Generated(torch.autograd.Function):
+            @staticmethod
+            def forward(ctx, *inputs):
+                guard = _C._AutoDispatchBelowAutograd()
+                output = self(*inputs)
+                del guard
+                ctx.save_for_backward(inputs[0])
+                return output
+
+            @staticmethod
+            def backward(ctx, *grads):
+                return dct['x'](grads[0], ctx.saved_tensors[0])
+
+        lib = get_library(self.namespace)
+        library.impl(lib, self.opname, 'Autograd')(Generated.apply)
+
     def def_meta(self, f):
         return def_meta(self.namespace, self.opname)(f)
+
+def preserve_ops(schema):
+    def inner(f):
+        op = custom_op(schema)
+        op.def_impl(f)
+        op.def_meta(f)
+        return op
+    return inner
+
+# # Needs FRAGMENT library.
+# def custom_op_from_cpp(schema):
+#     ns, rest, opname = parse_schema(schema)
 
 # ==========================
 # Sample code
@@ -97,7 +145,54 @@ class custom_op:
 import numpy as np
 
 # ================================================================
-# Create a custom op and register an implementation for it.
+# The new custom operator API is a way to create custom operators
+# (of class custom_op) and register interactions with various
+# high-level subsystems, like autograd, shape propagation
+# (meta/fake/dynamic shapes), and functionalization, in a safe
+# and blessed manner.
+#
+# There are two entry points into the new custom operator API:
+# 1. You have an operator that consists of only PyTorch operations.
+# 2. You have an operator that calls some custom C++/CUDA/etc code.
+
+# ================================================================
+# For the first use case:
+# if you want to preserve a set of PyTorch ops through
+# torch.compile or export, then use the @preserve_ops decorator.
+# This will create a custom operator wrapping your sequence
+# of PyTorch ops.
+@preserve_ops('my_new_lib::bar(Tensor x) -> Tensor')
+def bar(x):
+    return x.sin().sin()
+
+def f(x):
+    return bar(x) * 2
+
+x = torch.randn(3)
+gm = make_fx(f, tracing_mode='symbolic')(x)
+print(gm.code)
+
+# def forward(self, x_1):
+#     bar = torch.ops.my_new_lib.bar.default(x_1);  x_1 = None
+#     mul = torch.ops.aten.mul.Tensor(bar, 2);  bar = None
+#     return mul
+
+# ================================================================
+# Need additional things, like a backwards formula?
+# The preserve_ops transforms the function into a `custom_op`
+# class, where you can register additional things as needed.
+#
+# TODO: we could theortically generate the autograd formula
+# for the user under certain conditions... but I'm not convinced
+# this will be useful, and it may have implications for the schema.
+# Shout if you have a concrete use case.
+
+# Example, but keep reading to see how this works.
+# bar.def_autograd(...)
+
+# ================================================================
+# For the second use case, use the custom_op decorator to
+# directly create a custom op and register implementations for it.
 # Also, you need a meta formula to actually do symbolic tracing,
 # so we'll register that as well.
 
@@ -134,18 +229,19 @@ foo_backward.def_meta(foo_backward_meta)
 
 # ================================================================
 # To stitch together the forward and backward, we need to specify
-# how to actually call the backward operator.
+# how to actually call the backward operator. Our API for doing it
+# is similar to derivatives.yaml.
 
-def foo_save_for_backward(inputs, output):
-    x, = inputs
-    return [x]
+# TODO: this isn't good enough for saving things like x.shape,
+# unless we make it automagical...
+foo.def_autograd({
+    'x': lambda grad, x: foo_backward(grad, x),
+})
 
-def foo_call_backward(grads, saved):
-    grad_output, = grads
-    x, = saved
-    return foo_backward(grad_output, x)
-
-foo.def_autograd(foo_save_for_backward, foo_call_backward)
+# NB: This registers an autograd formula for ALL Autograd* keys, which
+# may not be desired, but is what most users want. If the user wants to do
+# something wild, then they are able to use the low-level torch.library API
+# directly.
 
 # ================================================================
 # Check that foo, foo_backward get traced out.
@@ -160,10 +256,8 @@ gy = torch.randn([1])
 gm = make_fx(f, tracing_mode='symbolic')(x, gy)
 print(gm.code)
 
-"""
-def forward(self, x_1, gy_1):
-    foo = torch.ops.my_new_lib.foo.default(x_1)
-    is_same_size = torch.ops.aten.is_same_size.default(foo, gy_1);  foo = None
-    foo_backward = torch.ops.my_new_lib.foo_backward.default(gy_1, x_1);  x_1 = None
-    return gy_1
-"""
+# def forward(self, x_1, gy_1):
+#     foo = torch.ops.my_new_lib.foo.default(x_1)
+#     is_same_size = torch.ops.aten.is_same_size.default(foo, gy_1);  foo = None
+#     foo_backward = torch.ops.my_new_lib.foo_backward.default(gy_1, x_1);  x_1 = None
+#     return gy_1
