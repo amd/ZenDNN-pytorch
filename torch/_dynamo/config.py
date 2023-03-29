@@ -110,7 +110,7 @@ replay_record_enabled = bool(os.environ.get("TORCH_COMPILE_DEBUG", False))
 rewrite_assert_with_torch_assert = True
 
 # Show a warning on every graph break
-print_graph_breaks = False
+print_graph_breaks = True
 
 # Print guards
 print_guards = os.environ.get("TORCHDYNAMO_PRINT_GUARDS", None) == "1"

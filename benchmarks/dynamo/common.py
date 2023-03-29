@@ -1387,6 +1387,25 @@ class BenchmarkRunner:
 
         return record_status(accuracy_status, dynamo_start_stats=start_stats)
 
+    def run_ts_nodynamo(
+        self, name, model, example_inputs, optimize_ctx, experiment, tag=None
+    ):
+        # Cast the model to float16/float32 as necessary
+        model, example_inputs = self.maybe_cast(model, example_inputs)
+        with self.pick_grad(name, self.args.training):
+            try:
+                ts_model = torch.jit.script(model)
+                out = self.model_iter_fn(ts_model, example_inputs)
+                status = "pass"
+            except Exception as e:
+                print(e)
+                status = "fail"
+
+        headers = ["dev", "name", "batch_size", "status"]
+        fields = [current_device, current_name, current_batch_size, status]
+        output_csv(output_filename, headers, fields)
+        return status
+
     def run_performance_test(
         self, name, model, example_inputs, optimize_ctx, experiment, tag=None
     ):
@@ -1490,7 +1509,12 @@ class BenchmarkRunner:
 
         start_stats = get_dynamo_stats()
 
-        if self.args.accuracy:
+        if self.args.run_ts_nodynamo:
+            status = self.run_ts_nodynamo(
+                name, model, example_inputs, optimize_ctx, experiment, tag
+            )
+            print(status)
+        elif self.args.accuracy:
             status = self.check_accuracy(
                 name, model, example_inputs, optimize_ctx, experiment, tag
             )
@@ -1866,6 +1890,11 @@ def parse_args(args=None):
         "--overhead", action="store_true", help=help(overhead_experiment)
     )
     group.add_argument(
+        "--run-ts-nodynamo",
+        action="store_true",
+        help="No TorchDynamo/Just torchscript",
+    )
+    group.add_argument(
         "--speedup-dynamo-ts",
         action="store_true",
         help="TorchDynamo frontend with torchscript backend",
@@ -2181,7 +2210,10 @@ def run(runner, args, original_dir=None):
     global current_name, current_device, current_batch_size, output_filename, optimize_ctx
     optimize_ctx = NullContext()
 
-    if args.overhead:
+    if args.run_ts_nodynamo:
+        experiment = speedup_experiment
+        output_filename = "no_dynamo.csv"
+    elif args.overhead:
         optimize_ctx = torch._dynamo.optimize(dummy_fx_compile, nopython=args.nopython)
         experiment = speedup_experiment
         output_filename = "overheads.csv"
