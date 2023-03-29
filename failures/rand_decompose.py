@@ -17,14 +17,17 @@ def test_custom_object():
     class Custom(torch.autograd.Function):
         @staticmethod
         def forward(ctx, x):
-            state = torch.get_rng_state()
+            state = torch.cuda.get_rng_state()
             ctx.save_for_backward(x, state)
-            return torch.rand(4, device="cuda") * torch.rand(4, device="cuda") * torch.sin(x)
+            a = torch.rand(4, device="cuda") * torch.rand(4, device="cuda") * torch.sin(x)
+            torch.cuda.set_rng_state(state)
+            a = torch.rand(4, device="cuda") * torch.rand(4, device="cuda") * a
+            return a
         
         @staticmethod
         def backward(ctx, grad_out):
             x, state = ctx.saved_tensors
-            torch.set_rng_state(state)
+            torch.cuda.set_rng_state(state)
             return grad_out * torch.rand(4, device="cuda") * torch.cos(x)
 
 

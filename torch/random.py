@@ -5,6 +5,7 @@ import warnings
 from torch._C import default_generator
 import torch
 
+from torch.overrides import has_torch_function, handle_torch_function
 
 def set_rng_state(new_state: torch.Tensor) -> None:
     r"""Sets the random number generator state.

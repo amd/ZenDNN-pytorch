@@ -28,6 +28,7 @@ def get_rng_state(device: Union[int, str, torch.device] = 'cuda') -> Tensor:
     if idx is None:
         idx = current_device()
     default_generator = torch.cuda.default_generators[idx]
+    # breakpoint()
     return default_generator.get_state()
 
 
