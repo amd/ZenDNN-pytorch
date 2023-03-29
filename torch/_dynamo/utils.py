@@ -139,6 +139,28 @@ def print_time_report():
     print(out)
 
 
+# NB: There may be multiple TimedFunc with same key
+@dataclasses.dataclass
+class TimedFunc:
+    key: str
+    children: collections.OrderedDict[str, "TimedFunc"] = dataclasses.field(
+        default_factory=collections.OrderedDict
+    )
+    metrics: List[float] = dataclasses.field(default_factory=list)
+
+
+ROOT_TIMED_FUNC = TimedFunc("<root>")
+CURRENT_TIMED_FUNC = ROOT_TIMED_FUNC
+
+
+def render_timed_func(t: TimedFunc, level: int = 0):
+    out = ""
+    out += "  " * level + t.key + "\n"
+    for c in t.children.values():
+        out += render_timed_func(c, level + 1)
+    return out
+
+
 # dynamo_timed API works as a function decorator
 # By wrapping a function in dynamo_timed, we can store a record in compilation_metrics
 # where the key is the functions name.
@@ -159,14 +181,25 @@ def dynamo_timed(original_function=None, phase_name=None):
     def dynamo_timed_inner(func):
         @wraps(func)
         def time_wrapper(*args, **kwargs):
-            key = func.__qualname__
+            key = f"{func.__module__}.{func.__qualname__}"
             if key not in compilation_metrics:
                 compilation_metrics[key] = []
-            t0 = time.time()
-            r = func(*args, **kwargs)
-            time_spent = time.time() - t0
+            global CURRENT_TIMED_FUNC
+            timed_func = CURRENT_TIMED_FUNC.children.get(key)
+            if timed_func is None:
+                timed_func = TimedFunc(key)
+                CURRENT_TIMED_FUNC.children[key] = timed_func
+            prev_timed_func = CURRENT_TIMED_FUNC
+            CURRENT_TIMED_FUNC = timed_func
+            try:
+                t0 = time.time()
+                r = func(*args, **kwargs)
+                time_spent = time.time() - t0
+            finally:
+                CURRENT_TIMED_FUNC = prev_timed_func
             # print(f"Dynamo timer: key={key}, latency={latency:.2f} sec")
             compilation_metrics[key].append(time_spent)
+            timed_func.metrics.append(time_spent)
             if phase_name:
                 frame_key = str(curr_frame)
                 if frame_key not in frame_phase_timing:
@@ -210,6 +243,8 @@ def compile_times(repr="str", aggregate=False):
         ]
         out = "TorchDynamo compilation metrics:\n"
         out += tabulate(rows, headers=("Function", "Runtimes (s)"))
+        out += "\n\nCall hierarchy:\n"
+        out += render_timed_func(ROOT_TIMED_FUNC)
         return out
     elif repr == "csv":
         values = [
