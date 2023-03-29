@@ -12,6 +12,32 @@ def print_rng_seed_and_offset():
     print(f"seed={seed}, offset={offset}", flush=True)
 
 
+def test_custom_object():
+
+    class Custom(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, x):
+            state = torch.get_rng_state()
+            ctx.save_for_backward(x, state)
+            return torch.rand(4, device="cuda") * torch.rand(4, device="cuda") * torch.sin(x)
+        
+        @staticmethod
+        def backward(ctx, grad_out):
+            x, state = ctx.saved_tensors
+            torch.set_rng_state(state)
+            return grad_out * torch.rand(4, device="cuda") * torch.cos(x)
+
+
+
+    custom = Custom.apply
+
+    x = torch.rand(4, device="cuda", requires_grad=True)
+    aot_custom = aot_function(custom, print_compile)
+
+    # Both forward
+    loss = aot_custom(x).sum()
+    torch.manual_seed(10)
+    loss.backward()
 
 
 def test_rst_state_in_between():
@@ -88,6 +114,7 @@ def test_checkpointing():
     # opt_mod(x).sum().backward()
 
 if __name__ == "__main__":
+    test_custom_object()
     # test_rst_state_in_between()
     # test_negative_testing()
-    test_checkpointing()
+    # test_checkpointing()

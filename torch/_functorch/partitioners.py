@@ -84,11 +84,13 @@ def _extract_graph_with_inputs_outputs(joint_graph, inputs, outputs):
 
 
 def _is_primal(node):
-    return node.op == "placeholder" and "tangents" not in node.target
+    # TODO - Yuck, any better way?
+    return node.op == "placeholder" and "tangents" not in node.target and "bwd_seed" not in node.target and "bwd_base_offset" not in node.target
 
 
 def _is_tangent(node):
-    return node.op == "placeholder" and "tangents" in node.target
+    # TODO - Yuck, any better way?
+    return node.op == "placeholder" and ("tangents" in node.target or "bwd_seed" in node.target or "bwd_base_offset" in node.target)
 
 
 def _extract_fwd_bwd_outputs(joint_module: fx.GraphModule, *, num_fwd_outputs):
