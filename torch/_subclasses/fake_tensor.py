@@ -1022,7 +1022,7 @@ class FakeTensorMode(TorchDispatchMode):
     def __init__(
         self,
         *,
-        allow_fallback_kernels=True,
+        allow_fallback_kernels=False,
         allow_non_fake_inputs=False,
         shape_env=None,
     ):
