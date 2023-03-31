@@ -52,6 +52,7 @@ from .utils import (
     dynamo_timed,
     format_graph_code,
     format_graph_tabular,
+    graph_break_dup_warning_checker,
     same,
 )
 from .variables.base import VariableTracker
@@ -501,21 +502,57 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
         raise AssertionError("unreachable")
 
     def compile_subgraph(
-        self, tx, partial_convert=False, reason: Optional[GraphCompileReason] = None
+        self,
+        tx,
+        *,
+        reason: GraphCompileReason,
+        partial_convert=False,
+        # If True, we will count this compilation as a graph break for
+        # reporting reasons
+        graph_break=True,
     ):
         """
         Generate a subgraph to continue execution on user code.
         Automatically restore live variables.
         """
+        import torch._dynamo.symbolic_convert as symbolic_convert
         from .eval_frame import disable
 
         self.partial_convert = partial_convert
         self.compile_subgraph_reason = reason
 
-        log.debug(f"COMPILING GRAPH due to {reason}")
-
         if not all(block.can_restore() for block in tx.block_stack):
             unimplemented("compile_subgraph with block_depth != 0")
+
+        log.debug(f"COMPILING GRAPH due to {reason}")
+
+        # The logic for reporting graph breaks is a little tricky.  There may
+        # not be any graph we're breaking on, but we still want to report
+        # a graph break, as we're still rewriting bytecode and going to
+        # install guards for the rewritten bytecode.
+        user_stack = reason.user_stack
+        frame_loc = (user_stack[-1].filename, user_stack[-1].lineno)
+
+        # Suppress these warnings when explain is on: torch._dynamo.explain()
+        # formats this a little nicer, and presents a slightly more actionable
+        # user code pointer
+        if (
+            graph_break
+            and config.print_graph_breaks
+            and not symbolic_convert.explain
+            and graph_break_dup_warning_checker.add(frame_loc)
+            and log.isEnabledFor(logging.WARNING)
+        ):
+            user_stack_formatted = "".join(traceback.format_list(user_stack))
+            log.warning(
+                "Graph break: %s from user code at:\n%s",
+                reason.reason,
+                user_stack_formatted,
+            )
+
+        # Don't record graph_break counters if this is just a plain return
+        if graph_break:
+            counters["graph_break"][reason.reason] += 1
 
         for block in reversed(tx.block_stack):
             block.exit(tx)
