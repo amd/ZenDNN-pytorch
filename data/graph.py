@@ -52,9 +52,10 @@ def graph_delta(data_names, title):
     fig.subplots_adjust(bottom=0.45)
     plt.rc('xtick', labelsize=8)    # fontsize of the tick labels
 
-    width = -0.4
+    width = 0.25
 
     last_names = []
+    i = 0
     for (d, n) in data_names:
         # Extract the model names and their corresponding performances from the data
         model_names = []
@@ -62,23 +63,18 @@ def graph_delta(data_names, title):
         for row in d:
             model_names.append(row[2])
             performances.append(row[3])
-                
 
-        # print(set(model_names) - set(last_names))
-        # print(set(last_names) - set(model_names))
-        # breakpoint()
-        last_names = model_names
-        # data.append(performances)
         names.append(n)
 
+        breakpoint()
         ax.bar(model_names, performances, width=width, align='edge', label=n)
-        width += 0.4
-        ax.set_xticklabels(model_names, rotation=90, ha='right')
+        i += 1
 
     # ax.axhline(y=1, color='r', linestyle='--')
     ax.set_ylim(bottom=1.0)
     ax.set_xticklabels(model_names, rotation=90, ha='right')
     ax.set_ylabel('Speedup')
+
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
     name = f"data/{title}.png"
@@ -87,16 +83,23 @@ def graph_delta(data_names, title):
 
 def graph_delta_merged(data1, data2, name1, name2, title):
     # Extract the model names and their corresponding performances from the data
-    model_names = []
+    model_name_to_perf1 = {}
+    model_name_to_perf2 = {}
     performances1 = []
     performances2 = []
 
     for row1, row2 in zip(data1, data2):
-        assert row1[2] == row2[2], f"row1: {row1}, row2: {row2}"  # Make sure model names match between the two datasets
-        
-        model_names.append(row1[2])
-        performances1.append(row1[3])
-        performances2.append(row2[3])
+        model_name_to_perf1[row1[2]] = row1[3]
+        model_name_to_perf2[row2[2]] = row2[3]
+
+
+    model_names = []
+    for name in model_name_to_perf1.keys():
+        if name in model_name_to_perf2:
+            model_names.append(name)
+            performances1.append(model_name_to_perf1[name])
+            performances2.append(model_name_to_perf2[name])
+
 
     # Plot the performances for the two datasets
     fig, ax = plt.subplots(figsize=(24, 10))
@@ -123,12 +126,9 @@ def draw_per_kind_per_bench_graphs():
     inductor_train = []
     nvfuser_train = []
     for bench in benches:
-        inductor_eval.extend(parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval"))
-        nvfuser_eval.extend(parse_log(f"data/{bench}_nvfuser_eval.log", f"cuda eval"))
-        inductor_train.extend(parse_log(f"data/{bench}_inductor_train.log", f"cuda train"))
-        nvfuser_train.extend(parse_log(f"data/{bench}_nvfuser_train.log", f"cuda train"))
-
-    graph_delta([(inductor_eval, "Inductor - Inference"), (inductor_train, "Inductor - Train"), (nvfuser_eval, "NVFuser - Inference"), (nvfuser_train, "NVFuser - Train")], title=f"all_inductor_nvfuser_gpu_per_kind")
+        inductor_eval = parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval")
+        inductor_train = parse_log(f"data/{bench}_inductor_train.log", f"cuda train")
+        graph_delta_merged(inductor_eval, inductor_train, "Inductor - Inference", "Inductor - Train", title=f"{bench}_inductor_per_kind")
 
 
 # draw_per_kind_per_bench_graphs()
@@ -137,23 +137,23 @@ def draw_all_not_merged():
     benches = ["hf", "timm", "tb"]
     kinds = ["eval", "train"]
     inductor = []
-    nvfuser = []
+    # nvfuser = []
     for bench in benches:
         for kind in kinds:
             inductor.extend(parse_log(f"data/{bench}_inductor_{kind}.log", f"cuda {kind}"))
-            nvfuser.extend(parse_log(f"data/{bench}_nvfuser_{kind}.log", f"cuda {kind}"))
+            # nvfuser.extend(parse_log(f"data/{bench}_nvfuser_{kind}.log", f"cuda {kind}"))
     # describe_delta(inductor, nvfuser, "Inductor", "NVFuser", f"all_inductor_nvfuser_gpu")
-    graph_delta([(inductor, "inductor"), (nvfuser, "NVFuser")], f"all_inductor_nvfuser_gpu")
+    graph_delta([(inductor, "inductor")], f"all_inductor_gpu")
 
 def draw_all_merged():
     benches = ["hf", "timm", "tb"]
     kinds = ["eval", "train"]
     inductor = []
-    nvfuser = []
+    # nvfuser = []
     for bench in benches:
         for kind in kinds:
             inductor.extend(parse_log(f"data/{bench}_inductor_{kind}.log", f"cuda {kind}"))
-            nvfuser.extend(parse_log(f"data/{bench}_nvfuser_{kind}.log", f"cuda {kind}"))
+            # nvfuser.extend(parse_log(f"data/{bench}_nvfuser_{kind}.log", f"cuda {kind}"))
     
     def merge(records):
         grouped_dict = {}
@@ -179,10 +179,10 @@ def draw_all_merged():
         return merged_list
 
     # describe_delta(merge(inductor), merge(nvfuser), "Inductor", "NVFuser", f"merged_inductor_nvfuser_gpu")
-    describe_delta(merge(inductor), merge(nvfuser), "Inductor", "NVFuser", f"all_inductor_nvfuser_gpu")
-    # graph_delta_merged(merge(inductor), merge(nvfuser), "Inductor", "NVFuser", f"merged_inductor_nvfuser_gpu")
+    # describe_delta(merge(inductor), "Inductor", "NVFuser", f"all_inductor_gpu")
+    graph_delta([(merge(inductor), "Inductor")], f"merged_inductor_gpu")
 
 
-# draw_per_kind_per_bench_graphs()
+draw_per_kind_per_bench_graphs()
 # draw_all_not_merged()
-draw_all_merged()
+# draw_all_merged()
