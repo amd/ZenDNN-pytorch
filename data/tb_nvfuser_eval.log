@@ -8480,7 +8480,8 @@ cuda eval  mobilenet_v3_large                  0.501x p=0.00
 TIMING: entire_frame_compile:25.99749 backend_compile:23.59232
 STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:1042 | FakeTensorMode.__torch_dispatch__:57179 | ProxyTorchDispatchMode.__torch_dispatch__:58712
 Dynamo produced 1 graphs covering 187 ops with 0 graph breaks (0 unique)
-cuda eval  moco                                   function: '<graph break in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
+cuda eval  moco                                 0.00x p=0.00
+  function: '<graph break in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
    reasons:  ___tuple_iterator_len(___stack0) == 160
 to diagnose recompilation issues, see https://pytorch.org/docs/master/dynamo/troubleshooting.html.
 ERROR:common:Backend dynamo failed in warmup()
