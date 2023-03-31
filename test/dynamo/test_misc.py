@@ -5156,6 +5156,33 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         self.assertEqual(seen_frames[2].line, "r2 = uwu_inline_me_deep(y, z)")
 
 
+    def test_name_match_guard(self):
+        guard_failure = None
+
+        def guard_failures(failure):
+            nonlocal guard_failure
+            guard_failure = failure
+
+        from functorch.experimental.control_flow import cond
+
+        def true_fn(x):
+            return x.sin()
+
+        def false_fn(x):
+            return x.cos()
+
+        def f(pred, x):
+            return cond(pred, true_fn, false_fn, [x])
+
+        opt_fn = torch._dynamo.optimize("eager", nopython=True, guard_fail_fn=guard_failures)(f)
+        a = opt_fn(torch.tensor(False), torch.tensor([0.25, 0.25]))
+        self.assertTrue(same(torch.cos(torch.tensor([0.25, 0.25])), a))
+        b = opt_fn(torch.tensor(True), torch.tensor([0.25, 0.25]))
+        self.assertTrue(same(torch.sin(torch.tensor([0.25, 0.25])), b))
+        breakpoint()
+
+
+
 class CustomFunc1(torch.autograd.Function):
     @staticmethod
     def forward(ctx, foo):
