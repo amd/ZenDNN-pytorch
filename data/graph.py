@@ -43,6 +43,13 @@ def graph_delta(data_names, title):
     data = []
     names = []
 
+    # Plot the performances for the datasets
+    fig, ax = plt.subplots(figsize=(24, 10))
+    fig.subplots_adjust(bottom=0.45)
+    plt.rc('xtick', labelsize=8)    # fontsize of the tick labels
+
+    width = -0.4
+
     last_names = []
     for (d, n) in data_names:
         # Filter out the rows with bad data
@@ -60,25 +67,24 @@ def graph_delta(data_names, title):
             except:
                 performances.append(float('nan'))
 
-        print(set(model_names) - set(last_names))
-        print(set(last_names) - set(model_names))
-        breakpoint()
+        # print(set(model_names) - set(last_names))
+        # print(set(last_names) - set(model_names))
+        # breakpoint()
         last_names = model_names
-        data.append(performances)
+        # data.append(performances)
         names.append(n)
 
-    
-    assert len(data) == len(names), "The number of data sets must match the number of names"
-
-    # Plot the performances for the datasets
-    fig, ax = plt.subplots(figsize=(24, 10))
-    fig.subplots_adjust(bottom=0.45)
-    plt.rc('xtick', labelsize=8)    # fontsize of the tick labels
-
-    width = -0.4
-    for i, d in enumerate(data):
-        ax.bar(model_names, d, width=width, align='edge', label=names[i])
+        ax.bar(model_names, performances, width=width, align='edge', label=n)
         width += 0.4
+        ax.set_xticklabels(model_names, rotation=90, ha='right')
+
+
+    
+    # assert len(data) == len(names), "The number of data sets must match the number of names"
+
+    # for i, d in enumerate(data):
+    #     ax.bar(model_names, d, width=width, align='edge', label=names[i])
+    #     width += 0.4
 
     ax.axhline(y=1, color='r', linestyle='--')
     ax.set_ylim(bottom=0)
