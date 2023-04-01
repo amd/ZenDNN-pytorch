@@ -561,8 +561,9 @@ def clean_and_assemble_instructions(
         code_options["co_exceptiontable"] = b""
     return instructions, types.CodeType(*[code_options[k] for k in keys])
 
-
 def cleaned_instructions(code, safe=False):
+    breakpoint()
+    from torch._dynamo.eval_frame import extract_instructions
     instructions = list(map(convert_instruction, dis.get_instructions(code)))
     check_offsets(instructions)
     virtualize_jumps(instructions)

@@ -59,6 +59,8 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     return 0;
 }
 
+
+
 int
 THP_PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame) {
     /* Merge fast locals into f->f_locals */
@@ -873,6 +875,269 @@ static PyObject* skip_code(PyObject* dummy, PyObject* args) {
   Py_RETURN_NONE;
 }
 
+//// Begin Instruction class
+
+typedef struct InstructionObject {
+    PyObject_HEAD
+    int opcode;
+    PyObject *opname;
+    PyObject *arg;
+    PyObject *argval;
+    PyObject *offset;
+    PyObject *starts_line;
+    int is_jump_target;
+    PyObject *target;
+} InstructionObject;
+
+static PyObject *
+Instruction_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    InstructionObject *self;
+
+    self = (InstructionObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->opcode = 0;
+        self->opname = NULL;
+        self->arg = NULL;
+        self->argval = NULL;
+        self->offset = NULL;
+        self->starts_line = NULL;
+        self->is_jump_target = 0;
+        self->target = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
+static void
+Instruction_dealloc(InstructionObject *self)
+{
+    Py_XDECREF(self->opname);
+    Py_XDECREF(self->arg);
+    Py_XDECREF(self->argval);
+    Py_XDECREF(self->offset);
+    Py_XDECREF(self->starts_line);
+    Py_XDECREF(self->target);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+Instruction_init(InstructionObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"opcode", "opname", "arg", "argval", "offset", "starts_line", "is_jump_target", "target", NULL};
+
+    PyObject *opname = NULL;
+    PyObject *arg = NULL;
+    PyObject *argval = NULL;
+    PyObject *offset = NULL;
+    PyObject *starts_line = NULL;
+    PyObject *target = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "iOOOOOi|O", kwlist, &self->opcode, &opname, &arg, &argval, &offset, &starts_line, &self->is_jump_target, &target)) {
+        return -1;
+    }
+
+    if (opname == Py_None) {
+        Py_DECREF(opname);
+        opname = NULL;
+    }
+    Py_XINCREF(opname);
+    self->opname = opname;
+
+    if (arg == Py_None) {
+        Py_DECREF(arg);
+        arg = NULL;
+    }
+    Py_XINCREF(arg);
+    self->arg = arg;
+
+    if (argval == Py_None) {
+        Py_DECREF(argval);
+        argval = NULL;
+    }
+    Py_XINCREF(argval);
+    self->argval = argval;
+
+    if (offset == Py_None) {
+        Py_DECREF(offset);
+        offset = NULL;
+    }
+    Py_XINCREF(offset);
+    self->offset = offset;
+
+    if (starts_line == Py_None) {
+        Py_DECREF(starts_line);
+        starts_line = NULL;
+    }
+    Py_XINCREF(starts_line);
+    self->starts_line = starts_line;
+
+    if (target == Py_None) {
+        Py_DECREF(target);
+        target = NULL;
+    }
+    Py_XINCREF(target);
+    self->target = target;
+
+    return 0;
+}
+
+static PyTypeObject InstructionType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "instruction.Instruction",      /* tp_name */
+    sizeof(InstructionObject),      /* tp_basicsize */
+    0,                              /* tp_itemsize */
+    (destructor)Instruction_dealloc,/* tp_dealloc */
+    0,                              /* tp_print */
+    0,                              /* tp_getattr */
+    0,                              /* tp_setattr */
+    0,                              /* tp_reserved */
+    0,                              /* tp_repr */
+    0,                              /* tp_as_number */
+    0,                              /* tp_as_sequence */
+    0,                              /* tp_as_mapping */
+    0,                              /* tp_hash */
+    0,                              /* tp_call */
+    0,                              /* tp_str */
+    0,                              /* tp_getattro */
+    0,                              /* tp_setattro */
+    0,                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,             /* tp_flags */
+    "Instruction objects",          /* tp_doc */
+    0,                              /* tp_traverse */
+    0,                              /* tp_clear */
+    0,                              /* tp_richcompare */
+    0,                              /* tp_weaklistoffset */
+    0,                              /* tp_iter */
+    0,                              /* tp_iternext */
+    0,                              /* tp_methods */
+    0,                              /* tp_members */
+    0,                              /* tp_getset */
+    0,                              /* tp_base */
+    0,                              /* tp_dict */
+    0,                              /* tp_descr_get */
+    0,                              /* tp_descr_set */
+    0,                              /* tp_dictoffset */
+    (initproc)Instruction_init,     /* tp_init */
+    0,                              /* tp_alloc */
+    Instruction_new,                /* tp_new */
+};
+
+static PyModuleDef instructionmodule = {
+PyModuleDef_HEAD_INIT,
+"instruction",
+"Module that defines an Instruction type.",
+-1,
+NULL, NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC
+PyInit_instruction(void)
+{
+PyObject *module;
+
+if (PyType_Ready(&InstructionType) < 0) {
+    return NULL;
+}
+
+module = PyModule_Create(&instructionmodule);
+if (module == NULL) {
+    return NULL;
+}
+
+Py_INCREF(&InstructionType);
+PyModule_AddObject(module, "Instruction", (PyObject *)&InstructionType);
+
+return module;
+}
+
+static PyObject* dis_get_instruction(PyObject* code)
+{
+    PyObject *dis_module, *get_instructions_func, *instr_iter, *instr_tuple;
+    PyObject *instr_list = PyList_New(0);
+    
+    // Import the 'dis' module
+    dis_module = PyImport_ImportModule("dis");
+    fprintf(stderr, "dis imported");
+    
+    // Get a reference to the 'get_instructions' function
+    get_instructions_func = PyObject_GetAttrString(dis_module, "get_instructions");
+    fprintf(stderr, "got func");
+    
+    // Call the 'get_instructions' function
+    instr_iter = PyObject_CallFunctionObjArgs(get_instructions_func, code, NULL);
+    fprintf(stderr, "got iter");
+    
+    // Iterate over the instructions
+    while ((instr_tuple = PyIter_Next(instr_iter) != NULL)) {
+        // Append the instruction tuple to the list
+        PyList_Append(instr_list, instr_tuple);
+        
+        // Decrement the reference count of the instruction tuple
+        Py_DECREF(instr_tuple);
+    }
+    fprintf(stderr, "Done looping");
+    
+    // Clean up
+    Py_DECREF(instr_iter);
+    Py_DECREF(get_instructions_func);
+    Py_DECREF(dis_module);
+    
+    // Return the list of instruction tuples
+    return instr_list;
+}
+
+//// End Instruction class
+
+static PyObject* extract_instructions(PyObject *dummy, PyObject* args)
+{
+    PyCodeObject *code = NULL;
+    if (!PyArg_ParseTuple(args, "O", &code)) {
+        return NULL;
+    }
+    PyObject *new_instrs;
+    Py_ssize_t n_instrs, i;
+    if (code == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Invalid code object: was f_code NULL?");
+        return NULL;
+    }
+
+    new_instrs = PyList_New(0);
+    if (new_instrs == NULL) {
+        return NULL;
+    }
+
+    // instr = (InstructionObject*)malloc(n_instrs * sizeof(InstructionObject));
+    PyObject* instr_tuples = dis_get_instruction(code->co_code);
+    int instr_list_len = PyList_Size(instr_tuples);
+    fprintf(stderr, "Got list len %i", instr_list_len);
+    for (i = 0; i < instr_list_len; i++) {
+        PyObject *instr_tuple = PyList_GetItem(instr_tuples, i);
+        InstructionObject* instr = Instruction_new(&InstructionType, NULL, NULL);
+        // instr->opcode = PyLong_AsLong(PyTuple_GetItem(instr_tuple, 0));
+        // instr->opname = PyUnicode_AsUTF8(PyTuple_GetItem(instr_tuple, 1));
+        // instr->arg = PyLong_AsLong(PyTuple_GetItem(instr_tuple, 2));
+        // instr->argval = PyTuple_GetItem(instr_tuple, 3);
+        // instr->offset = PyLong_AsLong(PyTuple_GetItem(instr_tuple, 4));
+        // instr->starts_line = PyLong_AsLong(PyTuple_GetItem(instr_tuple, 5));
+        // instr->is_jump_target = PyLong_AsLong(PyTuple_GetItem(instr_tuple, 6));
+
+        instr->opname = PyTuple_GetItem(instr_tuple, 1);
+        instr->arg = PyTuple_GetItem(instr_tuple, 2);
+        instr->argval = PyTuple_GetItem(instr_tuple, 3);
+        instr->offset = PyTuple_GetItem(instr_tuple, 4);
+        instr->starts_line = PyTuple_GetItem(instr_tuple, 5);
+        instr->is_jump_target = PyTuple_GetItem(instr_tuple, 6);
+        instr->target = NULL;
+        // Voz: warning squash
+        PyObject* inst = (PyObject *)instr;
+        PyList_Append(new_instrs, inst);
+        Py_DECREF(instr_tuple);
+    }
+
+    return new_instrs;
+}
+
 static PyObject* set_guard_fail_hook(PyObject* dummy, PyObject* args) {
   PyObject* obj = NULL;
   if (!PyArg_ParseTuple(args, "O", &obj)) {
@@ -943,6 +1208,7 @@ static PyMethodDef _methods[] = {
     {"set_guard_error_hook", set_guard_error_hook, METH_VARARGS, NULL},
     {"set_profiler_hooks", set_profiler_hooks, METH_VARARGS, NULL},
     {"clear_profiler_hooks", clear_profiler_hooks, METH_VARARGS, NULL},
+    {"extract_instructions", extract_instructions, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef _module = {
