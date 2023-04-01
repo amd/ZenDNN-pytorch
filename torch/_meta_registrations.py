@@ -21,8 +21,10 @@ from torch._prims_common import (
 from torch._prims_common.wrappers import _maybe_resize_out, _safe_copy_out, out_wrapper
 from torch._refs import _broadcast_shapes
 
-from torch.utils._pytree import tree_map
+# register quantized_decomposed ops
+from torch.ao.quantization.fx._decomposed import quantized_decomposed_lib  # noqa: F401
 
+from torch.utils._pytree import tree_map
 
 aten = torch.ops.aten
 
@@ -2934,6 +2936,10 @@ import torch._refs
 import torch._refs.nn.functional
 import torch._refs.special
 
+_QUANTIZED_DECOMPOSED_LIB = torch.library.Library(
+    "quantized_decomposed", "IMPL", "Meta"
+)
+
 
 def activate_meta():
     activate_meta_table = {}
@@ -2986,6 +2992,8 @@ def activate_meta():
                 _meta_lib_dont_use_me_use_register_meta_for_mkldnn.impl(op_overload, fn)
             elif "mkl::" in op_overload.name():
                 _meta_lib_dont_use_me_use_register_meta_for_mkl.impl(op_overload, fn)
+            elif "quantized_decomposed::" in op_overload.name():
+                _QUANTIZED_DECOMPOSED_LIB.impl(op_overload, fn)
             else:
                 _meta_lib_dont_use_me_use_register_meta.impl(op_overload, fn)
 
