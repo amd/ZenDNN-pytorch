@@ -2,6 +2,7 @@
 
 import types
 from copy import deepcopy
+from functools import partial
 from typing import Tuple
 from unittest.mock import patch
 
@@ -1401,6 +1402,46 @@ class OptimizedModuleTest(torch._dynamo.test_case.TestCase):
         self.assertEqual(compiled_func(inp), outer_func(inp))
         self.assertEqual(compiled_func(inp).item(), 7)
         self.assertEqual(cc.frame_count, 1)
+
+    @patch.object(torch._dynamo.config, "enable_nnmodule_hooks", True)
+    def test_hooks_allowed_modules(self):
+        class ToyModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.net = torch.nn.Sequential(
+                    *[torch.nn.Linear(10, 10000), torch.nn.ReLU()]
+                    + [torch.nn.Linear(10000, 5), torch.nn.ReLU()]
+                )
+
+            def forward(self, x):
+                return self.net(x)
+
+        model = ToyModel()
+        forward_handles = {}
+        activations = dict()
+
+        def save_activations(name, mod, inp, out):
+            activations[name] = inp
+
+        for name, module in model.named_modules():
+            forward_handles[name] = module.register_forward_hook(
+                partial(save_activations, name)
+            )
+
+        model = torch.compile(model, backend="aot_eager")
+
+        for i in range(2):
+            # second iteration is key, hooks would have fired during aot trace
+            # on first iter
+            activations.clear()
+            x = torch.randn((20, 10))
+            pred = model(x)
+            loss = pred.sum()
+            loss.backward()
+
+        print(f"Recorded Layers: {activations.keys()}\n\n")
+        print(f"Expected Layers: {forward_handles.keys()}")
+        self.assertTrue(activations.keys() == forward_handles.keys())
 
 
 if __name__ == "__main__":
