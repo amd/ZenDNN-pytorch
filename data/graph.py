@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-
+import math
 
 def parse_log(file_name, slug):
     out = []
@@ -102,14 +102,24 @@ def graph_delta_merged(data1, data2, name1, name2, title):
 
 
     # Plot the performances for the two datasets
-    fig, ax = plt.subplots(figsize=(24, 10))
+    fig, ax = plt.subplots(figsize=(24, 12))
     fig.subplots_adjust(bottom=0.45)
     plt.rc('xtick', labelsize=8)    # fontsize of the tick labels
     ax.bar(model_names, performances1, width=-0.4, align='edge', label=name1)
     ax.bar(model_names, performances2, width=0.4, align='edge', label=name2)
+    ax.margins(x=0)
     # ax.axhline(y=1, color='r', linestyle='--')
-    ax.set_ylim(bottom=1.0)
+    bottom = 1
+    top = math.ceil(max(max(performances2), max(performances1))) * 4
+    ticks = []
+    labels = []
+    for i in range(bottom, top):
+        ticks.append(i / 4)
+        labels.append(f"{i / 4}x")
+    
+    ax.set_ylim(bottom=float(bottom), top=top/4)
     ax.set_xticklabels(model_names, rotation=90, ha='right')
+    ax.set_yticks(ticks, labels)
     ax.set_ylabel('Speedup')
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
@@ -128,7 +138,7 @@ def draw_per_kind_per_bench_graphs():
     for bench in benches:
         inductor_eval = parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval")
         inductor_train = parse_log(f"data/{bench}_inductor_train.log", f"cuda train")
-        graph_delta_merged(inductor_eval, inductor_train, "Inductor - Inference", "Inductor - Train", title=f"{bench}_inductor_per_kind")
+        graph_delta_merged(inductor_eval, inductor_train, "Inference", "Training", title=f"{bench}_inductor_per_kind")
 
 
 # draw_per_kind_per_bench_graphs()
