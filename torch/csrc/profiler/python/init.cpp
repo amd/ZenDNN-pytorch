@@ -293,6 +293,9 @@ void initPythonBindings(PyObject* module) {
   m.def(
       "_disable_execution_graph_observer",
       &torch::profiler::impl::disableExecutionGraphObserver);
+  m.def(
+      "_is_kineto_profiler_registered",
+      &torch::profiler::impl::kineto::kinetoProfilerIsRegistered);
 
   py::class_<CapturedTraceback, std::shared_ptr<CapturedTraceback>>(
       m, "CapturedTraceback");
