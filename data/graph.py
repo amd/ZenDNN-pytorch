@@ -95,10 +95,21 @@ def graph_delta_merged(data1, data2, name1, name2, title):
 
     model_names = []
     for name in model_name_to_perf1.keys():
+        model_names.append(name)
+        performances1.append(model_name_to_perf1[name])
         if name in model_name_to_perf2:
-            model_names.append(name)
-            performances1.append(model_name_to_perf1[name])
             performances2.append(model_name_to_perf2[name])
+        else:
+            performances2.append(0)
+
+
+    for name in model_name_to_perf2.keys():
+        if name in model_names:
+            continue 
+        model_names.append(name)
+        performances1.append(0)
+        performances2.append(model_name_to_perf2[name])
+
 
 
     # Plot the performances for the two datasets
@@ -109,7 +120,7 @@ def graph_delta_merged(data1, data2, name1, name2, title):
     ax.bar(model_names, performances2, width=0.4, align='edge', label=name2)
     ax.margins(x=0)
     # ax.axhline(y=1, color='r', linestyle='--')
-    bottom = 1
+    bottom = 4
     top = math.ceil(max(max(performances2), max(performances1))) * 4
     ticks = []
     labels = []
@@ -117,7 +128,7 @@ def graph_delta_merged(data1, data2, name1, name2, title):
         ticks.append(i / 4)
         labels.append(f"{i / 4}x")
     
-    ax.set_ylim(bottom=float(bottom), top=top/4)
+    ax.set_ylim(bottom=1.0, top=top/4)
     ax.set_xticklabels(model_names, rotation=90, ha='right')
     ax.set_yticks(ticks, labels)
     ax.set_ylabel('Speedup')
