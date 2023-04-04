@@ -750,7 +750,14 @@ class CheckFunctionManager:
         verbose_code_parts.extend(local_builder.shape_env_code)
         assert not global_builder.shape_env_code
 
-        code = " and ".join(unique(code_parts))
+        code = "      passing = True \n"
+        for code_part in unique(code_parts):
+            cleaned = code_part.replace("'", '""')
+            code += f"      passing = {code_part} \n"
+            code += f"      if not passing: \n"
+            code += f"          print('failing {cleaned}') \n"
+            code += f"          return (False, str('{cleaned}')) \n"
+        code += f"      return True, None"
         closure_vars = collections.OrderedDict(
             [
                 ("___guarded_code", self),
@@ -763,14 +770,18 @@ class CheckFunctionManager:
         closure_vars.update(CLOSURE_VARS)
         py_code = f"""\
 def ___make_guard_fn({','.join(closure_vars.keys())}):
-    return lambda L: {code}
+    def guard_fn(L): 
+{code}
+    return guard_fn
 """
         if os.environ.get("TORCHDYNAMO_PRINT_GUARDS", None) == "1":
             print("GUARDS", code)
         set_guard_fail_hook(guard_fail_hook)
         out: Dict[str, Any] = dict()
+        # breakpoint()
         exec(py_code, global_builder.scope, out)
         guard_fn = out["___make_guard_fn"](*closure_vars.values())
+        # breakpoint()
         guard_fn.closure_vars = closure_vars
         # TODO(whc) maybe '.code_parts' was only kept around for the guard callback? so we don't need both
         guard_fn.args = largs
