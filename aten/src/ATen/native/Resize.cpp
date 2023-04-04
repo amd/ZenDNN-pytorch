@@ -47,10 +47,6 @@ void native_resize_(const Tensor& output, IntArrayRef shape) {
   native::resize_(output, shape);
 }
 
-void native_resize_(const Tensor& output, SymIntArrayRef shape) {
-  native::resize__symint(output, shape);
-}
-
 template <typename T>
 bool _resize_output(const Tensor& output, ArrayRef<T> shape) {
   if (_resize_output_check<T>(output, shape)) {
@@ -72,10 +68,6 @@ bool _resize_output(const Tensor& output, ArrayRef<T> shape) {
 }
 
 bool resize_output(const Tensor& output, IntArrayRef shape) {
-  return _resize_output(output, shape);
-}
-
-bool resize_output_symint(const Tensor& output, SymIntArrayRef shape) {
   return _resize_output(output, shape);
 }
 
@@ -154,35 +146,8 @@ const Tensor& resize_as_(
 }
 
 
-void resize_bytes_meta(StorageImpl* storage, c10::SymInt size_bytes) {
-  TORCH_CHECK(storage->resizable(), "Trying to resize storage that is not resizable");
-  storage->set_nbytes(std::move(size_bytes));
-}
-
-static void maybe_resize_storage_meta(TensorImpl* self, c10::SymInt new_size_bytes) {
-  // It does not make sense to try to resize a storage
-  // to hold 0 elements, and this can break
-  // if storage_offset is positive but
-  // new_size is 0, so just bail in that case
-  // (same comment is in Resize.h)
-  if (self->sym_numel() == 0) {
-    return;
-  }
-
-  const Storage& storage = self->unsafe_storage();
-  if (!storage) {
-    TORCH_INTERNAL_ASSERT(0, "NYI, this should only be Caffe2");
-  } else if (new_size_bytes > storage.nbytes()) {
-    resize_bytes_meta(storage.unsafeGetStorageImpl(), std::move(new_size_bytes));
-  }
-}
-
 static void _maybe_resize_storage(TensorImpl* self, int64_t new_size_bytes) {
   maybe_resize_storage_cpu(self, new_size_bytes);
-}
-
-static void _maybe_resize_storage(TensorImpl* self, c10::SymInt new_size_bytes) {
-  maybe_resize_storage_meta(self, std::move(new_size_bytes));
 }
 
 template <typename T>
@@ -223,14 +188,6 @@ TensorImpl* resize_impl_cpu_(
   return _resize_impl_(self, size, stride, resize_storage);
 }
 
-TensorImpl* resize_impl_meta_(
-    TensorImpl* self,
-    c10::SymIntArrayRef size,
-    at::OptionalSymIntArrayRef stride,
-    bool resize_storage = true) {
-  return _resize_impl_(self, size, stride, resize_storage);
-}
-
 template <typename T>
 const Tensor& _resize_(
     const Tensor& self,
@@ -258,14 +215,6 @@ const Tensor& resize_(
   if (self.has_names()) {
     return resize_named_tensor_(self, size, optional_memory_format);
   }
-  return _resize_(self, size, optional_memory_format);
-}
-
-const Tensor& resize__symint(
-    const Tensor& self,
-    c10::SymIntArrayRef size,
-    c10::optional<MemoryFormat> optional_memory_format) {
-  TORCH_INTERNAL_ASSERT(!self.has_names())
   return _resize_(self, size, optional_memory_format);
 }
 
