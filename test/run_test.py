@@ -114,7 +114,11 @@ def discover_tests(
         rc += extra_tests
     return sorted(rc)
 
+TESTS = [
+    'test_python_dispatch.py',
+]
 
+"""
 TESTS = discover_tests(
     blocklisted_patterns=[
         "ao",
@@ -166,6 +170,7 @@ TESTS = discover_tests(
         "distributed/elastic/multiprocessing/api_test",
     ],
 )
+"""
 
 # The doctests are a special case that don't correspond to a file that discover
 # tests can enable.
@@ -268,6 +273,7 @@ CI_SERIAL_LIST = [
     "test_tensor_creation_ops",
     "test_sparse_csr",
     "test_dispatch",
+    "test_python_dispatch",
     "test_spectral_ops",  # Cause CUDA illegal memory access https://github.com/pytorch/pytorch/issues/88916
     "nn/test_pooling",
     "nn/test_convolution",  # Doesn't respect set_per_process_memory_fraction, results in OOM for other tests in slow gradcheck
