@@ -508,6 +508,7 @@
     MkldnnCPU: mkldnn_add
     ZeroTensor: add_zerotensor
     NestedTensorCPU, NestedTensorCUDA: NestedTensor_add_Tensor
+    NestedTensorMeta: NestedTensor_add_Tensor_meta
   tags: [core, pointwise]
 
 - func: add_.Tensor(Tensor(a!) self, Tensor other, *, Scalar alpha=1) -> Tensor(a!)
@@ -2358,7 +2359,7 @@
     QuantizedCPU, QuantizedCUDA: empty_like_quantized
     SparseCPU, SparseCUDA, SparseMeta: empty_like_sparse_coo
     SparseCsrCPU, SparseCsrCUDA: empty_like_sparse_csr
-    NestedTensorCPU, NestedTensorCUDA: empty_like_nested
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: empty_like_nested
   autogen: empty_like.out
 
 - func: empty_strided(SymInt[] size, SymInt[] stride, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
@@ -2562,7 +2563,7 @@
     CPU, CUDA: fill_
     MPS: fill_scalar_mps
     QuantizedCPU, QuantizedCUDA: fill_quantized_
-    Meta: fill_meta_
+    Meta, NestedTensorMeta: fill_meta_
     SparseCsrCPU, SparseCsrCUDA: fill_sparse_csr_
     NestedTensorCPU, NestedTensorCUDA: fill_nested_
   autogen: fill.Scalar_out
@@ -4137,7 +4138,7 @@
     # NB: Although this composite mutates on the inside, it is
     # non-differentiable so NonFunctional doesn't apply
     CompositeExplicitAutograd: ones_like
-    NestedTensorCPU, NestedTensorCUDA: ones_like
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: ones_like
   autogen: ones_like.out
 
 - func: pairwise_distance(Tensor x1, Tensor x2, float p=2, float eps=1e-06, bool keepdim=False) -> Tensor
@@ -5068,7 +5069,7 @@
   variants: function, method
   dispatch:
     CompositeExplicitAutograd: detach
-    NestedTensorCPU, NestedTensorCUDA: detach
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: detach
 
 # Like `detach()`, but modifies this `Variable` in-place. This method may
 # only be called on non-view `Variable`s. You can use `is_view()` to check
@@ -5792,13 +5793,13 @@
 - func: _nested_tensor_size(Tensor self) -> Tensor
   variants: method
   dispatch:
-    NestedTensorCPU, NestedTensorCUDA: _nested_tensor_size
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: _nested_tensor_size
   autogen: _nested_tensor_size.out
 
 - func: _nested_tensor_strides(Tensor self) -> Tensor
   variants: method
   dispatch:
-    NestedTensorCPU, NestedTensorCUDA: _nested_tensor_strides
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: _nested_tensor_strides
   autogen: _nested_tensor_strides.out
 
 - func: _nested_tensor_storage_offsets(Tensor self) -> Tensor
@@ -6376,7 +6377,7 @@
   dispatch:
     CPU, CUDA: zero_
     MPS: zero_mps_
-    Meta: zero_meta_
+    Meta, NestedTensorMeta: zero_meta_
     SparseCPU, SparseCUDA, SparseMeta: zero_sparse_
     SparseCsrCPU, SparseCsrCUDA: zero_sparse_csr_
     MkldnnCPU: mkldnn_zero_
@@ -6847,7 +6848,7 @@
   dispatch:
     SparseCPU, SparseCUDA, SparseMeta: values_sparse
     SparseCsrCPU, SparseCsrCUDA: values_sparse_csr
-    NestedTensorCPU, NestedTensorCUDA: values_nested
+    NestedTensorCPU, NestedTensorCUDA, NestedTensorMeta: values_nested
     CompositeExplicitAutograd: values_default
   device_check: NoCheck
   device_guard: False
@@ -9666,7 +9667,7 @@
   dispatch:
     CPU, CUDA: normal_
     MPS: normal_mps_
-    Meta: normal_meta_
+    Meta, NestedTensorMeta: normal_meta_
     SparseCsrCPU, SparseCsrCUDA: normal_sparse_csr_
     NestedTensorCPU, NestedTensorCUDA: normal_nested_
   autogen: normal.out
@@ -13622,6 +13623,7 @@
   variants: function
   python_module: nn
 
+# Returns a NestedTensor
 - func: _nested_tensor_from_tensor_list(Tensor[] list, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
   variants: function
   dispatch:

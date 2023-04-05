@@ -25,7 +25,9 @@ from torch.testing._internal.common_utils import (
     skipIfSlowGradcheckEnv,
     subtest,
     TestCase,
+    TEST_WITH_CROSSREF,
 )
+from torch._subclasses.fake_tensor import _NestedTensorFakeNotImplementedError
 
 # Tests are ported from pytorch/nestedtensor.
 # This makes porting as_nested_tensor easier in the future.
@@ -96,8 +98,31 @@ def random_nt(device, dtype, num_tensors, max_dims, min_dims=None):
         ts1.append(t1)
     return torch.nested.nested_tensor(ts1, device=device, dtype=dtype)
 
+class CrossRefNestedFakeMode(torch._subclasses.CrossRefFakeMode):
+    def __init__(self):
+        super().__init__(
+            self.ignore_op, check_strides=True,
+            check_aliasing=False,
+        )  # TODO: enable alias checking
+
+    @staticmethod
+    def ignore_op(func):
+        return False
+
 
 class TestNestedTensor(TestCase):
+    # _nested_tensor_from_tensor_list() is not implemented for fake; skip tests
+    # that use it as they're expected to fail.
+    _ignore_not_implemented_error = True
+    _not_implemented_error_type = _NestedTensorFakeNotImplementedError
+
+    def run(self, result=None):
+        if TEST_WITH_CROSSREF:
+            with CrossRefNestedFakeMode():
+                return super().run(result)
+        else:
+            return super().run(result)
+
     @parametrize("batch_size", [2, 4])
     @parametrize("max_seq_len", [3, 5])
     @parametrize("vocab_size", [10, 20])
@@ -865,7 +890,8 @@ class TestNestedTensorDeviceType(TestCase):
                           subtest(torch.abs, name="abs"),
                           subtest(torch.abs_, name="abs_"),
                           subtest(torch.sgn, name="sgn"),
-                          subtest(torch.logical_not, name='logical_not'),])
+                          subtest(torch.logical_not, name='logical_not'),
+                          ])
     def test_activations(self, device, func):
         nt, nt_noncontiguous = random_nt_noncontiguous_pair((2, 3, 6, 7), device=device, dtype=torch.float32)
         nested_result = func(nt)

@@ -1,6 +1,7 @@
 # Owner(s): ["module: dynamo"]
 from torch._dynamo import config
 from torch._dynamo.testing import make_test_cls_with_patches
+from torch.testing._internal.common_utils import expectedSuccess
 
 try:
     from . import (
@@ -91,6 +92,13 @@ assert XFAIL_HITS == len(ALL_DYNAMIC_XFAILS) * 2
 unittest.expectedFailure(
     DynamicShapesMiscTests.test_slice_input_dynamic_shapes
     # NotImplementedError: SymNodeVariable() is not a constant
+)
+
+# Nested tensors are only expected to work within Dynamo when dynamic
+# shapes is enabled.
+expectedSuccess(DynamicShapesMiscTests.test_nested_tensor_inputs_dynamic_shapes)
+expectedSuccess(
+    StaticDefaultDynamicShapesMiscTests.test_nested_tensor_inputs_dynamic_shapes_static_default
 )
 
 if __name__ == "__main__":

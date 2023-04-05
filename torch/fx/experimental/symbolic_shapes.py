@@ -1718,7 +1718,9 @@ class ShapeEnv:
         # TODO: Make this more efficient by binding all the size/stride/offsets
         # to locals before performing tests on them.
 
-        from torch._dynamo.source import TensorPropertySource, TensorProperty
+        from torch._dynamo.source import (
+            TensorPropertySource, TensorProperty, NestedTensorProperty
+        )
 
         # Actual codegen must be delayed as we don't necessarily know what
         # the symbol mapping is
@@ -1788,6 +1790,15 @@ class ShapeEnv:
                         "about why it is constant, set torch._dynamo.config.print_specializations = True"
                     ))
 
+        def _track_symints_for_tensor_metadata(t, source, constraint):
+            for i, ss in enumerate(t.size()):
+                property_source = TensorPropertySource(source, TensorProperty.SIZE, i)
+                track_symint(property_source, ss, constraint[i])
+            for i, ss in enumerate(t.stride()):
+                track_symint(TensorPropertySource(source, TensorProperty.STRIDE, i), ss)
+            track_symint(TensorPropertySource(source, TensorProperty.STORAGE_OFFSET),
+                         t.storage_offset())
+
         for t, source, constraint in zip(placeholders, sources, constraint_inputs):
             if isinstance(source, str):
                 from torch._dynamo.source import LocalSource
@@ -1799,12 +1810,28 @@ class ShapeEnv:
                 track_symint(source, t)
                 continue
             assert isinstance(t, torch.Tensor)
-            for i, ss in enumerate(t.size()):
-                property_source = TensorPropertySource(source, TensorProperty.SIZE, i)
-                track_symint(property_source, ss, constraint[i])
-            for i, ss in enumerate(t.stride()):
-                track_symint(TensorPropertySource(source, TensorProperty.STRIDE, i), ss)
-            track_symint(TensorPropertySource(source, TensorProperty.STORAGE_OFFSET), t.storage_offset())
+            if t.is_nested:
+                assert all([c is None for c in constraint]), \
+                    "Dim constraints are not supported for nested tensors"
+
+                _track_symints_for_tensor_metadata(
+                    t._nested_tensor_size(),
+                    TensorPropertySource(source, NestedTensorProperty.NESTED_SIZES),
+                    constraint,
+                )
+                _track_symints_for_tensor_metadata(
+                    t._nested_tensor_strides(),
+                    TensorPropertySource(source, NestedTensorProperty.NESTED_STRIDES),
+                    constraint,
+                )
+                _track_symints_for_tensor_metadata(
+                    t._nested_tensor_storage_offsets(),
+                    TensorPropertySource(source, NestedTensorProperty.STORAGE_OFFSETS),
+                    constraint,
+                )
+
+            else:
+                _track_symints_for_tensor_metadata(t, source, constraint)
 
         # 1. Every input must equal the final simplified symbolic expression
         #    stored on the placeholder.  Given a placeholder (s0*2, s1),

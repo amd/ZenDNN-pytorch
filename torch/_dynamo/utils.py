@@ -948,6 +948,11 @@ def same(
             if not exact_dtype:
                 ref = ref.to(res.dtype)
 
+            if ref.is_nested and res.is_nested:
+                return same(ref.unbind(), res.unbind())
+            elif ref.is_nested or res.is_nested:
+                return False
+
             # First try usual allclose
             if torch.allclose(ref, res, atol=tol, rtol=tol, equal_nan=equal_nan):
                 return True

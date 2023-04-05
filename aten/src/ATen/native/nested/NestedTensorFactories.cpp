@@ -31,8 +31,9 @@ TensorOptions verify_empty_parameters(
       memory_format,
       " instead.");
 
+  bool is_meta = (!device.has_value() && self.is_meta()) || (device.has_value() && device->is_meta());
   TORCH_CHECK(
-      self.is_contiguous(),
+      is_meta || self.is_contiguous(),
       "empty_like only supports contiguous memory format for Nested Tensors");
 
   TORCH_CHECK(

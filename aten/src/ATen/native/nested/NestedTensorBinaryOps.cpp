@@ -178,6 +178,13 @@ Tensor NestedTensor_add_Tensor(
       });
 }
 
+Tensor NestedTensor_add_Tensor_meta(
+    const Tensor& self,
+    const Tensor& other,
+    const Scalar& alpha) {
+  return at::empty_like(self);
+}
+
 Tensor NestedTensor_sub_Tensor(
     const Tensor& self,
     const Tensor& other,

@@ -17,15 +17,17 @@ inline void validate_nested_tensor_metadata(
     const at::Tensor& nested_sizes,
     const at::Tensor& nested_strides,
     const at::Tensor& offsets) {
-  TORCH_INTERNAL_ASSERT(nested_sizes.is_contiguous());
   int64_t size_dim = nested_sizes.dim();
   TORCH_INTERNAL_ASSERT(size_dim == 0 || size_dim == 2);
-  TORCH_INTERNAL_ASSERT(nested_strides.is_contiguous());
   TORCH_INTERNAL_ASSERT(nested_strides.dim() == size_dim);
-  TORCH_INTERNAL_ASSERT(nested_sizes.sizes() == nested_strides.sizes());
-  TORCH_INTERNAL_ASSERT(
-      (size_dim == 0 && offsets.size(0) == 0) ||
-      (size_dim == 2 && nested_sizes.size(0) == offsets.size(0)));
+  if (!nested_sizes.unsafeGetTensorImpl()->has_symbolic_sizes_strides()) {
+    TORCH_INTERNAL_ASSERT(nested_sizes.is_contiguous());
+    TORCH_INTERNAL_ASSERT(nested_strides.is_contiguous());
+    TORCH_INTERNAL_ASSERT(nested_sizes.sizes() == nested_strides.sizes());
+    TORCH_INTERNAL_ASSERT(
+        (size_dim == 0 && offsets.size(0) == 0) ||
+        (size_dim == 2 && nested_sizes.size(0) == offsets.size(0)));
+  }
 }
 
 /**
@@ -178,11 +180,6 @@ NestedTensorImpl::NestedTensorImpl(
   TORCH_WARN_ONCE(
       "The PyTorch API of nested tensors is in prototype stage and will change "
       "in the near future.");
-  auto storage_device = storage_.device();
-  TORCH_INTERNAL_ASSERT(
-      storage_device.is_cpu() || storage_device.is_cuda(),
-      "NestedTensorImpl storage must be either CUDA or CPU but got ",
-      storage_device);
   validate_nested_tensor_metadata(nested_sizes_, nested_strides_, storage_offsets_);
   refresh_dim();
   set_custom_sizes_strides(c10::TensorImpl::SizesStridesPolicy::CustomSizes);
@@ -249,8 +246,8 @@ c10::optional<int64_t> NestedTensorImpl::opt_size(int64_t d) const {
 }
 
 void NestedTensorImpl::refresh_dim() {
-  const auto my_dim = nested_sizes_.dim() ? nested_sizes_.sizes()[1] + 1 : 1;
-  sizes_and_strides_.resize(my_dim);
+  const auto my_dim = nested_sizes_.dim() ? nested_sizes_.sym_size(1) + 1 : 1;
+  sizes_and_strides_.resize(my_dim.guard_int(__FILE__, __LINE__));
   TORCH_INTERNAL_ASSERT_DEBUG_ONLY(dim() == my_dim);
 }
 

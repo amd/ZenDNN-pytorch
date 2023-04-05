@@ -78,7 +78,7 @@ struct TORCH_API NestedTensorImpl : public c10::TensorImpl {
    */
   at::Tensor get_buffer() const {
     TORCH_CHECK(
-        nested_tensor_impl_is_contiguous(this),
+        this->is_meta() || nested_tensor_impl_is_contiguous(this),
         "NestedTensor must be contiguous to get buffer.");
     return get_unsafe_storage_as_tensor();
   }
@@ -92,15 +92,21 @@ struct TORCH_API NestedTensorImpl : public c10::TensorImpl {
    */
   at::Tensor get_unsafe_storage_as_tensor() const {
     auto buffer_key_set_ = generate_buffer_key_set();
-    const auto buffer_size = get_buffer_size();
     auto buffer_tensor_impl = c10::make_intrusive<TensorImpl>(
         c10::TensorImpl::VIEW, Storage(storage_), buffer_key_set_, data_type_);
-    buffer_tensor_impl->set_sizes_contiguous(c10::makeArrayRef(buffer_size));
+    const auto buffer_size = get_buffer_size();
+    if (C10_UNLIKELY(this->is_meta())) {
+      buffer_tensor_impl->set_sizes_and_strides(
+          {buffer_size}, {1}, c10::nullopt);
+    } else {
+      buffer_tensor_impl->set_sizes_contiguous(
+          C10_AS_INTARRAYREF_SLOW({buffer_size}));
+    }
     return Tensor(buffer_tensor_impl);
   }
 
-  int64_t get_buffer_size() const {
-    return storage_.nbytes() / data_type_.itemsize();
+  c10::SymInt get_buffer_size() const {
+    return storage_.sym_nbytes() / data_type_.itemsize();
   }
 
  protected:
