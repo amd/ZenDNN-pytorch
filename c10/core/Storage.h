@@ -1,6 +1,7 @@
 #pragma once
 
 #include <c10/core/StorageImpl.h>
+#include <c10/core/impl/cow/shadow_storage.h>
 
 namespace c10 {
 
