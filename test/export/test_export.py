@@ -99,17 +99,14 @@ class TestExport(TestCase):
         inp = (torch.tensor([3, 2]),)
         ref = f(*inp)
 
-        gm, guard = torchdynamo.export(f, *inp, aten_graph=True, tracing_mode="symbolic")
-        print(gm)
-        gm.print_readable(True)
+        gm, _ = torchdynamo.export(f, *inp, aten_graph=True, tracing_mode="symbolic")
         res = gm(*inp)
 
         self.assertTrue(torchdynamo.utils.same(ref, res))
 
         gm = make_fx(f, tracing_mode="symbolic")(*inp)
-        print(gm)
-        gm.print_readable(True)
         res = gm(*inp)
+        self.assertTrue(torchdynamo.utils.same(ref, res))
 
 if __name__ == '__main__':
     run_tests()
