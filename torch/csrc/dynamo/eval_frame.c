@@ -300,7 +300,6 @@ THPPyInterpreterFrame* THPPyInterpreterFrame_New(_PyInterpreterFrame* frame) {
 // Flag to just run a frame normally
 #define SKIP_CODE ((void*)0x1)
 
-static PyObject* guard_fail_hook = NULL;
 static PyObject* guard_error_hook = NULL;
 static PyObject* profiler_start_hook = NULL;
 static PyObject* profiler_end_hook = NULL;
@@ -407,21 +406,17 @@ static inline PyObject* call_callback(
     PyObject* callable,
     THP_EVAL_API_FRAME_OBJECT* _frame,
     long cache_len,
-    PyObject* reason,
-    PyObject* source) {
+    PyObject* code_part) {
 
 #if IS_PYTHON_3_11_PLUS
   THPPyInterpreterFrame* frame = THPPyInterpreterFrame_New(_frame);
 #else
   PyFrameObject* frame = _frame;
 #endif
-  if (reason == NULL) {
-    reason = Py_None;
+  if (code_part == NULL) {
+    code_part = Py_None;
   }
-  if (source == NULL) {
-    source = Py_None;
-  }
-  PyObject* args = Py_BuildValue("(OlOO)", frame, cache_len, reason, source);
+  PyObject* args = Py_BuildValue("(OlO)", frame, cache_len, code_part);
   if (args == NULL) {
     return NULL;
   }
@@ -520,7 +515,7 @@ static void call_profiler_end_hook(PyObject* record) {
 
 // Return value: borrowed reference
 // Is either Py_None or a PyCodeObject
-static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEntry* prev, size_t index, PyObject** reason, PyObject** source) {
+static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEntry* prev, size_t index, PyObject** code_part) {
   if (e == NULL) {
     // NB: intentionally not using Py_RETURN_NONE, to return borrowed ref
     return Py_None;
@@ -557,18 +552,9 @@ static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEn
     return (PyObject*)e->code;
   }
   // valid == False
-  PyObject* fail_reason = PyTuple_GetItem(result, 1);
-  *reason = fail_reason;
-  PyObject* fail_source = PyTuple_GetItem(result, 2);
-  *source = fail_source;
-  if (unlikely(guard_fail_hook != NULL)) {
-    PyObject* r = call_guard_fail_hook(guard_fail_hook, e, index, f_locals);
-    if (r == NULL) {
-      return NULL;
-    }
-    Py_DECREF(r);
-  }
-  PyObject* lookup_result = lookup(e->next, frame, e, index + 1, reason, source);
+  PyObject* fail_code_part = PyTuple_GetItem(result, 1);
+  *code_part = fail_code_part;
+  PyObject* lookup_result = lookup(e->next, frame, e, index + 1, code_part);
   return lookup_result;
 }
 
@@ -761,9 +747,8 @@ static PyObject* _custom_eval_frame(
   if (callback == Py_False) {
     DEBUG_TRACE("In run only mode %s", name(frame));
     PyObject* hook_record = call_profiler_start_hook(guard_profiler_name_str);
-    PyObject *reason = NULL;
-    PyObject *source = NULL;
-    PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason, &source);
+    PyObject *code_part = NULL;
+    PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &code_part);
     call_profiler_end_hook(hook_record);
     Py_XDECREF(hook_record);
 
@@ -789,9 +774,8 @@ static PyObject* _custom_eval_frame(
   eval_frame_callback_set(Py_None);
 
   PyObject* hook_record = call_profiler_start_hook(guard_profiler_name_str);
-  PyObject *reason = NULL;
-  PyObject *source = NULL;
-  PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason, &source);
+  PyObject *code_part = NULL;
+  PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &code_part);
   call_profiler_end_hook(hook_record);
   Py_XDECREF(hook_record);
   if (maybe_cached_code == NULL) {
@@ -810,9 +794,9 @@ static PyObject* _custom_eval_frame(
   // TODO(alband): This is WRONG for python3.11+ we pass in a _PyInterpreterFrame
   // that gets re-interpreted as a PyObject (which it is NOT!)
   PyObject* result =
-      call_callback(callback, frame, cache_size(extra), reason, source);
-  if (reason != NULL) {
-    Py_DECREF(reason);
+      call_callback(callback, frame, cache_size(extra), code_part);
+  if (code_part != NULL) {
+    Py_DECREF(code_part);
   }
   if (result == NULL) {
     // internal exception, returning here will leak the exception into user code
@@ -948,20 +932,6 @@ static PyObject* skip_code(PyObject* dummy, PyObject* args) {
   Py_RETURN_NONE;
 }
 
-static PyObject* set_guard_fail_hook(PyObject* dummy, PyObject* args) {
-  PyObject* obj = NULL;
-  if (!PyArg_ParseTuple(args, "O", &obj)) {
-    return NULL;
-  }
-  Py_XDECREF(guard_fail_hook);
-  if (obj == Py_None) {
-    guard_fail_hook = NULL;
-  } else {
-    guard_fail_hook = obj;
-    Py_INCREF(guard_fail_hook);
-  }
-  Py_RETURN_NONE;
-}
 
 static PyObject* set_guard_error_hook(PyObject* dummy, PyObject* args) {
   PyObject* obj = NULL;
@@ -1014,7 +984,6 @@ static PyMethodDef _methods[] = {
     {"reset_code", reset_code, METH_VARARGS, NULL},
     {"unsupported", unsupported, METH_VARARGS, NULL},
     {"skip_code", skip_code, METH_VARARGS, NULL},
-    {"set_guard_fail_hook", set_guard_fail_hook, METH_VARARGS, NULL},
     {"set_guard_error_hook", set_guard_error_hook, METH_VARARGS, NULL},
     {"set_profiler_hooks", set_profiler_hooks, METH_VARARGS, NULL},
     {"clear_profiler_hooks", clear_profiler_hooks, METH_VARARGS, NULL},

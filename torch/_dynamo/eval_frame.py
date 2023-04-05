@@ -34,7 +34,6 @@ if TYPE_CHECKING:
         reset_code,
         set_eval_frame,
         set_guard_error_hook,
-        set_guard_fail_hook,
         skip_code,
         unsupported,
     )
@@ -360,13 +359,12 @@ def first_real_inst_idx(code):
 
 def catch_errors_wrapper(callback, hooks: Hooks):
     @functools.wraps(callback)
-    def catch_errors(frame, cache_size, reason, source):
+    def catch_errors(frame, cache_size, code_part):
         msg = f"Compiling {frame.f_code.co_name} {frame.f_code.co_filename} with cache_size {cache_size}."
-        if reason is not None:
-            # TODO(voz): this almost obsoletes guard_failure_fn
-            # We can remove the metrics writing it does and plumb it in here.
-            msg += (f" Due to guard failure {reason}")
-        log.info(msg)
+        if code_part is not None:
+            torch._dynamo.guards.guard_fail_hook(hooks.guard_fail_fn, frame.f_code, code_part, cache_size)
+            msg += (f" Due to guard failure {code_part.code} from guard {code_part.origin} and source {code_part.source}")
+        log.debug(msg)
         if (
             # TODO: the first condition is not covered by any test
             frame.f_lasti >= first_real_inst_idx(frame.f_code)
