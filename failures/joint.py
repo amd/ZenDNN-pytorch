@@ -23,12 +23,14 @@ torch._dynamo.allow_in_graph(torch.autograd.grad)
 def joint(x):
     out = mod(x)
     loss = out.sum()
-    params = list(dict(mod.named_parameters()).values())
-    grad_x, grad_w = torch.autograd.grad(loss, [x, params[0]], retain_graph=True)
-    x.grad = grad_x
-    params[0].grad = grad_w
+    loss.backward()
+    # params = list(dict(mod.named_parameters()).values())
+    # grad_x, grad_w = torch.autograd.grad(loss, [x, params[0]], retain_graph=True)
+    # x.grad = grad_x
+    # params[0].grad = grad_w
     optim.step()
-    return loss, grad_x, grad_w
+    return loss
+    # return loss, grad_x, grad_w
 
 x = torch.randn(2, 2, requires_grad=True)
 ref = joint(x)

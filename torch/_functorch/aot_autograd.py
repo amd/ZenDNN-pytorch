@@ -1294,9 +1294,14 @@ class AOTConfig:
     dynamic_shapes: bool = False
 
 def aot_dispatch_base(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig):
+
+    flat_fn_fx = make_fx(flat_fn)(*flat_args)
+    def retraced_flat_fn(*args):
+        return Interpreter(flat_fn_fx).run(*flat_args)
+
     with enable_python_dispatcher():
         _fw_metadata = run_functionalized_fw_and_collect_metadata(
-            flat_fn,
+            retraced_flat_fn,
             keep_input_mutations=aot_config.keep_inference_input_mutations,
         )(
             *flat_args
@@ -1319,7 +1324,7 @@ def aot_dispatch_base(flat_fn, flat_args: List[Tensor], aot_config: AOTConfig):
     # - input mutations (including when inputs are aliases of each other)
     # - input metadata mutations
     trace_fn = create_forward_or_joint_functionalized(
-        flat_fn,
+        retraced_flat_fn,
         meta=metadata_,
         trace_joint=False,
         keep_input_mutations=aot_config.keep_inference_input_mutations
@@ -2071,7 +2076,7 @@ def aot_dispatch_autograd(flat_fn, flat_args: List[Any], aot_config: AOTConfig):
 
     with enable_python_dispatcher():
         _fw_metadata = run_functionalized_fw_and_collect_metadata(
-            flat_fn,
+            retraced_flat_fn,
             # Note: in the non-inference path, we are currently not passing input mutations into the graph directly.
             # This is mainly difficult due to the partitioner, but we are leaving (a bit of) perf on the table.
             keep_input_mutations=False,
@@ -2106,7 +2111,7 @@ def aot_dispatch_autograd(flat_fn, flat_args: List[Any], aot_config: AOTConfig):
     assert len(_fw_metadata.requires_grad_info) == metadata_.num_mutated_inputs + metadata_.num_outputs
 
     joint_forward_backward = create_forward_or_joint_functionalized(
-        flat_fn,
+        retraced_flat_fn,
         meta=metadata_,
         trace_joint=True,
         # For now in the autograd case, we NEVER keep input mutations (we could eventually fix this for slightly better perf

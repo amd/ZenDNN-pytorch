@@ -335,7 +335,7 @@ class TensorVariable(VariableTracker):
             and not config.dynamic_shapes
         ):
             unimplemented("dynamic Tensor.repeat")
-        elif name in ("tolist", "numpy", "backward", "data_ptr"):
+        elif name in ("tolist", "numpy", "data_ptr"):
             unimplemented(f"Tensor.{name}")
         elif name == "nonzero" and not config.dynamic_shapes:
             unimplemented(f"Tensor.{name}")
@@ -409,6 +409,16 @@ class TensorVariable(VariableTracker):
                 tx, [result, kwargs["value"]], {}
             )
             return self.call_method(tx, "add_", [result], {})
+        elif name == "backward":
+            return wrap_fx_proxy(
+                tx,
+                tx.output.create_proxy(
+                    "call_method",
+                    name,
+                    *proxy_args_kwargs([self], kwargs),
+                ),
+                **options,
+            )
         else:
             # Convert x.new(torch.Size) into x.new_empty(torch.Size),
             # as Tensor.new acts differently with a Size input versus a tuple input.
