@@ -123,6 +123,8 @@ class ComptimeContext:
         Retrieve the compile-time known information about a local.
         """
         tx = self.__get_tx(stacklevel)
+        if name not in tx.symbolic_locals:
+            raise RuntimeError(f"Symbol {name} could not be found in context")
         return ComptimeVar(tx.symbolic_locals[name])
 
     def graph_break(self, msg="ComptimeContext.graph_break"):

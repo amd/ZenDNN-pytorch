@@ -2,9 +2,13 @@
 from torch.testing._internal.common_utils import run_tests, TestCase
 from functorch.experimental.control_flow import cond
 from torch._export import do_not_use_experimental_export
+from torch._export.constraints import add_inline_size_constraint
+from torch.fx.experimental.proxy_tensor import make_fx
 import torch._dynamo as torchdynamo
+from torch._dynamo import config
 import torch
 import unittest
+
 
 class TestExport(TestCase):
     @unittest.skip("dynamo failure -> RuntimeError: Could not infer dtype of SymBool")
@@ -74,6 +78,38 @@ class TestExport(TestCase):
         # how to do buffer mutation
         # self.assertEqual(mutated_buffer.sum().item(), 30)
         self.assertEqual(output, mod(*inp))
+
+    @config.patch(dynamic_shapes=True, capture_dynamic_output_shape_ops=True, specialize_int=True, capture_scalar_outputs=True)
+    def test_export_constraints(self):
+
+        def f(roi_batch_splits_nms):
+            roi_batch_ids = []
+            for i, x in enumerate(roi_batch_splits_nms.to(torch.int32)):
+                b = x.item()
+
+                add_inline_size_constraint(b, min=0)
+
+                roi_batch_ids.append(torch.full((b, 1), i))
+
+            roi_batch_ids = torch.cat(roi_batch_ids, dim=0)
+
+            roi_batch_ids = roi_batch_ids.view(-1)
+            return roi_batch_ids
+
+        inp = (torch.tensor([3, 2]),)
+        ref = f(*inp)
+
+        gm, guard = torchdynamo.export(f, *inp, aten_graph=True, tracing_mode="symbolic")
+        print(gm)
+        gm.print_readable(True)
+        res = gm(*inp)
+
+        self.assertTrue(torchdynamo.utils.same(ref, res))
+
+        gm = make_fx(f, tracing_mode="symbolic")(*inp)
+        print(gm)
+        gm.print_readable(True)
+        res = gm(*inp)
 
 if __name__ == '__main__':
     run_tests()
