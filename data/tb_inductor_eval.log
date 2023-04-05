@@ -320,17 +320,7 @@ cuda eval  hf_Longformer                       1.246x p=0.00
 TIMING: entire_frame_compile:35.22686 backend_compile:29.36924
 STATS: call_* op count: 1735 | FakeTensorMode.__torch_dispatch__:75583 | FakeTensor.__torch_dispatch__:7894 | ProxyTorchDispatchMode.__torch_dispatch__:16053
 Dynamo produced 4 graphs covering 1735 ops with 3 graph breaks (1 unique)
-cuda eval  hf_Reformer                         [2023-04-05 07:30:33,750] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-[2023-04-05 07:30:35,679] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-[2023-04-05 07:30:38,163] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 07:30:41,268] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-[2023-04-05 07:30:44,905] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-[2023-04-05 07:30:45,901] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 07:30:46,509] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-[2023-04-05 07:30:47,716] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-[2023-04-05 07:30:48,731] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 07:30:49,335] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-1.298x p=0.00
+cuda eval  hf_Reformer                         1.298x p=0.00
 TIMING: entire_frame_compile:11.16185 backend_compile:8.35427
 STATS: call_* op count: 494 | FakeTensorMode.__torch_dispatch__:14804 | FakeTensor.__torch_dispatch__:2213 | ProxyTorchDispatchMode.__torch_dispatch__:2998
 Dynamo produced 44 graphs covering 494 ops with 26 graph breaks (3 unique)
@@ -408,9 +398,7 @@ cuda eval  mobilenet_v3_large                  2.009x p=0.00
 TIMING: entire_frame_compile:8.45006 backend_compile:7.3758
 STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:2855 | FakeTensorMode.__torch_dispatch__:17043 | ProxyTorchDispatchMode.__torch_dispatch__:3503
 Dynamo produced 1 graphs covering 187 ops with 0 graph breaks (0 unique)
-cuda eval  moco                                [2023-04-05 07:33:38,712] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-[2023-04-05 07:34:20,030] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (64)
-   function: '<resume in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
+cuda eval  moco                                   function: '<resume in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
    reasons:  ___tuple_iterator_len(L['___stack0']) == 97
 to diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
 ERROR:common:Backend dynamo failed in warmup()
@@ -624,13 +612,11 @@ cuda eval  pyhpc_equation_of_state             2.240x p=0.00
 TIMING: entire_frame_compile:4.94285 backend_compile:4.45894
 STATS: call_* op count: 366 | FakeTensorMode.__torch_dispatch__:4120 | ProxyTorchDispatchMode.__torch_dispatch__:1122 | FakeTensor.__torch_dispatch__:940
 Dynamo produced 1 graphs covering 366 ops with 0 graph breaks (0 unique)
-cuda eval  pyhpc_isoneutral_mixing             [2023-04-05 07:35:05,513] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-1.102x p=0.00
+cuda eval  pyhpc_isoneutral_mixing             1.102x p=0.00
 TIMING: entire_frame_compile:12.31761 backend_compile:11.17102
 STATS: call_* op count: 744 | FakeTensorMode.__torch_dispatch__:25269 | ProxyTorchDispatchMode.__torch_dispatch__:5372 | FakeTensor.__torch_dispatch__:2115
 Dynamo produced 1 graphs covering 744 ops with 0 graph breaks (0 unique)
-cuda eval  pyhpc_turbulent_kinetic_energy      [2023-04-05 07:35:26,161] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-2.895x p=0.00
+cuda eval  pyhpc_turbulent_kinetic_energy      2.895x p=0.00
 TIMING: entire_frame_compile:12.52704 backend_compile:11.34303
 STATS: call_* op count: 992 | FakeTensorMode.__torch_dispatch__:27058 | FakeTensor.__torch_dispatch__:2094 | ProxyTorchDispatchMode.__torch_dispatch__:6976
 Dynamo produced 1 graphs covering 992 ops with 0 graph breaks (0 unique)
@@ -681,8 +667,7 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
 ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
-cuda eval  pytorch_stargan                     [2023-04-05 07:35:48,213] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-1.204x p=0.00
+cuda eval  pytorch_stargan                     1.204x p=0.00
 TIMING: entire_frame_compile:5.12431 backend_compile:4.51638
 STATS: call_* op count: 56 | FakeTensorMode.__torch_dispatch__:8327 | FakeTensor.__torch_dispatch__:1081 | ProxyTorchDispatchMode.__torch_dispatch__:1960
 Dynamo produced 1 graphs covering 56 ops with 0 graph breaks (0 unique)

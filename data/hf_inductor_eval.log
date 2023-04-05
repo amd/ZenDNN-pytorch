@@ -54,26 +54,22 @@ TIMING: entire_frame_compile:8.56678 backend_compile:6.14956
 STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:18386 | FakeTensor.__torch_dispatch__:2960 | ProxyTorchDispatchMode.__torch_dispatch__:3297
 Dynamo produced 1 graphs covering 377 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
-cuda eval  DebertaForMaskedLM                  [2023-04-05 06:27:01,472] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-1.102x p=0.00
+cuda eval  DebertaForMaskedLM                  1.102x p=0.00
 TIMING: entire_frame_compile:13.24129 backend_compile:9.39191
 STATS: call_* op count: 712 | FakeTensorMode.__torch_dispatch__:21051 | FakeTensor.__torch_dispatch__:2608 | ProxyTorchDispatchMode.__torch_dispatch__:3836
 Dynamo produced 53 graphs covering 712 ops with 47 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
-cuda eval  DebertaForQuestionAnswering         [2023-04-05 06:27:33,579] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-1.039x p=0.00
+cuda eval  DebertaForQuestionAnswering         1.039x p=0.00
 TIMING: entire_frame_compile:13.64718 backend_compile:8.56666
 STATS: call_* op count: 719 | FakeTensorMode.__torch_dispatch__:21165 | FakeTensor.__torch_dispatch__:2608 | ProxyTorchDispatchMode.__torch_dispatch__:3875
 Dynamo produced 53 graphs covering 719 ops with 47 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
-cuda eval  DebertaV2ForMaskedLM                [2023-04-05 06:28:19,203] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-1.013x SAME
+cuda eval  DebertaV2ForMaskedLM                1.013x SAME
 TIMING: entire_frame_compile:19.64139 backend_compile:12.64931
 STATS: call_* op count: 917 | FakeTensorMode.__torch_dispatch__:40764 | FakeTensor.__torch_dispatch__:5878 | ProxyTorchDispatchMode.__torch_dispatch__:6301
 Dynamo produced 101 graphs covering 917 ops with 83 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
-cuda eval  DebertaV2ForQuestionAnswering       [2023-04-05 06:29:14,608] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-0.917x p=0.00
+cuda eval  DebertaV2ForQuestionAnswering       0.917x p=0.00
 TIMING: entire_frame_compile:19.37474 backend_compile:12.44011
 STATS: call_* op count: 924 | FakeTensorMode.__torch_dispatch__:40878 | FakeTensor.__torch_dispatch__:5878 | ProxyTorchDispatchMode.__torch_dispatch__:6340
 Dynamo produced 101 graphs covering 924 ops with 83 graph breaks (8 unique)
@@ -234,9 +230,7 @@ TIMING: entire_frame_compile:14.60288 backend_compile:10.64187
 STATS: call_* op count: 1001 | FakeTensorMode.__torch_dispatch__:33771 | FakeTensor.__torch_dispatch__:4876 | ProxyTorchDispatchMode.__torch_dispatch__:6386
 Dynamo produced 1 graphs covering 1001 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
-cuda eval  XLNetLMHeadModel                    [2023-04-05 06:44:41,594] torch._inductor.utils: [WARNING] DeviceCopy in input program
-[2023-04-05 06:44:54,993] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-2.307x p=0.00
+cuda eval  XLNetLMHeadModel                    2.307x p=0.00
 TIMING: entire_frame_compile:28.39423 backend_compile:23.40418
 STATS: call_* op count: 816 | FakeTensorMode.__torch_dispatch__:54506 | FakeTensor.__torch_dispatch__:9198 | ProxyTorchDispatchMode.__torch_dispatch__:10349
 Dynamo produced 1 graphs covering 816 ops with 0 graph breaks (0 unique)
