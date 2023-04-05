@@ -1,34 +1,1084 @@
-usage: torchbench.py [-h] [--filter FILTER] [--exclude EXCLUDE]
-                     [--exclude-exact EXCLUDE_EXACT]
-                     [--total-partitions {1,2,3,4,5,6,7,8,9}]
-                     [--partition-id PARTITION_ID] [--devices DEVICES]
-                     [--device-index DEVICE_INDEX] [--repeat REPEAT]
-                     [--iterations-per-run ITERATIONS_PER_RUN]
-                     [--randomize-input] [--threads THREADS] [--nopython]
-                     [--no-skip] [--prims-nvfuser] [--dump-raw-metrics]
-                     [--log-operator-inputs] [--channels-last]
-                     [--batch-size BATCH_SIZE] [--iterations ITERATIONS]
-                     [--batch-size-file BATCH_SIZE_FILE] [--cosine] [--ci]
-                     [--dynamic-ci-skips-only] [--dashboard]
-                     [--skip-fp64-check] [--fast] [--only ONLY] [--ddp]
-                     [--fsdp] [--no-optimize-ddp]
-                     [--distributed-master-port DISTRIBUTED_MASTER_PORT]
-                     [--dynamic-shapes] [--dynamic-batch-only]
-                     [--specialize-int] [--use-eval-mode]
-                     [--skip-accuracy-check] [--generate-aot-autograd-stats]
-                     [--inductor-settings] [--suppress-errors]
-                     [--output OUTPUT] [--output-directory OUTPUT_DIRECTORY]
-                     [--part PART] [--export-profiler-trace]
-                     [--profiler-trace-name PROFILER_TRACE_NAME]
-                     [--diff-branch DIFF_BRANCH] [--tag TAG] [--explain]
-                     [--stats] [--cold-start-latency] [--disable-cudagraphs]
-                     [--inductor-compile-mode INDUCTOR_COMPILE_MODE]
-                     [--print-graph-breaks] [--trace-on-xla]
-                     [--xla-tolerance XLA_TOLERANCE] [--collect-outputs]
-                     [--timing] [--progress] [--timeout TIMEOUT]
-                     [--per_process_memory_fraction PER_PROCESS_MEMORY_FRACTION]
-                     [--nnc] [--float16 | --bfloat16 | --float32 | --amp]
-                     [--verbose | --quiet]
-                     [--coverage | --overhead | --speedup-dynamo-ts | --speedup-fx2trt | --speedup-fx2trt-fp16 | --print-fx | --print-aten-ops | --inductor | --backend {aot_eager,aot_eager_decomp_partition,aot_torchxla_trace_once,aot_torchxla_trivial,aot_ts,aot_ts_nvfuser,cudagraphs,dynamo_accuracy_minifier_backend,dynamo_minifier_backend,eager,inductor,ipex,nvprims_aten,nvprims_nvfuser,onnxrt,torchxla_trace_once,torchxla_trivial,ts,tvm} | --nothing | --log-conv-args | --recompile-profiler | --find-batch-sizes]
-                     (--accuracy | --performance) (--training | --inference)
-torchbench.py: error: argument --inference: not allowed with argument --training
+cuda train BERT_pytorch                        [2023-04-05 19:30:03,451] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+2.210x p=0.00
+TIMING: entire_frame_compile:23.23801 backend_compile:18.55634
+STATS: call_* op count: 542 | FakeTensorMode.__torch_dispatch__:67045 | FakeTensor.__torch_dispatch__:21154 | ProxyTorchDispatchMode.__torch_dispatch__:23706
+Dynamo produced 2 graphs covering 542 ops with 15 graph breaks (7 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Background_Matting/__init__.py", line 8, in <module>
+    from tensorboardX import SummaryWriter
+ModuleNotFoundError: No module named 'tensorboardX'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/LearningToPaint/__init__.py", line 1, in <module>
+    import cv2
+ModuleNotFoundError: No module named 'cv2'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+WARNING:root:Super_SloMo failed to load
+Eager model failed to run
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1172, in validate_model
+    self.model_iter_fn(model, example_inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 379, in forward_and_backward_pass
+    pred = mod(*cloned_inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/model_wrapper.py", line 34, in forward
+    fCoeff = model.getFlowCoeff(trainFrameIndex, I0.device)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/slomo_model.py", line 324, in getFlowCoeff
+    C11 = C00 = - (1 - (t[ind])) * (t[ind])
+RuntimeError: indices should be either on cpu or on the same device as the indexed tensor (cpu)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 321, in load_model
+    self.validate_model(model, example_inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1174, in validate_model
+    raise NotImplementedError("Eager model failed to run") from e
+NotImplementedError: Eager model failed to run
+
+cuda train alexnet                             [2023-04-05 19:31:31,290] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.084x p=0.00
+TIMING: entire_frame_compile:4.74491 backend_compile:4.22316
+STATS: call_* op count: 26 | FakeTensor.__torch_dispatch__:1467 | FakeTensorMode.__torch_dispatch__:3168 | ProxyTorchDispatchMode.__torch_dispatch__:954
+Dynamo produced 2 graphs covering 26 ops with 13 graph breaks (7 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/attention_is_all_you_need_pytorch/__init__.py", line 5, in <module>
+    import dill as pickle
+ModuleNotFoundError: No module named 'dill'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda train dcgan                               1.354x p=0.00
+TIMING: entire_frame_compile:4.17095 backend_compile:3.67958
+STATS: call_* op count: 17 | FakeTensor.__torch_dispatch__:1224 | FakeTensorMode.__torch_dispatch__:3018 | ProxyTorchDispatchMode.__torch_dispatch__:779
+Dynamo produced 2 graphs covering 17 ops with 13 graph breaks (7 unique)
+cuda train demucs                              [2023-04-05 19:32:16,729] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.042x p=0.00
+TIMING: entire_frame_compile:7.10566 backend_compile:5.64952
+STATS: call_* op count: 89 | FakeTensorMode.__torch_dispatch__:10082 | FakeTensor.__torch_dispatch__:5949 | ProxyTorchDispatchMode.__torch_dispatch__:2738
+Dynamo produced 7 graphs covering 89 ops with 16 graph breaks (8 unique)
+cuda train densenet121                         2.505x p=0.00
+TIMING: entire_frame_compile:47.00587 backend_compile:39.94441
+STATS: call_* op count: 435 | FakeTensor.__torch_dispatch__:45555 | FakeTensorMode.__torch_dispatch__:108608 | ProxyTorchDispatchMode.__torch_dispatch__:29961
+Dynamo produced 2 graphs covering 435 ops with 13 graph breaks (7 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/dlrm/__init__.py", line 33, in <module>
+    from .dlrm_s_pytorch import DLRM_Net, LRPolicyScheduler
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/dlrm/dlrm_s_pytorch.py", line 75, in <module>
+    import onnx
+ModuleNotFoundError: No module named 'onnx'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/drq/__init__.py", line 11, in <module>
+    from gym import spaces
+ModuleNotFoundError: No module named 'gym'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/fastNLP_Bert/__init__.py", line 14, in <module>
+    from fastNLP.embeddings import BertEmbedding
+ModuleNotFoundError: No module named 'fastNLP'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda train hf_Albert                           [2023-04-05 19:35:38,184] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+2.322x p=0.00
+TIMING: entire_frame_compile:15.64021 backend_compile:13.15907
+STATS: call_* op count: 440 | FakeTensorMode.__torch_dispatch__:51479 | FakeTensor.__torch_dispatch__:9146 | ProxyTorchDispatchMode.__torch_dispatch__:19848
+Dynamo produced 2 graphs covering 440 ops with 12 graph breaks (7 unique)
+cuda train hf_Bart                             [2023-04-05 19:36:16,948] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.445x p=0.00
+TIMING: entire_frame_compile:27.19525 backend_compile:21.5573
+STATS: call_* op count: 646 | FakeTensorMode.__torch_dispatch__:79051 | FakeTensor.__torch_dispatch__:27798 | ProxyTorchDispatchMode.__torch_dispatch__:26692
+Dynamo produced 2 graphs covering 646 ops with 12 graph breaks (7 unique)
+cuda train hf_Bert                             [2023-04-05 19:37:10,270] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:37:24,523] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.516x p=0.00
+TIMING: entire_frame_compile:21.37428 backend_compile:15.14013
+STATS: call_* op count: 371 | FakeTensorMode.__torch_dispatch__:60393 | FakeTensor.__torch_dispatch__:21264 | ProxyTorchDispatchMode.__torch_dispatch__:20032
+Dynamo produced 2 graphs covering 371 ops with 12 graph breaks (7 unique)
+cuda train hf_BigBird                          [2023-04-05 19:37:45,051] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:37:59,494] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:00,307] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:05,612] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:06,137] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:11,198] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:11,732] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:16,698] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:17,250] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:22,290] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:22,839] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:27,843] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:28,400] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:33,437] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:34,001] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:39,063] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:39,635] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:44,765] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:45,340] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:50,459] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:51,040] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:56,178] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:38:56,770] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:39:01,939] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:39:02,537] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:39:44,402] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+2.219x p=0.00
+TIMING: entire_frame_compile:66.49057 backend_compile:54.48896
+STATS: call_* op count: 2911 | FakeTensorMode.__torch_dispatch__:217386 | FakeTensor.__torch_dispatch__:39479 | ProxyTorchDispatchMode.__torch_dispatch__:87092
+Dynamo produced 67 graphs covering 2911 ops with 69 graph breaks (13 unique)
+cuda train hf_DistilBert                       [2023-04-05 19:40:14,530] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.448x p=0.00
+TIMING: entire_frame_compile:12.50098 backend_compile:10.17699
+STATS: call_* op count: 207 | FakeTensorMode.__torch_dispatch__:30443 | FakeTensor.__torch_dispatch__:10749 | ProxyTorchDispatchMode.__torch_dispatch__:10223
+Dynamo produced 2 graphs covering 207 ops with 12 graph breaks (7 unique)
+cuda train hf_GPT2                             [2023-04-05 19:40:51,597] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.669x p=0.00
+TIMING: entire_frame_compile:19.64798 backend_compile:15.13053
+STATS: call_* op count: 639 | FakeTensorMode.__torch_dispatch__:52398 | FakeTensor.__torch_dispatch__:17218 | ProxyTorchDispatchMode.__torch_dispatch__:17627
+Dynamo produced 2 graphs covering 639 ops with 12 graph breaks (7 unique)
+cuda train hf_Longformer                       [2023-04-05 19:41:35,572] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1402, in warmup
+    fn(model, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 376, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 377, in <resume in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 379, in <resume in forward_and_backward_pass>
+    pred = mod(*cloned_inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1848, in forward
+    outputs = self.longformer(
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1750, in forward
+    encoder_outputs = self.encoder(
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1294, in forward
+    is_global_attn = is_index_global_attn.flatten().any().item()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 392, in catch_errors
+    return callback(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 430, in _convert_frame
+    result = inner_convert(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 112, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 282, in _convert_frame_assert
+    return _compile(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 347, in _compile
+    out_code = transform_code_object(code, transform)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/bytecode_transformation.py", line 683, in transform_code_object
+    transformations(instructions, code_options)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 334, in transform
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1890, in run
+    super().run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 609, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 569, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1977, in RETURN_VALUE
+    self.output.compile_subgraph(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 643, in compile_subgraph
+    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 689, in compile_and_call_fx_graph
+    compiled_fn = self.call_user_compiler(gm)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 768, in call_user_compiler
+    raise BackendCompilerFailed(self.compiler_fn, e).with_traceback(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 764, in call_user_compiler
+    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
+  File "/scratch/voz/work/pytorch/torch/_dynamo/debug_utils.py", line 1093, in debug_wrapper
+    compiled_gm = compiler_fn(gm, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/backends/inductor.py", line 9, in inductor
+    return compile_fx(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/compile_fx.py", line 636, in compile_fx
+    return aot_autograd(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/backends/common.py", line 62, in compiler_fn
+    cg = aot_module_simplified(gm, example_inputs, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 3082, in aot_module_simplified
+    compiled_fn = create_aot_dispatcher_function(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 2725, in create_aot_dispatcher_function
+    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config, fw_metadata=fw_metadata)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1826, in aot_wrapper_dedupe
+    return compiler_fn(flat_fn, leaf_flat_args, aot_config, fw_metadata=fw_metadata)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1992, in aot_wrapper_synthetic_base
+    return compiler_fn(flat_fn, flat_args, aot_config, fw_metadata=fw_metadata)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 2282, in aot_dispatch_autograd
+    fx_g = create_functionalized_graph(
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1152, in create_functionalized_graph
+    return make_fx(joint_helper if trace_joint else fwd_helper, decomposition_table=aot_config.decompositions)(*args)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 756, in wrapped
+    t = dispatch_trace(wrap_key(func, args, fx_tracer, pre_autograd), tracer=fx_tracer, concrete_args=tuple(phs))
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 462, in dispatch_trace
+    graph = tracer.trace(root, concrete_args)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/_symbolic_trace.py", line 778, in trace
+    (self.create_arg(fn(*args)),),
+  File "/scratch/voz/work/pytorch/torch/fx/_symbolic_trace.py", line 652, in flatten_fn
+    tree_out = root_fn(*tree_args)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 479, in wrapped
+    out = f(*tensors)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1146, in joint_helper
+    return functionalized_f_helper(primals, tangents)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1099, in functionalized_f_helper
+    f_outs = fn(*f_args)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1062, in inner_fn
+    backward_out = torch.autograd.grad(
+  File "/scratch/voz/work/pytorch/torch/autograd/__init__.py", line 284, in grad
+    return handle_torch_function(
+  File "/scratch/voz/work/pytorch/torch/overrides.py", line 1536, in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/overrides.py", line 42, in __torch_function__
+    return func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/autograd/__init__.py", line 319, in grad
+    result = Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/scratch/voz/work/pytorch/torch/utils/_stats.py", line 20, in wrapper
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 528, in __torch_dispatch__
+    return self.inner_torch_dispatch(func, types, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 553, in inner_torch_dispatch
+    return proxy_call(self, func, self.pre_autograd, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/experimental/proxy_tensor.py", line 364, in proxy_call
+    out = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_ops.py", line 394, in __call__
+    return self._op(*args, **kwargs or {})
+  File "/scratch/voz/work/pytorch/torch/utils/_stats.py", line 20, in wrapper
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1073, in __torch_dispatch__
+    return self.dispatch(func, types, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1263, in dispatch
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_ops.py", line 394, in __call__
+    return self._op(*args, **kwargs or {})
+  File "/scratch/voz/work/pytorch/torch/_refs/__init__.py", line 4023, in view
+    return _reshape_view_helper(a, *shape, allow_copy=False)
+  File "/scratch/voz/work/pytorch/torch/_refs/__init__.py", line 3259, in _reshape_view_helper
+    raise ValueError(msg)
+torch._dynamo.exc.BackendCompilerFailed: backend='inductor' raised:
+ValueError: Cannot view a tensor with shape torch.Size([2, 12, 1024, 513]) and strides (6303744, 513, 6156, 1) as a tensor with shape (24, 4, 256, 513)!
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+
+ERROR
+cuda train hf_Reformer                         [2023-04-05 19:42:04,600] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:04,930] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:08,413] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:09,243] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:09,614] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:10,396] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:11,528] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:13,998] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:15,055] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:15,601] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:16,739] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:16,865] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:16,925] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:17,379] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:18,168] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:18,856] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:18,917] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:19,252] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:20,208] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:20,333] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:20,392] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:20,728] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:21,524] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:22,219] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 19:42:22,282] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:22,625] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 19:42:22,911] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.140x p=0.00
+TIMING: entire_frame_compile:16.0075 backend_compile:12.09436
+STATS: call_* op count: 562 | FakeTensorMode.__torch_dispatch__:20998 | FakeTensor.__torch_dispatch__:7930 | ProxyTorchDispatchMode.__torch_dispatch__:4185
+Dynamo produced 108 graphs covering 562 ops with 47 graph breaks (13 unique)
+cuda train hf_T5                               [2023-04-05 19:43:02,808] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.900x p=0.00
+TIMING: entire_frame_compile:24.74404 backend_compile:19.0832
+STATS: call_* op count: 811 | FakeTensorMode.__torch_dispatch__:70281 | FakeTensor.__torch_dispatch__:19328 | ProxyTorchDispatchMode.__torch_dispatch__:27855
+Dynamo produced 2 graphs covering 811 ops with 12 graph breaks (7 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/maml_omniglot/__init__.py", line 25, in <module>
+    import higher
+ModuleNotFoundError: No module named 'higher'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda train mnasnet1_0                          [2023-04-05 19:44:05,711] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.510x p=0.00
+TIMING: entire_frame_compile:18.93092 backend_compile:16.02612
+STATS: call_* op count: 156 | FakeTensor.__torch_dispatch__:16942 | FakeTensorMode.__torch_dispatch__:41278 | ProxyTorchDispatchMode.__torch_dispatch__:10159
+Dynamo produced 2 graphs covering 156 ops with 13 graph breaks (7 unique)
+cuda train mobilenet_v2                        [2023-04-05 19:45:29,518] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+Process ForkProcess-31:
+Process ForkProcess-27:
+Process ForkProcess-24:
+Process ForkProcess-25:
+Process ForkProcess-23:
+Process ForkProcess-19:
+Process ForkProcess-1:
+Process ForkProcess-20:
+Process ForkProcess-18:
+Process ForkProcess-17:
+Process ForkProcess-15:
+Process ForkProcess-21:
+Process ForkProcess-11:
+Process ForkProcess-13:
+Process ForkProcess-16:
+Process ForkProcess-12:
+Process ForkProcess-10:
+Process ForkProcess-7:
+Process ForkProcess-2:
+Process ForkProcess-5:
+Process ForkProcess-28:
+Process ForkProcess-30:
+Process ForkProcess-26:
+Process ForkProcess-29:
+Process ForkProcess-22:
+Process ForkProcess-4:
+Process ForkProcess-3:
+Process ForkProcess-14:
+Process ForkProcess-32:
+Process ForkProcess-9:
+Process ForkProcess-8:
+Process ForkProcess-6:
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2389, in run
+    runner.run_one_model(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1499, in run_one_model
+    status = self.run_performance_test(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1432, in run_performance_test
+    dynamo_latency, dynamo_peak_mem, dynamo_stats = warmup(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1402, in warmup
+    fn(model, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 376, in forward_and_backward_pass
+    cloned_inputs = clone_inputs(inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 377, in <resume in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 377, in <resume in forward_and_backward_pass>
+    self.optimizer_zero_grad(mod)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 3096, in forward
+    return compiled_fn(full_args)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1212, in g
+    return f(*args)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 2106, in runtime_wrapper
+    all_outs = call_func_with_args(
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1237, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1212, in g
+    return f(*args)
+  File "/scratch/voz/work/pytorch/torch/autograd/function.py", line 506, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 2345, in forward
+    fw_outs = call_func_with_args(
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 1237, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/scratch/voz/work/pytorch/torch/_inductor/compile_fx.py", line 291, in run
+    return model(new_inputs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/compile_fx.py", line 332, in run
+    compiled_fn = cudagraphify_fn(model, new_inputs, static_input_idxs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/compile_fx.py", line 389, in cudagraphify_impl
+    model(list(static_inputs))
+  File "/tmp/torchinductor_voz/37/c37ooj7zi37v5377isqcdycj7572satfugiat5kphnhweqzeyzza.py", line 5071, in call
+    triton_per_fused__native_batch_norm_legit_functional_61.run(buf228, primals_217, buf229, buf230, buf232, 192, 3, grid=grid(192), stream=stream0)
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 231, in run
+    self.autotune_to_one_config(*args, grid=grid)
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 187, in autotune_to_one_config
+    timings = self.benchmark_all_configs(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 179, in benchmark_all_configs
+    timings = {
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 180, in <dictcomp>
+    launcher: self.bench(launcher, *cloned_args, **kwargs)[0]
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 162, in bench
+    return do_bench(kernel_call, rep=40, fast_flush=True)
+  File "/scratch/voz/work/triton/python/triton/testing.py", line 181, in do_bench
+    fn()
+  File "/scratch/voz/work/pytorch/torch/_inductor/triton_heuristics.py", line 156, in kernel_call
+    launcher(
+  File "<string>", line 6, in launcher
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+Traceback (most recent call last):
+Traceback (most recent call last):
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+Traceback (most recent call last):
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+Traceback (most recent call last):
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 103, in get
+    res = self._recv_bytes()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/connection.py", line 414, in _recv_bytes
+    buf = self._recv(4)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/connection.py", line 379, in _recv
+    chunk = read(handle, remaining)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+KeyboardInterrupt
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+Traceback (most recent call last):
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+KeyboardInterrupt
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/concurrent/futures/process.py", line 240, in _process_worker
+    call_item = call_queue.get(block=True)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/queues.py", line 102, in get
+    with self._rlock:
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/multiprocessing/synchronize.py", line 95, in __enter__
+    return self._semlock.__enter__()
+KeyboardInterrupt
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2433, in run
+    subprocess.check_call(
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/subprocess.py", line 364, in check_call
+    retcode = call(*popenargs, **kwargs)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/subprocess.py", line 347, in call
+    return p.wait(timeout=timeout)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/subprocess.py", line 1209, in wait
+    return self._wait(timeout=timeout)
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/subprocess.py", line 1937, in _wait
+    time.sleep(delay)
+KeyboardInterrupt

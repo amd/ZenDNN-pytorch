@@ -1,36 +1,393 @@
 /data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
   warn(
-usage: timm_models.py [-h] [--filter FILTER] [--exclude EXCLUDE]
-                      [--exclude-exact EXCLUDE_EXACT]
-                      [--total-partitions {1,2,3,4,5,6,7,8,9}]
-                      [--partition-id PARTITION_ID] [--devices DEVICES]
-                      [--device-index DEVICE_INDEX] [--repeat REPEAT]
-                      [--iterations-per-run ITERATIONS_PER_RUN]
-                      [--randomize-input] [--threads THREADS] [--nopython]
-                      [--no-skip] [--prims-nvfuser] [--dump-raw-metrics]
-                      [--log-operator-inputs] [--channels-last]
-                      [--batch-size BATCH_SIZE] [--iterations ITERATIONS]
-                      [--batch-size-file BATCH_SIZE_FILE] [--cosine] [--ci]
-                      [--dynamic-ci-skips-only] [--dashboard]
-                      [--skip-fp64-check] [--fast] [--only ONLY] [--ddp]
-                      [--fsdp] [--no-optimize-ddp]
-                      [--distributed-master-port DISTRIBUTED_MASTER_PORT]
-                      [--dynamic-shapes] [--dynamic-batch-only]
-                      [--specialize-int] [--use-eval-mode]
-                      [--skip-accuracy-check] [--generate-aot-autograd-stats]
-                      [--inductor-settings] [--suppress-errors]
-                      [--output OUTPUT] [--output-directory OUTPUT_DIRECTORY]
-                      [--part PART] [--export-profiler-trace]
-                      [--profiler-trace-name PROFILER_TRACE_NAME]
-                      [--diff-branch DIFF_BRANCH] [--tag TAG] [--explain]
-                      [--stats] [--cold-start-latency] [--disable-cudagraphs]
-                      [--inductor-compile-mode INDUCTOR_COMPILE_MODE]
-                      [--print-graph-breaks] [--trace-on-xla]
-                      [--xla-tolerance XLA_TOLERANCE] [--collect-outputs]
-                      [--timing] [--progress] [--timeout TIMEOUT]
-                      [--per_process_memory_fraction PER_PROCESS_MEMORY_FRACTION]
-                      [--nnc] [--float16 | --bfloat16 | --float32 | --amp]
-                      [--verbose | --quiet]
-                      [--coverage | --overhead | --speedup-dynamo-ts | --speedup-fx2trt | --speedup-fx2trt-fp16 | --print-fx | --print-aten-ops | --inductor | --backend {aot_eager,aot_eager_decomp_partition,aot_torchxla_trace_once,aot_torchxla_trivial,aot_ts,aot_ts_nvfuser,cudagraphs,dynamo_accuracy_minifier_backend,dynamo_minifier_backend,eager,inductor,ipex,nvprims_aten,nvprims_nvfuser,onnxrt,torchxla_trace_once,torchxla_trivial,ts,tvm} | --nothing | --log-conv-args | --recompile-profiler | --find-batch-sizes]
-                      (--accuracy | --performance) (--training | --inference)
-timm_models.py: error: argument --inference: not allowed with argument --training
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train adv_inception_v3                    1.524x p=0.00
+TIMING: entire_frame_compile:33.72377 backend_compile:27.88532
+STATS: call_* op count: 317 | FakeTensor.__torch_dispatch__:30766 | FakeTensorMode.__torch_dispatch__:75969 | ProxyTorchDispatchMode.__torch_dispatch__:19199
+Dynamo produced 2 graphs covering 317 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train beit_base_patch16_224               1.234x p=0.00
+TIMING: entire_frame_compile:16.63411 backend_compile:12.69105
+STATS: call_* op count: 472 | FakeTensor.__torch_dispatch__:19571 | FakeTensorMode.__torch_dispatch__:49342 | ProxyTorchDispatchMode.__torch_dispatch__:16437
+Dynamo produced 2 graphs covering 472 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train botnet26t_256                       1.431x p=0.00
+TIMING: entire_frame_compile:17.99933 backend_compile:14.90978
+STATS: call_* op count: 341 | FakeTensor.__torch_dispatch__:11263 | FakeTensorMode.__torch_dispatch__:32114 | ProxyTorchDispatchMode.__torch_dispatch__:9333
+Dynamo produced 2 graphs covering 341 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train cait_m36_384                        1.340x p=0.00
+TIMING: entire_frame_compile:53.98034 backend_compile:40.51487
+STATS: call_* op count: 1345 | FakeTensor.__torch_dispatch__:69579 | FakeTensorMode.__torch_dispatch__:178128 | ProxyTorchDispatchMode.__torch_dispatch__:61746
+Dynamo produced 2 graphs covering 1345 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train coat_lite_mini                      1.870x p=0.00
+TIMING: entire_frame_compile:18.41533 backend_compile:14.97305
+STATS: call_* op count: 463 | FakeTensor.__torch_dispatch__:16526 | FakeTensorMode.__torch_dispatch__:48696 | ProxyTorchDispatchMode.__torch_dispatch__:17175
+Dynamo produced 2 graphs covering 463 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train convit_base                         1.467x p=0.00
+TIMING: entire_frame_compile:18.28154 backend_compile:14.1252
+STATS: call_* op count: 501 | FakeTensor.__torch_dispatch__:19159 | FakeTensorMode.__torch_dispatch__:53933 | ProxyTorchDispatchMode.__torch_dispatch__:19451
+Dynamo produced 2 graphs covering 501 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train convmixer_768_32                    0.995x p=0.00
+TIMING: entire_frame_compile:19.22584 backend_compile:17.49189
+STATS: call_* op count: 234 | FakeTensor.__torch_dispatch__:7977 | FakeTensorMode.__torch_dispatch__:53117 | ProxyTorchDispatchMode.__torch_dispatch__:15402
+Dynamo produced 2 graphs covering 234 ops with 7 graph breaks (5 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train convnext_base                       1.476x p=0.00
+TIMING: entire_frame_compile:23.44001 backend_compile:16.60954
+STATS: call_* op count: 535 | FakeTensor.__torch_dispatch__:33672 | FakeTensorMode.__torch_dispatch__:67364 | ProxyTorchDispatchMode.__torch_dispatch__:22614
+Dynamo produced 2 graphs covering 535 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train crossvit_9_240                      1.554x p=0.00
+TIMING: entire_frame_compile:24.54169 backend_compile:17.98469
+STATS: call_* op count: 567 | FakeTensor.__torch_dispatch__:27344 | FakeTensorMode.__torch_dispatch__:72109 | ProxyTorchDispatchMode.__torch_dispatch__:23255
+Dynamo produced 2 graphs covering 567 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train cspdarknet53                        1.363x p=0.00
+TIMING: entire_frame_compile:26.6987 backend_compile:20.547
+STATS: call_* op count: 443 | FakeTensor.__torch_dispatch__:22317 | FakeTensorMode.__torch_dispatch__:57690 | ProxyTorchDispatchMode.__torch_dispatch__:14754
+Dynamo produced 2 graphs covering 443 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train deit_base_distilled_patch16_224     1.128x p=0.00
+TIMING: entire_frame_compile:12.75853 backend_compile:9.66285
+STATS: call_* op count: 344 | FakeTensor.__torch_dispatch__:15413 | FakeTensorMode.__torch_dispatch__:36870 | ProxyTorchDispatchMode.__torch_dispatch__:11343
+Dynamo produced 2 graphs covering 344 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train dla102                              1.537x p=0.00
+TIMING: entire_frame_compile:34.55683 backend_compile:28.34474
+STATS: call_* op count: 419 | FakeTensor.__torch_dispatch__:34876 | FakeTensorMode.__torch_dispatch__:85099 | ProxyTorchDispatchMode.__torch_dispatch__:21738
+Dynamo produced 2 graphs covering 419 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train dm_nfnet_f0                         1.487x p=0.00
+TIMING: entire_frame_compile:23.50105 backend_compile:17.36619
+STATS: call_* op count: 620 | FakeTensorMode.__torch_dispatch__:61680 | FakeTensor.__torch_dispatch__:24470 | ProxyTorchDispatchMode.__torch_dispatch__:18877
+Dynamo produced 2 graphs covering 620 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train dpn107                              1.199x p=0.00
+TIMING: entire_frame_compile:43.94204 backend_compile:32.49956
+STATS: call_* op count: 746 | FakeTensor.__torch_dispatch__:37525 | FakeTensorMode.__torch_dispatch__:102567 | ProxyTorchDispatchMode.__torch_dispatch__:29041
+Dynamo produced 2 graphs covering 746 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train eca_botnext26ts_256                 1.451x p=0.00
+TIMING: entire_frame_compile:19.8248 backend_compile:16.46719
+STATS: call_* op count: 371 | FakeTensor.__torch_dispatch__:12555 | FakeTensorMode.__torch_dispatch__:36206 | ProxyTorchDispatchMode.__torch_dispatch__:10498
+Dynamo produced 2 graphs covering 371 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train eca_halonext26ts                    1.354x p=0.00
+TIMING: entire_frame_compile:23.70438 backend_compile:20.28023
+STATS: call_* op count: 395 | FakeTensor.__torch_dispatch__:12933 | FakeTensorMode.__torch_dispatch__:37490 | ProxyTorchDispatchMode.__torch_dispatch__:11018
+Dynamo produced 2 graphs covering 395 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train ese_vovnet19b_dw                    1.433x p=0.00
+TIMING: entire_frame_compile:13.1196 backend_compile:10.49407
+STATS: call_* op count: 162 | FakeTensor.__torch_dispatch__:9631 | FakeTensorMode.__torch_dispatch__:23447 | ProxyTorchDispatchMode.__torch_dispatch__:6104
+Dynamo produced 3 graphs covering 162 ops with 13 graph breaks (8 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train fbnetc_100                          1.513x p=0.00
+TIMING: entire_frame_compile:23.44096 backend_compile:18.4476
+STATS: call_* op count: 384 | FakeTensor.__torch_dispatch__:20886 | FakeTensorMode.__torch_dispatch__:51379 | ProxyTorchDispatchMode.__torch_dispatch__:12687
+Dynamo produced 3 graphs covering 384 ops with 13 graph breaks (8 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train fbnetv3_b                           1.435x p=0.00
+TIMING: entire_frame_compile:39.52039 backend_compile:31.26205
+STATS: call_* op count: 610 | FakeTensor.__torch_dispatch__:36789 | FakeTensorMode.__torch_dispatch__:91174 | ProxyTorchDispatchMode.__torch_dispatch__:24341
+Dynamo produced 2 graphs covering 610 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train gernet_l                            1.122x p=0.00
+TIMING: entire_frame_compile:20.93349 backend_compile:15.92309
+STATS: call_* op count: 410 | FakeTensor.__torch_dispatch__:18475 | FakeTensorMode.__torch_dispatch__:45518 | ProxyTorchDispatchMode.__torch_dispatch__:11496
+Dynamo produced 2 graphs covering 410 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train ghostnet_100                        1.870x p=0.00
+TIMING: entire_frame_compile:31.77043 backend_compile:26.50338
+STATS: call_* op count: 328 | FakeTensor.__torch_dispatch__:29610 | FakeTensorMode.__torch_dispatch__:76435 | ProxyTorchDispatchMode.__torch_dispatch__:20093
+Dynamo produced 2 graphs covering 328 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train gluon_inception_v3                  1.526x p=0.00
+TIMING: entire_frame_compile:33.77562 backend_compile:27.96925
+STATS: call_* op count: 317 | FakeTensor.__torch_dispatch__:30766 | FakeTensorMode.__torch_dispatch__:75969 | ProxyTorchDispatchMode.__torch_dispatch__:19199
+Dynamo produced 2 graphs covering 317 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train gluon_xception65                    1.079x p=0.00
+TIMING: entire_frame_compile:38.98962 backend_compile:31.69361
+STATS: call_* op count: 356 | FakeTensor.__torch_dispatch__:42349 | FakeTensorMode.__torch_dispatch__:102812 | ProxyTorchDispatchMode.__torch_dispatch__:24932
+Dynamo produced 2 graphs covering 356 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train gmixer_24_224                       [2023-04-05 18:39:02,888] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.639x p=0.00
+TIMING: entire_frame_compile:23.83194 backend_compile:17.86619
+STATS: call_* op count: 635 | FakeTensor.__torch_dispatch__:30450 | FakeTensorMode.__torch_dispatch__:74559 | ProxyTorchDispatchMode.__torch_dispatch__:24266
+Dynamo produced 2 graphs covering 635 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train gmlp_s16_224                        [2023-04-05 18:39:56,668] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.586x p=0.00
+TIMING: entire_frame_compile:24.93499 backend_compile:17.9258
+STATS: call_* op count: 491 | FakeTensor.__torch_dispatch__:31104 | FakeTensorMode.__torch_dispatch__:72939 | ProxyTorchDispatchMode.__torch_dispatch__:23888
+Dynamo produced 2 graphs covering 491 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train hrnet_w18                           1.243x p=0.00
+TIMING: entire_frame_compile:100.90288 backend_compile:91.50774
+STATS: call_* op count: 1373 | FakeTensor.__torch_dispatch__:36771 | FakeTensorMode.__torch_dispatch__:244953 | ProxyTorchDispatchMode.__torch_dispatch__:69504
+Dynamo produced 2 graphs covering 1373 ops with 7 graph breaks (5 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train inception_v3                        1.524x p=0.00
+TIMING: entire_frame_compile:33.9533 backend_compile:28.08531
+STATS: call_* op count: 317 | FakeTensor.__torch_dispatch__:30766 | FakeTensorMode.__torch_dispatch__:75969 | ProxyTorchDispatchMode.__torch_dispatch__:19199
+Dynamo produced 2 graphs covering 317 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train jx_nest_base                        [2023-04-05 18:45:00,811] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.289x p=0.00
+TIMING: entire_frame_compile:29.96895 backend_compile:23.44759
+STATS: call_* op count: 862 | FakeTensor.__torch_dispatch__:33374 | FakeTensorMode.__torch_dispatch__:84304 | ProxyTorchDispatchMode.__torch_dispatch__:31018
+Dynamo produced 2 graphs covering 862 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train lcnet_050                           2.010x p=0.00
+TIMING: entire_frame_compile:14.31922 backend_compile:11.84221
+STATS: call_* op count: 168 | FakeTensor.__torch_dispatch__:10410 | FakeTensorMode.__torch_dispatch__:26667 | ProxyTorchDispatchMode.__torch_dispatch__:7008
+Dynamo produced 2 graphs covering 168 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train levit_128                           [2023-04-05 18:47:00,555] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.703x p=0.00
+TIMING: entire_frame_compile:29.99818 backend_compile:24.12148
+STATS: call_* op count: 583 | FakeTensor.__torch_dispatch__:24714 | FakeTensorMode.__torch_dispatch__:75053 | ProxyTorchDispatchMode.__torch_dispatch__:24385
+Dynamo produced 2 graphs covering 583 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mixer_b16_224                       [2023-04-05 18:47:36,983] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.302x p=0.00
+TIMING: entire_frame_compile:13.01616 backend_compile:10.11982
+STATS: call_* op count: 227 | FakeTensor.__torch_dispatch__:15342 | FakeTensorMode.__torch_dispatch__:35499 | ProxyTorchDispatchMode.__torch_dispatch__:11630
+Dynamo produced 2 graphs covering 227 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mixnet_l                            1.213x p=0.00
+TIMING: entire_frame_compile:33.75613 backend_compile:25.2953
+STATS: call_* op count: 677 | FakeTensor.__torch_dispatch__:31822 | FakeTensorMode.__torch_dispatch__:79434 | ProxyTorchDispatchMode.__torch_dispatch__:20265
+Dynamo produced 2 graphs covering 677 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mnasnet_100                         1.587x p=0.00
+TIMING: entire_frame_compile:19.83494 backend_compile:15.80286
+STATS: call_* op count: 305 | FakeTensor.__torch_dispatch__:16721 | FakeTensorMode.__torch_dispatch__:41104 | ProxyTorchDispatchMode.__torch_dispatch__:10142
+Dynamo produced 3 graphs covering 305 ops with 13 graph breaks (8 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mobilenetv2_100                     1.561x p=0.00
+TIMING: entire_frame_compile:20.64322 backend_compile:16.62407
+STATS: call_* op count: 304 | FakeTensor.__torch_dispatch__:17135 | FakeTensorMode.__torch_dispatch__:42545 | ProxyTorchDispatchMode.__torch_dispatch__:10711
+Dynamo produced 2 graphs covering 304 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mobilenetv3_large_100               1.584x p=0.00
+TIMING: entire_frame_compile:21.36669 backend_compile:17.17715
+STATS: call_* op count: 315 | FakeTensor.__torch_dispatch__:18549 | FakeTensorMode.__torch_dispatch__:45235 | ProxyTorchDispatchMode.__torch_dispatch__:11865
+Dynamo produced 2 graphs covering 315 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train mobilevit_s                         1.428x p=0.00
+TIMING: entire_frame_compile:28.28585 backend_compile:23.05977
+STATS: call_* op count: 494 | FakeTensor.__torch_dispatch__:22862 | FakeTensorMode.__torch_dispatch__:59407 | ProxyTorchDispatchMode.__torch_dispatch__:17184
+Dynamo produced 3 graphs covering 494 ops with 13 graph breaks (8 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train nfnet_l0                            1.541x p=0.00
+TIMING: entire_frame_compile:21.7723 backend_compile:16.55931
+STATS: call_* op count: 551 | FakeTensor.__torch_dispatch__:22748 | FakeTensorMode.__torch_dispatch__:57553 | ProxyTorchDispatchMode.__torch_dispatch__:17386
+Dynamo produced 2 graphs covering 551 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train pit_b_224                           [2023-04-05 18:53:31,337] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.220x p=0.00
+TIMING: entire_frame_compile:14.93305 backend_compile:10.75553
+STATS: call_* op count: 387 | FakeTensor.__torch_dispatch__:17035 | FakeTensorMode.__torch_dispatch__:42014 | ProxyTorchDispatchMode.__torch_dispatch__:13087
+Dynamo produced 2 graphs covering 387 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train pnasnet5large                       0.934x p=0.00
+TIMING: entire_frame_compile:71.02892 backend_compile:60.93199
+STATS: call_* op count: 958 | FakeTensor.__torch_dispatch__:24202 | FakeTensorMode.__torch_dispatch__:176065 | ProxyTorchDispatchMode.__torch_dispatch__:50005
+Dynamo produced 2 graphs covering 958 ops with 7 graph breaks (5 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train poolformer_m36                      1.320x p=0.00
+TIMING: entire_frame_compile:36.52622 backend_compile:28.86954
+STATS: call_* op count: 699 | FakeTensor.__torch_dispatch__:39325 | FakeTensorMode.__torch_dispatch__:84129 | ProxyTorchDispatchMode.__torch_dispatch__:24915
+Dynamo produced 2 graphs covering 699 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train regnety_002                         1.500x p=0.00
+TIMING: entire_frame_compile:20.29186 backend_compile:15.3759
+STATS: call_* op count: 369 | FakeTensor.__torch_dispatch__:18996 | FakeTensorMode.__torch_dispatch__:44454 | ProxyTorchDispatchMode.__torch_dispatch__:11887
+Dynamo produced 2 graphs covering 369 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train repvgg_a2                           1.175x p=0.00
+TIMING: entire_frame_compile:20.6768 backend_compile:15.73773
+STATS: call_* op count: 398 | FakeTensor.__torch_dispatch__:18341 | FakeTensorMode.__torch_dispatch__:44249 | ProxyTorchDispatchMode.__torch_dispatch__:11233
+Dynamo produced 2 graphs covering 398 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train res2net101_26w_4s                   1.160x p=0.00
+TIMING: entire_frame_compile:57.606 backend_compile:48.07243
+STATS: call_* op count: 807 | FakeTensor.__torch_dispatch__:57065 | FakeTensorMode.__torch_dispatch__:148483 | ProxyTorchDispatchMode.__torch_dispatch__:36956
+Dynamo produced 2 graphs covering 807 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train res2net50_14w_8s                    1.379x p=0.00
+TIMING: entire_frame_compile:52.17215 backend_compile:43.8608
+STATS: call_* op count: 703 | FakeTensor.__torch_dispatch__:50186 | FakeTensorMode.__torch_dispatch__:135083 | ProxyTorchDispatchMode.__torch_dispatch__:32521
+Dynamo produced 2 graphs covering 703 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train res2next50                          1.390x p=0.00
+TIMING: entire_frame_compile:30.16844 backend_compile:25.22492
+STATS: call_* op count: 399 | FakeTensor.__torch_dispatch__:28522 | FakeTensorMode.__torch_dispatch__:74091 | ProxyTorchDispatchMode.__torch_dispatch__:18409
+Dynamo produced 2 graphs covering 399 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train resmlp_12_224                       [2023-04-05 19:03:26,682] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.100x p=0.00
+TIMING: entire_frame_compile:10.16031 backend_compile:7.32276
+STATS: call_* op count: 203 | FakeTensor.__torch_dispatch__:14271 | FakeTensorMode.__torch_dispatch__:28562 | ProxyTorchDispatchMode.__torch_dispatch__:9179
+Dynamo produced 2 graphs covering 203 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train resnest101e                         1.382x p=0.00
+TIMING: entire_frame_compile:51.968 backend_compile:41.58082
+STATS: call_* op count: 1022 | FakeTensor.__torch_dispatch__:55079 | FakeTensorMode.__torch_dispatch__:140801 | ProxyTorchDispatchMode.__torch_dispatch__:38506
+Dynamo produced 2 graphs covering 1022 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train rexnet_100                          1.362x p=0.00
+TIMING: entire_frame_compile:28.92523 backend_compile:23.10331
+STATS: call_* op count: 405 | FakeTensor.__torch_dispatch__:24405 | FakeTensorMode.__torch_dispatch__:59634 | ProxyTorchDispatchMode.__torch_dispatch__:15825
+Dynamo produced 2 graphs covering 405 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train sebotnet33ts_256                    1.538x p=0.00
+TIMING: entire_frame_compile:25.77786 backend_compile:21.43417
+STATS: call_* op count: 466 | FakeTensor.__torch_dispatch__:16904 | FakeTensorMode.__torch_dispatch__:46892 | ProxyTorchDispatchMode.__torch_dispatch__:13656
+Dynamo produced 3 graphs covering 466 ops with 13 graph breaks (8 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train selecsls42b                         1.439x p=0.00
+TIMING: entire_frame_compile:15.94758 backend_compile:13.57497
+STATS: call_* op count: 136 | FakeTensor.__torch_dispatch__:13535 | FakeTensorMode.__torch_dispatch__:33203 | ProxyTorchDispatchMode.__torch_dispatch__:8374
+Dynamo produced 2 graphs covering 136 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train spnasnet_100                        1.522x p=0.00
+TIMING: entire_frame_compile:22.93925 backend_compile:18.05679
+STATS: call_* op count: 376 | FakeTensor.__torch_dispatch__:20547 | FakeTensorMode.__torch_dispatch__:50456 | ProxyTorchDispatchMode.__torch_dispatch__:12448
+Dynamo produced 2 graphs covering 376 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train swin_base_patch4_window7_224        [2023-04-05 19:12:32,386] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+1.581x p=0.00
+TIMING: entire_frame_compile:42.46919 backend_compile:34.39923
+STATS: call_* op count: 1372 | FakeTensor.__torch_dispatch__:35364 | FakeTensorMode.__torch_dispatch__:107417 | ProxyTorchDispatchMode.__torch_dispatch__:37193
+Dynamo produced 2 graphs covering 1372 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train swsl_resnext101_32x16d              1.071x p=0.00
+TIMING: entire_frame_compile:32.15123 backend_compile:26.30252
+STATS: call_* op count: 415 | FakeTensor.__torch_dispatch__:33969 | FakeTensorMode.__torch_dispatch__:82846 | ProxyTorchDispatchMode.__torch_dispatch__:20878
+Dynamo produced 2 graphs covering 415 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train tf_efficientnet_b0                  1.464x p=0.00
+TIMING: entire_frame_compile:24.61504 backend_compile:19.54995
+STATS: call_* op count: 371 | FakeTensor.__torch_dispatch__:22792 | FakeTensorMode.__torch_dispatch__:53926 | ProxyTorchDispatchMode.__torch_dispatch__:14003
+Dynamo produced 2 graphs covering 371 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train tf_mixnet_l                         1.221x p=0.00
+TIMING: entire_frame_compile:35.12526 backend_compile:26.10665
+STATS: call_* op count: 692 | FakeTensor.__torch_dispatch__:31836 | FakeTensorMode.__torch_dispatch__:79808 | ProxyTorchDispatchMode.__torch_dispatch__:20450
+Dynamo produced 2 graphs covering 692 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train tinynet_a                           1.355x p=0.00
+TIMING: entire_frame_compile:28.47817 backend_compile:22.6709
+STATS: call_* op count: 435 | FakeTensor.__torch_dispatch__:26976 | FakeTensorMode.__torch_dispatch__:63694 | ProxyTorchDispatchMode.__torch_dispatch__:16522
+Dynamo produced 2 graphs covering 435 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train tnt_s_patch16_224                   2.470x p=0.00
+TIMING: entire_frame_compile:33.02841 backend_compile:26.35165
+STATS: call_* op count: 826 | FakeTensor.__torch_dispatch__:36565 | FakeTensorMode.__torch_dispatch__:100508 | ProxyTorchDispatchMode.__torch_dispatch__:35493
+Dynamo produced 2 graphs covering 826 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train twins_pcpvt_base                    1.651x p=0.00
+TIMING: entire_frame_compile:46.38892 backend_compile:36.09416
+STATS: call_* op count: 1022 | FakeTensor.__torch_dispatch__:52013 | FakeTensorMode.__torch_dispatch__:137451 | ProxyTorchDispatchMode.__torch_dispatch__:45801
+Dynamo produced 2 graphs covering 1022 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train visformer_small                     1.180x p=0.00
+TIMING: entire_frame_compile:16.65665 backend_compile:13.87933
+STATS: call_* op count: 317 | FakeTensor.__torch_dispatch__:13802 | FakeTensorMode.__torch_dispatch__:38040 | ProxyTorchDispatchMode.__torch_dispatch__:11171
+Dynamo produced 2 graphs covering 317 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train vit_base_patch16_224                1.118x p=0.00
+TIMING: entire_frame_compile:13.93226 backend_compile:9.74941
+STATS: call_* op count: 341 | FakeTensor.__torch_dispatch__:15145 | FakeTensorMode.__torch_dispatch__:36275 | ProxyTorchDispatchMode.__torch_dispatch__:11138
+Dynamo produced 2 graphs covering 341 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train volo_d1_224                         1.578x p=0.00
+TIMING: entire_frame_compile:26.603 backend_compile:21.65264
+STATS: call_* op count: 618 | FakeTensor.__torch_dispatch__:27097 | FakeTensorMode.__torch_dispatch__:71536 | ProxyTorchDispatchMode.__torch_dispatch__:26287
+Dynamo produced 2 graphs covering 618 ops with 13 graph breaks (7 unique)
+/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: '/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/torchvision/image.so: undefined symbol: _ZN3c106detail23torchInternalAssertFailEPKcS2_jS2_RKSs'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+cuda train xcit_large_24_p8_224                [2023-04-05 19:28:55,190] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+1.734x p=0.00
+TIMING: entire_frame_compile:56.63204 backend_compile:43.87541
+STATS: call_* op count: 1195 | FakeTensor.__torch_dispatch__:64780 | FakeTensorMode.__torch_dispatch__:162623 | ProxyTorchDispatchMode.__torch_dispatch__:53769
+Dynamo produced 2 graphs covering 1195 ops with 13 graph breaks (7 unique)
+speedup             gmean=1.41x mean=1.428x
+abs_latency         gmean=76.38x mean=88.798x
+compilation_latency mean=49.424 seconds
+compression_ratio   mean=0.906x
+eager_peak_mem      gmean=6.31x mean=6.947x
+dynamo_peak_mem     gmean=6.99x mean=7.633x
+calls_captured      gmean=466.42x mean=530.871x
+unique_graphs       gmean=2.07x mean=2.081x
+graph_breaks        gmean=12.62x mean=12.710x
+unique_graph_breaks gmean=6.96x mean=6.984x
