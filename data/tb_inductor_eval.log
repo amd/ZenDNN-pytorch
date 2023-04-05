@@ -1,59 +1,11 @@
-cuda eval  BERT_pytorch                        1.917x p=0.00
-TIMING: entire_frame_compile:7.83995 backend_compile:6.31486
-STATS: call_* op count: 538 | FakeTensorMode.__torch_dispatch__:17112 | FakeTensor.__torch_dispatch__:1079 | ProxyTorchDispatchMode.__torch_dispatch__:3512
+cuda eval  BERT_pytorch                        1.387x p=0.00
+TIMING: entire_frame_compile:8.81543 backend_compile:6.86408
+STATS: call_* op count: 538 | FakeTensorMode.__torch_dispatch__:17796 | FakeTensor.__torch_dispatch__:2298 | ProxyTorchDispatchMode.__torch_dispatch__:3537
 Dynamo produced 1 graphs covering 538 ops with 0 graph breaks (0 unique)
-cuda eval  Background_Matting                  1.414x p=0.00
-TIMING: entire_frame_compile:8.46845 backend_compile:7.46776
-STATS: call_* op count: 183 | FakeTensorMode.__torch_dispatch__:17799 | FakeTensor.__torch_dispatch__:1168 | ProxyTorchDispatchMode.__torch_dispatch__:4227
-Dynamo produced 1 graphs covering 183 ops with 0 graph breaks (0 unique)
-cuda eval  LearningToPaint                     1.243x p=0.00
-TIMING: entire_frame_compile:4.9483 backend_compile:4.42608
-STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:369 | FakeTensorMode.__torch_dispatch__:6713 | ProxyTorchDispatchMode.__torch_dispatch__:1574
-Dynamo produced 1 graphs covering 71 ops with 0 graph breaks (0 unique)
-WARNING:root:Super_SloMo failed to load
-Eager model failed to run
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1146, in validate_model
-    self.model_iter_fn(model, example_inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 363, in forward_pass
-    return mod(*inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/model_wrapper.py", line 34, in forward
-    fCoeff = model.getFlowCoeff(trainFrameIndex, I0.device)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/slomo_model.py", line 324, in getFlowCoeff
-    C11 = C00 = - (1 - (t[ind])) * (t[ind])
-RuntimeError: indices should be either on cpu or on the same device as the indexed tensor (cpu)
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 311, in load_model
-    self.validate_model(model, example_inputs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1148, in validate_model
-    raise NotImplementedError("Eager model failed to run") from e
-NotImplementedError: Eager model failed to run
-
-cuda eval  alexnet                             1.231x p=0.00
-TIMING: entire_frame_compile:3.11434 backend_compile:2.86175
-STATS: call_* op count: 22 | FakeTensor.__torch_dispatch__:101 | FakeTensorMode.__torch_dispatch__:831 | ProxyTorchDispatchMode.__torch_dispatch__:114
-Dynamo produced 1 graphs covering 22 ops with 0 graph breaks (0 unique)
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
-    torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
-    main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
-    return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 249, in load_model
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
     module = importlib.import_module(f"torchbenchmark.models.{model_name}")
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/importlib/__init__.py", line 126, in import_module
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
   File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
   File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
@@ -61,395 +13,26 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
   File "<frozen importlib._bootstrap_external>", line 883, in exec_module
   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/attention_is_all_you_need_pytorch/__init__.py", line 12, in <module>
-    from torchbenchmark.util.torchtext_legacy.field import Field
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/torchtext_legacy/field.py", line 6, in <module>
-    from .data import Dataset
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/torchtext_legacy/data.py", line 13, in <module>
-    from torchtext.data.utils import RandomShuffler
-  File "/scratch/voz/work/torchtext/torchtext/__init__.py", line 6, in <module>
-    from torchtext import _extension  # noqa: F401
-  File "/scratch/voz/work/torchtext/torchtext/_extension.py", line 64, in <module>
-    _init_extension()
-  File "/scratch/voz/work/torchtext/torchtext/_extension.py", line 58, in _init_extension
-    _load_lib("libtorchtext")
-  File "/scratch/voz/work/torchtext/torchtext/_extension.py", line 50, in _load_lib
-    torch.ops.load_library(path)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_ops.py", line 643, in load_library
-    ctypes.CDLL(path)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/ctypes/__init__.py", line 374, in __init__
-    self._handle = _dlopen(self._name, mode)
-OSError: /scratch/voz/work/torchtext/torchtext/lib/libtorchtext.so: undefined symbol: _ZN5torch3jit17parseSchemaOrNameERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE
-ERROR
-cuda eval  dcgan                               1.082x p=0.00
-TIMING: entire_frame_compile:3.01959 backend_compile:2.76194
-STATS: call_* op count: 13 | FakeTensor.__torch_dispatch__:73 | FakeTensorMode.__torch_dispatch__:1047 | ProxyTorchDispatchMode.__torch_dispatch__:246
-Dynamo produced 1 graphs covering 13 ops with 0 graph breaks (0 unique)
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
-    torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
-    main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
-    return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 283, in load_model
-    benchmark = benchmark_cls(
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
-    obj = type.__call__(cls, *args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/demucs/__init__.py", line 50, in __init__
-    model.to(device)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1145, in to
-    return self._apply(convert)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 797, in _apply
-    module._apply(fn)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 797, in _apply
-    module._apply(fn)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 202, in _apply
-    self._init_flat_weights()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 139, in _init_flat_weights
-    self.flatten_parameters()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 169, in flatten_parameters
-    not torch.backends.cudnn.is_acceptable(fw.data)):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/backends/cudnn/__init__.py", line 97, in is_acceptable
-    if not _init():
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/backends/cudnn/__init__.py", line 52, in _init
-    raise RuntimeError(f'{base_error_msg}'
-RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (8, 5, 0) but found runtime version (8, 4, 1). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN.Looks like your LD_LIBRARY_PATH contains incompatible version of cudnnPlease either remove it from the path or install cudnn (8, 5, 0)
-ERROR
-cuda eval  densenet121                         1.504x p=0.00
-TIMING: entire_frame_compile:21.24364 backend_compile:19.11984
-STATS: call_* op count: 431 | FakeTensor.__torch_dispatch__:2060 | FakeTensorMode.__torch_dispatch__:36686 | ProxyTorchDispatchMode.__torch_dispatch__:7962
-Dynamo produced 1 graphs covering 431 ops with 0 graph breaks (0 unique)
-cuda eval  dlrm                                0.947x p=0.00
-TIMING: entire_frame_compile:12.86703 backend_compile:12.53935
-STATS: call_* op count: 36 | FakeTensor.__torch_dispatch__:273 | FakeTensorMode.__torch_dispatch__:1519 | ProxyTorchDispatchMode.__torch_dispatch__:282
-Dynamo produced 1 graphs covering 36 ops with 0 graph breaks (0 unique)
-cuda eval  drq                                 3.207x p=0.00
-TIMING: entire_frame_compile:3.04886 backend_compile:2.69042
-STATS: call_* op count: 29 | FakeTensorMode.__torch_dispatch__:914 | FakeTensor.__torch_dispatch__:110 | ProxyTorchDispatchMode.__torch_dispatch__:152
-Dynamo produced 1 graphs covering 29 ops with 0 graph breaks (0 unique)
-cuda eval  fastNLP_Bert                        1.947x p=0.00
-TIMING: entire_frame_compile:9.3456 backend_compile:5.73628
-STATS: call_* op count: 435 | FakeTensorMode.__torch_dispatch__:17646 | FakeTensor.__torch_dispatch__:1618 | ProxyTorchDispatchMode.__torch_dispatch__:3398
-Dynamo produced 5 graphs covering 435 ops with 4 graph breaks (2 unique)
-cuda eval  hf_Albert                           5.127x p=0.00
-TIMING: entire_frame_compile:7.93336 backend_compile:6.27719
-STATS: call_* op count: 436 | FakeTensorMode.__torch_dispatch__:17924 | FakeTensor.__torch_dispatch__:1320 | ProxyTorchDispatchMode.__torch_dispatch__:3120
-Dynamo produced 1 graphs covering 436 ops with 0 graph breaks (0 unique)
-cuda eval  hf_Bart                             3.065x p=0.00
-TIMING: entire_frame_compile:11.33218 backend_compile:7.99487
-STATS: call_* op count: 649 | FakeTensorMode.__torch_dispatch__:27505 | FakeTensor.__torch_dispatch__:2304 | ProxyTorchDispatchMode.__torch_dispatch__:4624
-Dynamo produced 16 graphs covering 649 ops with 25 graph breaks (7 unique)
-cuda eval  hf_Bert                             4.116x p=0.00
-TIMING: entire_frame_compile:8.32371 backend_compile:6.50945
-STATS: call_* op count: 367 | FakeTensorMode.__torch_dispatch__:19772 | FakeTensor.__torch_dispatch__:1610 | ProxyTorchDispatchMode.__torch_dispatch__:3518
-Dynamo produced 1 graphs covering 367 ops with 0 graph breaks (0 unique)
-cuda eval  hf_BigBird                          1.660x p=0.00
-TIMING: entire_frame_compile:35.05765 backend_compile:26.62611
-STATS: call_* op count: 2857 | FakeTensorMode.__torch_dispatch__:91181 | FakeTensor.__torch_dispatch__:2960 | ProxyTorchDispatchMode.__torch_dispatch__:18744
-Dynamo produced 64 graphs covering 2857 ops with 56 graph breaks (5 unique)
-cuda eval  hf_DistilBert                       4.647x p=0.00
-TIMING: entire_frame_compile:5.50219 backend_compile:4.57955
-STATS: call_* op count: 203 | FakeTensorMode.__torch_dispatch__:10096 | FakeTensor.__torch_dispatch__:632 | ProxyTorchDispatchMode.__torch_dispatch__:1923
-Dynamo produced 1 graphs covering 203 ops with 0 graph breaks (0 unique)
-cuda eval  hf_GPT2                             2.302x p=0.00
-TIMING: entire_frame_compile:7.91353 backend_compile:6.16809
-STATS: call_* op count: 635 | FakeTensorMode.__torch_dispatch__:17467 | FakeTensor.__torch_dispatch__:704 | ProxyTorchDispatchMode.__torch_dispatch__:3366
-Dynamo produced 1 graphs covering 635 ops with 0 graph breaks (0 unique)
-cuda eval  hf_Longformer                       Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 333, in call_function
-    out = lowerings[target](*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/lowering.py", line 226, in wrapped
-    validate_ir(out)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 105, in validate_ir
-    _check_tensorbox(node_or_nodes)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 90, in _check_tensorbox
-    assert isinstance(
-AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-ERROR:common:Backend dynamo failed in warmup()
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 333, in call_function
-    out = lowerings[target](*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/lowering.py", line 226, in wrapped
-    validate_ir(out)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 105, in validate_ir
-    _check_tensorbox(node_or_nodes)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 90, in _check_tensorbox
-    assert isinstance(
-AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1326, in aot_dispatch_base
-    compiled_fw = aot_config.fw_compiler(fw_module, flat_args_with_views_handled)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 176, in compile_fx_inner
-    graph.run(*example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 194, in run
-    return super().run(*args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 136, in run
-    self.env[node] = self.run_node(node)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 407, in run_node
-    result = super().run_node(n)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 177, in run_node
-    return getattr(self, n.op)(n.target, args, kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 337, in call_function
-    raise LoweringException(e, target, args, kwargs) from e
-torch._inductor.exc.LoweringException: AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-  target: aten._local_scalar_dense.default
-  args[0]: TensorBox(StorageBox(
-    Pointwise(
-      'cpu',
-      torch.int64,
-      tmp0 = constant(4096, torch.int64)
-      tmp1 = constant(512, torch.int64)
-      tmp2 = truncdiv(tmp0, tmp1)
-      return tmp2
-      ,
-      ranges=(),
-      origins={div}
-    )
-  ))
-
-While executing %_local_scalar_dense : [#users=0] = call_function[target=torch.ops.aten._local_scalar_dense.default](args = (%div,), kwargs = {})
-Original traceback:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 769, in _chunk
-    hidden_states = hidden_states.view(
- |   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in <graph break in _sliding_chunks_query_key_matmul>
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 363, in forward_pass
-    return mod(*inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1848, in forward
-    outputs = self.longformer(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1750, in forward
-    encoder_outputs = self.encoder(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1294, in forward
-    is_global_attn = is_index_global_attn.flatten().any().item()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1326, in <graph break in forward>
-    layer_outputs = layer_module(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1249, in forward
-    self_attn_outputs = self.attention(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1185, in forward
-    self_outputs = self.self(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 574, in forward
-    attn_scores = self._sliding_chunks_query_key_matmul(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in _sliding_chunks_query_key_matmul
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 372, in wrapper
-    self.output.compile_subgraph(self, reason=reason)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 541, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised LoweringException: AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-  target: aten._local_scalar_dense.default
-  args[0]: TensorBox(StorageBox(
-    Pointwise(
-      'cpu',
-      torch.int64,
-      tmp0 = constant(4096, torch.int64)
-      tmp1 = constant(512, torch.int64)
-      tmp2 = truncdiv(tmp0, tmp1)
-      return tmp2
-      ,
-      ranges=(),
-      origins={div}
-    )
-  ))
-
-While executing %_local_scalar_dense : [#users=0] = call_function[target=torch.ops.aten._local_scalar_dense.default](args = (%div,), kwargs = {})
-Original traceback:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 769, in _chunk
-    hidden_states = hidden_states.view(
- |   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in <graph break in _sliding_chunks_query_key_matmul>
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
-cuda eval  hf_Reformer                         1.654x p=0.00
-TIMING: entire_frame_compile:8.90435 backend_compile:6.34492
-STATS: call_* op count: 494 | FakeTensorMode.__torch_dispatch__:14779 | FakeTensor.__torch_dispatch__:1090 | ProxyTorchDispatchMode.__torch_dispatch__:3198
-Dynamo produced 44 graphs covering 494 ops with 26 graph breaks (3 unique)
-cuda eval  hf_T5                               3.152x p=0.00
-TIMING: entire_frame_compile:11.14522 backend_compile:8.27396
-STATS: call_* op count: 977 | FakeTensorMode.__torch_dispatch__:24399 | FakeTensor.__torch_dispatch__:1784 | ProxyTorchDispatchMode.__torch_dispatch__:6293
-Dynamo produced 1 graphs covering 977 ops with 0 graph breaks (0 unique)
-cuda eval  maml                                0.829x p=0.00
-TIMING: entire_frame_compile:11.20288 backend_compile:8.87061
-STATS: call_* op count: 137 | FakeTensorMode.__torch_dispatch__:11206 | ProxyTorchDispatchMode.__torch_dispatch__:3988 | FakeTensor.__torch_dispatch__:816
-Dynamo produced 12 graphs covering 137 ops with 5 graph breaks (3 unique)
-cuda eval  maml_omniglot                       1.073x p=0.00
-TIMING: entire_frame_compile:3.04814 backend_compile:2.79169
-STATS: call_* op count: 14 | FakeTensor.__torch_dispatch__:75 | FakeTensorMode.__torch_dispatch__:1157 | ProxyTorchDispatchMode.__torch_dispatch__:258
-Dynamo produced 1 graphs covering 14 ops with 0 graph breaks (0 unique)
-cuda eval  mnasnet1_0                          1.588x p=0.00
-TIMING: entire_frame_compile:8.16429 backend_compile:7.27109
-STATS: call_* op count: 152 | FakeTensor.__torch_dispatch__:896 | FakeTensorMode.__torch_dispatch__:15655 | ProxyTorchDispatchMode.__torch_dispatch__:3359
-Dynamo produced 1 graphs covering 152 ops with 0 graph breaks (0 unique)
-cuda eval  mobilenet_v2                        1.626x p=0.00
-TIMING: entire_frame_compile:9.46434 backend_compile:7.74104
-STATS: call_* op count: 153 | FakeTensor.__torch_dispatch__:931 | FakeTensorMode.__torch_dispatch__:16033 | ProxyTorchDispatchMode.__torch_dispatch__:3821
-Dynamo produced 1 graphs covering 153 ops with 0 graph breaks (0 unique)
-WARNING:root:mobilenet_v2_quantized_qat failed to load
-The eval test only supports CPU.
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 283, in load_model
-    benchmark = benchmark_cls(
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
-    obj = type.__call__(cls, *args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/mobilenet_v2_quantized_qat/__init__.py", line 21, in __init__
-    raise NotImplementedError("The eval test only supports CPU.")
-NotImplementedError: The eval test only supports CPU.
-
-cuda eval  mobilenet_v3_large                  1.470x p=0.00
-TIMING: entire_frame_compile:9.0987 backend_compile:8.1058
-STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:1035 | FakeTensorMode.__torch_dispatch__:16680 | ProxyTorchDispatchMode.__torch_dispatch__:3827
-Dynamo produced 1 graphs covering 187 ops with 0 graph breaks (0 unique)
-cuda eval  moco                                1.00x p=0.00
-cuda eval  opacus_cifar10                      3.102x p=0.00
-TIMING: entire_frame_compile:8.01059 backend_compile:4.77644
-STATS: call_* op count: 69 | FakeTensor.__torch_dispatch__:10452 | FakeTensorMode.__torch_dispatch__:13011 | ProxyTorchDispatchMode.__torch_dispatch__:874
-Dynamo produced 1 graphs covering 69 ops with 0 graph breaks (0 unique)
-cuda eval  pyhpc_equation_of_state             1.401x p=0.00
-TIMING: entire_frame_compile:4.35714 backend_compile:3.87798
-STATS: call_* op count: 366 | FakeTensorMode.__torch_dispatch__:4116 | ProxyTorchDispatchMode.__torch_dispatch__:1122
-Dynamo produced 1 graphs covering 366 ops with 0 graph breaks (0 unique)
-cuda eval  pyhpc_isoneutral_mixing             0.851x p=0.00
-TIMING: entire_frame_compile:11.59423 backend_compile:10.47293
-STATS: call_* op count: 744 | FakeTensorMode.__torch_dispatch__:25105 | FakeTensor.__torch_dispatch__:4 | ProxyTorchDispatchMode.__torch_dispatch__:5398
-Dynamo produced 1 graphs covering 744 ops with 0 graph breaks (0 unique)
-cuda eval  pyhpc_turbulent_kinetic_energy      2.790x p=0.00
-TIMING: entire_frame_compile:12.62737 backend_compile:11.46243
-STATS: call_* op count: 992 | FakeTensorMode.__torch_dispatch__:28226 | FakeTensor.__torch_dispatch__:14 | ProxyTorchDispatchMode.__torch_dispatch__:7004
-Dynamo produced 1 graphs covering 992 ops with 0 graph breaks (0 unique)
-cuda eval  pytorch_CycleGAN_and_pix2pix        1.402x p=0.00
-TIMING: entire_frame_compile:5.1221 backend_compile:4.63439
-STATS: call_* op count: 91 | FakeTensorMode.__torch_dispatch__:5985 | FakeTensor.__torch_dispatch__:392 | ProxyTorchDispatchMode.__torch_dispatch__:1339
-Dynamo produced 1 graphs covering 91 ops with 0 graph breaks (0 unique)
-cuda eval  pytorch_stargan                     1.199x p=0.00
-TIMING: entire_frame_compile:5.29806 backend_compile:4.77963
-STATS: call_* op count: 56 | FakeTensorMode.__torch_dispatch__:8065 | FakeTensor.__torch_dispatch__:574 | ProxyTorchDispatchMode.__torch_dispatch__:2028
-Dynamo produced 1 graphs covering 56 ops with 0 graph breaks (0 unique)
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 249, in load_model
-    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/importlib/__init__.py", line 126, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
-  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_struct/__init__.py", line 6, in <module>
-    import pytest
-ModuleNotFoundError: No module named 'pytest'
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Background_Matting/__init__.py", line 8, in <module>
+    from tensorboardX import SummaryWriter
+ModuleNotFoundError: No module named 'tensorboardX'
 
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
     torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
     main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
     return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
     return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
     ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 251, in load_model
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
     module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/importlib/__init__.py", line 126, in import_module
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
   File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
   File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
@@ -460,24 +43,708 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
 ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
-cuda eval  pytorch_unet                        1.558x p=0.00
-TIMING: entire_frame_compile:5.53036 backend_compile:4.90722
-STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:455 | FakeTensorMode.__torch_dispatch__:8528 | ProxyTorchDispatchMode.__torch_dispatch__:2045
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/LearningToPaint/__init__.py", line 1, in <module>
+    import cv2
+ModuleNotFoundError: No module named 'cv2'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+WARNING:root:Super_SloMo failed to load
+Eager model failed to run
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1172, in validate_model
+    self.model_iter_fn(model, example_inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 373, in forward_pass
+    return mod(*inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/model_wrapper.py", line 34, in forward
+    fCoeff = model.getFlowCoeff(trainFrameIndex, I0.device)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/Super_SloMo/slomo_model.py", line 324, in getFlowCoeff
+    C11 = C00 = - (1 - (t[ind])) * (t[ind])
+RuntimeError: indices should be either on cpu or on the same device as the indexed tensor (cpu)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 321, in load_model
+    self.validate_model(model, example_inputs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1174, in validate_model
+    raise NotImplementedError("Eager model failed to run") from e
+NotImplementedError: Eager model failed to run
+
+cuda eval  alexnet                             1.230x p=0.00
+TIMING: entire_frame_compile:2.63 backend_compile:2.39968
+STATS: call_* op count: 22 | FakeTensor.__torch_dispatch__:100 | FakeTensorMode.__torch_dispatch__:841 | ProxyTorchDispatchMode.__torch_dispatch__:113
+Dynamo produced 1 graphs covering 22 ops with 0 graph breaks (0 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/attention_is_all_you_need_pytorch/__init__.py", line 5, in <module>
+    import dill as pickle
+ModuleNotFoundError: No module named 'dill'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  dcgan                               1.162x p=0.00
+TIMING: entire_frame_compile:2.53688 backend_compile:2.30454
+STATS: call_* op count: 13 | FakeTensor.__torch_dispatch__:150 | FakeTensorMode.__torch_dispatch__:1081 | ProxyTorchDispatchMode.__torch_dispatch__:228
+Dynamo produced 1 graphs covering 13 ops with 0 graph breaks (0 unique)
+cuda eval  demucs                              1.091x p=0.00
+TIMING: entire_frame_compile:4.62106 backend_compile:3.45237
+STATS: call_* op count: 63 | FakeTensorMode.__torch_dispatch__:2065 | FakeTensor.__torch_dispatch__:417 | ProxyTorchDispatchMode.__torch_dispatch__:376
+Dynamo produced 4 graphs covering 63 ops with 2 graph breaks (1 unique)
+cuda eval  densenet121                         1.640x p=0.00
+TIMING: entire_frame_compile:19.9576 backend_compile:17.39589
+STATS: call_* op count: 431 | FakeTensor.__torch_dispatch__:7069 | FakeTensorMode.__torch_dispatch__:37287 | ProxyTorchDispatchMode.__torch_dispatch__:7116
+Dynamo produced 1 graphs covering 431 ops with 0 graph breaks (0 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/dlrm/__init__.py", line 33, in <module>
+    from .dlrm_s_pytorch import DLRM_Net, LRPolicyScheduler
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/dlrm/dlrm_s_pytorch.py", line 75, in <module>
+    import onnx
+ModuleNotFoundError: No module named 'onnx'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/drq/__init__.py", line 11, in <module>
+    from gym import spaces
+ModuleNotFoundError: No module named 'gym'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/fastNLP_Bert/__init__.py", line 14, in <module>
+    from fastNLP.embeddings import BertEmbedding
+ModuleNotFoundError: No module named 'fastNLP'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  hf_Albert                           5.286x p=0.00
+TIMING: entire_frame_compile:8.80718 backend_compile:6.90093
+STATS: call_* op count: 436 | FakeTensorMode.__torch_dispatch__:19198 | FakeTensor.__torch_dispatch__:3049 | ProxyTorchDispatchMode.__torch_dispatch__:3109
+Dynamo produced 1 graphs covering 436 ops with 0 graph breaks (0 unique)
+cuda eval  hf_Bart                             2.877x p=0.00
+TIMING: entire_frame_compile:12.22972 backend_compile:9.33255
+STATS: call_* op count: 649 | FakeTensorMode.__torch_dispatch__:27647 | FakeTensor.__torch_dispatch__:3798 | ProxyTorchDispatchMode.__torch_dispatch__:4479
+Dynamo produced 10 graphs covering 649 ops with 6 graph breaks (4 unique)
+cuda eval  hf_Bert                             2.307x p=0.00
+TIMING: entire_frame_compile:9.01947 backend_compile:6.54395
+STATS: call_* op count: 367 | FakeTensorMode.__torch_dispatch__:21141 | FakeTensor.__torch_dispatch__:3119 | ProxyTorchDispatchMode.__torch_dispatch__:3519
+Dynamo produced 1 graphs covering 367 ops with 0 graph breaks (0 unique)
+cuda eval  hf_BigBird                          1.576x p=0.00
+TIMING: entire_frame_compile:37.37506 backend_compile:28.68506
+STATS: call_* op count: 2857 | FakeTensorMode.__torch_dispatch__:94832 | FakeTensor.__torch_dispatch__:11688 | ProxyTorchDispatchMode.__torch_dispatch__:18277
+Dynamo produced 64 graphs covering 2857 ops with 56 graph breaks (6 unique)
+cuda eval  hf_DistilBert                       2.893x p=0.00
+TIMING: entire_frame_compile:6.03227 backend_compile:4.99213
+STATS: call_* op count: 203 | FakeTensorMode.__torch_dispatch__:10859 | FakeTensor.__torch_dispatch__:1392 | ProxyTorchDispatchMode.__torch_dispatch__:1918
+Dynamo produced 1 graphs covering 203 ops with 0 graph breaks (0 unique)
+cuda eval  hf_GPT2                             1.867x p=0.00
+TIMING: entire_frame_compile:9.44015 backend_compile:7.00967
+STATS: call_* op count: 635 | FakeTensorMode.__torch_dispatch__:18378 | FakeTensor.__torch_dispatch__:2272 | ProxyTorchDispatchMode.__torch_dispatch__:3364
+Dynamo produced 1 graphs covering 635 ops with 0 graph breaks (0 unique)
+cuda eval  hf_Longformer                       1.246x p=0.00
+TIMING: entire_frame_compile:35.22686 backend_compile:29.36924
+STATS: call_* op count: 1735 | FakeTensorMode.__torch_dispatch__:75583 | FakeTensor.__torch_dispatch__:7894 | ProxyTorchDispatchMode.__torch_dispatch__:16053
+Dynamo produced 4 graphs covering 1735 ops with 3 graph breaks (1 unique)
+cuda eval  hf_Reformer                         [2023-04-05 07:30:33,750] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
+[2023-04-05 07:30:35,679] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 07:30:38,163] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 07:30:41,268] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 07:30:44,905] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 07:30:45,901] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 07:30:46,509] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 07:30:47,716] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+[2023-04-05 07:30:48,731] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
+[2023-04-05 07:30:49,335] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+1.298x p=0.00
+TIMING: entire_frame_compile:11.16185 backend_compile:8.35427
+STATS: call_* op count: 494 | FakeTensorMode.__torch_dispatch__:14804 | FakeTensor.__torch_dispatch__:2213 | ProxyTorchDispatchMode.__torch_dispatch__:2998
+Dynamo produced 44 graphs covering 494 ops with 26 graph breaks (3 unique)
+cuda eval  hf_T5                               1.724x p=0.00
+TIMING: entire_frame_compile:14.38093 backend_compile:10.17815
+STATS: call_* op count: 876 | FakeTensorMode.__torch_dispatch__:24453 | FakeTensor.__torch_dispatch__:4865 | ProxyTorchDispatchMode.__torch_dispatch__:5265
+Dynamo produced 36 graphs covering 876 ops with 10 graph breaks (4 unique)
+cuda eval  maml                                0.302x p=0.00
+TIMING: entire_frame_compile:10.73765 backend_compile:9.18999
+STATS: call_* op count: 137 | FakeTensorMode.__torch_dispatch__:13258 | ProxyTorchDispatchMode.__torch_dispatch__:3837 | FakeTensor.__torch_dispatch__:2048
+Dynamo produced 12 graphs covering 137 ops with 5 graph breaks (3 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/maml_omniglot/__init__.py", line 25, in <module>
+    import higher
+ModuleNotFoundError: No module named 'higher'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  mnasnet1_0                          1.530x p=0.00
+TIMING: entire_frame_compile:7.29773 backend_compile:6.34413
+STATS: call_* op count: 152 | FakeTensor.__torch_dispatch__:2513 | FakeTensorMode.__torch_dispatch__:15887 | ProxyTorchDispatchMode.__torch_dispatch__:2996
+Dynamo produced 1 graphs covering 152 ops with 0 graph breaks (0 unique)
+cuda eval  mobilenet_v2                        2.775x p=0.00
+TIMING: entire_frame_compile:7.88704 backend_compile:6.87904
+STATS: call_* op count: 153 | FakeTensor.__torch_dispatch__:2759 | FakeTensorMode.__torch_dispatch__:16638 | ProxyTorchDispatchMode.__torch_dispatch__:3455
+Dynamo produced 1 graphs covering 153 ops with 0 graph breaks (0 unique)
+WARNING:root:mobilenet_v2_quantized_qat failed to load
+The eval test only supports CPU.
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 293, in load_model
+    benchmark = benchmark_cls(
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
+    obj = type.__call__(cls, *args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/mobilenet_v2_quantized_qat/__init__.py", line 21, in __init__
+    raise NotImplementedError("The eval test only supports CPU.")
+NotImplementedError: The eval test only supports CPU.
+
+cuda eval  mobilenet_v3_large                  2.009x p=0.00
+TIMING: entire_frame_compile:8.45006 backend_compile:7.3758
+STATS: call_* op count: 187 | FakeTensor.__torch_dispatch__:2855 | FakeTensorMode.__torch_dispatch__:17043 | ProxyTorchDispatchMode.__torch_dispatch__:3503
+Dynamo produced 1 graphs covering 187 ops with 0 graph breaks (0 unique)
+cuda eval  moco                                [2023-04-05 07:33:38,712] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+[2023-04-05 07:34:20,030] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (64)
+   function: '<resume in _momentum_update_key_encoder>' (/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py:50)
+   reasons:  ___tuple_iterator_len(L['___stack0']) == 97
+to diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
+ERROR:common:Backend dynamo failed in warmup()
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1402, in warmup
+    fn(model, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 245, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 373, in forward_pass
+    return mod(*inputs)
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/nn/parallel/distributed.py", line 1550, in forward
+    else self._run_ddp_forward(*inputs, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/nn/parallel/distributed.py", line 1403, in _run_ddp_forward
+    return self.module(*args, **kwargs)  # type: ignore[index]
+  File "/scratch/voz/work/pytorch/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py", line 130, in forward
+    self._momentum_update_key_encoder()  # update the key encoder
+  File "/scratch/voz/work/pytorch/torch/_dynamo/eval_frame.py", line 389, in catch_errors
+    return hijacked_callback(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 430, in _convert_frame
+    result = inner_convert(frame, cache_size, hooks)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 112, in _fn
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 282, in _convert_frame_assert
+    return _compile(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 347, in _compile
+    out_code = transform_code_object(code, transform)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/bytecode_transformation.py", line 683, in transform_code_object
+    transformations(instructions, code_options)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/convert_frame.py", line 334, in transform
+    tracer.run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 1890, in run
+    super().run()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 609, in run
+    and self.step()
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 569, in step
+    getattr(self, inst.opname)(inst)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/symbolic_convert.py", line 382, in wrapper
+    self.output.compile_subgraph(self, reason=reason)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 643, in compile_subgraph
+    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 689, in compile_and_call_fx_graph
+    compiled_fn = self.call_user_compiler(gm)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 768, in call_user_compiler
+    raise BackendCompilerFailed(self.compiler_fn, e).with_traceback(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/output_graph.py", line 764, in call_user_compiler
+    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
+  File "/scratch/voz/work/pytorch/torch/_dynamo/backends/distributed.py", line 204, in compile_fn
+    return self.backend_compile_fn(gm, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/debug_utils.py", line 1093, in debug_wrapper
+    compiled_gm = compiler_fn(gm, example_inputs)
+  File "/scratch/voz/work/pytorch/torch/_dynamo/backends/inductor.py", line 9, in inductor
+    return compile_fx(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_inductor/compile_fx.py", line 636, in compile_fx
+    return aot_autograd(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/backends/common.py", line 62, in compiler_fn
+    cg = aot_module_simplified(gm, example_inputs, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 3082, in aot_module_simplified
+    compiled_fn = create_aot_dispatcher_function(
+  File "/scratch/voz/work/pytorch/torch/_dynamo/utils.py", line 166, in time_wrapper
+    r = func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 2709, in create_aot_dispatcher_function
+    fw_metadata = run_functionalized_fw_and_collect_metadata(
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 686, in inner
+    flat_f_outs = f(*flat_f_args)
+  File "/scratch/voz/work/pytorch/torch/_functorch/aot_autograd.py", line 3014, in functional_call
+    out = Interpreter(mod).run(*args[params_len:], **kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/interpreter.py", line 137, in run
+    self.env[node] = self.run_node(node)
+  File "/scratch/voz/work/pytorch/torch/fx/interpreter.py", line 179, in run_node
+    return getattr(self, n.op)(n.target, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/fx/interpreter.py", line 251, in call_function
+    return target(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/distributed/distributed_c10d.py", line 131, in wrapper
+    return func(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/distributed/distributed_c10d.py", line 2487, in all_gather
+    work = default_pg.allgather([tensor_list], [tensor])
+  File "/scratch/voz/work/pytorch/torch/utils/_stats.py", line 20, in wrapper
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1073, in __torch_dispatch__
+    return self.dispatch(func, types, args, kwargs)
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1159, in dispatch
+    args, kwargs = self.validate_and_convert_non_fake_tensors(
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1313, in validate_and_convert_non_fake_tensors
+    return tree_map_only(
+  File "/scratch/voz/work/pytorch/torch/utils/_pytree.py", line 266, in tree_map_only
+    return tree_map(map_only(ty)(fn), pytree)
+  File "/scratch/voz/work/pytorch/torch/utils/_pytree.py", line 196, in tree_map
+    return tree_unflatten([fn(i) for i in flat_args], spec)
+  File "/scratch/voz/work/pytorch/torch/utils/_pytree.py", line 196, in <listcomp>
+    return tree_unflatten([fn(i) for i in flat_args], spec)
+  File "/scratch/voz/work/pytorch/torch/utils/_pytree.py", line 247, in inner
+    return f(x)
+  File "/scratch/voz/work/pytorch/torch/_subclasses/fake_tensor.py", line 1305, in validate
+    raise Exception(
+torch._dynamo.exc.BackendCompilerFailed: backend='compile_fn' raised:
+Exception: Please convert all Tensors to FakeTensors first or instantiate FakeTensorMode with 'allow_non_fake_inputs'. Found in c10d.allgather_.default(*([[_to_functional_tensor(FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0),
+       device='cuda:0')]], [FakeTensor(FakeTensor(..., device='meta', size=(32, 3, 224, 224)), cuda:0)], <torch.ScriptObject object at 0x7f664348ceb0>, -1), **{}) 
+
+While executing %all_gather : [#users=0] = call_function[target=torch.distributed.distributed_c10d.all_gather](args = ([%ones_like], %l_im_k_), kwargs = {async_op: False})
+Original traceback:
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py", line 133, in <resume in forward>
+    im_k, idx_unshuffle = self._batch_shuffle_ddp(im_k)
+  File "/scratch/voz/work/pytorch/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py", line 76, in _batch_shuffle_ddp
+    x_gather = concat_all_gather(x)
+  File "/scratch/voz/work/pytorch/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/moco/moco/builder.py", line 172, in concat_all_gather
+    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
+
+
+
+You can suppress this exception and fall back to eager by setting:
+    torch._dynamo.config.suppress_errors = True
+
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/nvidia_deeprecommender/__init__.py", line 12, in <module>
+    from torchbenchmark.models.attention_is_all_you_need_pytorch.train import train
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/attention_is_all_you_need_pytorch/__init__.py", line 5, in <module>
+    import dill as pickle
+ModuleNotFoundError: No module named 'dill'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/opacus_cifar10/__init__.py", line 6, in <module>
+    from opacus import PrivacyEngine
+ModuleNotFoundError: No module named 'opacus'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  pyhpc_equation_of_state             2.240x p=0.00
+TIMING: entire_frame_compile:4.94285 backend_compile:4.45894
+STATS: call_* op count: 366 | FakeTensorMode.__torch_dispatch__:4120 | ProxyTorchDispatchMode.__torch_dispatch__:1122 | FakeTensor.__torch_dispatch__:940
+Dynamo produced 1 graphs covering 366 ops with 0 graph breaks (0 unique)
+cuda eval  pyhpc_isoneutral_mixing             [2023-04-05 07:35:05,513] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+1.102x p=0.00
+TIMING: entire_frame_compile:12.31761 backend_compile:11.17102
+STATS: call_* op count: 744 | FakeTensorMode.__torch_dispatch__:25269 | ProxyTorchDispatchMode.__torch_dispatch__:5372 | FakeTensor.__torch_dispatch__:2115
+Dynamo produced 1 graphs covering 744 ops with 0 graph breaks (0 unique)
+cuda eval  pyhpc_turbulent_kinetic_energy      [2023-04-05 07:35:26,161] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+2.895x p=0.00
+TIMING: entire_frame_compile:12.52704 backend_compile:11.34303
+STATS: call_* op count: 992 | FakeTensorMode.__torch_dispatch__:27058 | FakeTensor.__torch_dispatch__:2094 | ProxyTorchDispatchMode.__torch_dispatch__:6976
+Dynamo produced 1 graphs covering 992 ops with 0 graph breaks (0 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_CycleGAN_and_pix2pix/__init__.py", line 12, in <module>
+    from .train_cyclegan import prepare_training_loop
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_CycleGAN_and_pix2pix/train_cyclegan.py", line 25, in <module>
+    from .util.visualizer import Visualizer
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_CycleGAN_and_pix2pix/util/visualizer.py", line 6, in <module>
+    from . import util, html
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_CycleGAN_and_pix2pix/util/html.py", line 1, in <module>
+    import dominate
+ModuleNotFoundError: No module named 'dominate'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  pytorch_stargan                     [2023-04-05 07:35:48,213] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+1.204x p=0.00
+TIMING: entire_frame_compile:5.12431 backend_compile:4.51638
+STATS: call_* op count: 56 | FakeTensorMode.__torch_dispatch__:8327 | FakeTensor.__torch_dispatch__:1081 | ProxyTorchDispatchMode.__torch_dispatch__:1960
+Dynamo produced 1 graphs covering 56 ops with 0 graph breaks (0 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/pytorch_struct/__init__.py", line 10, in <module>
+    import torch_struct
+ModuleNotFoundError: No module named 'torch_struct'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  pytorch_unet                        1.559x p=0.00
+TIMING: entire_frame_compile:5.37011 backend_compile:4.74008
+STATS: call_* op count: 71 | FakeTensor.__torch_dispatch__:1229 | FakeTensorMode.__torch_dispatch__:8968 | ProxyTorchDispatchMode.__torch_dispatch__:1937
 Dynamo produced 1 graphs covering 71 ops with 0 graph breaks (0 unique)
-cuda eval  resnet18                            1.517x p=0.00
-TIMING: entire_frame_compile:5.14582 backend_compile:4.64301
-STATS: call_* op count: 69 | FakeTensor.__torch_dispatch__:352 | FakeTensorMode.__torch_dispatch__:6143 | ProxyTorchDispatchMode.__torch_dispatch__:1314
+cuda eval  resnet18                            2.172x p=0.00
+TIMING: entire_frame_compile:4.52215 backend_compile:4.01019
+STATS: call_* op count: 69 | FakeTensor.__torch_dispatch__:1022 | FakeTensorMode.__torch_dispatch__:6248 | ProxyTorchDispatchMode.__torch_dispatch__:1171
 Dynamo produced 1 graphs covering 69 ops with 0 graph breaks (0 unique)
-cuda eval  resnet50                            1.460x p=0.00
-TIMING: entire_frame_compile:8.48871 backend_compile:7.51916
-STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:913 | FakeTensorMode.__torch_dispatch__:15946 | ProxyTorchDispatchMode.__torch_dispatch__:3433
+cuda eval  resnet50                            1.522x p=0.00
+TIMING: entire_frame_compile:7.63725 backend_compile:6.52185
+STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:2643 | FakeTensorMode.__torch_dispatch__:16230 | ProxyTorchDispatchMode.__torch_dispatch__:3059
 Dynamo produced 1 graphs covering 175 ops with 0 graph breaks (0 unique)
 WARNING:root:resnet50_quantized_qat failed to load
 The eval test only supports CPU.
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
     ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 283, in load_model
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 293, in load_model
     benchmark = benchmark_cls(
   File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
     obj = type.__call__(cls, *args, **kwargs)
@@ -485,65 +752,155 @@ Traceback (most recent call last):
     raise NotImplementedError("The eval test only supports CPU.")
 NotImplementedError: The eval test only supports CPU.
 
-cuda eval  resnext50_32x4d                     1.636x p=0.00
-TIMING: entire_frame_compile:8.74222 backend_compile:7.50131
-STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:913 | FakeTensorMode.__torch_dispatch__:15946 | ProxyTorchDispatchMode.__torch_dispatch__:3433
+cuda eval  resnext50_32x4d                     2.353x p=0.00
+TIMING: entire_frame_compile:7.60955 backend_compile:6.58496
+STATS: call_* op count: 175 | FakeTensor.__torch_dispatch__:2643 | FakeTensorMode.__torch_dispatch__:16230 | ProxyTorchDispatchMode.__torch_dispatch__:3059
 Dynamo produced 1 graphs covering 175 ops with 0 graph breaks (0 unique)
-cuda eval  shufflenet_v2_x1_0                  1.571x p=0.00
-TIMING: entire_frame_compile:9.53485 backend_compile:8.43844
-STATS: call_* op count: 271 | FakeTensor.__torch_dispatch__:964 | FakeTensorMode.__torch_dispatch__:18372 | ProxyTorchDispatchMode.__torch_dispatch__:3924
+cuda eval  shufflenet_v2_x1_0                  1.912x p=0.00
+TIMING: entire_frame_compile:8.5083 backend_compile:7.37523
+STATS: call_* op count: 271 | FakeTensor.__torch_dispatch__:2843 | FakeTensorMode.__torch_dispatch__:18705 | ProxyTorchDispatchMode.__torch_dispatch__:3532
 Dynamo produced 1 graphs covering 271 ops with 0 graph breaks (0 unique)
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/soft_actor_critic/__init__.py", line 13, in <module>
+    from .envs import load_gym
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/soft_actor_critic/envs.py", line 6, in <module>
+    import gym
+ModuleNotFoundError: No module named 'gym'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
     torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
     main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
     return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
     return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
     ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 283, in load_model
-    benchmark = benchmark_cls(
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
-    obj = type.__call__(cls, *args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/soft_actor_critic/__init__.py", line 131, in __init__
-    self.train_env = load_gym(self.args.env_id, self.args.seed)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/soft_actor_critic/envs.py", line 237, in load_gym
-    env.seed(seed)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/gym/core.py", line 241, in __getattr__
-    return getattr(self.env, name)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/gym/core.py", line 241, in __getattr__
-    return getattr(self.env, name)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/gym/core.py", line 241, in __getattr__
-    return getattr(self.env, name)
-  [Previous line repeated 1 more time]
-AttributeError: 'PendulumEnv' object has no attribute 'seed'
-ERROR
-cuda eval  speech_transformer                  1.339x p=0.00
-TIMING: entire_frame_compile:10.00152 backend_compile:8.16318
-STATS: call_* op count: 749 | FakeTensorMode.__torch_dispatch__:23663 | ProxyTorchDispatchMode.__torch_dispatch__:4925 | FakeTensor.__torch_dispatch__:1674
-Dynamo produced 9 graphs covering 749 ops with 9 graph breaks (2 unique)
-cuda eval  squeezenet1_1                       2.389x p=0.00
-TIMING: entire_frame_compile:3.69687 backend_compile:3.34229
-STATS: call_* op count: 66 | FakeTensor.__torch_dispatch__:338 | FakeTensorMode.__torch_dispatch__:1876 | ProxyTorchDispatchMode.__torch_dispatch__:308
-Dynamo produced 1 graphs covering 66 ops with 0 graph breaks (0 unique)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
-    torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
-    main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
-    return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 249, in load_model
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
     module = importlib.import_module(f"torchbenchmark.models.{model_name}")
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/importlib/__init__.py", line 126, in import_module
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/speech_transformer/__init__.py", line 13, in <module>
+    from .config import SpeechTransformerTrainConfig, SpeechTransformerEvalConfig
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/speech_transformer/config.py", line 4, in <module>
+    import kaldi_io
+ModuleNotFoundError: No module named 'kaldi_io'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+cuda eval  squeezenet1_1                       1.626x p=0.00
+TIMING: entire_frame_compile:3.22538 backend_compile:2.88135
+STATS: call_* op count: 66 | FakeTensor.__torch_dispatch__:351 | FakeTensorMode.__torch_dispatch__:1879 | ProxyTorchDispatchMode.__torch_dispatch__:306
+Dynamo produced 1 graphs covering 66 ops with 0 graph breaks (0 unique)
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tacotron2/__init__.py", line 1, in <module>
+    from .train_tacotron2 import load_model, prepare_dataloaders
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tacotron2/train_tacotron2.py", line 13, in <module>
+    from .model import Tacotron2
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tacotron2/model.py", line 6, in <module>
+    from .layers import ConvNorm, LinearNorm
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tacotron2/layers.py", line 2, in <module>
+    from librosa.filters import mel as librosa_mel_fn
+ModuleNotFoundError: No module named 'librosa'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
   File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
   File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
@@ -553,154 +910,70 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
   File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/timm_efficientdet/__init__.py", line 12, in <module>
     from effdet import create_model, create_loader
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/effdet/__init__.py", line 2, in <module>
-    from .bench import DetBenchPredict, DetBenchTrain, unwrap_bench
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/effdet/bench.py", line 70, in <module>
-    def _batch_detection(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_script.py", line 1341, in script
-    fn = torch._C._jit_script_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_recursive.py", line 867, in try_compile_fn
-    return torch.jit.script(fn, _rcb=rcb)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_script.py", line 1341, in script
-    fn = torch._C._jit_script_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_recursive.py", line 867, in try_compile_fn
-    return torch.jit.script(fn, _rcb=rcb)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_script.py", line 1341, in script
-    fn = torch._C._jit_script_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_recursive.py", line 867, in try_compile_fn
-    return torch.jit.script(fn, _rcb=rcb)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_script.py", line 1341, in script
-    fn = torch._C._jit_script_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_recursive.py", line 867, in try_compile_fn
-    return torch.jit.script(fn, _rcb=rcb)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/jit/_script.py", line 1341, in script
-    fn = torch._C._jit_script_compile(
-RuntimeError: 
-object has no attribute nms:
-  File "/scratch/voz/work/torchvision/torchvision/ops/boxes.py", line 41
-        _log_api_usage_once(nms)
-    _assert_has_ops()
-    return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-'nms' is being compiled since it was called from '_batched_nms_vanilla'
-  File "/scratch/voz/work/torchvision/torchvision/ops/boxes.py", line 109
-    for class_id in torch.unique(idxs):
-        curr_indices = torch.where(idxs == class_id)[0]
-        curr_keep_indices = nms(boxes[curr_indices], scores[curr_indices], iou_threshold)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-        keep_mask[curr_indices[curr_keep_indices]] = True
-    keep_indices = torch.where(keep_mask)[0]
-'_batched_nms_vanilla' is being compiled since it was called from 'batched_nms'
-  File "/scratch/voz/work/torchvision/torchvision/ops/boxes.py", line 73
-    # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
-    if boxes.numel() > (4000 if boxes.device.type == "cpu" else 20000) and not torchvision._is_tracing():
-        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-    else:
-        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
-'batched_nms' is being compiled since it was called from 'generate_detections'
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/effdet/anchors.py", line 140
-        scores[top_detection_idx] = soft_scores
-    else:
-        top_detection_idx = batched_nms(boxes, scores, classes, iou_threshold=0.5)
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
+ModuleNotFoundError: No module named 'effdet'
 
-    # keep only top max_det_per_image scoring predictions
-'generate_detections' is being compiled since it was called from '_batch_detection'
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/effdet/bench.py", line 82
-        img_scale_i = None if img_scale is None else img_scale[i]
-        img_size_i = None if img_size is None else img_size[i]
-        detections = generate_detections(
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            class_out[i], box_out[i], anchor_boxes, indices[i], classes[i],
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            img_scale_i, img_size_i, max_det_per_image=max_det_per_image, soft_nms=soft_nms)
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
-        batch_detections.append(detections)
-    return torch.stack(batch_detections, dim=0)
+During handling of the above exception, another exception occurred:
 
-ERROR
-cuda eval  timm_efficientnet                   1.253x p=0.00
-TIMING: entire_frame_compile:10.53474 backend_compile:8.88258
-STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:1114 | FakeTensorMode.__torch_dispatch__:18194 | ProxyTorchDispatchMode.__torch_dispatch__:3914
-Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
-cuda eval  timm_nfnet                          1.952x p=0.00
-TIMING: entire_frame_compile:12.05697 backend_compile:9.81735
-STATS: call_* op count: 615 | FakeTensorMode.__torch_dispatch__:21128 | FakeTensor.__torch_dispatch__:1113 | ProxyTorchDispatchMode.__torch_dispatch__:4948
-Dynamo produced 1 graphs covering 615 ops with 0 graph breaks (0 unique)
-cuda eval  timm_regnet                         1.849x p=0.00
-TIMING: entire_frame_compile:16.20093 backend_compile:11.73435
-STATS: call_* op count: 642 | FakeTensor.__torch_dispatch__:1832 | FakeTensorMode.__torch_dispatch__:29482 | ProxyTorchDispatchMode.__torch_dispatch__:6244
-Dynamo produced 1 graphs covering 642 ops with 0 graph breaks (0 unique)
-cuda eval  timm_resnest                        1.632x p=0.00
-TIMING: entire_frame_compile:6.90884 backend_compile:6.18425
-STATS: call_* op count: 148 | FakeTensor.__torch_dispatch__:471 | FakeTensorMode.__torch_dispatch__:8276 | ProxyTorchDispatchMode.__torch_dispatch__:1791
-Dynamo produced 1 graphs covering 148 ops with 0 graph breaks (0 unique)
-cuda eval  timm_vision_transformer             3.511x p=0.00
-TIMING: entire_frame_compile:6.8237 backend_compile:5.74753
-STATS: call_* op count: 337 | FakeTensor.__torch_dispatch__:819 | FakeTensorMode.__torch_dispatch__:11983 | ProxyTorchDispatchMode.__torch_dispatch__:2218
-Dynamo produced 1 graphs covering 337 ops with 0 graph breaks (0 unique)
-cuda eval  timm_vovnet                         1.303x p=0.00
-TIMING: entire_frame_compile:8.07552 backend_compile:6.85855
-STATS: call_* op count: 169 | FakeTensor.__torch_dispatch__:519 | FakeTensorMode.__torch_dispatch__:11452 | ProxyTorchDispatchMode.__torch_dispatch__:2473
-Dynamo produced 1 graphs covering 169 ops with 0 graph breaks (0 unique)
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
     torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
     main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
     return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
     return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
     ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 283, in load_model
-    benchmark = benchmark_cls(
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/util/model.py", line 13, in __call__
-    obj = type.__call__(cls, *args, **kwargs)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tts_angular/__init__.py", line 20, in __init__
-    self.model = TTSModel(device=self.device, batch_size=self.batch_size)
-  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/tts_angular/angular_tts_main.py", line 244, in __init__
-    self.model = self.model.cuda()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 905, in cuda
-    return self._apply(lambda t: t.cuda(device))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 797, in _apply
-    module._apply(fn)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 797, in _apply
-    module._apply(fn)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 797, in _apply
-    module._apply(fn)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 202, in _apply
-    self._init_flat_weights()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 139, in _init_flat_weights
-    self.flatten_parameters()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/rnn.py", line 169, in flatten_parameters
-    not torch.backends.cudnn.is_acceptable(fw.data)):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/backends/cudnn/__init__.py", line 97, in is_acceptable
-    if not _init():
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/backends/cudnn/__init__.py", line 52, in _init
-    raise RuntimeError(f'{base_error_msg}'
-RuntimeError: cuDNN version incompatibility: PyTorch was compiled  against (8, 5, 0) but found runtime version (8, 4, 1). PyTorch already comes bundled with cuDNN. One option to resolving this error is to ensure PyTorch can find the bundled cuDNN.Looks like your LD_LIBRARY_PATH contains incompatible version of cudnnPlease either remove it from the path or install cudnn (8, 5, 0)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
+cuda eval  timm_efficientnet                   1.216x p=0.00
+TIMING: entire_frame_compile:10.11631 backend_compile:8.01972
+STATS: call_* op count: 313 | FakeTensor.__torch_dispatch__:2749 | FakeTensorMode.__torch_dispatch__:18416 | ProxyTorchDispatchMode.__torch_dispatch__:3568
+Dynamo produced 1 graphs covering 313 ops with 0 graph breaks (0 unique)
+cuda eval  timm_nfnet                          1.784x p=0.00
+TIMING: entire_frame_compile:13.57349 backend_compile:10.18738
+STATS: call_* op count: 616 | FakeTensorMode.__torch_dispatch__:21627 | FakeTensor.__torch_dispatch__:3628 | ProxyTorchDispatchMode.__torch_dispatch__:4547
+Dynamo produced 1 graphs covering 616 ops with 0 graph breaks (0 unique)
+cuda eval  timm_regnet                         1.473x p=0.00
+TIMING: entire_frame_compile:15.93963 backend_compile:10.47792
+STATS: call_* op count: 643 | FakeTensor.__torch_dispatch__:4676 | FakeTensorMode.__torch_dispatch__:29790 | ProxyTorchDispatchMode.__torch_dispatch__:5640
+Dynamo produced 1 graphs covering 643 ops with 0 graph breaks (0 unique)
+cuda eval  timm_resnest                        1.718x p=0.00
+TIMING: entire_frame_compile:6.32199 backend_compile:5.49588
+STATS: call_* op count: 148 | FakeTensor.__torch_dispatch__:1275 | FakeTensorMode.__torch_dispatch__:8274 | ProxyTorchDispatchMode.__torch_dispatch__:1591
+Dynamo produced 1 graphs covering 148 ops with 0 graph breaks (0 unique)
+cuda eval  timm_vision_transformer             2.338x p=0.00
+TIMING: entire_frame_compile:7.04379 backend_compile:5.90109
+STATS: call_* op count: 337 | FakeTensor.__torch_dispatch__:1939 | FakeTensorMode.__torch_dispatch__:12928 | ProxyTorchDispatchMode.__torch_dispatch__:2180
+Dynamo produced 1 graphs covering 337 ops with 0 graph breaks (0 unique)
+cuda eval  timm_vovnet                         1.038x p=0.00
+TIMING: entire_frame_compile:8.00242 backend_compile:6.06448
+STATS: call_* op count: 170 | FakeTensor.__torch_dispatch__:1787 | FakeTensorMode.__torch_dispatch__:11650 | ProxyTorchDispatchMode.__torch_dispatch__:2198
+Dynamo produced 1 graphs covering 170 ops with 0 graph breaks (0 unique)
+cuda eval  tts_angular                         0.976x p=0.00
+TIMING: entire_frame_compile:2.05864 backend_compile:1.77274
+STATS: call_* op count: 2 | FakeTensorMode.__torch_dispatch__:106 | ProxyTorchDispatchMode.__torch_dispatch__:26 | FakeTensor.__torch_dispatch__:10
+Dynamo produced 1 graphs covering 2 ops with 1 graph breaks (1 unique)
 cuda eval  vgg16                               1.269x p=0.00
-TIMING: entire_frame_compile:3.25771 backend_compile:2.9728
-STATS: call_* op count: 40 | FakeTensor.__torch_dispatch__:205 | FakeTensorMode.__torch_dispatch__:1385 | ProxyTorchDispatchMode.__torch_dispatch__:202
+TIMING: entire_frame_compile:2.82504 backend_compile:2.56439
+STATS: call_* op count: 40 | FakeTensor.__torch_dispatch__:192 | FakeTensorMode.__torch_dispatch__:1401 | ProxyTorchDispatchMode.__torch_dispatch__:201
 Dynamo produced 1 graphs covering 40 ops with 0 graph breaks (0 unique)
 Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 386, in <module>
-    torchbench_main()
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 382, in torchbench_main
-    main(TorchBenchmarkRunner(), original_dir)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1919, in main
-    return maybe_fresh_cache(
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 988, in inner
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2269, in run
-    ) = runner.load_model(device, model_name, batch_size=batch_size)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 249, in load_model
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
     module = importlib.import_module(f"torchbenchmark.models.{model_name}")
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/importlib/__init__.py", line 126, in import_module
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
   File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
   File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
@@ -712,22 +985,86 @@ Traceback (most recent call last):
     from .coco_utils import ConvertCocoPolysToMask
   File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/vision_maskrcnn/coco_utils.py", line 2, in <module>
     from pycocotools import mask as coco_mask
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/pycocotools-2.0.6-py3.10-linux-x86_64.egg/pycocotools/mask.py", line 3, in <module>
-    import pycocotools._mask as _mask
-  File "pycocotools/_mask.pyx", line 1, in init pycocotools._mask
-ValueError: numpy.ndarray size changed, may indicate binary incompatibility. Expected 96 from C header, got 88 from PyObject
+ModuleNotFoundError: No module named 'pycocotools'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
 ERROR
-cuda eval  yolov3                              1.183x p=0.00
-TIMING: entire_frame_compile:12.32505 backend_compile:10.57643
-STATS: call_* op count: 308 | FakeTensor.__torch_dispatch__:1364 | FakeTensorMode.__torch_dispatch__:24903 | ProxyTorchDispatchMode.__torch_dispatch__:6029
-Dynamo produced 1 graphs covering 308 ops with 0 graph breaks (0 unique)
-speedup             gmean=1.56x mean=1.747x
-abs_latency         gmean=nanx mean=6.993x
-compilation_latency mean=9.399 seconds
-compression_ratio   mean=0.918x
-eager_peak_mem      gmean=nanx mean=1.118x
-dynamo_peak_mem     gmean=nanx mean=1.250x
-calls_captured      gmean=nanx mean=360.116x
-unique_graphs       gmean=nanx mean=4.349x
-graph_breaks        gmean=nanx mean=3.767x
-unique_graph_breaks gmean=nanx mean=1.372x
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 259, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/yolov3/__init__.py", line 14, in <module>
+    from .yolo_train import prepare_training_loop
+  File "/scratch/voz/work/torchbenchmark/torchbenchmark/models/yolov3/yolo_train.py", line 6, in <module>
+    from torch.utils.tensorboard import SummaryWriter
+  File "/scratch/voz/work/pytorch/torch/utils/tensorboard/__init__.py", line 1, in <module>
+    import tensorboard
+ModuleNotFoundError: No module named 'tensorboard'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 396, in <module>
+    torchbench_main()
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 392, in torchbench_main
+    main(TorchBenchmarkRunner(), original_dir)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1965, in main
+    return maybe_fresh_cache(
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1010, in inner
+    return fn(*args, **kwargs)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 2335, in run
+    ) = runner.load_model(device, model_name, batch_size=batch_size)
+  File "/scratch/voz/work/pytorch/benchmarks/dynamo/torchbench.py", line 261, in load_model
+    module = importlib.import_module(f"torchbenchmark.models.fb.{model_name}")
+  File "/data/home/voz/miniconda3/envs/torch5/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1004, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'torchbenchmark.models.fb'
+ERROR
+speedup             gmean=1.41x mean=1.543x
+abs_latency         gmean=nanx mean=10.409x
+compilation_latency mean=12.969 seconds
+compression_ratio   mean=0.941x
+eager_peak_mem      gmean=nanx mean=1.115x
+dynamo_peak_mem     gmean=nanx mean=1.186x
+calls_captured      gmean=nanx mean=422.278x
+unique_graphs       gmean=nanx mean=5.639x
+graph_breaks        gmean=nanx mean=3.806x
+unique_graph_breaks gmean=nanx mean=1.417x

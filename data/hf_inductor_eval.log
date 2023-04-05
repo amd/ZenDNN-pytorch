@@ -1,440 +1,257 @@
 WARNING:__main__:Running smaller batch size=4 for AlbertForMaskedLM, orig batch_size=8
-cuda eval  AlbertForMaskedLM                   1.306x p=0.00
-TIMING: entire_frame_compile:8.33204 backend_compile:6.778
-STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:15349 | FakeTensor.__torch_dispatch__:1324 | ProxyTorchDispatchMode.__torch_dispatch__:2954
+cuda eval  AlbertForMaskedLM                   1.309x p=0.00
+TIMING: entire_frame_compile:9.10932 backend_compile:7.26403
+STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:16499 | FakeTensor.__torch_dispatch__:2770 | ProxyTorchDispatchMode.__torch_dispatch__:2943
 Dynamo produced 1 graphs covering 439 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for AlbertForQuestionAnswering, orig batch_size=8
 cuda eval  AlbertForQuestionAnswering          1.307x p=0.00
-TIMING: entire_frame_compile:9.58784 backend_compile:6.0965
-STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:15398 | FakeTensor.__torch_dispatch__:1308 | ProxyTorchDispatchMode.__torch_dispatch__:2977
+TIMING: entire_frame_compile:7.67688 backend_compile:5.98713
+STATS: call_* op count: 439 | FakeTensorMode.__torch_dispatch__:16556 | FakeTensor.__torch_dispatch__:2761 | ProxyTorchDispatchMode.__torch_dispatch__:2966
 Dynamo produced 1 graphs covering 439 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for AllenaiLongformerBase, orig batch_size=8
-cuda eval  AllenaiLongformerBase               Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 333, in call_function
-    out = lowerings[target](*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/lowering.py", line 226, in wrapped
-    validate_ir(out)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 105, in validate_ir
-    _check_tensorbox(node_or_nodes)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 90, in _check_tensorbox
-    assert isinstance(
-AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-ERROR:common:Backend dynamo failed in warmup()
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 333, in call_function
-    out = lowerings[target](*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/lowering.py", line 226, in wrapped
-    validate_ir(out)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 105, in validate_ir
-    _check_tensorbox(node_or_nodes)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/ir.py", line 90, in _check_tensorbox
-    assert isinstance(
-AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 670, in call_user_compiler
-    compiled_fn = compiler_fn(gm, self.fake_example_inputs())
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 1055, in debug_wrapper
-    compiled_gm = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/inductor.py", line 9, in inductor
-    return compile_fx(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 455, in compile_fx
-    return aot_autograd(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/backends/common.py", line 48, in compiler_fn
-    cg = aot_module_simplified(gm, example_inputs, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2805, in aot_module_simplified
-    compiled_fn = create_aot_dispatcher_function(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 2498, in create_aot_dispatcher_function
-    compiled_fn = compiler_fn(flat_fn, fake_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1713, in aot_wrapper_dedupe
-    return compiler_fn(flat_fn, leaf_flat_args, aot_config)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1326, in aot_dispatch_base
-    compiled_fw = aot_config.fw_compiler(fw_module, flat_args_with_views_handled)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 430, in fw_compiler
-    return inner_compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/debug_utils.py", line 595, in debug_wrapper
-    compiled_fn = compiler_fn(gm, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/debug.py", line 239, in inner
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/contextlib.py", line 79, in inner
-    return func(*args, **kwds)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 176, in compile_fx_inner
-    graph.run(*example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 194, in run
-    return super().run(*args)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 136, in run
-    self.env[node] = self.run_node(node)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 407, in run_node
-    result = super().run_node(n)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/fx/interpreter.py", line 177, in run_node
-    return getattr(self, n.op)(n.target, args, kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_inductor/graph.py", line 337, in call_function
-    raise LoweringException(e, target, args, kwargs) from e
-torch._inductor.exc.LoweringException: AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-  target: aten._local_scalar_dense.default
-  args[0]: TensorBox(StorageBox(
-    Pointwise(
-      'cpu',
-      torch.int64,
-      tmp0 = constant(1024, torch.int64)
-      tmp1 = constant(512, torch.int64)
-      tmp2 = truncdiv(tmp0, tmp1)
-      return tmp2
-      ,
-      ranges=(),
-      origins={div}
-    )
-  ))
-
-While executing %_local_scalar_dense : [#users=0] = call_function[target=torch.ops.aten._local_scalar_dense.default](args = (%div,), kwargs = {})
-Original traceback:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 769, in _chunk
-    hidden_states = hidden_states.view(
- |   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in <graph break in _sliding_chunks_query_key_matmul>
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1376, in warmup
-    fn(model, example_inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 209, in _fn
-    return fn(*args, **kwargs)
-  File "/scratch/voz/work/pytorch/benchmarks/dynamo/huggingface.py", line 484, in forward_pass
-    return mod(**inputs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1848, in forward
-    outputs = self.longformer(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1750, in forward
-    encoder_outputs = self.encoder(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1294, in forward
-    is_global_attn = is_index_global_attn.flatten().any().item()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1326, in <graph break in forward>
-    layer_outputs = layer_module(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1249, in forward
-    self_attn_outputs = self.attention(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 1185, in forward
-    self_outputs = self.self(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 574, in forward
-    attn_scores = self._sliding_chunks_query_key_matmul(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in _sliding_chunks_query_key_matmul
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 337, in catch_errors
-    return callback(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 404, in _convert_frame
-    result = inner_convert(frame, cache_size, hooks)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 104, in _fn
-    return fn(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 262, in _convert_frame_assert
-    return _compile(
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 324, in _compile
-    out_code = transform_code_object(code, transform)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/bytecode_transformation.py", line 445, in transform_code_object
-    transformations(instructions, code_options)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/convert_frame.py", line 311, in transform
-    tracer.run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 1726, in run
-    super().run()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 576, in run
-    and self.step()
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 540, in step
-    getattr(self, inst.opname)(inst)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/symbolic_convert.py", line 372, in wrapper
-    self.output.compile_subgraph(self, reason=reason)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 541, in compile_subgraph
-    self.compile_and_call_fx_graph(tx, pass2.graph_output_vars(), root)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 588, in compile_and_call_fx_graph
-    compiled_fn = self.call_user_compiler(gm)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/utils.py", line 163, in time_wrapper
-    r = func(*args, **kwargs)
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/torch/_dynamo/output_graph.py", line 675, in call_user_compiler
-    raise BackendCompilerFailed(self.compiler_fn, e) from e
-torch._dynamo.exc.BackendCompilerFailed: inductor raised LoweringException: AssertionError: Found <class 'torch._inductor.ir.DynamicScalar'>, which is not a supported top level IR node. See [Note: Inductor IR]
-  target: aten._local_scalar_dense.default
-  args[0]: TensorBox(StorageBox(
-    Pointwise(
-      'cpu',
-      torch.int64,
-      tmp0 = constant(1024, torch.int64)
-      tmp1 = constant(512, torch.int64)
-      tmp2 = truncdiv(tmp0, tmp1)
-      return tmp2
-      ,
-      ranges=(),
-      origins={div}
-    )
-  ))
-
-While executing %_local_scalar_dense : [#users=0] = call_function[target=torch.ops.aten._local_scalar_dense.default](args = (%div,), kwargs = {})
-Original traceback:
-  File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 769, in _chunk
-    hidden_states = hidden_states.view(
- |   File "/data/home/voz/miniconda3/envs/benchmarks/lib/python3.10/site-packages/transformers/models/longformer/modeling_longformer.py", line 839, in <graph break in _sliding_chunks_query_key_matmul>
-    query = self._chunk(query, window_overlap, getattr(self.config, "onnx_export", False))
-
-
-Set torch._dynamo.config.verbose=True for more information
-
-
-You can suppress this exception and fall back to eager by setting:
-    torch._dynamo.config.suppress_errors = True
-
-ERROR
+cuda eval  AllenaiLongformerBase               1.368x p=0.00
+TIMING: entire_frame_compile:38.72349 backend_compile:33.05381
+STATS: call_* op count: 1738 | FakeTensorMode.__torch_dispatch__:71604 | FakeTensor.__torch_dispatch__:8041 | ProxyTorchDispatchMode.__torch_dispatch__:16205
+Dynamo produced 4 graphs covering 1738 ops with 3 graph breaks (1 unique)
 WARNING:__main__:Running smaller batch size=4 for BartForCausalLM, orig batch_size=8
-cuda eval  BartForCausalLM                     1.343x p=0.00
-TIMING: entire_frame_compile:10.16292 backend_compile:6.30688
-STATS: call_* op count: 482 | FakeTensorMode.__torch_dispatch__:16785 | FakeTensor.__torch_dispatch__:1350 | ProxyTorchDispatchMode.__torch_dispatch__:3292
-Dynamo produced 14 graphs covering 482 ops with 7 graph breaks (5 unique)
+cuda eval  BartForCausalLM                     1.375x p=0.00
+TIMING: entire_frame_compile:9.10635 backend_compile:7.51769
+STATS: call_* op count: 482 | FakeTensorMode.__torch_dispatch__:16855 | FakeTensor.__torch_dispatch__:2454 | ProxyTorchDispatchMode.__torch_dispatch__:3167
+Dynamo produced 1 graphs covering 482 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=2 for BartForConditionalGeneration, orig batch_size=4
-cuda eval  BartForConditionalGeneration        1.171x p=0.00
-TIMING: entire_frame_compile:15.82139 backend_compile:12.24445
-STATS: call_* op count: 1258 | FakeTensorMode.__torch_dispatch__:42094 | FakeTensor.__torch_dispatch__:3134 | ProxyTorchDispatchMode.__torch_dispatch__:8480
+cuda eval  BartForConditionalGeneration        1.144x p=0.00
+TIMING: entire_frame_compile:18.67966 backend_compile:14.22773
+STATS: call_* op count: 1258 | FakeTensorMode.__torch_dispatch__:43856 | FakeTensor.__torch_dispatch__:6201 | ProxyTorchDispatchMode.__torch_dispatch__:8259
 Dynamo produced 1 graphs covering 1258 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for BertForMaskedLM, orig batch_size=32
-cuda eval  BertForMaskedLM                     1.343x p=0.00
-TIMING: entire_frame_compile:7.70505 backend_compile:5.98915
-STATS: call_* op count: 370 | FakeTensorMode.__torch_dispatch__:17151 | FakeTensor.__torch_dispatch__:1614 | ProxyTorchDispatchMode.__torch_dispatch__:3274
+cuda eval  BertForMaskedLM                     1.293x p=0.00
+TIMING: entire_frame_compile:8.84255 backend_compile:6.41489
+STATS: call_* op count: 370 | FakeTensorMode.__torch_dispatch__:18292 | FakeTensor.__torch_dispatch__:2944 | ProxyTorchDispatchMode.__torch_dispatch__:3275
 Dynamo produced 1 graphs covering 370 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for BertForQuestionAnswering, orig batch_size=32
-cuda eval  BertForQuestionAnswering            1.370x p=0.00
-TIMING: entire_frame_compile:7.96309 backend_compile:6.21258
-STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:17269 | FakeTensor.__torch_dispatch__:1598 | ProxyTorchDispatchMode.__torch_dispatch__:3313
+cuda eval  BertForQuestionAnswering            1.300x p=0.00
+TIMING: entire_frame_compile:8.78315 backend_compile:6.39364
+STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:18406 | FakeTensor.__torch_dispatch__:2944 | ProxyTorchDispatchMode.__torch_dispatch__:3314
 Dynamo produced 1 graphs covering 377 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for BlenderbotForCausalLM, orig batch_size=32
-cuda eval  BlenderbotForCausalLM               1.057x p=0.00
-TIMING: entire_frame_compile:17.30876 backend_compile:10.21303
-STATS: call_* op count: 934 | FakeTensorMode.__torch_dispatch__:32323 | FakeTensor.__torch_dispatch__:2868 | ProxyTorchDispatchMode.__torch_dispatch__:6373
-Dynamo produced 26 graphs covering 934 ops with 7 graph breaks (5 unique)
+cuda eval  BlenderbotForCausalLM               1.033x p=0.00
+TIMING: entire_frame_compile:15.84072 backend_compile:11.30477
+STATS: call_* op count: 935 | FakeTensorMode.__torch_dispatch__:32849 | FakeTensor.__torch_dispatch__:4801 | ProxyTorchDispatchMode.__torch_dispatch__:6147
+Dynamo produced 1 graphs covering 935 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForCausalLM, orig batch_size=256
-cuda eval  BlenderbotSmallForCausalLM          1.316x p=0.00
-TIMING: entire_frame_compile:6.0895 backend_compile:4.75975
-STATS: call_* op count: 327 | FakeTensorMode.__torch_dispatch__:11583 | FakeTensor.__torch_dispatch__:966 | ProxyTorchDispatchMode.__torch_dispatch__:2248
-Dynamo produced 10 graphs covering 327 ops with 7 graph breaks (5 unique)
+cuda eval  BlenderbotSmallForCausalLM          1.337x p=0.00
+TIMING: entire_frame_compile:6.82795 backend_compile:5.67088
+STATS: call_* op count: 327 | FakeTensorMode.__torch_dispatch__:11457 | FakeTensor.__torch_dispatch__:1665 | ProxyTorchDispatchMode.__torch_dispatch__:2163
+Dynamo produced 1 graphs covering 327 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForConditionalGeneration, orig batch_size=128
-cuda eval  BlenderbotSmallForConditionalGeneration  1.210x p=0.00
-TIMING: entire_frame_compile:13.89809 backend_compile:9.09006
-STATS: call_* op count: 840 | FakeTensorMode.__torch_dispatch__:28148 | FakeTensor.__torch_dispatch__:2108 | ProxyTorchDispatchMode.__torch_dispatch__:5670
+cuda eval  BlenderbotSmallForConditionalGeneration  1.204x p=0.00
+TIMING: entire_frame_compile:13.96956 backend_compile:11.11899
+STATS: call_* op count: 840 | FakeTensorMode.__torch_dispatch__:29344 | FakeTensor.__torch_dispatch__:4166 | ProxyTorchDispatchMode.__torch_dispatch__:5523
 Dynamo produced 1 graphs covering 840 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for CamemBert, orig batch_size=32
-cuda eval  CamemBert                           1.345x p=0.00
-TIMING: entire_frame_compile:7.98007 backend_compile:6.17406
-STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:17245 | FakeTensor.__torch_dispatch__:1614 | ProxyTorchDispatchMode.__torch_dispatch__:3296
+cuda eval  CamemBert                           1.299x p=0.00
+TIMING: entire_frame_compile:8.56678 backend_compile:6.14956
+STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:18386 | FakeTensor.__torch_dispatch__:2960 | ProxyTorchDispatchMode.__torch_dispatch__:3297
 Dynamo produced 1 graphs covering 377 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
-cuda eval  DebertaForMaskedLM                  1.095x p=0.00
-TIMING: entire_frame_compile:10.03974 backend_compile:6.87245
-STATS: call_* op count: 712 | FakeTensorMode.__torch_dispatch__:20576 | FakeTensor.__torch_dispatch__:1136 | ProxyTorchDispatchMode.__torch_dispatch__:3908
+cuda eval  DebertaForMaskedLM                  [2023-04-05 06:27:01,472] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+1.102x p=0.00
+TIMING: entire_frame_compile:13.24129 backend_compile:9.39191
+STATS: call_* op count: 712 | FakeTensorMode.__torch_dispatch__:21051 | FakeTensor.__torch_dispatch__:2608 | ProxyTorchDispatchMode.__torch_dispatch__:3836
 Dynamo produced 53 graphs covering 712 ops with 47 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
-cuda eval  DebertaForQuestionAnswering         1.046x p=0.00
-TIMING: entire_frame_compile:10.32285 backend_compile:7.0713
-STATS: call_* op count: 719 | FakeTensorMode.__torch_dispatch__:20694 | FakeTensor.__torch_dispatch__:1120 | ProxyTorchDispatchMode.__torch_dispatch__:3947
+cuda eval  DebertaForQuestionAnswering         [2023-04-05 06:27:33,579] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+1.039x p=0.00
+TIMING: entire_frame_compile:13.64718 backend_compile:8.56666
+STATS: call_* op count: 719 | FakeTensorMode.__torch_dispatch__:21165 | FakeTensor.__torch_dispatch__:2608 | ProxyTorchDispatchMode.__torch_dispatch__:3875
 Dynamo produced 53 graphs covering 719 ops with 47 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
-cuda eval  DebertaV2ForMaskedLM                1.333x p=0.00
-TIMING: entire_frame_compile:16.75937 backend_compile:9.90549
-STATS: call_* op count: 917 | FakeTensorMode.__torch_dispatch__:38216 | FakeTensor.__torch_dispatch__:3814 | ProxyTorchDispatchMode.__torch_dispatch__:6301
+cuda eval  DebertaV2ForMaskedLM                [2023-04-05 06:28:19,203] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+1.013x SAME
+TIMING: entire_frame_compile:19.64139 backend_compile:12.64931
+STATS: call_* op count: 917 | FakeTensorMode.__torch_dispatch__:40764 | FakeTensor.__torch_dispatch__:5878 | ProxyTorchDispatchMode.__torch_dispatch__:6301
 Dynamo produced 101 graphs covering 917 ops with 83 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
-cuda eval  DebertaV2ForQuestionAnswering       0.915x p=0.00
-TIMING: entire_frame_compile:16.24858 backend_compile:10.23449
-STATS: call_* op count: 924 | FakeTensorMode.__torch_dispatch__:38334 | FakeTensor.__torch_dispatch__:3798 | ProxyTorchDispatchMode.__torch_dispatch__:6340
+cuda eval  DebertaV2ForQuestionAnswering       [2023-04-05 06:29:14,608] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
+0.917x p=0.00
+TIMING: entire_frame_compile:19.37474 backend_compile:12.44011
+STATS: call_* op count: 924 | FakeTensorMode.__torch_dispatch__:40878 | FakeTensor.__torch_dispatch__:5878 | ProxyTorchDispatchMode.__torch_dispatch__:6340
 Dynamo produced 101 graphs covering 924 ops with 83 graph breaks (8 unique)
 WARNING:__main__:Running smaller batch size=128 for DistilBertForMaskedLM, orig batch_size=256
 WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
 cuda eval  DistilBertForMaskedLM               1.224x p=0.00
-TIMING: entire_frame_compile:6.76711 backend_compile:4.10936
-STATS: call_* op count: 206 | FakeTensorMode.__torch_dispatch__:8864 | FakeTensor.__torch_dispatch__:636 | ProxyTorchDispatchMode.__torch_dispatch__:1804
+TIMING: entire_frame_compile:7.20394 backend_compile:4.97432
+STATS: call_* op count: 206 | FakeTensorMode.__torch_dispatch__:9497 | FakeTensor.__torch_dispatch__:1319 | ProxyTorchDispatchMode.__torch_dispatch__:1799
 Dynamo produced 1 graphs covering 206 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=256 for DistilBertForQuestionAnswering, orig batch_size=512
 WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
-cuda eval  DistilBertForQuestionAnswering      1.206x p=0.00
-TIMING: entire_frame_compile:5.11459 backend_compile:4.26819
-STATS: call_* op count: 214 | FakeTensorMode.__torch_dispatch__:8982 | FakeTensor.__torch_dispatch__:620 | ProxyTorchDispatchMode.__torch_dispatch__:1843
+cuda eval  DistilBertForQuestionAnswering      1.196x p=0.00
+TIMING: entire_frame_compile:6.07769 backend_compile:5.10443
+STATS: call_* op count: 214 | FakeTensorMode.__torch_dispatch__:9613 | FakeTensor.__torch_dispatch__:1319 | ProxyTorchDispatchMode.__torch_dispatch__:1839
 Dynamo produced 1 graphs covering 214 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for DistillGPT2, orig batch_size=32
-cuda eval  DistillGPT2                         1.726x p=0.00
-TIMING: entire_frame_compile:6.03065 backend_compile:4.50329
-STATS: call_* op count: 330 | FakeTensorMode.__torch_dispatch__:8403 | FakeTensor.__torch_dispatch__:372 | ProxyTorchDispatchMode.__torch_dispatch__:1713
+cuda eval  DistillGPT2                         1.680x p=0.00
+TIMING: entire_frame_compile:6.54735 backend_compile:5.32522
+STATS: call_* op count: 330 | FakeTensorMode.__torch_dispatch__:8858 | FakeTensor.__torch_dispatch__:1072 | ProxyTorchDispatchMode.__torch_dispatch__:1711
 Dynamo produced 1 graphs covering 330 ops with 0 graph breaks (0 unique)
 If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=32 for ElectraForCausalLM, orig batch_size=64
-cuda eval  ElectraForCausalLM                  1.673x p=0.00
-TIMING: entire_frame_compile:8.0251 backend_compile:6.21357
-STATS: call_* op count: 375 | FakeTensorMode.__torch_dispatch__:17463 | FakeTensor.__torch_dispatch__:1649 | ProxyTorchDispatchMode.__torch_dispatch__:3324
-Dynamo produced 4 graphs covering 375 ops with 3 graph breaks (2 unique)
+cuda eval  ElectraForCausalLM                  1.570x p=0.00
+TIMING: entire_frame_compile:9.85669 backend_compile:6.75958
+STATS: call_* op count: 375 | FakeTensorMode.__torch_dispatch__:18548 | FakeTensor.__torch_dispatch__:2970 | ProxyTorchDispatchMode.__torch_dispatch__:3319
+Dynamo produced 1 graphs covering 375 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=64 for ElectraForQuestionAnswering, orig batch_size=128
-cuda eval  ElectraForQuestionAnswering         1.509x p=0.00
-TIMING: entire_frame_compile:7.87765 backend_compile:6.08304
-STATS: call_* op count: 378 | FakeTensorMode.__torch_dispatch__:17399 | FakeTensor.__torch_dispatch__:1614 | ProxyTorchDispatchMode.__torch_dispatch__:3331
+cuda eval  ElectraForQuestionAnswering         1.431x p=0.00
+TIMING: entire_frame_compile:8.91969 backend_compile:6.49664
+STATS: call_* op count: 378 | FakeTensorMode.__torch_dispatch__:18539 | FakeTensor.__torch_dispatch__:2961 | ProxyTorchDispatchMode.__torch_dispatch__:3332
 Dynamo produced 1 graphs covering 378 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for GPT2ForSequenceClassification, orig batch_size=8
-cuda eval  GPT2ForSequenceClassification       1.911x p=0.00
-TIMING: entire_frame_compile:9.02932 backend_compile:6.48988
-STATS: call_* op count: 644 | FakeTensorMode.__torch_dispatch__:15848 | FakeTensor.__torch_dispatch__:712 | ProxyTorchDispatchMode.__torch_dispatch__:3229
+cuda eval  GPT2ForSequenceClassification       1.771x p=0.00
+TIMING: entire_frame_compile:9.45144 backend_compile:7.00701
+STATS: call_* op count: 644 | FakeTensorMode.__torch_dispatch__:16656 | FakeTensor.__torch_dispatch__:2031 | ProxyTorchDispatchMode.__torch_dispatch__:3227
 Dynamo produced 1 graphs covering 644 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for GoogleFnet, orig batch_size=32
-cuda eval  GoogleFnet                          1.633x p=0.00
-TIMING: entire_frame_compile:5.62707 backend_compile:4.59159
-STATS: call_* op count: 209 | FakeTensorMode.__torch_dispatch__:7513 | FakeTensor.__torch_dispatch__:650 | ProxyTorchDispatchMode.__torch_dispatch__:1567
-Dynamo produced 28 graphs covering 209 ops with 41 graph breaks (4 unique)
+cuda eval  GoogleFnet                          1.791x p=0.00
+TIMING: entire_frame_compile:7.30275 backend_compile:5.75736
+STATS: call_* op count: 232 | FakeTensorMode.__torch_dispatch__:8435 | FakeTensor.__torch_dispatch__:1517 | ProxyTorchDispatchMode.__torch_dispatch__:1641
+Dynamo produced 1 graphs covering 232 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for LayoutLMForMaskedLM, orig batch_size=32
-cuda eval  LayoutLMForMaskedLM                 1.368x p=0.00
-TIMING: entire_frame_compile:8.80037 backend_compile:6.22115
-STATS: call_* op count: 396 | FakeTensorMode.__torch_dispatch__:18568 | FakeTensor.__torch_dispatch__:2092 | ProxyTorchDispatchMode.__torch_dispatch__:3425
+cuda eval  LayoutLMForMaskedLM                 1.317x p=0.00
+TIMING: entire_frame_compile:11.25814 backend_compile:8.40162
+STATS: call_* op count: 396 | FakeTensorMode.__torch_dispatch__:19783 | FakeTensor.__torch_dispatch__:3466 | ProxyTorchDispatchMode.__torch_dispatch__:3426
 Dynamo produced 1 graphs covering 396 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for LayoutLMForSequenceClassification, orig batch_size=32
-cuda eval  LayoutLMForSequenceClassification   1.400x p=0.00
-TIMING: entire_frame_compile:8.42547 backend_compile:6.00511
-STATS: call_* op count: 394 | FakeTensorMode.__torch_dispatch__:18335 | FakeTensor.__torch_dispatch__:2072 | ProxyTorchDispatchMode.__torch_dispatch__:3375
+cuda eval  LayoutLMForSequenceClassification   1.326x p=0.00
+TIMING: entire_frame_compile:9.04499 backend_compile:6.40236
+STATS: call_* op count: 394 | FakeTensorMode.__torch_dispatch__:19546 | FakeTensor.__torch_dispatch__:3422 | ProxyTorchDispatchMode.__torch_dispatch__:3377
 Dynamo produced 1 graphs covering 394 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for M2M100ForConditionalGeneration, orig batch_size=64
 WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
-cuda eval  M2M100ForConditionalGeneration      1.129x p=0.00
-TIMING: entire_frame_compile:16.4057 backend_compile:12.10878
-STATS: call_* op count: 1266 | FakeTensorMode.__torch_dispatch__:42771 | FakeTensor.__torch_dispatch__:3539 | ProxyTorchDispatchMode.__torch_dispatch__:8421
-Dynamo produced 19 graphs covering 1266 ops with 13 graph breaks (4 unique)
+cuda eval  M2M100ForConditionalGeneration      1.122x p=0.00
+TIMING: entire_frame_compile:16.77801 backend_compile:12.76319
+STATS: call_* op count: 1271 | FakeTensorMode.__torch_dispatch__:43421 | FakeTensor.__torch_dispatch__:6051 | ProxyTorchDispatchMode.__torch_dispatch__:8135
+Dynamo produced 1 graphs covering 1271 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for MBartForCausalLM, orig batch_size=8
-cuda eval  MBartForCausalLM                    1.318x p=0.00
-TIMING: entire_frame_compile:7.84552 backend_compile:6.08409
-STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:16870 | FakeTensor.__torch_dispatch__:1540 | ProxyTorchDispatchMode.__torch_dispatch__:3290
-Dynamo produced 14 graphs covering 481 ops with 7 graph breaks (5 unique)
+cuda eval  MBartForCausalLM                    1.351x p=0.00
+TIMING: entire_frame_compile:10.42172 backend_compile:8.81353
+STATS: call_* op count: 482 | FakeTensorMode.__torch_dispatch__:16939 | FakeTensor.__torch_dispatch__:2481 | ProxyTorchDispatchMode.__torch_dispatch__:3184
+Dynamo produced 1 graphs covering 482 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=2 for MBartForConditionalGeneration, orig batch_size=4
-cuda eval  MBartForConditionalGeneration       1.155x p=0.00
-TIMING: entire_frame_compile:16.68014 backend_compile:12.68389
-STATS: call_* op count: 1263 | FakeTensorMode.__torch_dispatch__:42283 | FakeTensor.__torch_dispatch__:3152 | ProxyTorchDispatchMode.__torch_dispatch__:8529
+cuda eval  MBartForConditionalGeneration       1.124x p=0.00
+TIMING: entire_frame_compile:18.30737 backend_compile:14.0464
+STATS: call_* op count: 1263 | FakeTensorMode.__torch_dispatch__:44082 | FakeTensor.__torch_dispatch__:6259 | ProxyTorchDispatchMode.__torch_dispatch__:8310
 Dynamo produced 1 graphs covering 1263 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for MT5ForConditionalGeneration, orig batch_size=32
 WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
-cuda eval  MT5ForConditionalGeneration         2.772x p=0.00
-TIMING: entire_frame_compile:12.79064 backend_compile:9.25083
-STATS: call_* op count: 1173 | FakeTensorMode.__torch_dispatch__:29059 | FakeTensor.__torch_dispatch__:2464 | ProxyTorchDispatchMode.__torch_dispatch__:7167
+cuda eval  MT5ForConditionalGeneration         1.897x p=0.00
+TIMING: entire_frame_compile:16.37867 backend_compile:10.9832
+STATS: call_* op count: 1173 | FakeTensorMode.__torch_dispatch__:28120 | FakeTensor.__torch_dispatch__:4712 | ProxyTorchDispatchMode.__torch_dispatch__:6716
 Dynamo produced 1 graphs covering 1173 ops with 0 graph breaks (0 unique)
 If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=4 for MegatronBertForCausalLM, orig batch_size=16
-cuda eval  MegatronBertForCausalLM             1.283x p=0.00
-TIMING: entire_frame_compile:13.92981 backend_compile:10.21009
-STATS: call_* op count: 721 | FakeTensorMode.__torch_dispatch__:33426 | FakeTensor.__torch_dispatch__:3150 | ProxyTorchDispatchMode.__torch_dispatch__:6365
+cuda eval  MegatronBertForCausalLM             1.158x p=0.00
+TIMING: entire_frame_compile:15.85283 backend_compile:10.49855
+STATS: call_* op count: 721 | FakeTensorMode.__torch_dispatch__:35576 | FakeTensor.__torch_dispatch__:5736 | ProxyTorchDispatchMode.__torch_dispatch__:6366
 Dynamo produced 1 graphs covering 721 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=8 for MegatronBertForQuestionAnswering, orig batch_size=16
-cuda eval  MegatronBertForQuestionAnswering    1.269x p=0.00
-TIMING: entire_frame_compile:13.50025 backend_compile:10.21871
-STATS: call_* op count: 724 | FakeTensorMode.__torch_dispatch__:33421 | FakeTensor.__torch_dispatch__:3134 | ProxyTorchDispatchMode.__torch_dispatch__:6378
+cuda eval  MegatronBertForQuestionAnswering    1.193x p=0.00
+TIMING: entire_frame_compile:15.77988 backend_compile:10.51129
+STATS: call_* op count: 724 | FakeTensorMode.__torch_dispatch__:35567 | FakeTensor.__torch_dispatch__:5727 | ProxyTorchDispatchMode.__torch_dispatch__:6379
 Dynamo produced 1 graphs covering 724 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=64 for MobileBertForMaskedLM, orig batch_size=256
-cuda eval  MobileBertForMaskedLM               1.906x p=0.00
-TIMING: entire_frame_compile:22.42097 backend_compile:14.97499
-STATS: call_* op count: 1447 | FakeTensorMode.__torch_dispatch__:71622 | FakeTensor.__torch_dispatch__:7576 | ProxyTorchDispatchMode.__torch_dispatch__:12126
+cuda eval  MobileBertForMaskedLM               1.095x p=0.00
+TIMING: entire_frame_compile:39.80314 backend_compile:16.29158
+STATS: call_* op count: 1447 | FakeTensorMode.__torch_dispatch__:72633 | FakeTensor.__torch_dispatch__:11805 | ProxyTorchDispatchMode.__torch_dispatch__:12100
 Dynamo produced 1 graphs covering 1447 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
-cuda eval  MobileBertForQuestionAnswering      1.413x p=0.00
-TIMING: entire_frame_compile:21.71175 backend_compile:14.77889
-STATS: call_* op count: 1451 | FakeTensorMode.__torch_dispatch__:71735 | FakeTensor.__torch_dispatch__:7562 | ProxyTorchDispatchMode.__torch_dispatch__:12154
+cuda eval  MobileBertForQuestionAnswering      0.949x p=0.00
+TIMING: entire_frame_compile:39.62199 backend_compile:15.17074
+STATS: call_* op count: 1451 | FakeTensorMode.__torch_dispatch__:72758 | FakeTensor.__torch_dispatch__:11796 | ProxyTorchDispatchMode.__torch_dispatch__:12131
 Dynamo produced 1 graphs covering 1451 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
-cuda eval  OPTForCausalLM                      1.879x p=0.00
-TIMING: entire_frame_compile:8.07872 backend_compile:6.25048
-STATS: call_* op count: 533 | FakeTensorMode.__torch_dispatch__:16932 | FakeTensor.__torch_dispatch__:1520 | ProxyTorchDispatchMode.__torch_dispatch__:3280
-Dynamo produced 14 graphs covering 533 ops with 7 graph breaks (5 unique)
+cuda eval  OPTForCausalLM                      2.152x p=0.00
+TIMING: entire_frame_compile:8.94319 backend_compile:7.33162
+STATS: call_* op count: 534 | FakeTensorMode.__torch_dispatch__:16936 | FakeTensor.__torch_dispatch__:2409 | ProxyTorchDispatchMode.__torch_dispatch__:3210
+Dynamo produced 1 graphs covering 534 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
-cuda eval  PLBartForCausalLM                   1.613x p=0.00
-TIMING: entire_frame_compile:5.38321 backend_compile:4.23045
-STATS: call_* op count: 254 | FakeTensorMode.__torch_dispatch__:9051 | FakeTensor.__torch_dispatch__:774 | ProxyTorchDispatchMode.__torch_dispatch__:1738
-Dynamo produced 8 graphs covering 254 ops with 7 graph breaks (5 unique)
+cuda eval  PLBartForCausalLM                   1.671x p=0.00
+TIMING: entire_frame_compile:5.63666 backend_compile:4.71162
+STATS: call_* op count: 254 | FakeTensorMode.__torch_dispatch__:8833 | FakeTensor.__torch_dispatch__:1278 | ProxyTorchDispatchMode.__torch_dispatch__:1673
+Dynamo produced 1 graphs covering 254 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
-cuda eval  PLBartForConditionalGeneration      1.275x p=0.00
-TIMING: entire_frame_compile:11.01784 backend_compile:7.41158
-STATS: call_* op count: 658 | FakeTensorMode.__torch_dispatch__:24843 | FakeTensor.__torch_dispatch__:2500 | ProxyTorchDispatchMode.__torch_dispatch__:4455
-Dynamo produced 10 graphs covering 658 ops with 10 graph breaks (4 unique)
+cuda eval  PLBartForConditionalGeneration      1.278x p=0.00
+TIMING: entire_frame_compile:10.21049 backend_compile:7.99728
+STATS: call_* op count: 658 | FakeTensorMode.__torch_dispatch__:22723 | FakeTensor.__torch_dispatch__:3194 | ProxyTorchDispatchMode.__torch_dispatch__:4302
+Dynamo produced 1 graphs covering 658 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
 WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
-cuda eval  PegasusForCausalLM                  1.146x p=0.00
-TIMING: entire_frame_compile:9.2588 backend_compile:6.22749
-STATS: call_* op count: 478 | FakeTensorMode.__torch_dispatch__:16515 | FakeTensor.__torch_dispatch__:1447 | ProxyTorchDispatchMode.__torch_dispatch__:3268
-Dynamo produced 16 graphs covering 478 ops with 8 graph breaks (5 unique)
+cuda eval  PegasusForCausalLM                  1.153x p=0.00
+TIMING: entire_frame_compile:8.96761 backend_compile:6.90654
+STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:16803 | FakeTensor.__torch_dispatch__:2449 | ProxyTorchDispatchMode.__torch_dispatch__:3158
+Dynamo produced 1 graphs covering 481 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
 WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
-cuda eval  PegasusForConditionalGeneration     1.083x p=0.00
-TIMING: entire_frame_compile:16.35317 backend_compile:12.44164
-STATS: call_* op count: 1244 | FakeTensorMode.__torch_dispatch__:41914 | FakeTensor.__torch_dispatch__:3185 | ProxyTorchDispatchMode.__torch_dispatch__:8409
-Dynamo produced 7 graphs covering 1244 ops with 11 graph breaks (3 unique)
+cuda eval  PegasusForConditionalGeneration     1.070x p=0.00
+TIMING: entire_frame_compile:19.10244 backend_compile:14.92198
+STATS: call_* op count: 1248 | FakeTensorMode.__torch_dispatch__:43512 | FakeTensor.__torch_dispatch__:6174 | ProxyTorchDispatchMode.__torch_dispatch__:8173
+Dynamo produced 1 graphs covering 1248 ops with 0 graph breaks (0 unique)
 If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
-cuda eval  RobertaForCausalLM                  1.400x p=0.00
-TIMING: entire_frame_compile:8.67777 backend_compile:6.13581
-STATS: call_* op count: 381 | FakeTensorMode.__torch_dispatch__:17355 | FakeTensor.__torch_dispatch__:1614 | ProxyTorchDispatchMode.__torch_dispatch__:3320
+cuda eval  RobertaForCausalLM                  1.346x p=0.00
+TIMING: entire_frame_compile:9.50345 backend_compile:6.62999
+STATS: call_* op count: 381 | FakeTensorMode.__torch_dispatch__:18494 | FakeTensor.__torch_dispatch__:2968 | ProxyTorchDispatchMode.__torch_dispatch__:3321
 Dynamo produced 1 graphs covering 381 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
-cuda eval  RobertaForQuestionAnswering         1.376x p=0.00
-TIMING: entire_frame_compile:7.77885 backend_compile:5.97719
-STATS: call_* op count: 384 | FakeTensorMode.__torch_dispatch__:17350 | FakeTensor.__torch_dispatch__:1598 | ProxyTorchDispatchMode.__torch_dispatch__:3333
+cuda eval  RobertaForQuestionAnswering         1.305x p=0.00
+TIMING: entire_frame_compile:8.44457 backend_compile:6.01111
+STATS: call_* op count: 384 | FakeTensorMode.__torch_dispatch__:18485 | FakeTensor.__torch_dispatch__:2959 | ProxyTorchDispatchMode.__torch_dispatch__:3334
 Dynamo produced 1 graphs covering 384 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
 WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
-cuda eval  Speech2Text2ForCausalLM             1.434x p=0.00
-TIMING: entire_frame_compile:5.3196 backend_compile:4.26783
-STATS: call_* op count: 261 | FakeTensorMode.__torch_dispatch__:8796 | FakeTensor.__torch_dispatch__:683 | ProxyTorchDispatchMode.__torch_dispatch__:1726
-Dynamo produced 10 graphs covering 261 ops with 8 graph breaks (5 unique)
+cuda eval  Speech2Text2ForCausalLM             1.516x p=0.00
+TIMING: entire_frame_compile:4.97817 backend_compile:4.09638
+STATS: call_* op count: 263 | FakeTensorMode.__torch_dispatch__:8727 | FakeTensor.__torch_dispatch__:1229 | ProxyTorchDispatchMode.__torch_dispatch__:1655
+Dynamo produced 1 graphs covering 263 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
-cuda eval  T5ForConditionalGeneration          1.974x p=0.00
-TIMING: entire_frame_compile:10.75438 backend_compile:7.46899
-STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:20246 | FakeTensor.__torch_dispatch__:1724 | ProxyTorchDispatchMode.__torch_dispatch__:4964
+cuda eval  T5ForConditionalGeneration          1.703x p=0.00
+TIMING: entire_frame_compile:12.3967 backend_compile:8.5424
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:19685 | FakeTensor.__torch_dispatch__:3247 | ProxyTorchDispatchMode.__torch_dispatch__:4661
 Dynamo produced 1 graphs covering 798 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
-cuda eval  T5Small                             1.969x p=0.00
-TIMING: entire_frame_compile:9.7951 backend_compile:7.20462
-STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:20246 | FakeTensor.__torch_dispatch__:1724 | ProxyTorchDispatchMode.__torch_dispatch__:4964
+cuda eval  T5Small                             1.704x p=0.00
+TIMING: entire_frame_compile:10.50736 backend_compile:7.12662
+STATS: call_* op count: 798 | FakeTensorMode.__torch_dispatch__:19685 | FakeTensor.__torch_dispatch__:3247 | ProxyTorchDispatchMode.__torch_dispatch__:4661
 Dynamo produced 1 graphs covering 798 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
-cuda eval  TrOCRForCausalLM                    1.189x p=0.00
-TIMING: entire_frame_compile:7.9877 backend_compile:5.9721
-STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:16475 | FakeTensor.__torch_dispatch__:1350 | ProxyTorchDispatchMode.__torch_dispatch__:3218
-Dynamo produced 14 graphs covering 481 ops with 7 graph breaks (5 unique)
+cuda eval  TrOCRForCausalLM                    1.209x p=0.00
+TIMING: entire_frame_compile:8.37535 backend_compile:6.75566
+STATS: call_* op count: 481 | FakeTensorMode.__torch_dispatch__:16853 | FakeTensor.__torch_dispatch__:2455 | ProxyTorchDispatchMode.__torch_dispatch__:3165
+Dynamo produced 1 graphs covering 481 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
 WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
-cuda eval  XGLMForCausalLM                     1.482x p=0.00
-TIMING: entire_frame_compile:12.91379 backend_compile:9.91752
-STATS: call_* op count: 998 | FakeTensorMode.__torch_dispatch__:32396 | FakeTensor.__torch_dispatch__:2791 | ProxyTorchDispatchMode.__torch_dispatch__:6476
-Dynamo produced 28 graphs covering 998 ops with 8 graph breaks (5 unique)
+cuda eval  XGLMForCausalLM                     1.458x p=0.00
+TIMING: entire_frame_compile:14.60288 backend_compile:10.64187
+STATS: call_* op count: 1001 | FakeTensorMode.__torch_dispatch__:33771 | FakeTensor.__torch_dispatch__:4876 | ProxyTorchDispatchMode.__torch_dispatch__:6386
+Dynamo produced 1 graphs covering 1001 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
-cuda eval  XLNetLMHeadModel                    2.362x p=0.00
-TIMING: entire_frame_compile:27.52619 backend_compile:23.40352
-STATS: call_* op count: 816 | FakeTensorMode.__torch_dispatch__:50911 | FakeTensor.__torch_dispatch__:3872 | ProxyTorchDispatchMode.__torch_dispatch__:10970
+cuda eval  XLNetLMHeadModel                    [2023-04-05 06:44:41,594] torch._inductor.utils: [WARNING] DeviceCopy in input program
+[2023-04-05 06:44:54,993] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
+2.307x p=0.00
+TIMING: entire_frame_compile:28.39423 backend_compile:23.40418
+STATS: call_* op count: 816 | FakeTensorMode.__torch_dispatch__:54506 | FakeTensor.__torch_dispatch__:9198 | ProxyTorchDispatchMode.__torch_dispatch__:10349
 Dynamo produced 1 graphs covering 816 ops with 0 graph breaks (0 unique)
 WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
-cuda eval  YituTechConvBert                    1.377x p=0.00
-TIMING: entire_frame_compile:12.33616 backend_compile:9.2001
-STATS: call_* op count: 634 | FakeTensorMode.__torch_dispatch__:28448 | FakeTensor.__torch_dispatch__:2425 | ProxyTorchDispatchMode.__torch_dispatch__:5814
-Dynamo produced 4 graphs covering 634 ops with 3 graph breaks (2 unique)
-speedup             gmean=1.39x mean=1.428x
-abs_latency         gmean=nanx mean=31.934x
-compilation_latency mean=12.536 seconds
-compression_ratio   mean=1.206x
-eager_peak_mem      gmean=nanx mean=4.008x
-dynamo_peak_mem     gmean=nanx mean=3.689x
-calls_captured      gmean=nanx mean=655.667x
-unique_graphs       gmean=nanx mean=12.422x
-graph_breaks        gmean=nanx mean=9.756x
-unique_graph_breaks gmean=nanx mean=2.800x
+cuda eval  YituTechConvBert                    1.348x p=0.00
+TIMING: entire_frame_compile:13.41684 backend_compile:10.14851
+STATS: call_* op count: 634 | FakeTensorMode.__torch_dispatch__:29420 | FakeTensor.__torch_dispatch__:4612 | ProxyTorchDispatchMode.__torch_dispatch__:5569
+Dynamo produced 1 graphs covering 634 ops with 0 graph breaks (0 unique)
+speedup             gmean=1.33x mean=1.361x
+abs_latency         gmean=29.98x mean=33.056x
+compilation_latency mean=15.947 seconds
+compression_ratio   mean=1.260x
+eager_peak_mem      gmean=3.30x mean=3.983x
+dynamo_peak_mem     gmean=2.78x mean=3.462x
+calls_captured      gmean=584.43x mean=680.130x
+unique_graphs       gmean=1.50x mean=7.674x
+graph_breaks        gmean=1.47x mean=6.609x
+unique_graph_breaks gmean=1.20x mean=1.609x

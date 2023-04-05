@@ -149,6 +149,7 @@ def draw_per_kind_per_bench_graphs():
     for bench in benches:
         inductor_eval = parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval")
         inductor_train = parse_log(f"data/{bench}_inductor_train.log", f"cuda train")
+        breakpoint()
         graph_delta_merged(inductor_eval, inductor_train, "Inference", "Training", title=f"{bench}_inductor_per_kind")
 
 
