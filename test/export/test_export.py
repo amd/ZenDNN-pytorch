@@ -1,7 +1,7 @@
 # Owner(s): ["module: dynamo"]
 from torch.testing._internal.common_utils import run_tests, TestCase
 from functorch.experimental.control_flow import cond
-from torch._export import do_not_use_experimental_export
+from torch._export.trace import do_not_use_experimental_export
 from torch._export.constraints import add_inline_size_constraint
 from torch.fx.experimental.proxy_tensor import make_fx
 import torch._dynamo as torchdynamo
@@ -87,7 +87,7 @@ class TestExport(TestCase):
             for i, x in enumerate(roi_batch_splits_nms.to(torch.int32)):
                 b = x.item()
 
-                add_inline_size_constraint(b, min=0)
+                add_inline_size_constraint(b, min=2, max=5)
 
                 roi_batch_ids.append(torch.full((b, 1), i))
 
