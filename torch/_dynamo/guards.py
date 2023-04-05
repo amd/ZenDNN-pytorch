@@ -130,6 +130,7 @@ class GuardBuilder(GuardBuilderBase):
         self.argnames: List[str] = []
         # Code is python expression strings generated for each guard
         self.code: List[str] = []
+        self.sources: List[Source] = []
         # shape_env_code is only used by local_builder and is used for
         # shape env code.  This exists only because we need to make sure
         # shape env guards get run after tensor match guards (since the
@@ -149,6 +150,7 @@ class GuardBuilder(GuardBuilderBase):
         # swept up into a single call to ___check_tensors.  Invariant:
         # len(tensor_check_names) == len(tensor_check_examples).
         self.tensor_check_names: List[str] = []
+        self.tensor_check_sources: List[Source] = []
         self.tensor_check_examples: List[torch.Tensor] = []
 
         self.check_fn_manager: CheckFunctionManager = check_fn_manager
@@ -337,7 +339,9 @@ class GuardBuilder(GuardBuilderBase):
 
         def setup_guard():
             assert istype(val.training, bool)
+            # TODO(voz): Why isn't this in _produce_guard_code?
             self.code.append(f"{ref}.training == {val.training}")
+            self.sources.append(guard.origin)
 
         if hasattr(val, "training"):
             # There are cases where a monkeypatched object has a guard made between __new__ and __init__
@@ -513,6 +517,7 @@ class GuardBuilder(GuardBuilderBase):
                     code.append(f"{tensor_name}.{term} == {real_value}")
             else:
                 self.tensor_check_names.append(tensor_name)
+                self.tensor_check_sources.append(guard.origin)
                 self.tensor_check_examples.append(value)
 
             # A frame is valid for reuse with dynamic dimensions if the new dynamic dimensions are a
@@ -583,6 +588,7 @@ class GuardBuilder(GuardBuilderBase):
             self.__class__
         ), f"_produce_guard_code must be called from inside GuardedCode. Called from {func_name}"
 
+        self.sources.extend([guard.origin] * len(code_list))
         if shape_env:
             self.shape_env_code.extend(code_list)
         else:
@@ -698,10 +704,16 @@ class CheckFunctionManager:
         largs += ["**___kwargs_ignored"]
         args = ",".join(largs)
 
+        assert len(local_builder.code) == len(local_builder.sources), breakpoint()
+        assert len(global_builder.code) == len(global_builder.sources), breakpoint()
+        local_code_to_source_map = dict(zip(local_builder.code, local_builder.sources))
+        global_code_to_source_map = dict(zip(global_builder.code, global_builder.sources))
+        code_to_source_map = {**local_code_to_source_map, **global_code_to_source_map}
         code_parts = (
             ["___guarded_code.valid"] + local_builder.code + global_builder.code
         )
         # TODO(whc) maybe only the 'check_tensors' one is ambiguous? if so we can be less general..
+        # TODO(voz): Kill this with fire now that we launder failure
         verbose_code_parts = (
             ["___guarded_code.valid"] + local_builder.code + global_builder.code
         )
@@ -709,6 +721,10 @@ class CheckFunctionManager:
         tensor_check_names = (
             local_builder.tensor_check_names + global_builder.tensor_check_names
         )
+        tensor_check_sources = (
+            local_builder.tensor_check_sources + global_builder.tensor_check_sources
+        )
+        assert len(tensor_check_names) == len(tensor_check_sources)
 
         check_tensors_fn = None
         check_tensors_verbose_fn = None
@@ -725,7 +741,9 @@ class CheckFunctionManager:
             )
             check_tensors_fn = tensor_guards.check
             check_tensors_verbose_fn = tensor_guards.check_verbose
-            code_parts.append(f"___check_tensors({', '.join(tensor_check_names)})")
+            check_tensor_slug = f"___check_tensors({', '.join(tensor_check_names)})"
+            code_parts.append(check_tensor_slug)
+            code_to_source_map[check_tensor_slug] = tensor_check_sources
             verbose_args = ", ".join(
                 tensor_check_names + ["tensor_check_names=tensor_check_names"]
             )
@@ -750,14 +768,28 @@ class CheckFunctionManager:
         verbose_code_parts.extend(local_builder.shape_env_code)
         assert not global_builder.shape_env_code
 
+        # TODO(voz): I really hate that we use a code_part for accessing a map
+        # We should refactor the guards codegen entirely, where instead of taking .code, a list of str,
+        # and keeping around parallel structures, intead we make the local/global builder provide us a
+        # CodePart object that is 1:1:1 code, source, originating info (guard_fn?)
+        # And plumb that through instead of doing all this grosness.
+        # So, something like
+        # code = "      passing = True \n"
+        # for code_part in unique(code_parts):
+        #     cleaned = code_part.replace("'", '""')
+        #     code += f"      passing = {code_part.code} \n"
+        #     code += f"      if not passing: \n"
+        #     code += f"          return (False, code_parts[{id(code_part)}]) \n"
+        # code += f"      return True, None"
+        #
+        # where code_part is a CodePart object
         code = "      passing = True \n"
         for code_part in unique(code_parts):
             cleaned = code_part.replace("'", '""')
             code += f"      passing = {code_part} \n"
             code += f"      if not passing: \n"
-            code += f"          print('failing {cleaned}') \n"
-            code += f"          return (False, str('{cleaned}')) \n"
-        code += f"      return True, None"
+            code += f"          return (False, str('{cleaned}'), code_to_source_map[\"{code_part}\"]) \n"
+        code += f"      return True, None, None"
         closure_vars = collections.OrderedDict(
             [
                 ("___guarded_code", self),
@@ -769,7 +801,7 @@ class CheckFunctionManager:
         )
         closure_vars.update(CLOSURE_VARS)
         py_code = f"""\
-def ___make_guard_fn({','.join(closure_vars.keys())}):
+def ___make_guard_fn({','.join(closure_vars.keys())}, code_to_source_map):
     def guard_fn(L): 
 {code}
     return guard_fn
@@ -780,7 +812,7 @@ def ___make_guard_fn({','.join(closure_vars.keys())}):
         out: Dict[str, Any] = dict()
         # breakpoint()
         exec(py_code, global_builder.scope, out)
-        guard_fn = out["___make_guard_fn"](*closure_vars.values())
+        guard_fn = out["___make_guard_fn"](*closure_vars.values(), code_to_source_map)
         # breakpoint()
         guard_fn.closure_vars = closure_vars
         # TODO(whc) maybe '.code_parts' was only kept around for the guard callback? so we don't need both

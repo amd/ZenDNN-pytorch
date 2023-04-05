@@ -407,7 +407,8 @@ static inline PyObject* call_callback(
     PyObject* callable,
     THP_EVAL_API_FRAME_OBJECT* _frame,
     long cache_len,
-    PyObject* reason) {
+    PyObject* reason,
+    PyObject* source) {
 
 #if IS_PYTHON_3_11_PLUS
   THPPyInterpreterFrame* frame = THPPyInterpreterFrame_New(_frame);
@@ -417,7 +418,10 @@ static inline PyObject* call_callback(
   if (reason == NULL) {
     reason = Py_None;
   }
-  PyObject* args = Py_BuildValue("(OlO)", frame, cache_len, reason);
+  if (source == NULL) {
+    source = Py_None;
+  }
+  PyObject* args = Py_BuildValue("(OlOO)", frame, cache_len, reason, source);
   if (args == NULL) {
     return NULL;
   }
@@ -516,7 +520,7 @@ static void call_profiler_end_hook(PyObject* record) {
 
 // Return value: borrowed reference
 // Is either Py_None or a PyCodeObject
-static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEntry* prev, size_t index, PyObject** reason) {
+static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEntry* prev, size_t index, PyObject** reason, PyObject** source) {
   if (e == NULL) {
     // NB: intentionally not using Py_RETURN_NONE, to return borrowed ref
     return Py_None;
@@ -555,6 +559,8 @@ static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEn
   // valid == False
   PyObject* fail_reason = PyTuple_GetItem(result, 1);
   *reason = fail_reason;
+  PyObject* fail_source = PyTuple_GetItem(result, 2);
+  *source = fail_source;
   if (unlikely(guard_fail_hook != NULL)) {
     PyObject* r = call_guard_fail_hook(guard_fail_hook, e, index, f_locals);
     if (r == NULL) {
@@ -562,7 +568,7 @@ static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEn
     }
     Py_DECREF(r);
   }
-  PyObject* lookup_result = lookup(e->next, frame, e, index + 1, reason);
+  PyObject* lookup_result = lookup(e->next, frame, e, index + 1, reason, source);
   return lookup_result;
 }
 
@@ -756,7 +762,8 @@ static PyObject* _custom_eval_frame(
     DEBUG_TRACE("In run only mode %s", name(frame));
     PyObject* hook_record = call_profiler_start_hook(guard_profiler_name_str);
     PyObject *reason = NULL;
-    PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason);
+    PyObject *source = NULL;
+    PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason, &source);
     call_profiler_end_hook(hook_record);
     Py_XDECREF(hook_record);
 
@@ -783,7 +790,8 @@ static PyObject* _custom_eval_frame(
 
   PyObject* hook_record = call_profiler_start_hook(guard_profiler_name_str);
   PyObject *reason = NULL;
-  PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason);
+  PyObject *source = NULL;
+  PyObject* maybe_cached_code = lookup(extra, frame, NULL, 0, &reason, &source);
   call_profiler_end_hook(hook_record);
   Py_XDECREF(hook_record);
   if (maybe_cached_code == NULL) {
@@ -802,7 +810,7 @@ static PyObject* _custom_eval_frame(
   // TODO(alband): This is WRONG for python3.11+ we pass in a _PyInterpreterFrame
   // that gets re-interpreted as a PyObject (which it is NOT!)
   PyObject* result =
-      call_callback(callback, frame, cache_size(extra), reason);
+      call_callback(callback, frame, cache_size(extra), reason, source);
   if (reason != NULL) {
     Py_DECREF(reason);
   }

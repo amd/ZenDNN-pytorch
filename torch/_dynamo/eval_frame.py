@@ -360,11 +360,13 @@ def first_real_inst_idx(code):
 
 def catch_errors_wrapper(callback, hooks: Hooks):
     @functools.wraps(callback)
-    def catch_errors(frame, cache_size, reason):
-        if cache_size > 0:
-            breakpoint()
+    def catch_errors(frame, cache_size, reason, source):
+        msg = f"Compiling {frame.f_code.co_name} {frame.f_code.co_filename} with cache_size {cache_size}."
         if reason is not None:
-            breakpoint()
+            # TODO(voz): this almost obsoletes guard_failure_fn
+            # We can remove the metrics writing it does and plumb it in here.
+            msg += (f" Due to guard failure {reason}")
+        log.info(msg)
         if (
             # TODO: the first condition is not covered by any test
             frame.f_lasti >= first_real_inst_idx(frame.f_code)
