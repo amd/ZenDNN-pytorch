@@ -2258,7 +2258,9 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
     device_opt_ = storage_.device();
     // We have a new storage, so any prior shadow storage we have is
     // no longer valid.
-    shadow_storage_ref().reset();
+    if (has_shadow_storage_) {
+      shadow_storage_ref().reset();
+    }
   }
 
   void set_storage_and_dtype(
