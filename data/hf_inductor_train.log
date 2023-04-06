@@ -1,18 +1,15 @@
 WARNING:__main__:Running smaller batch size=4 for AlbertForMaskedLM, orig batch_size=8
-cuda train AlbertForMaskedLM                   [2023-04-05 17:29:25,285] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.633x p=0.00
+cuda train AlbertForMaskedLM                   1.633x p=0.00
 TIMING: entire_frame_compile:15.66281 backend_compile:13.12764
 STATS: call_* op count: 441 | FakeTensorMode.__torch_dispatch__:51954 | FakeTensor.__torch_dispatch__:9188 | ProxyTorchDispatchMode.__torch_dispatch__:20000
 Dynamo produced 1 graphs covering 441 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for AlbertForQuestionAnswering, orig batch_size=8
-cuda train AlbertForQuestionAnswering          [2023-04-05 17:30:18,176] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.644x p=0.00
+cuda train AlbertForQuestionAnswering          1.644x p=0.00
 TIMING: entire_frame_compile:15.17135 backend_compile:12.69326
 STATS: call_* op count: 441 | FakeTensorMode.__torch_dispatch__:51538 | FakeTensor.__torch_dispatch__:8931 | ProxyTorchDispatchMode.__torch_dispatch__:19844
 Dynamo produced 1 graphs covering 441 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for AllenaiLongformerBase, orig batch_size=8
-cuda train AllenaiLongformerBase               [2023-04-05 17:30:52,950] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-ERROR:common:Backend dynamo failed in warmup()
+cuda train AllenaiLongformerBase               ERROR:common:Backend dynamo failed in warmup()
 Traceback (most recent call last):
   File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1402, in warmup
     fn(model, example_inputs)
@@ -151,34 +148,27 @@ You can suppress this exception and fall back to eager by setting:
 
 ERROR
 WARNING:__main__:Running smaller batch size=4 for BartForCausalLM, orig batch_size=8
-cuda train BartForCausalLM                     [2023-04-05 17:31:38,845] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.513x p=0.00
+cuda train BartForCausalLM                     1.513x p=0.00
 TIMING: entire_frame_compile:19.22376 backend_compile:14.00886
 STATS: call_* op count: 484 | FakeTensorMode.__torch_dispatch__:59874 | FakeTensor.__torch_dispatch__:22660 | ProxyTorchDispatchMode.__torch_dispatch__:19295
 Dynamo produced 1 graphs covering 484 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=2 for BartForConditionalGeneration, orig batch_size=4
-cuda train BartForConditionalGeneration        [2023-04-05 17:32:50,712] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.434x p=0.00
+cuda train BartForConditionalGeneration        1.434x p=0.00
 TIMING: entire_frame_compile:45.97682 backend_compile:34.08327
 STATS: call_* op count: 1260 | FakeTensorMode.__torch_dispatch__:147851 | FakeTensor.__torch_dispatch__:52271 | ProxyTorchDispatchMode.__torch_dispatch__:49834
 Dynamo produced 1 graphs covering 1260 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for BertForMaskedLM, orig batch_size=32
-cuda train BertForMaskedLM                     [2023-04-05 17:33:59,375] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:34:10,281] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.587x p=0.00
+cuda train BertForMaskedLM                     1.587x p=0.00
 TIMING: entire_frame_compile:20.0229 backend_compile:14.94964
 STATS: call_* op count: 372 | FakeTensorMode.__torch_dispatch__:60868 | FakeTensor.__torch_dispatch__:21306 | ProxyTorchDispatchMode.__torch_dispatch__:20184
 Dynamo produced 1 graphs covering 372 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for BertForQuestionAnswering, orig batch_size=32
-cuda train BertForQuestionAnswering            [2023-04-05 17:34:43,149] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:34:53,913] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.749x p=0.00
+cuda train BertForQuestionAnswering            1.749x p=0.00
 TIMING: entire_frame_compile:20.14051 backend_compile:14.78753
 STATS: call_* op count: 379 | FakeTensorMode.__torch_dispatch__:60610 | FakeTensor.__torch_dispatch__:21077 | ProxyTorchDispatchMode.__torch_dispatch__:20125
 Dynamo produced 1 graphs covering 379 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for BlenderbotForCausalLM, orig batch_size=32
-cuda train BlenderbotForCausalLM               [2023-04-05 17:36:09,490] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-ERROR:common:Backend dynamo failed in warmup()
+cuda train BlenderbotForCausalLM               ERROR:common:Backend dynamo failed in warmup()
 Traceback (most recent call last):
   File "/scratch/voz/work/pytorch/benchmarks/dynamo/common.py", line 1402, in warmup
     fn(model, example_inputs)
@@ -197,49 +187,32 @@ Traceback (most recent call last):
 torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 100.00 MiB (GPU 0; 39.56 GiB total capacity; 37.36 GiB already allocated; 58.56 MiB free; 37.75 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
 ERROR
 WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForCausalLM, orig batch_size=256
-cuda train BlenderbotSmallForCausalLM          [2023-04-05 17:36:53,844] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.227x p=0.00
+cuda train BlenderbotSmallForCausalLM          1.227x p=0.00
 TIMING: entire_frame_compile:13.53107 backend_compile:10.03524
 STATS: call_* op count: 329 | FakeTensorMode.__torch_dispatch__:40491 | FakeTensor.__torch_dispatch__:15284 | ProxyTorchDispatchMode.__torch_dispatch__:13052
 Dynamo produced 1 graphs covering 329 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=64 for BlenderbotSmallForConditionalGeneration, orig batch_size=128
-cuda train BlenderbotSmallForConditionalGeneration  [2023-04-05 17:37:38,016] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.319x p=0.00
+cuda train BlenderbotSmallForConditionalGeneration  1.319x p=0.00
 TIMING: entire_frame_compile:30.37724 backend_compile:23.10901
 STATS: call_* op count: 842 | FakeTensorMode.__torch_dispatch__:99184 | FakeTensor.__torch_dispatch__:35125 | ProxyTorchDispatchMode.__torch_dispatch__:33438
 Dynamo produced 1 graphs covering 842 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for CamemBert, orig batch_size=32
-cuda train CamemBert                           [2023-04-05 17:38:33,610] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:38:44,402] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.535x p=0.00
+cuda train CamemBert                           1.535x p=0.00
 TIMING: entire_frame_compile:19.88345 backend_compile:14.81458
 STATS: call_* op count: 379 | FakeTensorMode.__torch_dispatch__:60958 | FakeTensor.__torch_dispatch__:21321 | ProxyTorchDispatchMode.__torch_dispatch__:20204
 Dynamo produced 1 graphs covering 379 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for DebertaForMaskedLM, orig batch_size=32
-cuda train DebertaForMaskedLM                  [2023-04-05 17:39:08,324] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:39:10,357] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-[2023-04-05 17:39:10,414] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:39:11,603] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-0.878x p=0.00
+cuda train DebertaForMaskedLM                  0.878x p=0.00
 TIMING: entire_frame_compile:22.46831 backend_compile:15.71152
 STATS: call_* op count: 728 | FakeTensorMode.__torch_dispatch__:65887 | FakeTensor.__torch_dispatch__:20205 | ProxyTorchDispatchMode.__torch_dispatch__:22439
 Dynamo produced 95 graphs covering 728 ops with 164 graph breaks (15 unique)
 WARNING:__main__:Running smaller batch size=8 for DebertaForQuestionAnswering, orig batch_size=32
-cuda train DebertaForQuestionAnswering         [2023-04-05 17:40:19,897] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:40:21,924] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-[2023-04-05 17:40:21,982] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:40:23,178] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.124x p=0.00
+cuda train DebertaForQuestionAnswering         1.124x p=0.00
 TIMING: entire_frame_compile:22.30012 backend_compile:15.63439
 STATS: call_* op count: 735 | FakeTensorMode.__torch_dispatch__:65617 | FakeTensor.__torch_dispatch__:19977 | ProxyTorchDispatchMode.__torch_dispatch__:22372
 Dynamo produced 95 graphs covering 735 ops with 164 graph breaks (15 unique)
 WARNING:__main__:Running smaller batch size=1 for DebertaV2ForMaskedLM, orig batch_size=8
-cuda train DebertaV2ForMaskedLM                [2023-04-05 17:41:44,748] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:41:46,190] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-[2023-04-05 17:41:46,241] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:41:46,915] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:42:33,219] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (64)
-   function: 'forward' (/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py:226)
+cuda train DebertaV2ForMaskedLM                   function: 'forward' (/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py:226)
    reasons:  ___check_obj_id(L['self'], 140310470141616)
 to diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
 0.737x p=0.00
@@ -247,12 +220,7 @@ TIMING: entire_frame_compile:38.20015 backend_compile:23.98917
 STATS: call_* op count: 933 | FakeTensorMode.__torch_dispatch__:133079 | FakeTensor.__torch_dispatch__:44401 | ProxyTorchDispatchMode.__torch_dispatch__:40335
 Dynamo produced 179 graphs covering 933 ops with 287 graph breaks (15 unique)
 WARNING:__main__:Running smaller batch size=2 for DebertaV2ForQuestionAnswering, orig batch_size=8
-cuda train DebertaV2ForQuestionAnswering       [2023-04-05 17:44:02,968] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:44:04,520] torch._inductor.utils: [WARNING] skipping cudagraphs due to input mutation
-[2023-04-05 17:44:04,572] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:44:05,257] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:44:52,105] torch._dynamo.convert_frame: [WARNING] torch._dynamo hit config.cache_size_limit (64)
-   function: 'forward' (/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py:226)
+cuda train DebertaV2ForQuestionAnswering          function: 'forward' (/data/home/voz/miniconda3/envs/torch5/lib/python3.10/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py:226)
    reasons:  ___check_obj_id(L['self'], 139680598745936)
 to diagnose recompilation issues, see https://pytorch.org/docs/master/compile/troubleshooting.html.
 0.795x p=0.00
@@ -261,42 +229,34 @@ STATS: call_* op count: 940 | FakeTensorMode.__torch_dispatch__:133033 | FakeTen
 Dynamo produced 179 graphs covering 940 ops with 287 graph breaks (15 unique)
 WARNING:__main__:Running smaller batch size=128 for DistilBertForMaskedLM, orig batch_size=256
 WARNING:__main__:Sequence Length not defined for DistilBertForMaskedLM. Choosing 128 arbitrarily
-cuda train DistilBertForMaskedLM               [2023-04-05 17:46:18,298] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.212x p=0.00
+cuda train DistilBertForMaskedLM               1.212x p=0.00
 TIMING: entire_frame_compile:11.3555 backend_compile:9.00985
 STATS: call_* op count: 208 | FakeTensorMode.__torch_dispatch__:30933 | FakeTensor.__torch_dispatch__:10792 | ProxyTorchDispatchMode.__torch_dispatch__:10377
 Dynamo produced 1 graphs covering 208 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=256 for DistilBertForQuestionAnswering, orig batch_size=512
 WARNING:__main__:Sequence Length not defined for DistilBertForQuestionAnswering. Choosing 128 arbitrarily
-cuda train DistilBertForQuestionAnswering      [2023-04-05 17:46:48,627] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.437x p=0.00
+cuda train DistilBertForQuestionAnswering      1.437x p=0.00
 TIMING: entire_frame_compile:10.98981 backend_compile:8.65469
 STATS: call_* op count: 216 | FakeTensorMode.__torch_dispatch__:30800 | FakeTensor.__torch_dispatch__:10573 | ProxyTorchDispatchMode.__torch_dispatch__:10361
 Dynamo produced 1 graphs covering 216 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for DistillGPT2, orig batch_size=32
-cuda train DistillGPT2                         [2023-04-05 17:47:21,496] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.646x p=0.00
+cuda train DistillGPT2                         1.646x p=0.00
 TIMING: entire_frame_compile:10.77282 backend_compile:8.41183
 STATS: call_* op count: 332 | FakeTensorMode.__torch_dispatch__:27369 | FakeTensor.__torch_dispatch__:8839 | ProxyTorchDispatchMode.__torch_dispatch__:9205
 Dynamo produced 1 graphs covering 332 ops with 11 graph breaks (6 unique)
 If you want to use `ElectraForCausalLM` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=32 for ElectraForCausalLM, orig batch_size=64
-cuda train ElectraForCausalLM                  [2023-04-05 17:47:57,281] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:48:08,485] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.836x p=0.00
+cuda train ElectraForCausalLM                  1.836x p=0.00
 TIMING: entire_frame_compile:20.63358 backend_compile:15.12825
 STATS: call_* op count: 377 | FakeTensorMode.__torch_dispatch__:61463 | FakeTensor.__torch_dispatch__:21507 | ProxyTorchDispatchMode.__torch_dispatch__:20362
 Dynamo produced 1 graphs covering 377 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=64 for ElectraForQuestionAnswering, orig batch_size=128
-cuda train ElectraForQuestionAnswering         [2023-04-05 17:48:40,879] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 17:48:51,725] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-2.090x p=0.00
+cuda train ElectraForQuestionAnswering         2.090x p=0.00
 TIMING: entire_frame_compile:19.98063 backend_compile:14.89075
 STATS: call_* op count: 380 | FakeTensorMode.__torch_dispatch__:61022 | FakeTensor.__torch_dispatch__:21278 | ProxyTorchDispatchMode.__torch_dispatch__:20231
 Dynamo produced 1 graphs covering 380 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for GPT2ForSequenceClassification, orig batch_size=8
-cuda train GPT2ForSequenceClassification       [2023-04-05 17:49:23,624] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-2.224x p=0.00
+cuda train GPT2ForSequenceClassification       2.224x p=0.00
 TIMING: entire_frame_compile:18.02444 backend_compile:13.42627
 STATS: call_* op count: 646 | FakeTensorMode.__torch_dispatch__:52711 | FakeTensor.__torch_dispatch__:17206 | ProxyTorchDispatchMode.__torch_dispatch__:17752
 Dynamo produced 1 graphs covering 646 ops with 11 graph breaks (6 unique)
@@ -346,159 +306,130 @@ Traceback (most recent call last):
 NotImplementedError: Eager model failed to run
 
 WARNING:__main__:Running smaller batch size=16 for LayoutLMForMaskedLM, orig batch_size=32
-cuda train LayoutLMForMaskedLM                 [2023-04-05 17:50:17,568] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.565x p=0.00
+cuda train LayoutLMForMaskedLM                 1.565x p=0.00
 TIMING: entire_frame_compile:20.3665 backend_compile:14.98252
 STATS: call_* op count: 398 | FakeTensorMode.__torch_dispatch__:62898 | FakeTensor.__torch_dispatch__:22165 | ProxyTorchDispatchMode.__torch_dispatch__:20597
 Dynamo produced 1 graphs covering 398 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for LayoutLMForSequenceClassification, orig batch_size=32
-cuda train LayoutLMForSequenceClassification   [2023-04-05 17:51:03,400] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.767x p=0.00
+cuda train LayoutLMForSequenceClassification   1.767x p=0.00
 TIMING: entire_frame_compile:21.18723 backend_compile:14.68751
 STATS: call_* op count: 396 | FakeTensorMode.__torch_dispatch__:62285 | FakeTensor.__torch_dispatch__:21984 | ProxyTorchDispatchMode.__torch_dispatch__:20441
 Dynamo produced 1 graphs covering 396 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for M2M100ForConditionalGeneration, orig batch_size=64
 WARNING:__main__:Sequence Length not defined for M2M100ForConditionalGeneration. Choosing 128 arbitrarily
-cuda train M2M100ForConditionalGeneration      [2023-04-05 17:52:12,811] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.266x p=0.00
+cuda train M2M100ForConditionalGeneration      1.266x p=0.00
 TIMING: entire_frame_compile:46.03844 backend_compile:34.13855
 STATS: call_* op count: 1273 | FakeTensorMode.__torch_dispatch__:152090 | FakeTensor.__torch_dispatch__:53947 | ProxyTorchDispatchMode.__torch_dispatch__:51352
 Dynamo produced 1 graphs covering 1273 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for MBartForCausalLM, orig batch_size=8
-cuda train MBartForCausalLM                    [2023-04-05 17:53:23,310] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.506x p=0.00
+cuda train MBartForCausalLM                    1.506x p=0.00
 TIMING: entire_frame_compile:18.89405 backend_compile:13.77364
 STATS: call_* op count: 484 | FakeTensorMode.__torch_dispatch__:60470 | FakeTensor.__torch_dispatch__:23086 | ProxyTorchDispatchMode.__torch_dispatch__:19382
 Dynamo produced 1 graphs covering 484 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=2 for MBartForConditionalGeneration, orig batch_size=4
-cuda train MBartForConditionalGeneration       [2023-04-05 17:54:28,579] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.423x p=0.00
+cuda train MBartForConditionalGeneration       1.423x p=0.00
 TIMING: entire_frame_compile:45.87699 backend_compile:33.79673
 STATS: call_* op count: 1265 | FakeTensorMode.__torch_dispatch__:149264 | FakeTensor.__torch_dispatch__:53254 | ProxyTorchDispatchMode.__torch_dispatch__:50028
 Dynamo produced 1 graphs covering 1265 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for MT5ForConditionalGeneration, orig batch_size=32
 WARNING:__main__:Sequence Length not defined for MT5ForConditionalGeneration. Choosing 128 arbitrarily
-cuda train MT5ForConditionalGeneration         [2023-04-05 17:55:49,921] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.765x p=0.00
+cuda train MT5ForConditionalGeneration         1.765x p=0.00
 TIMING: entire_frame_compile:31.7118 backend_compile:23.5425
 STATS: call_* op count: 1175 | FakeTensorMode.__torch_dispatch__:102454 | FakeTensor.__torch_dispatch__:27995 | ProxyTorchDispatchMode.__torch_dispatch__:41045
 Dynamo produced 1 graphs covering 1175 ops with 11 graph breaks (6 unique)
 If you want to use `MegatronBertForCausalLM` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=4 for MegatronBertForCausalLM, orig batch_size=16
-cuda train MegatronBertForCausalLM             [2023-04-05 17:56:57,806] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.435x p=0.00
+cuda train MegatronBertForCausalLM             1.435x p=0.00
 TIMING: entire_frame_compile:38.08367 backend_compile:27.44647
 STATS: call_* op count: 723 | FakeTensorMode.__torch_dispatch__:119604 | FakeTensor.__torch_dispatch__:42007 | ProxyTorchDispatchMode.__torch_dispatch__:39569
 Dynamo produced 1 graphs covering 723 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=8 for MegatronBertForQuestionAnswering, orig batch_size=16
-cuda train MegatronBertForQuestionAnswering    [2023-04-05 17:58:12,297] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.589x p=0.00
+cuda train MegatronBertForQuestionAnswering    1.589x p=0.00
 TIMING: entire_frame_compile:37.96541 backend_compile:27.55586
 STATS: call_* op count: 726 | FakeTensorMode.__torch_dispatch__:119163 | FakeTensor.__torch_dispatch__:41778 | ProxyTorchDispatchMode.__torch_dispatch__:39438
 Dynamo produced 1 graphs covering 726 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=64 for MobileBertForMaskedLM, orig batch_size=256
-cuda train MobileBertForMaskedLM               [2023-04-05 18:00:00,595] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.761x p=0.00
+cuda train MobileBertForMaskedLM               1.761x p=0.00
 TIMING: entire_frame_compile:72.49059 backend_compile:44.80969
 STATS: call_* op count: 1449 | FakeTensorMode.__torch_dispatch__:215857 | FakeTensor.__torch_dispatch__:26279 | ProxyTorchDispatchMode.__torch_dispatch__:76695
 Dynamo produced 1 graphs covering 1449 ops with 5 graph breaks (4 unique)
 WARNING:__main__:Running smaller batch size=128 for MobileBertForQuestionAnswering, orig batch_size=256
-cuda train MobileBertForQuestionAnswering      [2023-04-05 18:02:03,180] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.663x p=0.00
+cuda train MobileBertForQuestionAnswering      1.663x p=0.00
 TIMING: entire_frame_compile:71.96428 backend_compile:44.35224
 STATS: call_* op count: 1453 | FakeTensorMode.__torch_dispatch__:215722 | FakeTensor.__torch_dispatch__:26267 | ProxyTorchDispatchMode.__torch_dispatch__:76608
 Dynamo produced 1 graphs covering 1453 ops with 5 graph breaks (4 unique)
 WARNING:__main__:Running smaller batch size=2 for OPTForCausalLM, orig batch_size=4
-cuda train OPTForCausalLM                      [2023-04-05 18:03:23,515] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-2.435x p=0.00
+cuda train OPTForCausalLM                      2.435x p=0.00
 TIMING: entire_frame_compile:18.74019 backend_compile:14.45398
 STATS: call_* op count: 536 | FakeTensorMode.__torch_dispatch__:56718 | FakeTensor.__torch_dispatch__:20831 | ProxyTorchDispatchMode.__torch_dispatch__:19164
 Dynamo produced 1 graphs covering 536 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=8 for PLBartForCausalLM, orig batch_size=16
-cuda train PLBartForCausalLM                   [2023-04-05 18:04:03,798] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.621x p=0.00
+cuda train PLBartForCausalLM                   1.621x p=0.00
 TIMING: entire_frame_compile:11.48454 backend_compile:8.38317
 STATS: call_* op count: 256 | FakeTensorMode.__torch_dispatch__:31566 | FakeTensor.__torch_dispatch__:11656 | ProxyTorchDispatchMode.__torch_dispatch__:10187
 Dynamo produced 1 graphs covering 256 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for PLBartForConditionalGeneration, orig batch_size=8
-cuda train PLBartForConditionalGeneration      [2023-04-05 18:04:47,082] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.615x p=0.00
+cuda train PLBartForConditionalGeneration      1.615x p=0.00
 TIMING: entire_frame_compile:24.26253 backend_compile:18.5785
 STATS: call_* op count: 660 | FakeTensorMode.__torch_dispatch__:78259 | FakeTensor.__torch_dispatch__:27538 | ProxyTorchDispatchMode.__torch_dispatch__:26402
 Dynamo produced 1 graphs covering 660 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=32 for PegasusForCausalLM, orig batch_size=128
 WARNING:__main__:Sequence Length not defined for PegasusForCausalLM. Choosing 128 arbitrarily
-cuda train PegasusForCausalLM                  [2023-04-05 18:05:39,004] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.172x p=0.00
+cuda train PegasusForCausalLM                  1.172x p=0.00
 TIMING: entire_frame_compile:19.5883 backend_compile:13.59912
 STATS: call_* op count: 483 | FakeTensorMode.__torch_dispatch__:60097 | FakeTensor.__torch_dispatch__:22834 | ProxyTorchDispatchMode.__torch_dispatch__:19266
 Dynamo produced 1 graphs covering 483 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=32 for PegasusForConditionalGeneration, orig batch_size=64
 WARNING:__main__:Sequence Length not defined for PegasusForConditionalGeneration. Choosing 128 arbitrarily
-cuda train PegasusForConditionalGeneration     [2023-04-05 18:06:45,565] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.232x p=0.00
+cuda train PegasusForConditionalGeneration     1.232x p=0.00
 TIMING: entire_frame_compile:39.44976 backend_compile:33.7209
 STATS: call_* op count: 1250 | FakeTensorMode.__torch_dispatch__:135970 | FakeTensor.__torch_dispatch__:16003 | ProxyTorchDispatchMode.__torch_dispatch__:49710
 Dynamo produced 1 graphs covering 1250 ops with 5 graph breaks (4 unique)
 If you want to use `RobertaLMHeadModel` as a standalone, add `is_decoder=True.`
 WARNING:__main__:Running smaller batch size=16 for RobertaForCausalLM, orig batch_size=32
-cuda train RobertaForCausalLM                  [2023-04-05 18:07:49,750] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 18:08:00,763] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.650x p=0.00
+cuda train RobertaForCausalLM                  1.650x p=0.00
 TIMING: entire_frame_compile:20.00748 backend_compile:14.93884
 STATS: call_* op count: 383 | FakeTensorMode.__torch_dispatch__:61132 | FakeTensor.__torch_dispatch__:21332 | ProxyTorchDispatchMode.__torch_dispatch__:20274
 Dynamo produced 1 graphs covering 383 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for RobertaForQuestionAnswering, orig batch_size=32
-cuda train RobertaForQuestionAnswering         [2023-04-05 18:08:33,584] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 18:08:44,324] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.763x p=0.00
+cuda train RobertaForQuestionAnswering         1.763x p=0.00
 TIMING: entire_frame_compile:19.9574 backend_compile:14.61863
 STATS: call_* op count: 386 | FakeTensorMode.__torch_dispatch__:60685 | FakeTensor.__torch_dispatch__:21091 | ProxyTorchDispatchMode.__torch_dispatch__:20143
 Dynamo produced 1 graphs covering 386 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=256 for Speech2Text2ForCausalLM, orig batch_size=1024
 WARNING:__main__:Sequence Length not defined for Speech2Text2ForCausalLM. Choosing 128 arbitrarily
-cuda train Speech2Text2ForCausalLM             [2023-04-05 18:09:09,774] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.536x p=0.00
+cuda train Speech2Text2ForCausalLM             1.536x p=0.00
 TIMING: entire_frame_compile:10.64185 backend_compile:8.04205
 STATS: call_* op count: 265 | FakeTensorMode.__torch_dispatch__:30041 | FakeTensor.__torch_dispatch__:11178 | ProxyTorchDispatchMode.__torch_dispatch__:9726
 Dynamo produced 1 graphs covering 265 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for T5ForConditionalGeneration, orig batch_size=8
-cuda train T5ForConditionalGeneration          [2023-04-05 18:09:45,980] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.604x p=0.00
+cuda train T5ForConditionalGeneration          1.604x p=0.00
 TIMING: entire_frame_compile:22.57905 backend_compile:17.08629
 STATS: call_* op count: 812 | FakeTensorMode.__torch_dispatch__:70706 | FakeTensor.__torch_dispatch__:19222 | ProxyTorchDispatchMode.__torch_dispatch__:28006
 Dynamo produced 1 graphs covering 812 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=4 for T5Small, orig batch_size=8
-cuda train T5Small                             [2023-04-05 18:10:34,594] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.607x p=0.00
+cuda train T5Small                             1.607x p=0.00
 TIMING: entire_frame_compile:22.60822 backend_compile:17.15405
 STATS: call_* op count: 812 | FakeTensorMode.__torch_dispatch__:70706 | FakeTensor.__torch_dispatch__:19222 | ProxyTorchDispatchMode.__torch_dispatch__:28006
 Dynamo produced 1 graphs covering 812 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=32 for TrOCRForCausalLM, orig batch_size=64
-cuda train TrOCRForCausalLM                    [2023-04-05 18:11:21,372] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.252x p=0.00
+cuda train TrOCRForCausalLM                    1.252x p=0.00
 TIMING: entire_frame_compile:19.05845 backend_compile:13.72866
 STATS: call_* op count: 483 | FakeTensorMode.__torch_dispatch__:59872 | FakeTensor.__torch_dispatch__:22661 | ProxyTorchDispatchMode.__torch_dispatch__:19293
 Dynamo produced 1 graphs covering 483 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=8 for XGLMForCausalLM, orig batch_size=32
 WARNING:__main__:Sequence Length not defined for XGLMForCausalLM. Choosing 128 arbitrarily
-cuda train XGLMForCausalLM                     [2023-04-05 18:12:27,133] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-1.309x p=0.00
+cuda train XGLMForCausalLM                     1.309x p=0.00
 TIMING: entire_frame_compile:35.7633 backend_compile:27.1385
 STATS: call_* op count: 1003 | FakeTensorMode.__torch_dispatch__:119002 | FakeTensor.__torch_dispatch__:43079 | ProxyTorchDispatchMode.__torch_dispatch__:39799
 Dynamo produced 1 graphs covering 1003 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=8 for XLNetLMHeadModel, orig batch_size=16
-cuda train XLNetLMHeadModel                    [2023-04-05 18:13:49,224] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 18:13:49,241] torch._inductor.utils: [WARNING] DeviceCopy in input program
-[2023-04-05 18:14:06,673] torch._inductor.utils: [WARNING] skipping cudagraphs due to multiple devices
-1.827x p=0.00
+cuda train XLNetLMHeadModel                    1.827x p=0.00
 TIMING: entire_frame_compile:53.96496 backend_compile:43.56509
 STATS: call_* op count: 770 | FakeTensorMode.__torch_dispatch__:164362 | FakeTensor.__torch_dispatch__:45805 | ProxyTorchDispatchMode.__torch_dispatch__:61047
 Dynamo produced 1 graphs covering 770 ops with 11 graph breaks (6 unique)
 WARNING:__main__:Running smaller batch size=16 for YituTechConvBert, orig batch_size=32
-cuda train YituTechConvBert                    [2023-04-05 18:15:16,370] torch._inductor.utils: [WARNING] using triton random, expect difference from eager
-[2023-04-05 18:15:33,091] torch._inductor.utils: [WARNING] skipping cudagraphs due to complex input striding
-1.437x p=0.00
+cuda train YituTechConvBert                    1.437x p=0.00
 TIMING: entire_frame_compile:29.74843 backend_compile:22.23213
 STATS: call_* op count: 636 | FakeTensorMode.__torch_dispatch__:91141 | FakeTensor.__torch_dispatch__:30534 | ProxyTorchDispatchMode.__torch_dispatch__:30902
 Dynamo produced 1 graphs covering 636 ops with 11 graph breaks (6 unique)

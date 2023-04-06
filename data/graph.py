@@ -130,7 +130,7 @@ def graph_delta_merged(data1, data2, name1, name2, title):
     
     ax.set_ylim(bottom=1.0, top=top/4)
     ax.set_xticklabels(model_names, rotation=90, ha='right')
-    ax.set_yticks(ticks, labels)
+    ax.set_yticks(ticks, labels=labels)
     ax.set_ylabel('Speedup')
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
