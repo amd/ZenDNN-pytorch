@@ -150,7 +150,7 @@ def graph_delta_merged(data1, data2, name1, name2, title):
     
     ax.set_ylim(bottom=1.0, top=top/4)
     ax.set_xticklabels(model_names, rotation=90, ha='right')
-    ax.set_yticks(ticks, labels)
+    ax.set_yticks(ticks, labels=labels)
     ax.set_ylabel('Speedup')
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
@@ -169,6 +169,7 @@ def draw_per_kind_per_bench_graphs():
     for bench in benches:
         inductor_eval = parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval")
         inductor_train = parse_log(f"data/{bench}_inductor_train.log", f"cuda train")
+        breakpoint()
         graph_delta_merged(inductor_eval, inductor_train, "Inference", "Training", title=f"{bench}_inductor_per_kind")
         # describe_delta(inductor_eval, inductor_train, "Inference", "Training", f"{bench}_inductor_per_kind")
 
