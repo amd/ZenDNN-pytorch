@@ -30,6 +30,23 @@ def describe_delta(data1, data2, name1, name2, run_name):
     performances1 = []
     performances2 = []
 
+    model_names = []
+    for name in model_name_to_perf1.keys():
+        model_names.append(name)
+        performances1.append(model_name_to_perf1[name])
+        if name in model_name_to_perf2:
+            performances2.append(model_name_to_perf2[name])
+        else:
+            performances2.append(0)
+
+
+    for name in model_name_to_perf2.keys():
+        if name in model_names:
+            continue 
+        model_names.append(name)
+        performances1.append(0)
+        performances2.append(model_name_to_perf2[name])
+
     for row1, row2 in zip(data1, data2):
         assert row1[2] == row2[2]  # Make sure model names match between the two datasets
         model_names.append(row1[2])
@@ -111,6 +128,9 @@ def graph_delta_merged(data1, data2, name1, name2, title):
         performances2.append(model_name_to_perf2[name])
 
 
+    print(f"==== {title} ====")
+    print(f"Geomean {name1} : {sum(performances1)/len(performances1)}")
+    print(f"Geomean {name2} : {sum(performances2)/len(performances2)}")
 
     # Plot the performances for the two datasets
     fig, ax = plt.subplots(figsize=(24, 12))
@@ -135,7 +155,7 @@ def graph_delta_merged(data1, data2, name1, name2, title):
     # ax.set_title('PT2 Cuda Eval Backend Comparison - HF')
     ax.legend()
     name = f"data/{title}.png"
-    print(f"Saving to {name}")
+    # print(f"Saving to {name}")
     plt.savefig(name, bbox_inches='tight')
 
 
@@ -150,7 +170,7 @@ def draw_per_kind_per_bench_graphs():
         inductor_eval = parse_log(f"data/{bench}_inductor_eval.log", f"cuda eval")
         inductor_train = parse_log(f"data/{bench}_inductor_train.log", f"cuda train")
         graph_delta_merged(inductor_eval, inductor_train, "Inference", "Training", title=f"{bench}_inductor_per_kind")
-
+        # describe_delta(inductor_eval, inductor_train, "Inference", "Training", f"{bench}_inductor_per_kind")
 
 # draw_per_kind_per_bench_graphs()
 
@@ -200,8 +220,8 @@ def draw_all_merged():
         return merged_list
 
     # describe_delta(merge(inductor), merge(nvfuser), "Inductor", "NVFuser", f"merged_inductor_nvfuser_gpu")
-    # describe_delta(merge(inductor), "Inductor", "NVFuser", f"all_inductor_gpu")
-    graph_delta([(merge(inductor), "Inductor")], f"merged_inductor_gpu")
+    describe_delta(merge(inductor), "Inductor", f"all_inductor_gpu")
+    # graph_delta([(merge(inductor), "Inductor")], f"merged_inductor_gpu")
 
 
 draw_per_kind_per_bench_graphs()
