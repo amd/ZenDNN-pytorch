@@ -336,6 +336,33 @@ void Reducer::check_grad_layout(
   }
 }
 
+void Reducer::point_grads_to_bucket() {
+  std::unordered_set<int> zeroed_buckets;
+  for (size_t variable_index = 0; variable_index < params_.size();
+       ++variable_index) {
+    const auto& bucket_index = variable_locators_[variable_index];
+    auto& bucket = buckets_[bucket_index.bucket_index];
+    if (zeroed_buckets.find(bucket_index.bucket_index) ==
+        zeroed_buckets.end()) {
+      bucket.gradients.zero_();
+      zeroed_buckets.insert(bucket_index.bucket_index);
+    }
+    auto& variable = bucket.variables[bucket_index.intra_bucket_index];
+    auto& bucket_view = bucket.bucket_views_out[bucket_index.intra_bucket_index];
+
+    runGradCallbackForVariable(variable, [&](auto& grad) {
+      if (!grad.defined()) {
+        // grad is None: assuming user called zero_grad(set_to_none=True)
+        // point grad to bucket
+        grad = bucket_view;
+        // The grad is modified and need to be written back.
+        return true;
+      }
+      // Grad is not none
+      return false;
+    });
+  };
+}
 void Reducer::mark_variable_ready_dense(size_t variable_index) {
   const auto& bucket_index = variable_locators_[variable_index];
   auto& bucket = buckets_[bucket_index.bucket_index];

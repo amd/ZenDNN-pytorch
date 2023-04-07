@@ -5171,6 +5171,12 @@ class DistributedTest:
                 gradient_as_bucket_view=False,
                 set_grad_to_none=False,
             )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "1"
+            self._test_ddp_native_mixed_precision(
+                gradient_as_bucket_view=False,
+                set_grad_to_none=False,
+            )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "0"
 
         @skip_if_lt_x_gpu(2)
         def test_ddp_native_mixed_precision_grad_as_bucket_view_no_set_grad_none(self):
@@ -5178,18 +5184,36 @@ class DistributedTest:
                 gradient_as_bucket_view=True,
                 set_grad_to_none=False,
             )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "1"
+            self._test_ddp_native_mixed_precision(
+                gradient_as_bucket_view=False,
+                set_grad_to_none=False,
+            )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "0"
 
         @skip_if_lt_x_gpu(2)
         def test_ddp_native_mixed_precision_grad_as_bucket_view_set_grad_to_none(self):
             self._test_ddp_native_mixed_precision(
                 gradient_as_bucket_view=True, set_grad_to_none=True
             )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "1"
+            self._test_ddp_native_mixed_precision(
+                gradient_as_bucket_view=False,
+                set_grad_to_none=False,
+            )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "0"
 
         @skip_if_lt_x_gpu(2)
         def test_ddp_native_mixed_precision_no_grad_as_bucket_view_set_grad_to_none(self):
             self._test_ddp_native_mixed_precision(
-                gradient_as_bucket_view=True, set_grad_to_none=True
+                gradient_as_bucket_view=False, set_grad_to_none=True
             )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "1"
+            self._test_ddp_native_mixed_precision(
+                gradient_as_bucket_view=False,
+                set_grad_to_none=False,
+            )
+            os.environ["DDP_POINT_GRADS_TO_BUCKET"] = "0"
 
         def _test_ddp_hook_parity(self, state, hook, num_validated_iters=100):
             rank = self.rank
