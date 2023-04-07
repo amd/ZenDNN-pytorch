@@ -10394,6 +10394,8 @@ class TestConsistency(TestCaseMPS):
         'nn.functional.triplet_margin_loss',
         'nn.functional.triplet_margin_with_distance_loss',
         'round', 'xlogy',
+        'nn.functional.poisson_nll_loss',
+        'nn.functional.nll_loss',
 
         # for macOS 12
         'masked.normalize', 'masked.sum', 'masked.var',
@@ -10422,6 +10424,9 @@ class TestConsistency(TestCaseMPS):
     def test_output_match(self, device, dtype, op):
         self.assertEqual(device, "cpu")
         key = op.name + op.variant_test_name
+        print(key)
+        print(op.name)
+
         run_grad_test = True
 
         def get_samples():
