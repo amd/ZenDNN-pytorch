@@ -67,7 +67,7 @@ dynamic_shapes = os.environ.get("TORCHDYNAMO_DYNAMIC_SHAPES") == "1"
 # When assume_static_by_default is True, we only allocate symbols for shapes marked dynamic via mark_dynamic.
 # NOTE - this flag can be removed once we can run dynamic_shapes=False w/ the mark_dynamic API
 # see [Note - on the state of mark_dynamic]
-assume_static_by_default = False
+assume_static_by_default = True
 
 
 class DYNAMIC_SHAPE_STRATEGY(Enum):
