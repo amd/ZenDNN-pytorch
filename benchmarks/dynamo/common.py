@@ -10,6 +10,7 @@ import itertools
 import logging
 import os
 import random
+import re
 import signal
 import subprocess
 import sys
@@ -170,11 +171,6 @@ CI_SKIP[CI("inductor", training=False)] = [
     "AllenaiLongformerBase",
     "DebertaV2ForQuestionAnswering",  # OOM
     "OPTForCausalLM",  # OOM
-    # TIMM
-    "cait_m36_384",  # Accuracy
-    "botnet26t_256",  # accuracy https://github.com/pytorch/pytorch/issues/93847
-    "gluon_xception65",  # accuracy https://github.com/pytorch/pytorch/issues/93847
-    "xcit_large_24_p8_224",  # TIMEOUT
 ]
 
 CI_SKIP[CI("inductor", training=False, device="cpu")] = [
@@ -233,15 +229,6 @@ CI_SKIP[CI("inductor", training=True)] = [
     "M2M100ForConditionalGeneration",  # OOM
     "XGLMForCausalLM",  # OOM
     "MT5ForConditionalGeneration",  # fails accuracy
-    # TIMM
-    "convit_base",  # fp64_OOM
-    "eca_halonext26ts",  # accuracy
-    "fbnetv3_b",  # accuracy
-    "levit_128",  # fp64_OOM
-    # https://github.com/pytorch/pytorch/issues/94066
-    "rexnet_100",  # Accuracy failed for key name stem.bn.weight.grad
-    "sebotnet33ts_256",  # Accuracy failed for key name stem.conv1.conv.weight.grad
-    "xcit_large_24_p8_224",  # fp64_OOM
 ]
 
 # Skips for dynamic=True
@@ -258,7 +245,6 @@ CI_SKIP[CI("aot_eager", training=True, dynamic=True)] = [
 CI_SKIP[CI("inductor", training=False, dynamic=True)] = [
     *CI_SKIP[CI("aot_eager", training=False, dynamic=True)],
     *CI_SKIP[CI("inductor", training=False)],
-    "convit_base",  # _print_Pow: assert exp.is_integer
 ]
 
 CI_SKIP[CI("inductor", training=True, dynamic=True)] = [
@@ -1029,6 +1015,7 @@ def maybe_init_distributed(should_init_distributed, port="6789", rank=0, world_s
 class BenchmarkRunner:
     def __init__(self):
         self.model_iter_fn = None
+        self.model_names = None
         self.grad_scaler = DummyGradScaler()
         self.autocast = NullContext
         self.optimizer = None
@@ -1084,6 +1071,10 @@ class BenchmarkRunner:
         return set()
 
     @property
+    def large_memory_models(self):
+        return set()
+
+    @property
     def slow_models(self):
         return set()
 
@@ -1097,10 +1088,6 @@ class BenchmarkRunner:
 
     @property
     def skip_not_suitable_for_training_models(self):
-        return set()
-
-    @property
-    def failing_torchinductor_models(self):
         return set()
 
     @property
@@ -1126,17 +1113,24 @@ class BenchmarkRunner:
             equal_nan = False
         return equal_nan
 
-    def iter_models(self, args):
-        for model_name in self.iter_model_names(args):
-            for device in args.devices:
-                try:
-                    yield self.load_model(
-                        device,
-                        model_name,
-                        batch_size=args.batch_size,
-                    )
-                except NotImplementedError:
-                    continue  # bad benchmark implementation
+    def iter_model_names(self, args):
+        start, end = self.get_benchmark_indices(len(self.model_names))
+        for index, model_name in enumerate(self.model_names):
+            if index < start or index >= end:
+                continue
+            if (
+                not re.search("|".join(args.filter), model_name, re.I)
+                or re.search("|".join(args.exclude), model_name, re.I)
+                or model_name in args.exclude_exact
+                or model_name in self.skip_models
+            ):
+                continue
+            if args.large_memory_models_only and (
+                model_name not in self.large_memory_models
+            ):
+                continue
+
+            yield model_name
 
     def validate_model(self, model, example_inputs):
         """
@@ -1283,7 +1277,7 @@ class BenchmarkRunner:
             self.args.cosine = True
             fp64_outputs = None
             if self.args.ci and self.args.training:
-                return record_status("fp64_OOM")
+                return record_status("fp64_OOM", dynamo_start_stats=start_stats)
 
         tolerance, cos_similarity = self.get_tolerance_and_cosine_flag(
             self.args.training, current_device, name
@@ -1531,6 +1525,11 @@ def parse_args(args=None):
     )
     parser.add_argument(
         "--exclude-exact", action="append", help="filter benchmarks with exact match"
+    )
+    parser.add_argument(
+        "--large-memory-models-only",
+        action="store_true",
+        help="Only run models that require over 24GB gpu memory. Useful for CI.",
     )
     parser.add_argument(
         "--total-partitions",
@@ -2090,30 +2089,6 @@ def run(runner, args, original_dir=None):
         global synchronize
         synchronize = torch.cuda.synchronize
 
-    if (
-        args.devices == ["cuda"]
-        and torch.cuda.get_device_properties(0).total_memory < 25 * 2**30
-    ):
-        # OOM errors on an RTX 3090 with 24gb RAM
-        runner.skip_models.update(
-            {
-                # torchbench
-                "hf_Longformer",
-                "timm_nfnet",
-                "timm_efficientdet",
-                # timm
-                "beit_base_patch16_224",
-                "cait_m36_384",
-                "convmixer_768_32",
-                "deit_base_distilled_patch16_224",
-                "dm_nfnet_f0",
-                "dpn107",
-                "dm_nfnet_f0",
-            }
-        )
-        if args.training:
-            runner.skip_models.add("hf_T5")
-
     if torch._dynamo.config.dynamic_shapes:
         # TODO(jansel): fix bugs in these
         runner.skip_models.update(runner.failing_dynamic_shape_models)
@@ -2151,12 +2126,8 @@ def run(runner, args, original_dir=None):
         runner.skip_models.update(runner.very_slow_models)
     elif args.devices == ["cuda"]:
         runner.skip_models.update(runner.skip_models_for_cuda)
-
-    if args.inductor or args.inductor_settings:
-        runner.skip_models.update(runner.failing_torchinductor_models)
-        if args.float16:
-            # TODO(jansel): check if correctness issue is real
-            runner.skip_models.add("yolov3")
+        if torch.cuda.get_device_properties(0).total_memory < 25 * 2**30:
+            runner.skip_models.update(runner.large_memory_models)
 
     if args.float16:
         # these give `INCORRECT - Variation in Eager runs itself` sometimes
@@ -2414,6 +2385,7 @@ def run(runner, args, original_dir=None):
             os.unlink(output_filename)
         if original_dir:
             os.chdir(original_dir)
+
         model_names = list(runner.iter_model_names(args))
         nmodels = len(model_names)
         for i, name in enumerate(model_names):

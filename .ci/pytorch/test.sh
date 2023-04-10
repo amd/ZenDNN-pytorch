@@ -268,6 +268,10 @@ elif [[ "${TEST_CONFIG}" == *inductor* && "${TEST_CONFIG}" != *perf* ]]; then
   DYNAMO_BENCHMARK_FLAGS+=(--inductor)
 fi
 
+if [[ "${TEST_CONFIG}" == *large_memory_models_only* ]]; then
+  DYNAMO_BENCHMARK_FLAGS+=(--large-memory-models-only)
+fi
+
 if [[ "${TEST_CONFIG}" == *dynamic* ]]; then
   DYNAMO_BENCHMARK_FLAGS+=(--dynamic-shapes --dynamic-batch-only)
 fi
@@ -350,20 +354,44 @@ test_single_dynamo_benchmark() {
     test_perf_for_dashboard "$suite" \
       "${DYNAMO_BENCHMARK_FLAGS[@]}" "$@" "${partition_flags[@]}"
   else
-    python "benchmarks/dynamo/$suite.py" \
-      --ci --accuracy --timing --explain \
-      "${DYNAMO_BENCHMARK_FLAGS[@]}" \
-      "$@" "${partition_flags[@]}" \
-      --output "$TEST_REPORTS_DIR/${name}_${suite}.csv"
-    python benchmarks/dynamo/check_csv.py \
-      -f "$TEST_REPORTS_DIR/${name}_${suite}.csv"
-    if [[ "${TEST_CONFIG}" == *inductor* ]] && [[ "${TEST_CONFIG}" != *cpu_accuracy* ]] && [[ "${TEST_CONFIG}" != *dynamic* ]]; then
-      # because I haven't dealt with dynamic expected artifacts yet,
-      # and non-inductor jobs (e.g. periodic, cpu-accuracy) may have different set of expected models.
-      # TODO: make update_expected.py produces combined expected csv file
+    if [[ "${TEST_CONFIG}" == *inductor_timm* ]] && [[ "${TEST_CONFIG}" != *cpu_accuracy* ]]; then
+      # Drop --ci for inductor_timm runs
+      # TODO: do the same for HF and TB, and for dynamo_eager and aot_eager
+      python "benchmarks/dynamo/$suite.py" \
+        --accuracy --timing --explain \
+        "${DYNAMO_BENCHMARK_FLAGS[@]}" \
+        "$@" "${partition_flags[@]}" \
+        --output "$TEST_REPORTS_DIR/${name}_${suite}.csv"
+    else
+      python "benchmarks/dynamo/$suite.py" \
+        --ci --accuracy --timing --explain \
+        "${DYNAMO_BENCHMARK_FLAGS[@]}" \
+        "$@" "${partition_flags[@]}" \
+        --output "$TEST_REPORTS_DIR/${name}_${suite}.csv"
+    fi
+
+    if [[ "${TEST_CONFIG}" == *inductor-skip-for-this-run* ]] && [[ "${TEST_CONFIG}" != *cpu_accuracy* ]]; then
+      # Other jobs (e.g. periodic, cpu-accuracy) may have different set of expected models.
+      if [[ "${TEST_CONFIG}" == *dynamic* ]]; then
+        expected_csv="${name}_${suite}_dynamic.csv"
+      else
+        expected_csv="${name}_${suite}.csv"
+      fi
+      if [[ "${TEST_CONFIG}" == *inductor_timm* ]]; then
+        python benchmarks/dynamo/check_accuracy.py \
+        --actual "$TEST_REPORTS_DIR/${name}_$suite.csv" \
+        --expected "benchmarks/dynamo/ci_expected_accuracy/${expected_csv}"
+      else
+        # There are more cleanup coming for HF and TB
+        python benchmarks/dynamo/check_csv.py -f "$TEST_REPORTS_DIR/${name}_${suite}.csv"
+      fi
       python benchmarks/dynamo/check_graph_breaks.py \
         --actual "$TEST_REPORTS_DIR/${name}_$suite.csv" \
-        --expected "benchmarks/dynamo/ci_expected_accuracy/${name}_${suite}.csv"
+        --expected "benchmarks/dynamo/ci_expected_accuracy/${expected_csv}"
+    else
+      echo
+      # No expected csv to check against yet
+      # python benchmarks/dynamo/check_csv.py -f "$TEST_REPORTS_DIR/${name}_${suite}.csv"
     fi
   fi
 }
@@ -936,6 +964,19 @@ elif [[ "${TEST_CONFIG}" == *torchbench* ]]; then
     checkout_install_torchbench
     PYTHONPATH=$(pwd)/torchbench test_dynamo_benchmark torchbench "$id"
   fi
+elif [[ "${TEST_CONFIG}" == *large_memory_models_only* ]]; then
+  install_torchaudio cuda
+  install_torchtext
+  install_torchvision
+  install_huggingface
+  install_timm
+  # checkout_install_torchbench
+
+  # These tests will run with --large-memory-models-only, so we only need one shard
+  # TODO: also do this for HF and TB
+  # test_dynamo_benchmark huggingface "$id"
+  test_dynamo_benchmark timm_models "$id"
+  # PYTHONPATH=$(pwd)/torchbench test_dynamo_benchmark torchbench "$id"
 elif [[ "${TEST_CONFIG}" == *inductor* && "${SHARD_NUMBER}" == 1 ]]; then
   install_torchvision
   test_inductor
