@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 from torch.nn.utils.parametrize import type_before_parametrizations, is_parametrized
 from itertools import chain
 
@@ -14,33 +14,30 @@ __all__ = [
 ]
 
 
-def module_contains_param(module: nn.Module, parametrization: Type[nn.Module]) -> bool:
+def module_contains_param(module, parametrization):
     if is_parametrized(module):
         # see if any of the module tensors have a parametriztion attached that matches the one passed in
         return any(
             [
                 any(isinstance(param, parametrization) for param in param_list)
-                for key, param_list in module.parametrizations.items()  # type: ignore[union-attr,operator]
+                for key, param_list in module.parametrizations.items()
             ]
         )
     return False
 
-
-def swap_module(
-    mod: nn.Module, mapping: Dict[Type[nn.Module], Type[nn.Module]]
-) -> nn.Module:
-    r"""Swaps the module using from_dense according to the mapping passed in.
+def swap_module(mod, mapping):
+    r"""Swaps the module if it has a quantized counterpart and it has an
+    `observer` attached.
     Args:
         mod: input module
         mapping: a dictionary that maps from nn module to sparse nn module
     Return:
-        The corresponding sparse module of `mod` according to mapping, created using from_dense
+        The corresponding sparse module of `mod` according to mapping
     """
+    new_mod = mod
     if type_before_parametrizations(mod) in mapping:
         sparse_mod = mapping[type_before_parametrizations(mod)]
-
-        # TODO Fix this typing, as Type[Module] has no attribute "from_dense"
-        new_mod = sparse_mod.from_dense(mod)  # type: ignore[attr-defined]
+        new_mod = sparse_mod.from_dense(mod)
 
         # Preserve module's pre forward hooks. They'll be called on quantized input
         for pre_hook_fn in mod._forward_pre_hooks.values():
@@ -48,7 +45,8 @@ def swap_module(
         # Preserve module's post forward hooks except _observer_forward_hook
         # After convert they'll work with quantized output
         for hook_fn in mod._forward_hooks.values():
-            new_mod.register_forward_hook(hook_fn)
+            if hook_fn is not _observer_forward_hook:
+                new_mod.register_forward_hook(hook_fn)
 
         # respect device affinity when swapping modules
         devices = {p.device for p in chain(mod.parameters(), mod.buffers())}
@@ -60,15 +58,9 @@ def swap_module(
         if device:
             new_mod.to(device)
 
-        return new_mod
+    return new_mod
 
-    else:
-        return mod
-
-
-def module_to_fqn(
-    model: nn.Module, module: nn.Module, prefix: str = ""
-) -> Optional[str]:
+def module_to_fqn(model: nn.Module, module: nn.Module, prefix: str = "") -> Optional[str]:
     """
     Returns the fqn for a module or None if module not a descendent of model.
     """
@@ -123,7 +115,6 @@ class FakeSparsity(nn.Module):
         contents of the mask can change, but the mask reference itself should
         not.
     """
-
     def __init__(self, mask):
         super().__init__()
         self.register_buffer("mask", mask)
