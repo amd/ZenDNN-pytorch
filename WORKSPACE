@@ -185,9 +185,14 @@ http_archive(
 
 http_archive(
     name = "rules_python",
-    sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+    sha256 = "a644da969b6824cc87f8fe7b18101a8a6c57da5db39caa6566ec6109f37d2141",
+    strip_prefix = "rules_python-0.20.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.20.0/rules_python-0.20.0.tar.gz",
 )
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
 
 load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
@@ -199,10 +204,6 @@ python_configure(
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
-
-load("@rules_python//python:repositories.bzl", "py_repositories")
-
-py_repositories()
 
 new_local_repository(
     name = "cuda",
