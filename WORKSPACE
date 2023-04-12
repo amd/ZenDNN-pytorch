@@ -183,6 +183,8 @@ http_archive(
     ],
 )
 
+# See https://github.com/bazelbuild/rules_python for more details of
+# the following sections.
 http_archive(
     name = "rules_python",
     sha256 = "a644da969b6824cc87f8fe7b18101a8a6c57da5db39caa6566ec6109f37d2141",
@@ -190,9 +192,24 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_python/releases/download/0.20.0/rules_python-0.20.0.tar.gz",
 )
 
-load("@rules_python//python:repositories.bzl", "py_repositories")
+# Use a hermetic Python 3.8 toolchain.
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 
-py_repositories()
+python_register_toolchains(
+    name = "python3_8",
+    python_version = "3.8",
+)
+
+# Make our PyPI requirements available to Python targets via,
+# e.g. requirement("PyYAML") after loading:
+# load("@pip_parsed_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(requirements = "//:requirements_lock.txt")
+
+load("@pip_parsed_deps//:requirements.bzl", "install_deps")
+
+install_deps()
 
 load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
