@@ -9,6 +9,7 @@ import unittest
 from typing import Optional
 
 import numpy as np
+import packaging.version
 
 import torch
 from torch.autograd import function
@@ -157,6 +158,30 @@ def skipScriptTest(skip_before_opset_version: Optional[int] = None, reason: str 
     return skip_dec
 
 
+# TODO(titaiwang): dynamic_only is specific to the situation that dynamic fx exporter
+# is not yet supported by ORT until 1.15.0. Remove dynamic_only once ORT 1.15.0 is released.
+def skip_min_ort_version(reason: str, version: str, dynamic_only: bool = False):
+    def skip_dec(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if (
+                packaging.version.parse(self.ort_version).release
+                < packaging.version.parse(version).release
+            ):
+                if dynamic_only and not self.dynamic_shapes:
+                    return func(self, *args, **kwargs)
+
+                raise unittest.SkipTest(
+                    f"ONNX Runtime version: {version} is older than required version {version}. "
+                    f"Reason: {reason}."
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return skip_dec
+
+
 def skip_dynamic_fx_test(reason: str):
     """Skip dynamic exporting test.
 
@@ -174,6 +199,7 @@ def skip_dynamic_fx_test(reason: str):
                 raise unittest.SkipTest(
                     f"Skip verify dynamic shapes test for FX. {reason}"
                 )
+            return func(self, *args, **kwargs)
 
         return wrapper
 
