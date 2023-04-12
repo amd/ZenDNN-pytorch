@@ -1,0 +1,16 @@
+load("//:tools/bazel.bzl", "rules")
+load(":build.bzl", "define_targets")
+
+define_targets(rules = rules)
+
+sh_test(
+    name = "bazel_test",
+    srcs = [":cmake_macros_tester"],
+    env = {
+        "BUILD_SHARED_LIBS": "1",
+        "USE_GLOG": "1",
+        "USE_GFLAGS": "1",
+        "USE_NUMA": "0",
+        "USE_MSVC_STATIC_RUNTIME": "1",
+    },
+)
