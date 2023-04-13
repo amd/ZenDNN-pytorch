@@ -1,4 +1,4 @@
-from ._internal import register_artifact, register_log
+from ._internal import _codegen_set_logs, register_artifact, register_log
 
 register_log("dynamo", "torch._dynamo")
 register_log("aot", "torch._functorch.aot_autograd")
@@ -14,3 +14,7 @@ register_artifact("aot_joint_graph")
 register_artifact("recompiles")
 register_artifact("output_code", off_by_default=True)
 register_artifact("schedule", off_by_default=True)
+
+
+# don't touch this
+_codegen_set_logs()

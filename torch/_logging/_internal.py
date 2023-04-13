@@ -119,25 +119,44 @@ log_state = LogState()
 # User API for setting log properties
 # ex. format set_logs(LOG_NAME=LEVEL, ARTIFACT_NAME=bool)
 # ex. set_logs(dynamo=logging.DEBUG, graph_code=True)
-def set_logs(
-    dynamo=DEFAULT_LOG_LEVEL,
-    aot=DEFAULT_LOG_LEVEL,
-    inductor=DEFAULT_LOG_LEVEL,
-    bytecode=False,
-    aot_graphs=False,
-    aot_joint_graph=False,
-    graph=False,
-    graph_code=False,
-    guards=False,
-    recompiles=False,
-    output_code=False,
-    schedule=False,
-):
+def set_logs(**kwargs):
+    """hi"""
+    _set_logs(**kwargs)
+
+
+def _codegen_set_logs():
+    registered_args = list(
+        itertools.chain(
+            log_registry.log_alias_to_log_qname.keys(), log_registry.artifact_names
+        )
+    )
+
+    def format_args(args):
+        def get_default(arg):
+            if log_registry.is_artifact(arg):
+                return "False"
+            else:
+                return "DEFAULT_LOG_LEVEL"
+
+        signature_str = ",".join([f"{arg}={get_default(arg)}" for arg in args])
+        call_str = ",".join([f"{arg}={arg}" for arg in args])
+        return signature_str, call_str
+
+    signature_str, call_str = format_args(registered_args)
+
+    fn_str = f"""
+# User API for setting log properties
+# ex. format set_logs(LOG_NAME=LEVEL, ARTIFACT_NAME=bool)
+# ex. set_logs(dynamo=logging.DEBUG, graph_code=True)
+def set_logs({signature_str}):
+    \"\"\"Set log levels and enable/disable artifacts\"\"\"
+    _set_logs({call_str})
+
     """
-    Enable setting the log level of individual components through kwargs.
-    Args are set using the following format:
-        set_logs(<log_name>=<log_level>,...<artifact_name>=<True or False>)
-    """
+    exec(fn_str, globals())
+
+
+def _set_logs(**kwargs):
     # ignore if env var is set
     if LOG_ENV_VAR in os.environ:
         log.warning(
@@ -146,43 +165,24 @@ def set_logs(
         return
 
     log_state.clear()
-
-    def _set_logs(**kwargs):
-        for alias, val in kwargs.items():
-            if log_registry.is_artifact(alias):
-                if val:
-                    log_state.enable_artifact(alias)
-            elif log_registry.is_log(alias):
-                if val not in logging._levelToName:
-                    raise ValueError(
-                        f"Unrecognized log level for log {alias}: {val}, valid level values "
-                        f"are: {','.join([str(k) for k in logging._levelToName.keys()])}"
-                    )
-                if val != DEFAULT_LOG_LEVEL:
-                    log_state.enable_log(
-                        log_registry.log_alias_to_log_qname[alias], val
-                    )
-            else:
+    for alias, val in kwargs.items():
+        if log_registry.is_artifact(alias):
+            if val:
+                log_state.enable_artifact(alias)
+        elif log_registry.is_log(alias):
+            if val not in logging._levelToName:
                 raise ValueError(
-                    f"Unrecognized log or artifact name passed to set_logs: {alias}"
+                    f"Unrecognized log level for log {alias}: {val}, valid level values "
+                    f"are: {','.join([str(k) for k in logging._levelToName.keys()])}"
                 )
+            if val != DEFAULT_LOG_LEVEL:
+                log_state.enable_log(log_registry.log_alias_to_log_qname[alias], val)
+        else:
+            raise ValueError(
+                f"Unrecognized log or artifact name passed to set_logs: {alias}"
+            )
 
-        _init_logs()
-
-    _set_logs(
-        dynamo=dynamo,
-        aot=aot,
-        inductor=inductor,
-        bytecode=bytecode,
-        aot_graphs=aot_graphs,
-        aot_joint_graph=aot_joint_graph,
-        graph=graph,
-        graph_code=graph_code,
-        guards=guards,
-        recompiles=recompiles,
-        output_code=output_code,
-        schedule=schedule,
-    )
+    _init_logs()
 
 
 def register_log(setting_name, log_name):
