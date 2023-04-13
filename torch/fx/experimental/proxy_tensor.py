@@ -414,7 +414,8 @@ def proxy_call(proxy_mode, func, pre_autograd, args, kwargs):
     else:
         constant = None
 
-    track_tensor_tree(out, proxy_out, constant=constant, tracer=tracer)
+    with inside_mode(proxy_mode):
+        track_tensor_tree(out, proxy_out, constant=constant, tracer=tracer)
     return out
 
 
