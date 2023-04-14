@@ -328,7 +328,7 @@ Tensor embedding_dense_backward_cuda(const Tensor & grad_, const Tensor & indice
       cuda::cub::inclusive_scan_by_key(
         thrust::make_reverse_iterator(sorted_data + num_indices),
         thrust::make_reverse_iterator(count_data + num_indices),
-        thrust::make_reverse_iterator(count_data + num_indices),
+        thrust::make_reverse_iterator(count.mutable_data_ptr<index_t>() + num_indices),
         at_cuda_detail::cub::Max(),
         num_indices
       );
