@@ -20,6 +20,7 @@
 #include <ATen/ops/_unique.h>
 #include <ATen/ops/add_native.h>
 #include <ATen/ops/resize_as_sparse_native.h>
+#include <ATen/ops/sum.h>
 #include <ATen/ops/tensor.h>
 #include <ATen/ops/zeros.h>
 #endif
@@ -636,6 +637,17 @@ Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
     [&] {
       result = reduce_sparse_csr_cuda_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
     });
+  return result;
+}
+
+Tensor sum_sparse_csr_cuda(const Tensor& input, at::OptionalIntArrayRef dims_to_sum, bool keepdim, c10::optional<ScalarType> dtype) {
+  Tensor result;
+  if (dims_to_sum.has_value()){
+    keepdim = true;
+    result = _sparse_csr_sum_cuda(input, *dims_to_sum, keepdim, dtype);
+  } else {
+    result = at::sum(input, dtype);
+  }
   return result;
 }
 

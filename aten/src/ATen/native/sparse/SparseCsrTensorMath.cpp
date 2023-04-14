@@ -109,6 +109,7 @@
 #include <ATen/ops/sparse_mask_native.h>
 #include <ATen/ops/sqrt.h>
 #include <ATen/ops/sqrt_native.h>
+#include <ATen/ops/sum.h>
 #include <ATen/ops/tan.h>
 #include <ATen/ops/tan_native.h>
 #include <ATen/ops/tanh.h>
@@ -1268,6 +1269,17 @@ Tensor _sparse_csr_sum_cpu(const Tensor& input, IntArrayRef dims_to_sum, bool ke
     [&] {
       result = reduce_sparse_csr_cpu_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
     });
+  return result;
+}
+
+Tensor sum_sparse_csr_cpu(const Tensor& input, at::OptionalIntArrayRef dims_to_sum, bool keepdim, c10::optional<ScalarType> dtype) {
+  Tensor result;
+  if (dims_to_sum.has_value()){
+    keepdim = true;
+    result = _sparse_csr_sum_cpu(input, *dims_to_sum, keepdim, dtype);
+  } else {
+    result = at::sum(input, dtype);
+  }
   return result;
 }
 
