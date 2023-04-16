@@ -332,12 +332,13 @@ class DTensor(torch.Tensor):  # pyre-ignore[13]: pyre is bad at __new__
 
         .. note:: `redistribute` is differentiable.
         """
-        # NOTE: This redistribute API currently only supports out
+        # This API perform necessary transformations and get
+        # a new DTensor with the new spec. i.e. for
+        # sharding it's a reshard behavior.
+        # Note that redistribute currently only supports out
         # of place redistribution, i.e. it always create a new
         # DTensor object and leave the original one unchanged.
-
-        # if device_mesh is not specified, use the current device_mesh
-        device_mesh = device_mesh or self.device_mesh
+        device_mesh = get_global_device_mesh() if device_mesh is None else device_mesh
         # raise error if new placements not specified
         if placements is None:
             raise RuntimeError("placements is needed for redistribute!")

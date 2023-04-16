@@ -264,15 +264,9 @@ void Pickler::pushBinGet(uint32_t memo_id) {
 
 // unmemoized encoding of a string
 void Pickler::pushStringImpl(const std::string& string) {
-  if (string.size() <= UINT_MAX) {
-    push<PickleOpCode>(PickleOpCode::BINUNICODE);
-    push<uint32_t>(to_le32(string.size()));
-    pushBytes(string);
-  } else {
-    push<PickleOpCode>(PickleOpCode::BINUNICODE8);
-    push<int64_t>(to_le64(string.size()));
-    pushBytes(string);
-  }
+  push<PickleOpCode>(PickleOpCode::BINUNICODE);
+  push<uint32_t>(to_le32(string.size()));
+  pushBytes(string);
 }
 
 void Pickler::pushString(const std::string& string) {

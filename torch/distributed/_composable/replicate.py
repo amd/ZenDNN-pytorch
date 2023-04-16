@@ -1,10 +1,9 @@
-from typing import Optional, Tuple
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
 
 from torch.nn.parallel import DistributedDataParallel
-
 from .contract import _get_registry, contract
 
 
@@ -24,7 +23,7 @@ def replicate(
         >>> replicate(module)
     """
     torch._C._log_api_usage_once("torch.distributed.replicate")
-    _ReplicateState().mark_module(module, **kwargs)
+    _ReplicateState().mark_modules(module, **kwargs)
     return module
 
 
@@ -35,21 +34,23 @@ def _can_compose(module: nn.Module) -> bool:
 
 class _ReplicateState:
     def __init__(self) -> None:
-        self.module: Optional[nn.Module] = None
+        self.modules: List[nn.Module] = []
         self.has_initialized: bool = False
         self._param_list: nn.ParameterList = nn.ParameterList()
         self.kwargs: dict = {}
 
-    def mark_module(self, module: nn.Module, **kwargs) -> None:
-        if not _can_compose(module):
-            raise AssertionError(
-                "Cannot apply `replicate()` on a Module already managed by `fully_shard`"
-            )
-        self.module = module
-        replicate.state(module)._params_collected = False
-        module.register_forward_pre_hook(self.forward_pre_hook)
-        # TODO(@yhcharles): fix type error
-        module.register_forward_hook(self.forward_post_hook)  # type: ignore[arg-type]
+    def mark_modules(self, *modules: nn.Module, **kwargs) -> None:
+        for module in modules:
+            if not _can_compose(module):
+                raise AssertionError(
+                    "Cannot apply `replicate()` on a Module already managed by `fully_shard`"
+                )
+            self.modules.append(module)
+            replicate.state(module)._distributed_state = self
+            replicate.state(module)._params_collected = False
+            module.register_forward_pre_hook(self.forward_pre_hook)
+            # TODO(@yhcharles): fix type error
+            module.register_forward_hook(self.forward_post_hook)  # type: ignore[arg-type]
         self.kwargs = kwargs
 
     def _recursive_collect_params(self, module: nn.Module) -> None:
@@ -58,14 +59,10 @@ class _ReplicateState:
             return
 
         # skip if module parameters already collected
-        replicate_state = replicate.state(module)
-        # if replicate_state is None, `module` is a child module that has not been explicitly
-        # tagged as replicate().
-        if replicate_state is not None:
-            if hasattr(replicate_state, "_params_collected"):
-                if replicate_state._params_collected:
-                    return
-                replicate_state._params_collected = True
+        if hasattr(replicate.state(module), "_params_collected"):
+            if replicate.state(module)._params_collected:
+                return
+            replicate.state(module)._params_collected = True
 
         self._param_list.extend(
             param for param in module.parameters(recurse=False) if param.requires_grad
@@ -78,8 +75,8 @@ class _ReplicateState:
             return
 
         self.has_initialized = True
-
-        self._recursive_collect_params(self.module)  # type: ignore[arg-type]
+        for module in self.modules:
+            self._recursive_collect_params(module)
 
         self._ddp = DistributedDataParallel(self._param_list, **self.kwargs)
 
