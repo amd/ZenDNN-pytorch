@@ -188,44 +188,36 @@ def generate_random_tensors(shape: torch.Size, dtype: torch.dtype):
 
 
 @_beartype.beartype
-def _fx_args_to_torch_args(
+def _recursive_wrap_args(
     complete_args: List[_type_utils.Argument],
 ) -> List[_type_utils.Argument]:
-    """Recursively convert fx args to torch args"""
+    """Wrap args in torch.fx.Node to FakeTensor"""
     wrapped_args: List[_type_utils.Argument] = []
     for arg in complete_args:
         if isinstance(arg, torch.fx.Node):
-            # NOTE(titaiwang): The arg type here should align to the type handled in
-            # shape.inference.FakeTensorPropGetStaticShapes. Currently, we are aware
-            # of FakeTensor/Tensor/SymInt/SymFloat/Symbool/int/float/bool could be in
-            # arg.meta["static_shape"].
-            fake_tensor = arg.meta.get("static_shape", None)
+            fake_tensor = arg.meta["val"]
             if isinstance(fake_tensor, torch.Tensor):
                 real_tensor = generate_random_tensors(
                     fake_tensor.shape, fake_tensor.dtype
                 )
                 wrapped_args.append(real_tensor)
-            elif isinstance(fake_tensor, (int, float, bool)):
+            elif isinstance(fake_tensor, (int, float)):
+                # TODO(titaiwang): Could dtype be inside a fx.Node?
                 wrapped_args.append(fake_tensor)
-            elif isinstance(fake_tensor, (torch.SymBool, torch.SymInt, torch.SymFloat)):
-                raise ValueError(
-                    f"Unexpected input argument Sym type found inside fx.Node. arg: {arg}; "
-                    f"arg.meta['static_shape']: {fake_tensor}; type(arg.meta['static_shape']): "
-                    f"{type(fake_tensor)}. Sym type is not supported in op_level_debug."
-                )
             else:
-                raise ValueError(
-                    f"Unexpected input argument type found inside fx.Node. arg: {arg}; "
-                    f"arg.meta['static_shape']: {fake_tensor}; type(arg.meta['static_shape']): "
-                    f"{type(fake_tensor)}."
+                warnings.warn(
+                    f"Unexpected argument type found inside fx.Node. arg: {arg}; "
+                    f"arg.meta['val']: {fake_tensor}; type(arg.meta['val']): "
+                    f"{type(fake_tensor)}. This might lead to an error when running on Ops."
                 )
         elif isinstance(arg, Sequence):
-            wrapped_args.append(_fx_args_to_torch_args(arg))
+            wrapped_args.append(_recursive_wrap_args(arg))
         elif isinstance(arg, (int, float, torch.dtype)):
             wrapped_args.append(arg)
         else:
-            raise ValueError(
-                f"Unexpected input argument type is found in node arguments. arg: {arg}; "
+            warnings.warn(
+                f"Unexpected argument type found. arg: {arg}; type(arg): {type(arg)}. "
+                "This might lead to an error when running on Ops"
             )
 
     return wrapped_args
@@ -239,6 +231,6 @@ def wrap_fx_args_as_torch_args(
     """Prepare torch format args and kwargs for op-level validation by using fake tensor to create real tensor to feed in ops"""
 
     # NOTE: This function only supports FakeTensor with concrete shapes
-    torch_args: List[_type_utils.Argument] = _fx_args_to_torch_args(complete_args)
+    torch_args: List[_type_utils.Argument] = _recursive_wrap_args(complete_args)
     torch_kwargs = complete_kwargs
-    return tuple(torch_args), torch_kwargs
+    return (tuple(torch_args), torch_kwargs)

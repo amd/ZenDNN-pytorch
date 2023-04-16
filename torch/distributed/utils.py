@@ -62,18 +62,14 @@ def _recursive_to(inputs, target_device, use_side_stream_for_tensor_copies):
             if not use_side_stream_for_tensor_copies:
                 return (obj.to(target_device),)
             else:
-                # If the custom module is not registered to torch, stream is not used for acceleration
-                device_mod = getattr(torch, device.type, None)
-                if device.type == "cpu" or device_mod is None:
-                    return (obj.to(target_device),)
-                # Perform CPU -> target_device copies in a background stream. This code is
+                # Perform CPU -> GPU copies in a background stream. This code is
                 # motivated from similar logic in torch/nn/parallel/_functions.py
-                stream = _get_stream(target_device)
-                with device_mod.stream(stream):
-                    output = obj.to(target_device)
+                stream = _get_stream(target_device.index)
+                with torch.cuda.stream(stream):
+                    output = obj.to(target_device.index)
                 # synchronize with the copy stream
                 with torch.cuda.device(target_device.index):
-                    current_stream = device_mod.current_stream()
+                    current_stream = torch.cuda.current_stream()
                     # Sync the current stream with the copy stream
                     current_stream.wait_stream(stream)
                     # Ensure tensor memory is not reused until work on

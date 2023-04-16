@@ -89,17 +89,12 @@ def download_artifacts_and_extract_csvs(urls):
             artifact = ZipFile(BytesIO(resp.read()))
             for phase in ("training", "inference"):
                 name = f"test/test-reports/{phase}_{subsuite}.csv"
-                try:
-                    df = pd.read_csv(artifact.open(name))
-                    prev_df = dataframes.get((suite, phase), None)
+                df = pd.read_csv(artifact.open(name))
+                prev_df = dataframes.get((suite, phase), None)
 
-                    dataframes[(suite, phase)] = (
-                        pd.concat([prev_df, df]) if prev_df is not None else df
-                    )
-                except KeyError:
-                    print(
-                        f"Warning: Unable to find {name} in artifacts file from {url}, continuing"
-                    )
+                dataframes[(suite, phase)] = (
+                    pd.concat([prev_df, df]) if prev_df is not None else df
+                )
 
     except urllib.error.HTTPError:
         print(f"Unable to download {url}, perhaps the CI job isn't finished?")

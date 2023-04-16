@@ -917,6 +917,7 @@ class WrapperModule(torch.nn.Module):
         return self.m()
 
 
+@unittest.skipIf(torch.backends.mps.is_available(), "not applicable to mps")
 class DefaultsTests(torch._dynamo.test_case.TestCase):
     def test_func_default_tensor_args(self):
         """

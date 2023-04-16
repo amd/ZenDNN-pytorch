@@ -1,20 +1,8 @@
 //  Copyright © 2022 Apple Inc.
-#define TORCH_ASSERT_ONLY_METHOD_OPERATORS
+
 #include <ATen/native/LinearAlgebraUtils.h>
 #include <ATen/native/Resize.h>
 #include <ATen/native/mps/OperationUtils.h>
-
-#ifndef AT_PER_OPERATOR_HEADERS
-#include <ATen/Functions.h>
-#include <ATen/NativeFunctions.h>
-#else
-#include <ATen/ops/addmm_native.h>
-#include <ATen/ops/addr_native.h>
-#include <ATen/ops/baddbmm_native.h>
-#include <ATen/ops/bmm_native.h>
-#include <ATen/ops/mm_native.h>
-#include <ATen/ops/triangular_solve_native.h>
-#endif
 
 namespace at::native {
 namespace mps {
@@ -348,7 +336,7 @@ Tensor& addmm_out_mps_impl(const Tensor& bias,
   if (&output != &self) {
     output.resize_(bias_sizes);
     if (beta.toComplexDouble() != 0.0) {
-      output.copy_(*bias_);
+      at::native::copy_(output, *bias_);
     }
   }
   IntArrayRef output_sizes = output.sizes();
@@ -671,7 +659,7 @@ Tensor& addr_out_mps(const Tensor& self,
   if (&result != &vec1) {
     result.resize_(self_sizes);
     if (beta.toComplexDouble() != 0.0) {
-      result.copy_(*self_);
+      at::native::copy_(result, *self_);
     }
   }
 
@@ -834,7 +822,7 @@ Tensor& linalg_solve_triangular_mps_out(const Tensor& A,
 }
 
 Tensor linalg_solve_triangular_mps(const Tensor& A, const Tensor& B, bool upper, bool left, bool unitriangular) {
-  Tensor out = at::empty({0}, A.scalar_type(), c10::nullopt, kMPS, c10::nullopt, MemoryFormat::Contiguous);
+  Tensor out = empty_mps({0}, A.scalar_type(), c10::nullopt, kMPS, c10::nullopt, MemoryFormat::Contiguous);
   mps::linalg_solve_triangular_mps_impl(A, B, upper, /*transpose=*/false, left, unitriangular, out);
   return out;
 }
@@ -848,7 +836,7 @@ TORCH_IMPL_FUNC(triangular_solve_mps_out)
  const Tensor& result,
  const Tensor& clone_A) {
   clone_A.copy_(A);
-  Tensor out = at::empty({0}, A.scalar_type(), c10::nullopt, kMPS, c10::nullopt, MemoryFormat::Contiguous);
+  Tensor out = empty_mps({0}, A.scalar_type(), c10::nullopt, kMPS, c10::nullopt, MemoryFormat::Contiguous);
   mps::linalg_solve_triangular_mps_impl(A, self, upper, transpose, /*left=*/true, unitriangular, out);
   result.resize_(out.sizes());
   result.copy_(out);

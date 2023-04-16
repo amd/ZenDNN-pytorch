@@ -4,7 +4,6 @@ import dataclasses
 import enum
 import logging
 import traceback
-import unittest.mock
 import weakref
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -97,7 +96,6 @@ class GuardBuilderBase:
 
 class ShapeGuard(NamedTuple):
     expr: sympy.Expr
-    # TODO: store this in slightly less formatted form
     stack: str
 
 
@@ -344,7 +342,7 @@ class TracingContext:
     Provides the currently installed TracingContext, or None.
 
     Note that it is a staticmethod, and invocations outside of `with tracing()` (see below), are valid but
-    will return None.
+    will return NoNe.
     """
 
     @staticmethod
@@ -356,30 +354,6 @@ class TracingContext:
         self.fake_mode = fake_mode
         self.frame_summary_stack = []
         self.loc_in_frame = None
-
-    @staticmethod
-    def extract_stack():
-        self = TracingContext.get()
-        if self is None:
-            return traceback.StackSummary()
-        stack = list(self.frame_summary_stack)
-        if self.loc_in_frame is not None:
-            stack.append(self.loc_in_frame)
-        return traceback.StackSummary.from_list(stack)
-
-    # Call this when you want to call into some code that isn't necessarily
-    # associated with the current frame state
-    @staticmethod
-    @contextlib.contextmanager
-    def clear_frame():
-        tc = TracingContext.get()
-        assert (
-            tc is not None
-        ), "Frame context manager must be called within an ongoing trace."
-        with unittest.mock.patch.object(
-            tc, "frame_summary_stack", []
-        ), unittest.mock.patch.object(tc, "loc_in_frame", None):
-            yield
 
     @staticmethod
     @contextlib.contextmanager
@@ -395,12 +369,17 @@ class TracingContext:
             tc.frame_summary_stack.pop()
 
     @staticmethod
-    def set_current_loc(filename, lineno, frame_name):
+    @contextlib.contextmanager
+    def current_loc(filename, lineno, frame_name):
         tc = TracingContext.get()
         assert (
             tc is not None
         ), "Loc context manager must be called within an ongoing trace."
         tc.loc_in_frame = traceback.FrameSummary(filename, lineno, frame_name)
+        try:
+            yield
+        finally:
+            tc.loc_in_frame = None
 
 
 """

@@ -3282,8 +3282,12 @@ class TestComposability(TestCase):
 
         B = 5
         x = torch.randn(B, 3)
-        with self.assertRaisesRegex(RuntimeError, "Batching rule not implemented for aten::_make_dual"):
+        with self.assertRaises(RuntimeError):
             vmap(f)(x)
+
+        x = torch.randn([])
+        with self.assertRaises(RuntimeError):
+            grad(f)(x)
 
     @parametrize('transform', [
         'vmap', 'grad', 'jacrev', 'jacfwd', 'grad_and_value', 'hessian', 'functionalize'

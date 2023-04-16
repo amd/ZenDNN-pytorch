@@ -93,7 +93,6 @@ class TestSubgraphRewriter(JitTestCase):
         class M(torch.nn.Module):
             def forward(self, x):
                 val = torch.neg(x)
-                val = torch.add(val, val)
                 return torch.add(val, val)
 
         def pattern(x):
@@ -116,9 +115,9 @@ class TestSubgraphRewriter(JitTestCase):
 
         ref_output = comparison_fn(x)
         test_output = traced.forward(x)
-        no_replacements = len(matches) == 2 and len(matches[1].replacements) == 0
+        one_replacement = len(matches) == 1 and len(matches[0].replacements) == 0
         self.assertEqual(ref_output, test_output)
-        self.assertTrue(no_replacements)
+        self.assertTrue(one_replacement)
 
     def test_subgraph_rewriter_single_pattern_match(self):
         class M(torch.nn.Module):
