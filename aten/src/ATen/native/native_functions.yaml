@@ -5470,8 +5470,7 @@
   dispatch:
     NestedTensorCPU: NestedTensor_sum_dim_CPU
     SparseCPU, SparseCUDA: sum_sparse_coo
-    SparseCsrCPU: sum_sparse_csr_cpu
-    SparseCsrCUDA: sum_sparse_csr_cuda
+    SparseCsrCPU, SparseCsrCUDA: sum_sparse_csr # TODO: Align the signature of sum.dim_IntList and _sparse_csr_sum.dim_dtype
   tags: core
 
 - func: sum.dim_DimnameList(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
