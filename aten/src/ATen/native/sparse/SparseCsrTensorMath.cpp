@@ -1030,7 +1030,7 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
 
   AT_DISPATCH_INDEX_TYPES(col_indices.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
                           [&]() {
-                            index_t* columns_map_ptr = columns_map.data_ptr<index_t>();
+                            int64_t* columns_map_ptr = columns_map.data_ptr<int64_t>();
                             scalar_t* values_ptr = values.data_ptr<scalar_t>();
                             scalar_t* new_values_ptr = new_values.data_ptr<scalar_t>();
 
