@@ -133,6 +133,17 @@ def tuned_int_mm(mat1, mat2, *, layout=None):
                 layout,
                 **mm_options(config, k, layout),
             )
+
+        # Temporary hack: ensure that the first choice has a consistent
+        # name. This is needed because there is a TODO above which does
+        # not include the eager mode function in `choices`, the eager mode
+        # choice is assumed to be first in other lowerings, and the first
+        # choice's name is used as the cache key for compiled kernels in
+        # `select_algorithm.py`
+        # TODO: remove this once the TODO above is fixed.
+        if len(choices):
+            choices[0].name = "_int_mm"
+
     return autotune_select_algorithm("int_mm", choices, [mat1, mat2], layout)
 
 
