@@ -2477,6 +2477,11 @@ class ReproTests(torch._dynamo.test_case.TestCase):
 
         self.assertNoUnraisable(f)
 
+    @torch._dynamo.config.patch(
+        capture_scalar_outputs=True,
+        capture_dynamic_output_shape_ops=True,
+        dynamic_shapes=True,
+    )
     def test_rewrite_assert_with_msg(self):
         def f(x):
             b = x.sin()
@@ -2486,7 +2491,7 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         args = (torch.Tensor([3, 4, 5]),)
         cnt = torch._dynamo.testing.CompileCounter()
 
-        opt_f = torch._dynamo.optimize(cnt, nopython=True)(f)
+        opt_f = torch._dynamo.optimize(cnt, nopython=True, dynamic=True)(f)
         self.assertTrue(same(f(*args), opt_f(*args)))
         self.assertEqual(cnt.op_count, 6)
         self.assertEqual(cnt.frame_count, 1)
@@ -2494,7 +2499,7 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         exported, _ = torch._dynamo.export(f, torch.Tensor([3, 4, 5]))
         self.assertTrue(same(exported(*args), f(*args)))
 
-        with self.assertRaisesRegex(AssertionError, ""):
+        with self.assertRaisesRegex(RuntimeError, "First dim need to be 3"):
             exported, _ = torch._dynamo.export(f, torch.Tensor([4, 4, 5]))
 
     def test_not_rewrite_assert_for_other_errors(self):
@@ -2509,6 +2514,11 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         with self.assertRaisesRegex(ValueError, "input sum needs to be 3"):
             opt_fn(*args)
 
+    @torch._dynamo.config.patch(
+        capture_scalar_outputs=True,
+        capture_dynamic_output_shape_ops=True,
+        dynamic_shapes=True,
+    )
     def test_rewrite_assert_without_msg(self):
         def f(x):
             b = x.sin()
@@ -2519,7 +2529,7 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         exported, _ = torch._dynamo.export(f, torch.Tensor([3, 4, 5]))
         self.assertTrue(same(exported(*args), f(*args)))
 
-        with self.assertRaisesRegex(AssertionError, ""):
+        with self.assertRaisesRegex(RuntimeError, "assertion error"):
             exported, _ = torch._dynamo.export(f, torch.Tensor([4, 4, 5]))
 
     def test_rewrite_assert_with_non_string_msg(self):
