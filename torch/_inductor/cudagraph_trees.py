@@ -473,6 +473,7 @@ class CUDAWarmupNode:
         device_index: int,
         stack_traces: Optional[StackTraces],
         stream: torch.cuda.Stream,
+        already_warm: bool,
     ):
         self.wrapped_function = wrapped_function
         self.parent = parent
@@ -483,6 +484,7 @@ class CUDAWarmupNode:
         self.device_index = device_index
         self.stack_traces = stack_traces
         self.stream = stream
+        self.already_warm = already_warm
 
     def run(self, new_inputs):
         assert not self.has_run, "Wrapped function should never be run twice"
@@ -500,7 +502,7 @@ class CUDAWarmupNode:
             ):
                 non_cudagraph_inps.add(new_inputs[i].untyped_storage().data_ptr())
 
-        if config.triton.slow_path_cudagraph_asserts:
+        if config.triton.slow_path_cudagraph_asserts and not self.already_warm:
             refs = list(self.path_live_weakrefs())
             check_memory_pool(self.cuda_graphs_pool, refs)
 
@@ -525,7 +527,7 @@ class CUDAWarmupNode:
             ]
         )
 
-        if config.triton.slow_path_cudagraph_asserts:
+        if config.triton.slow_path_cudagraph_asserts and not self.already_warm:
             out_refs = self.path_live_weakrefs()
             new_storages = [
                 t for t in out_refs if t.data_ptr() not in non_cudagraph_inps
@@ -1584,7 +1586,6 @@ class CUDAGraphTreeManager:
                 or config.triton.skip_cudagraph_warmup
             )
         ) or self.in_warmup:
-            self.warmed_up_functions.add(function_id)
             # If we are in the middle of executing cuda graphs, then we need to checkpoint memory state.
             # Both Recording and Warmup will be reflected in the allocator and dont need changes
             if self.path_state == ExecutionState.EXECUTION:
@@ -1672,6 +1673,8 @@ class CUDAGraphTreeManager:
     def run_eager(self, new_inputs, function_id: FunctionID):
         # this is only stored on current node, because when we start a new path,
         # we will deallocate it
+        already_warm = function_id in self.warmed_up_functions
+        self.warmed_up_functions.add(function_id)
         node = CUDAWarmupNode(
             self.ids_to_funcs[function_id],
             self.current_node,
@@ -1680,6 +1683,7 @@ class CUDAGraphTreeManager:
             self.device_index,
             self.ids_to_stack_traces[function_id],
             self.stream,
+            already_warm,
         )
         self.current_node = node
         self.path_state = ExecutionState.WARMUP
