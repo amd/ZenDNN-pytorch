@@ -1,5 +1,5 @@
 import copy
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Generator, Dict, Optional, List
 from unittest.mock import patch
 
 import torch
@@ -19,6 +19,31 @@ from torch._functorch.aot_autograd import (
 from torch.fx.experimental.proxy_tensor import (
     get_torch_dispatch_modes,
     has_proxy_slot,
+    ProxyTorchDispatchMode,
+    set_proxy_slot,
+)
+
+from torch._functorch.eager_transforms import _unwrap_all_tensors_from_functional
+
+from .workflow import ExportedProgram
+from torch._dynamo.eval_frame import Constraint
+
+CORE_ATEN_DECOMPOSITIONS_TABLE = core_aten_decompositions()
+
+__all__ = ["do_not_use_experimental_export"]
+
+from torch._functorch.aot_autograd import (
+    AOTConfig,
+    create_aot_dispatcher_function,
+    default_partition,
+    run_functionalized_fw_and_collect_metadata,
+)
+
+from torch.fx.experimental.proxy_tensor import (
+    get_proxy_slot,
+    get_torch_dispatch_modes,
+    has_proxy_slot,
+    make_fx,
     ProxyTorchDispatchMode,
     set_proxy_slot,
 )
@@ -84,15 +109,6 @@ def _aot_capture(mod, flat_args):
         nonlocal graph_module
         graph_module = gm
 
-    num_fwd_returns = None
-
-    def partition_fn(joint_module, joint_inputs, *, num_fwd_outputs, **kwargs):
-        nonlocal num_fwd_returns
-        num_fwd_returns = num_fwd_outputs
-        return default_partition(
-            joint_module, joint_inputs, num_fwd_outputs=num_fwd_outputs, **kwargs
-        )
-
     def set_state_proxies(state_args):
         modes = get_torch_dispatch_modes()
         proxy_tensor_modes = [m for m in modes if isinstance(m, ProxyTorchDispatchMode)]
@@ -108,7 +124,7 @@ def _aot_capture(mod, flat_args):
     aot_config = AOTConfig(
         fw_compiler=fw_compiler,
         bw_compiler=lambda gm, inputs: None,
-        partition_fn=partition_fn,
+        partition_fn=default_partition,
         decompositions=CORE_ATEN_DECOMPOSITIONS_TABLE,  # type: ignore[arg-type]
         num_params_buffers=params_len,
         aot_id=-1,
@@ -145,7 +161,6 @@ def _aot_capture(mod, flat_args):
 
     output_node = next(iter(reversed(graph_module.graph.nodes)))
     assert output_node.op == "output" and len(output_node.args) == 1
-    assert num_fwd_returns is not None
     # Turncate the output so we only output what we need.
     output_node.args = (
         output_node.args[0][
@@ -156,47 +171,48 @@ def _aot_capture(mod, flat_args):
     graph_module.graph.eliminate_dead_code()
     graph_module.recompile()
 
-    def find_mutation_destinations(gm, w):
-        assert isinstance(w, torch.Tensor)
-        ret = [
-            name for name, x in [*gm.named_parameters(), *gm.named_buffers()] if x is w
-        ]
-        assert len(ret) != 0, "Cannot find mutation destination."
-        return ret
+    def _find_source(node):
+        queue = [node]
+        while len(queue) > 0:
+            current_node = queue.pop(0)
+            if current_node.op == "placeholder" or current_node.op == "get_attr":
+                return current_node
+            for parent in current_node._input_nodes:
+                queue.append(parent)
 
-    mutation = [
-        (
-            "copy_",
-            output_node.args[0][k].name,
-            find_mutation_destinations(graph_module, param_list[i][1]),
-        )
-        for k, i in enumerate(mutated_input_indices)
-    ]
+        assert False, "should never get here"
+
+    mutations = []
+    for idx, val in enumerate(mutated_input_indices):
+        dest = output_node.args[0][idx]
+        # mapping the original node and the mutated node
+        mutations.append((_find_source(dest), output_node.args[0][idx]))
+
     assert out_spec is not None
-    return graph_module, mutation, out_spec
+    breakpoint()
+    return graph_module, mutations, out_spec
 
 
-@patch.object(torchdynamo.config, "dynamic_shapes", True)
-@patch.object(torchdynamo.config, "capture_scalar_outputs", True)
-@patch.object(torchdynamo.config, "guard_nn_modules", True)
-@patch.object(torchdynamo.config, "specialize_int", True)
-@patch.object(torchdynamo.config, "allow_rnn", True)
-@patch.object(torchdynamo.config, "verbose", True)
-def do_not_use_experimental_export(f: Callable, args: Tuple, training=False):
+@torchdynamo.config.patch(
+    dynamic_shapes=True,
+    capture_scalar_outputs=True,
+    guard_nn_modules=True,
+    specialize_int=True,
+    allow_rnn=True,
+    verbose=True,
+)
+def do_not_use_experimental_export(f: Callable, args: Tuple, constraints: List[Constraint]=None):
     """
     This prototype is under heavy development. Pls don't use it if you are
     not part of PyTorch 2.0 Export team.
     """
-    if training:
-        NotImplementedError("training mode is not supported yet")
-
     flattened_args, in_spec = pytree.tree_flatten(args)
     # Doing it twice so that if graph_module accidentally modifies the input
     # we still get the same original input.
     original_flat_args = tuple(flattened_args)
     flat_args = tuple(flattened_args)
 
-    graph_module, guards = torchdynamo.export(f, *args, aten_graph=False)
+    graph_module, guards = torchdynamo.export(f, *args, aten_graph=False, constraints=constraints)
     # TODO (tmanlaibaatar) do sth with guards?
-    graph_module, _, out_spec = _aot_capture(graph_module, flat_args)
-    return ExportedProgram(fw_module=graph_module, example_inputs=original_flat_args, in_spec=in_spec, out_spec=out_spec)
+    graph_module, mutations, out_spec = _aot_capture(graph_module, flat_args)
+    return ExportedProgram(fw_module=graph_module, mutations=mutations, example_inputs=original_flat_args, in_spec=in_spec, out_spec=out_spec)

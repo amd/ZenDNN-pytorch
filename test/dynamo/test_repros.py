@@ -2496,7 +2496,8 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         self.assertEqual(cnt.op_count, 6)
         self.assertEqual(cnt.frame_count, 1)
 
-        exported, _ = torch._dynamo.export(f, torch.Tensor([3, 4, 5]))
+        exported, _ = torch._dynamo.export(f, torch.Tensor([3, 4, 5]), aten_graph=True, tracing_mode="symbolic")
+        print(exported.graph)
         self.assertTrue(same(exported(*args), f(*args)))
 
         with self.assertRaisesRegex(RuntimeError, "First dim need to be 3"):
