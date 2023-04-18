@@ -15,6 +15,7 @@ import torch._dynamo.testing
 from functorch.experimental.control_flow import cond
 from torch._dynamo import config
 from torch._export import dynamic_dim
+from torch._export.constraints import constrain_as_size
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch.fx.experimental.symbolic_shapes import (
     ConstraintViolationError,
@@ -2514,6 +2515,89 @@ class ExportTests(torch._dynamo.test_case.TestCase):
         false_inp = (torch.Tensor([6, 4, 5]), torch.ones(6, 4).add_(2))
         self.assertEqual(gm(*true_inp), f(*true_inp))
         self.assertEqual(gm(*false_inp), f(*false_inp))
+
+    @config.patch(assume_static_by_default=False)
+    def test_export_persist_assert(self):
+        def f(x):
+            assert x.shape[0] > 4, "Shape must be more than 4"
+            return x.cos() + x.sin()
+
+        gm, guard = torch._dynamo.export(
+            f, torch.randn(5, 4, 6), aten_graph=True, tracing_mode="symbolic"
+        )
+
+        def has_aten_op(gm, op):
+            for node in gm.graph.nodes:
+                if node.target == op:
+                    return True
+            return False
+
+        self.assertTrue(has_aten_op(gm, torch.ops.aten._assert_async.msg))
+
+        gm.graph.eliminate_dead_code()
+        gm.recompile()
+        self.assertTrue(has_aten_op(gm, torch.ops.aten._assert_async.msg))
+
+        with self.assertRaisesRegex(RuntimeError, "Shape must be more than 4"):
+            gm(torch.randn(3, 4, 5))
+
+    def test_export_input_constrain_assert(self):
+        def f(x, y):
+            return x.cos().sum() + y.sin().sum()
+
+        x = torch.randn(5, 4, 6)
+        y = torch.randn(6, 4, 7)
+
+        constraint = [
+            3 <= dynamic_dim(x, 0),
+            dynamic_dim(x, 0) <= 6,
+            dynamic_dim(x, 1),
+            dynamic_dim(y, 0),
+        ]
+
+        gm, guard = torch._dynamo.export(
+            f, x, y, aten_graph=True, tracing_mode="symbolic", constraints=constraint
+        )
+
+        count = 0
+        for node in gm.graph.nodes:
+            if node.target == torch.ops.aten._assert_async.msg:
+                count += 1
+
+        # Dim constraints for x[1] and y[0] are too wide so we don't asserts in those case
+        self.assertEqual(count, 2)
+        test_inps = (torch.randn(3, 4, 5), torch.randn(6, 4, 7))
+        self.assertEqual(gm(*test_inps), f(*test_inps))
+        test_inps_v2 = (torch.randn(2, 4, 5), torch.randn(6, 4, 7))
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Input #0's dimension #0 size is outside of specified dynamic range",
+        ):
+            gm(*test_inps_v2)
+
+    @config.patch(
+        dynamic_shapes=True,
+        capture_dynamic_output_shape_ops=True,
+        capture_scalar_outputs=True,
+    )
+    def test_export_assert_with_inline_constraint(self):
+        def f(x):
+            b = x.item()
+            constrain_as_size(b, min=2, max=5)
+            return torch.full((b, 1), 1)
+
+        gm, _ = torch._dynamo.export(
+            f, torch.tensor(4), aten_graph=True, tracing_mode="symbolic"
+        )
+
+        count = 0
+        for node in gm.graph.nodes:
+            if node.target == torch.ops.aten._assert_async.msg:
+                count += 1
+        self.assertEqual(count, 2)
+
+        with self.assertRaisesRegexp(RuntimeError, "Intermediate variable is outside"):
+            gm(torch.tensor(9))
 
 
 common_utils.instantiate_parametrized_tests(ExportTests)
