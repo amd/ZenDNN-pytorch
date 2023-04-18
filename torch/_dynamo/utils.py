@@ -1197,6 +1197,22 @@ def get_fake_value(node, tx):
     args = tree_map(fake_wrapper, args)
     kwargs = tree_map(fake_wrapper, kwargs)
 
+    if op == "call_method" and node.target == "backward":
+        # We don't want to run .backward() during dynamo tracing even if under a fake mode, since
+        # it may affect the state of the autograd system and we must preserve it for later tracing.
+        # The actual return type here is None anyway (from .backward()) so no need to run it to find out.
+        return None
+
+    if (
+        op == "call_method"
+        and node.target == "step"
+        and len(node.args) == 1
+        and node.args[0].op == "get_attr"
+        and "__optimizer_" in node.args[0].target
+    ):
+        # same as above...
+        return None
+
     nnmodule = None
     if op == "call_method" and len(args) > 0 and isinstance(args[0], torch.nn.Module):
         # If the first argument is nn.Module, should copy to fake mode.

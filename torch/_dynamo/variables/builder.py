@@ -23,6 +23,7 @@ from torch.fx.experimental.symbolic_shapes import (
 )
 from torch.fx.immutable_collections import immutable_list
 
+from torch._guards import TracingContext
 from .. import config, mutation_guard, replay_record, skipfiles
 from ..allowed_functions import is_allowed, is_builtin_callable, is_numpy
 from ..exc import unimplemented
@@ -533,6 +534,11 @@ class VariableBuilder:
             return NullContextVariable(
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+        elif isinstance(value, torch.optim.Optimizer) and TracingContext.get().trainstep:
+            return self.tx.output.register_optimizer(
+                value,
+                source=self.source,
             )
         else:
             result = UserDefinedObjectVariable(
