@@ -50,6 +50,7 @@ class ToyModel(nn.Module):
             + [nn.Linear(hidden_feat, hidden_feat), nn.ReLU()]
             + [nn.Linear(hidden_feat, out_feat), nn.ReLU()]
         )
+        self.unused = nn.Linear(in_feat, hidden_feat)
 
     def forward(self, inputs):
         return self.net(inputs)
@@ -364,6 +365,28 @@ class TestSingleProc(DynamoDistributedSingleProcTestCase):
 
         m, inputs, correct_outputs = self.get_model()
         ddp_m = DDP(m, device_ids=self.device_ids)
+        ddp_m = torch._dynamo.optimize("aot_eager")(ddp_m)
+        outputs = ddp_m(inputs)
+        self.assertTrue(same(correct_outputs, outputs))
+
+    @patch.object(config, "optimize_ddp", False)
+    def test_ddp_unused_parameters(self):
+        from torch.nn.parallel import DistributedDataParallel as DDP
+        bsz=20
+        in_feat=10
+        hidden_feat=5000
+        out_feat=5
+
+        class ToyModelWithUnused(ToyModel):
+            def __post_init__(self):
+                self.register_parameter(nn.Parameter(torch.randn(2,3)))
+
+        m = ToyModelWithUnused(in_feat=in_feat, hidden_feat=hidden_feat, out_feat=out_feat).to(self.device)
+        m.apply(init_weights)
+        inputs = torch.rand(bsz, in_feat).to(self.device)
+        correct_outputs = m(inputs)
+
+        ddp_m = DDP(m, device_ids=self.device_ids, static_graph=False, find_unused_parameters=True)
         ddp_m = torch._dynamo.optimize("aot_eager")(ddp_m)
         outputs = ddp_m(inputs)
         self.assertTrue(same(correct_outputs, outputs))
