@@ -1,5 +1,7 @@
 from functools import partial
 
+from typing import Any, List
+
 import torch
 import torch.utils._pytree as pytree
 from torch._C import DispatchKey
@@ -26,25 +28,30 @@ map = HigherOrderOperator("map")
 
 class MapAutogradOp(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, fw_graph, joint_graph, args_spec, *flat_args):
+    def forward(ctx, fw_graph, joint_graph, args_spec, out_spec, *flat_args):
+        xs, *args = pytree.tree_unflatten(flat_args, args_spec)
         ctx.save_for_backward(*flat_args)
         ctx._joint_graph = joint_graph
         ctx._args_spec = args_spec
+        ctx._out_spec = out_spec
         _ = torch._C._AutoDispatchBelowAutograd()
-        return (*map(fw_graph, *flat_args), )
+        def fw_fn(xs, *args):
+            flat_xs, _ = pytree.tree_flatten(xs)
+            return fw_graph(*flat_xs, *args)
+        return (*map(fw_fn, xs, *args), )
     
     @staticmethod
     def backward(ctx, *flat_grads):
-        xs, args = pytree.tree_unflatten(ctx.saved_tensors, ctx._args_spec)
+        xs, *args = pytree.tree_unflatten(ctx.saved_tensors, ctx._args_spec)
         _ = torch._C._AutoDispatchBelowAutograd()
         def bw_fn(xs, *args):
             xs_primals, xs_grads = xs
             flat_xs, _ = pytree.tree_flatten(xs_primals)
             flat_args, _ = pytree.tree_flatten((flat_xs + list(args), xs_grads))
-            _, grads = ctx._joint_graph(*flat_args)
+            _, grads = pytree.tree_unflatten(ctx._joint_graph(*flat_args), ctx._out_spec)
             return grads
         grads = map(bw_fn, (xs, [grad for grad in flat_grads if grad is not None]), *args)
-        return None, None, None, *grads
+        return None, None, None, None, *grads
 
 def trace_map(proxy_mode, func_overload, f, xs, *args):
     if not all(isinstance(o, torch.Tensor) for o in args):
@@ -141,7 +148,8 @@ def _make_flattend_graph(fn, *args, **kwargs):
     flat_graph = make_fx(flat_fn)(*flat_in)
     return flat_graph, out_spec[0]
 
-def _make_flattend_joint_graph(flattend_fw_graph, flat_args, flat_grads):
+
+def _make_flattend_joint_graph(flattend_fw_graph: callable, flat_args: List[Any], flat_grads: List[Any]):
     def fw_with_masks(*args):
         flat_out = flattend_fw_graph(*args)
         return flat_out, [True if isinstance(ret, torch.Tensor) and ret.requires_grad else False for ret in flat_out]
@@ -161,15 +169,13 @@ def map_autograd(f, xs, *args):
 
 
     fw_graph, fw_out_spec = _make_flattend_graph(f, example_xs, *args)
-    fw_graph.print_readable()
 
-    # Run tests to verify correctness of following lines
-    bw_graph, out_spec = _make_flattend_joint_graph(fw_graph, example_xs, *args)
-    bw_graph.print_readable()
-    print(out_spec)
+    flat_example_args, _ = pytree.tree_flatten((example_xs, *args))
+    # joint_graph takes flattend args and flattend grads return tuple(list of fw_outs, list of grads for flattend_args)
+    joint_graph, out_spec = _make_flattend_joint_graph(fw_graph, flat_example_args, example_grad)
 
     flat_args, args_spec = pytree.tree_flatten((xs, *args))
-    flat_out = MapAutogradOp.apply(fw_graph, bw_graph, args_spec, *flat_args)
+    flat_out = MapAutogradOp.apply(fw_graph, joint_graph, args_spec, out_spec, *flat_args)
     return pytree.tree_unflatten(flat_out, fw_out_spec)
 
 
