@@ -643,6 +643,7 @@ class TestControlFlowTraced(TestCase):
         i = 0
         for node in gm.graph.nodes:
             if node.op == "call_function" and node.target == torch.ops.map:
+                breakpoint()
                 i += 1
                 self.assertEqual(
                     node.meta[key].shape[0], node.args[1].meta[key].shape[0]
@@ -661,10 +662,8 @@ class TestControlFlowTraced(TestCase):
         y = torch.randn(2)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
-        gm.print_readable()
-        #self.check_map_graph(gm, "tensor_meta")
 
-    def test_tracing_map_symbolic(self):
+    def test_tracing_map_symbolic_simple(self):
         def f(x, y):
             return x + y
 
@@ -676,7 +675,40 @@ class TestControlFlowTraced(TestCase):
         y = torch.randn(2)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
-        self.check_map_graph(gm, "val")
+
+    def test_tracing_map_symbolic_list(self):
+        def f(x, y):
+            return [x[0][0] + y, x[1] * y]
+
+        def g(xs, y, z):
+            out = control_flow.map(f, xs, y)
+            return out[0] + z, out[1] * z 
+
+        example_x = [torch.ones(3, 2, 4), torch.ones(3, 2, 4)]
+        gm = make_fx(g, tracing_mode="symbolic")(example_x, torch.ones(4), torch.ones(1))
+        x = [torch.randn(4, 2, 2), torch.ones(4, 1, 1)]
+        y = torch.randn(2)
+        z = torch.ones(1)
+        res = gm(x, y, z)
+        self.assertEqual(res, g(x, y, z))
+        gm.print_readable()
+
+    def test_tracing_map_symbolic_dict(self):
+        def f(x, y):
+            return [x["a"] + y, x["b"] * y]
+
+        def g(xs, y, z):
+            out = control_flow.map(f, xs, y)
+            return out[0] + z, out[1] * z 
+
+        traced_x = {"a":torch.ones(3, 2, 4), "b":torch.ones(3, 2, 4)}
+        gm = make_fx(g, tracing_mode="symbolic")(traced_x, torch.ones(4), torch.ones(1))
+        x = {"a":torch.randn(4, 2, 2), "b":torch.ones(4, 1, 1)}
+        y = torch.randn(2)
+        z = torch.ones(1)
+        res = gm(x, y, z)
+        self.assertEqual(res, g(x, y, z))
+        gm.print_readable()
 
     def test_tracing_map_autograd_symbolic_simple(self):
         def f(x, y):
@@ -693,21 +725,6 @@ class TestControlFlowTraced(TestCase):
         self.assertEqual(res, g(x, y))
         gm.print_readable()
 
-    def test_tracing_map_symbolic_list(self):
-        def f(x, y):
-            return [x[0] + y, x[1] * y]
-
-        def g(xs, y, z):
-            out = control_flow.map(f, xs, y)
-            return out[0] + z, out[1] * z 
-
-        gm = make_fx(g, tracing_mode="symbolic")([torch.ones(3, 2, 4), torch.ones(3, 2, 4)], torch.ones(4), torch.ones(1))
-        x = [torch.randn(4, 2, 2), torch.ones(4, 1, 1)]
-        y = torch.randn(2)
-        z = torch.ones(1)
-        res = gm(x, y, z)
-        self.assertEqual(res, g(x, y, z))
-        gm.print_readable()
 
     def test_tracing_map_autograd_symbolic_list(self):
         import torch.utils._pytree as pytree

@@ -169,10 +169,15 @@ def map_autograd(f, xs, *args):
 
 
     fw_graph, fw_out_spec = _make_flattend_graph(f, example_xs, *args)
+    print("forward graph")
+    fw_graph.print_readable()
 
     flat_example_args, _ = pytree.tree_flatten((example_xs, *args))
-    # joint_graph takes flattend args and flattend grads return tuple(list of fw_outs, list of grads for flattend_args)
+    # joint_graph takes flattend args and flattend grads and
+    # returns tuple(list of fw_outs, list of grads for flattend_args)
     joint_graph, out_spec = _make_flattend_joint_graph(fw_graph, flat_example_args, example_grad)
+    print("joint graph")
+    joint_graph.print_readable()
 
     flat_args, args_spec = pytree.tree_flatten((xs, *args))
     flat_out = MapAutogradOp.apply(fw_graph, joint_graph, args_spec, out_spec, *flat_args)
