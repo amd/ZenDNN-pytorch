@@ -197,6 +197,9 @@ class BaseSchedulerNode:
     def can_inplace(self, read_dep: dependencies.MemoryDep):
         return False
 
+    def has_side_effects(self):
+        return False
+
     def allocate(self):
         if not self.node.should_allocate():
             return
@@ -213,7 +216,7 @@ class BaseSchedulerNode:
                 # o what have i done.  lets make this an api
                 or (
                     isinstance(self, ExternKernelSchedulerNode)
-                    and isinstance(self.node, (ir.AllReduce, ir.ForceInPlace))
+                    and isinstance(self.node, ir.InPlaceHint)
                 )
             )
             and config.inplace_buffers
@@ -324,6 +327,9 @@ class ExternKernelSchedulerNode(BaseSchedulerNode):
     def is_extern(self):
         return True
 
+    def has_side_effects(self):
+        return hasattr(self.node, "has_side_effects") and self.node.has_side_effects()
+
     def can_inplace(self, read_dep: dependencies.MemoryDep):
         if self.get_aliases() or self.is_template():
             return False
@@ -333,9 +339,7 @@ class ExternKernelSchedulerNode(BaseSchedulerNode):
             # (would this have been fixed if I tracked mutations properly above?)
             return False
 
-        if not isinstance(
-            self.node, (torch._inductor.ir.AllReduce, torch._inductor.ir.ForceInPlace)
-        ):
+        if not isinstance(self.node, torch._inductor.ir.InPlaceHint):
             # TODO make this a property of the IR
             return False
 
@@ -796,7 +800,7 @@ class Scheduler:
         """
         updated_nodes = []
         for node in self.nodes:
-            if node.users:
+            if node.users or node.has_side_effects():
                 updated_nodes.append(node)
             else:
                 # dead code
