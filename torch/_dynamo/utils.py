@@ -1244,7 +1244,7 @@ def get_fake_value(node, tx):
             unimplemented("guard on data-dependent symbolic int/float")
         elif isinstance(cause, torch.utils._sympy.value_ranges.ValueRangeError):
             raise UserError(UserErrorType.CONSTRAIN_VIOLATION, e.args[0]) from e
-        raise TorchRuntimeError() from e
+        raise TorchRuntimeError(str(e)).with_traceback(e.__traceback__) from None
 
 
 def run_node(output_graph, node, args, kwargs, nnmodule):
@@ -1278,8 +1278,8 @@ def run_node(output_graph, node, args, kwargs, nnmodule):
             return node.meta["example_value"]
     except Exception as e:
         raise RuntimeError(
-            f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n{e}\n(scroll up for backtrace)"
-        ) from e
+            f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n{e}"
+        ).with_traceback(e.__traceback__) from None
     raise AssertionError(op)
 
 
