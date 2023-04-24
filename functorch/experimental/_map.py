@@ -20,48 +20,47 @@ from torch.utils._python_dispatch import (
     _get_current_dispatch_mode,
     _pop_mode_temporarily,
 )
-from torch.utils._pytree import tree_flatten
 from ._cond import _has_potential_branch_input_alias, _has_potential_branch_input_mutation, UnsupportedAliasMutationException
 
 map_impl = HigherOrderOperator("map_impl")
-map = map_impl
 
-#def map(f, xs, *args):
-#    flat_in, in_spec = pytree.tree_flatten((xs, *args))
-#    out_spec = [None]
-#    def flat_fn(*flat_args):
-#        args, kwargs = pytree.tree_unflatten(flat_args, in_spec)
-#        unflattened_out = f(*args, **kwargs)
-#        flat_out, tmp_out_spec = pytree.tree_flatten(unflattened_out)
-#        out_spec[0] = tmp_out_spec
-#        return flat_out
-#    return pytree.tree_unflatten(map_impl(flat_fn, *flat_in), out_spec[0])
+def map(f, xs, *args):
+    flat_xs, xs_spec = pytree.tree_flatten(xs)
+    num_mapped_args = len(flat_xs)
+    assert num_mapped_args > 0, "map must have at least one mapped argument."
+    out_spec = [None]
+    def flat_fn(num_mapped_args, *flat_args):
+        xs = pytree.tree_unflatten(flat_args[:num_mapped_args], xs_spec)
+        unflattened_out = f(xs, *flat_args[num_mapped_args:])
+        flat_out, tmp_out_spec = pytree.tree_flatten(unflattened_out)
+        out_spec[0] = tmp_out_spec
+        return flat_out
+    return pytree.tree_unflatten(map_impl(flat_fn, num_mapped_args, *(*flat_xs, *args)), out_spec[0])
 
 class MapAutogradOp(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, fw_graph, joint_graph, args_spec, out_spec, *flat_args):
-        xs, *args = pytree.tree_unflatten(flat_args, args_spec)
+    def forward(ctx, fw_graph, joint_graph, num_mapped_args, *flat_args):
         ctx.save_for_backward(*flat_args)
         ctx._joint_graph = joint_graph
-        ctx._args_spec = args_spec
-        ctx._out_spec = out_spec
+        ctx._num_mapped_args = num_mapped_args
         _ = torch._C._AutoDispatchBelowAutograd()
-        def fw_fn(xs, *args):
-            flat_xs, _ = pytree.tree_flatten(xs)
-            return fw_graph(*flat_xs, *args)
-        return (*map_impl(fw_fn, xs, *args), )
+        return (*map_impl(fw_graph, num_mapped_args, *flat_args), )
     
     @staticmethod
     def backward(ctx, *flat_grads):
-        xs, *args = pytree.tree_unflatten(ctx.saved_tensors, ctx._args_spec)
+        fw_args = ctx.saved_tensors
         _ = torch._C._AutoDispatchBelowAutograd()
+        mapped_grads = [grad for grad in flat_grads if grad is not None]
+        num_mapped_args =  len(mapped_grads) + ctx._num_mapped_args
+        fw_mapped_args = fw_args[:ctx._num_mapped_args]
+        pos_args = fw_args[ctx._num_mapped_args:]
         def bw_fn(xs, *args):
             xs_primals, xs_grads = xs
             flat_xs, _ = pytree.tree_flatten(xs_primals)
             flat_args, _ = pytree.tree_flatten((flat_xs + list(args), xs_grads))
             _, grads = pytree.tree_unflatten(ctx._joint_graph(*flat_args), ctx._out_spec)
             return grads
-        grads = map_impl(bw_fn, (xs, [grad for grad in flat_grads if grad is not None]), *args)
+        grads = map_impl(ctx._joint_graph, num_mapped_args, (*fw_mapped_args, *mapped_grads, *pos_args))
         return None, None, None, None, *grads
 
 def trace_map(proxy_mode, func_overload, f, xs, *args):
@@ -137,12 +136,14 @@ def _stack_pytree(pytrees):
 
 @map_impl.py_impl(DispatchKey.CUDA)
 @map_impl.py_impl(DispatchKey.CPU)
-def map_impl_dense(f, xs, *args):
+def map_dense(f, num_mapped_args, *args):
     mode = _get_current_dispatch_mode()
+    xs = args[:num_mapped_args]
+    pos_args = args[num_mapped_args:]
     assert (mode is None), "Mode should never be enabled for CPU/CUDA keyOne of the differentiated Tensors"
     pytrees = []
     for inp in _unstack_pytree(xs):
-        pytrees.append(f(inp, *args))
+        pytrees.append(f(num_mapped_args, *(inp + pos_args)))
     return _stack_pytree(pytrees)
 
 # Create a GraphModule for fn, which takes flattend input and produces flattend output.
@@ -171,28 +172,24 @@ def _make_flattend_joint_graph(flattend_fw_graph: callable, flat_args: List[Any]
 
 
 @map_impl.py_impl(DispatchKey.Autograd)
-def map_impl_autograd(f, xs, *args):
+def map_autograd(f, num_mapped_args, *args):
+    mapped_xs = args[:num_mapped_args]
+    pos_args = args[num_mapped_args:]
 
     with disable_proxy_modes_tracing():
-        example_xs = _unstack_pytree(xs)[0]
-        example_flat_out, _ = pytree.tree_flatten(f(example_xs, *args))
+        example_xs = _unstack_pytree(mapped_xs)[0]
+        example_input = (num_mapped_args, *example_xs, *pos_args)
+        example_flat_out, _ = pytree.tree_flatten(f(*example_input))
         example_grad = [torch.ones_like(out) for out in example_flat_out if out is not None and out.requires_grad]
-
-
-    fw_graph, fw_out_spec = _make_flattend_graph(f, example_xs, *args)
+    
+    fw_graph = make_fx(f)(*example_input)
     print("forward graph")
     fw_graph.print_readable()
-
-    flat_example_args, _ = pytree.tree_flatten((example_xs, *args))
-    # joint_graph takes flattend args and flattend grads and
-    # returns tuple(list of fw_outs, list of grads for flattend_args)
-    joint_graph, out_spec = _make_flattend_joint_graph(fw_graph, flat_example_args, example_grad)
+    joint_graph, out_spec = _make_flattend_joint_graph(fw_graph, example_input, example_grad)
     print("joint graph")
     joint_graph.print_readable()
-
-    flat_args, args_spec = pytree.tree_flatten((xs, *args))
-    flat_out = MapAutogradOp.apply(fw_graph, joint_graph, args_spec, out_spec, *flat_args)
-    return pytree.tree_unflatten(flat_out, fw_out_spec)
+    flat_out = MapAutogradOp.apply(fw_graph, joint_graph, num_mapped_args, *args)
+    return flat_out
 
 
 @map_impl.py_impl(ProxyTorchDispatchMode)

@@ -54,6 +54,30 @@ class TestControlFlow(TestCase):
         res = control_flow.map(f, xs, y)
         expected = _fake_map(f, xs, y)
         self.assertEqual(expected, res)
+
+    def test_map_list_in_out(self):
+        def f(x, y):
+            return [[x[0][0] + y]]
+
+        xs = [[torch.ones(3, 2, 2)]]
+        y = torch.ones(2)
+        res = control_flow.map(f, xs, y)
+        expected = _fake_map(f, xs, y)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res[0]), 1)
+        self.assertEqual(expected, res)
+    
+    def test_map_dict_in_out(self):
+        def f(x, y):
+            return {"c": x["a"]["b"] + y}
+        
+        xs = {"a":{"b":torch.ones(3, 2, 2)}}
+        y = torch.ones(2)
+        res = control_flow.map(f, xs, y)
+        expected = _fake_map(f, xs, y)
+        self.assertEqual(len(res), 1)
+        self.assertTrue("c" in res)
+        self.assertEqual(expected, res)
     
     def test_map_autograd_simple(self):
         def f(x, y):
