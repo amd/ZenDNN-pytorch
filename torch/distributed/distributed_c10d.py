@@ -963,10 +963,6 @@ def init_process_group(
     if backend == Backend.MPI:
         # MPI backend doesn't use store.
         barrier()
-    else:
-        # Use store based barrier here since barrier() used a bunch of
-        # default devices and messes up NCCL internal state.
-        _store_based_barrier(rank, store, timeout)
 
 
 def _new_process_group_helper(
@@ -3609,10 +3605,6 @@ def _new_group_with_tag(ranks=None, timeout=default_pg_timeout, backend=None, pg
     if backend == Backend.MPI:
         # MPI doesn't have store.
         barrier()
-    else:
-        # Use store based barrier here since barrier() used a bunch of
-        # default devices and messes up NCCL internal state.
-        _store_based_barrier(global_rank, default_store, timeout)
 
     return pg
 
