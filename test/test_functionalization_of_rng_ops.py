@@ -41,6 +41,51 @@ class TestFunctionalizationRngOps(TestCase):
 
     @dtypes(torch.float32)
     @patch.object(torch._functorch.config, "functionalize_rng_ops", True)
+    def test_rand_like_dynamic(self, dtype, device):
+        def fn(x):
+            a = torch.rand_like(x) * x
+            a = torch.rand_like(x) * a
+            return a
+
+        for seed in range(1, 10):
+            shape = (seed, seed)
+            x = torch.rand(shape, device=device, dtype=dtype)
+            torch.cuda.manual_seed(seed)
+            ref = fn(x)
+
+            torch.cuda.manual_seed(seed)
+            opt_fn = torch.compile(fn, backend="aot_eager", dynamic=True)
+            res = opt_fn(x)
+
+            self.assertEqual(ref, res)
+
+
+
+    @dtypes(torch.float32)
+    @patch.object(torch._functorch.config, "functionalize_rng_ops", True)
+    def test_rand_like_dynamic_bwd(self, dtype, device):
+        def fn(x):
+            a = torch.rand_like(x) * x
+            a = torch.rand_like(x) * a
+            return a
+
+        for seed in range(1, 10):
+            shape = (seed, seed)
+            x = torch.rand(shape, device=device, dtype=dtype, requires_grad=True)
+            torch.cuda.manual_seed(seed)
+            ref = fn(x)
+            ref.sum().backward()
+
+            torch.cuda.manual_seed(seed)
+            opt_fn = torch.compile(fn, backend="aot_eager", dynamic=True)
+            res = opt_fn(x)
+            res.sum().backward()
+
+            self.assertEqual(ref, res)
+
+
+    @dtypes(torch.float32)
+    @patch.object(torch._functorch.config, "functionalize_rng_ops", True)
     def test_rand(self, dtype, device):
         shape = (10,)
 
