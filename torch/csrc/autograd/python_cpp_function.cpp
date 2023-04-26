@@ -124,13 +124,14 @@ void THPCppFunction_dealloc(PyObject* self) {
 
 } // namespace
 
-PyObject* THPCppFunction_next_functions(THPCppFunction* self, PyObject* hook) {
-  const auto num_next = self->cdata->num_outputs();
+PyObject* THPCppFunction_next_functions(THPCppFunction* self, void* _unused) {
+  const auto* cdata = reinterpret_cast<THPCppFunction*>(self)->cdata;
+  const auto num_next = cdata->num_outputs();
   THPObjectPtr py_functions(PyTuple_New(num_next));
   if (!py_functions)
     return nullptr;
   for (const auto i : c10::irange(num_next)) {
-    auto& c_tuple = self->cdata->next_edge(i);
+    auto& c_tuple = cdata->next_edge(i);
     THPObjectPtr tuple(PyTuple_New(2));
     if (!tuple)
       return nullptr;
@@ -148,14 +149,14 @@ PyObject* THPCppFunction_next_functions(THPCppFunction* self, PyObject* hook) {
 }
 
 PyObject* THPCppFunction_metadata(THPCppFunction* self, void* _unused) {
-  auto* metadata =
-      static_cast<PyAnomalyMetadata*>(self->cdata->metadata())->dict();
+  auto* metadata = static_cast<PyAnomalyMetadata*>(
+      reinterpret_cast<THPCppFunction*>(self)->cdata->metadata())->dict();
 
   Py_XINCREF(metadata);
   return metadata;
 }
 
-PyObject* THPCppFunction_requires_grad(THPCppFunction* self, void* unused) {
+PyObject* THPCppFunction_requires_grad(PyObject* self, void* unused) {
   Py_RETURN_TRUE;
 }
 
