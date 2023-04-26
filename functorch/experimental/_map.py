@@ -32,8 +32,10 @@ def map(f, xs, *args):
             raise ValueError(f"mapped dimension cannot be 0. Got {arg.shape}")
 
     pytree.tree_map(check_tensor, xs)
-
     flat_xs, xs_spec = pytree.tree_flatten(xs)
+    shapes = [xs.shape for xs in flat_xs]
+    assert len(shapes) > 0 and all([shapes[0][0] == cur_shape[0] for cur_shape in shapes])
+
     num_mapped_args = len(flat_xs)
     assert num_mapped_args > 0, "map must have at least one mapped argument."
     out_spec = [None]
@@ -132,31 +134,6 @@ def map_dense(f, num_mapped_args, *args):
         pytrees.append(f(num_mapped_args, *(inp + pos_args)))
     return _stack_pytree(pytrees)
 
-# Create a GraphModule for fn, which takes flattend input and produces flattend output.
-# The tree specs of original functions's output is also returned.
-def _make_flattend_graph(fn, *args, **kwargs):
-    flat_in, in_spec = pytree.tree_flatten((args, kwargs))
-    out_spec = [None]
-    def flat_fn(*flat_args):
-        args, kwargs = pytree.tree_unflatten(flat_args, in_spec)
-        unflattened_out = fn(*args, **kwargs)
-        flat_out, tmp_out_spec = pytree.tree_flatten(unflattened_out)
-        out_spec[0] = tmp_out_spec
-        return flat_out
-    flat_graph = make_fx(flat_fn)(*flat_in)
-    return flat_graph, out_spec[0]
-
-
-def _make_flattend_joint_graph(flattend_fw_graph: callable, flat_args: List[Any], flat_grads: List[Any]):
-    def fw_with_masks(*args):
-        flat_out = flattend_fw_graph(*args)
-        return flat_out, [True if isinstance(ret, torch.Tensor) and ret.requires_grad else False for ret in flat_out]
-    
-    joint_fn = create_joint(fw_with_masks)
-    flat_graph, out_spec = _make_flattend_graph(joint_fn, flat_args, flat_grads)
-    return flat_graph, out_spec
-
-
 @map_impl.py_impl(DispatchKey.Autograd)
 def map_autograd(f, num_mapped_args, *args):
     mapped_xs = args[:num_mapped_args]
@@ -200,26 +177,29 @@ def map_proxy_torch_dispatch_mode(f, num_mapped, *args):
 
 
 @map_impl.py_impl(FakeTensorMode)
-def map_fake_tensor_mode(f, xs, *args):
-    print("fake tensor mode")
+def map_fake_tensor_mode(f, num_mapped, *args):
+    xs = args[:num_mapped]
+    pos_args = args[num_mapped:]
     leading_dims = pytree.tree_map(lambda t: t.shape[0], xs)
     xs_pytree = _unstack_pytree(xs)
-    example_out = f(xs_pytree[0], *args)
+    example_out = f(xs_pytree[0], *pos_args)
     return pytree.tree_map(lambda t: t.expand(leading_dims[0], *t.shape), example_out)
 
 @map_impl.py_impl(torch._C._functorch.TransformType.Functionalize)
-def map_functionalize(interpreter, f, xs, *args):
+def map_functionalize(interpreter, f, num_mapped, *args):
     print("map_functionalize")
     """
     Functionalization implementation for torch.map. Currently:
       1. We don't allow any input mutation inside the map function
       2. Our check for above condition is not exhaustive
     """
+    xs = args[:num_mapped]
+    pos_args = args[num_mapped:]
     reapply_views = interpreter.functionalize_add_back_views()
     mode = 'mutations_and_views' if reapply_views else 'mutations'
     # At this point, we will see functionalized tensors, so need to unwrap them first
     unwrapped_xs = _unwrap_all_tensors_from_functional(xs, reapply_views=reapply_views)
-    unwrapped_args = _unwrap_all_tensors_from_functional(args, reapply_views=reapply_views)
+    unwrapped_args = _unwrap_all_tensors_from_functional(pos_args, reapply_views=reapply_views)
 
     functional_map_fn = functionalize(f, remove=mode)
 
@@ -235,7 +215,7 @@ def map_functionalize(interpreter, f, xs, *args):
                 "torch.map is aliasing the input!"
             )
 
-        map_return = map_impl(functional_map_fn, unwrapped_xs, *unwrapped_args)
+        map_return = map_impl(functional_map_fn, num_mapped, *unwrapped_xs, *unwrapped_args)
         return _wrap_all_tensors_to_functional(map_return, level=interpreter.level())
 
 # TODO(voz) Make this automatic for keys, this is very ugly atm
