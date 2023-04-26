@@ -472,7 +472,10 @@ class GuardBuilder(GuardBuilderBase):
         # NB: self.output_graph can be None in the debug_nops tests
         fs = output_graph.tracked_fakes
         constraint_inputs = [a.constraint_dims for a in fs]
-        guards = output_graph.shape_env.produce_guards(
+        (
+            guards,
+            shape_constraints,
+        ) = output_graph.shape_env.produce_guards_and_constraints(
             [a.fake for a in fs],
             [a.source for a in fs],
             constraint_inputs=constraint_inputs,
@@ -480,6 +483,7 @@ class GuardBuilder(GuardBuilderBase):
             # Export keeps static.
             ignore_static=(not self.check_fn_manager.output_graph.export),
         )
+        output_graph.shape_constraints = shape_constraints
         output_graph.shape_env.freeze()
         for shape_guard in guards:
             self._produce_guard_code(guard, [shape_guard], shape_env=True)

@@ -7,6 +7,7 @@ import logging
 import math
 import operator
 import os
+import re
 import sys
 import textwrap
 import threading
@@ -1675,22 +1676,35 @@ class DimConstraints:
                 if s not in self._substitutions or not sympy.checksol(congruence, {s: self._substitutions[s]}):
                     self._dynamic_results.add(self._dcp.doprint(sympy.Eq(congruence, 0)))
 
-    def prettify_results(self):
+    def prettify_results(self, original_signature: inspect.Signature):
+        # Note: Model inputs are wrapped as LocalSource in dynamo.
+        # LocalSource.name() wraps the name with L[""]. We use regular
+        # expression to do the replacement to avoid traversing up
+        # the source hierarchy manually.
+        def unwrap_local_source(source_name):
+            return re.sub(r"L\['(.+?)'\]", r'\1', source_name)
+
         buf = ""
+        indent = 4 * " "
         if self._static_results:
+            sorted_static_results = sorted(self._static_results)
             buf += "\nThe following dimensions have been specialized and CANNOT be dynamic."
             buf += "\nNOTE: Specializations will happen by default with `assume_static_by_default=True`."
-            for result in self._static_results:
-                buf += f"\n\t{result}"
-            buf += "\n"
+            buf += f"\n```\ndef static_constraints{str(original_signature)}:"
+            for result in sorted_static_results:
+                buf += f"\n{indent}{unwrap_local_source(result)}"
+            buf += "\n```\n"
         if self._dynamic_results:
+            sorted_dynamic_results = sorted(self._dynamic_results)
             buf += "\nThe following dimensions CAN be dynamic."
             buf += "\nYou can use the following code to specify the constraints they must satisfy:"
-            buf += "\n```\nconstraints=["
-            for result in self._dynamic_results:
-                buf += f"\n\t{result},"
-            buf += "\n]\n```"
+            buf += f"\n```\ndef dynamic_constraints{str(original_signature)}:"
+            buf += f"\n{indent}return ["
+            for result in sorted_dynamic_results:
+                buf += f"\n{indent*2}{unwrap_local_source(result)},"
+            buf += f"\n{indent}]\n```\n"
         return buf
+
 
 
 TLS = threading.local()
@@ -1994,11 +2008,13 @@ class ShapeEnv:
             self.var_to_sources[r].append(source)
         return r
 
-    # Generates a list of guards strings which, when evaluated in a context that
+    # Generates a tuple of 1. a list of guards strings which, when evaluated in a context that
     # defines tensors for all the sources, returns True or False depending
     # on if the guards in the list evaluated to True or not.  Primarily used by Dynamo,
     # but this is also helpful for manual testing of guards (see
-    # evaluate_guards_for_args)
+    # evaluate_guards_for_args) and 2. DimConstraints that are generated from guards. Different
+    # from guards, DimConstraints allow users to understand the constraints on inputs more easily
+    # and provide suggestions to improve the exportablity of the program (see prettify_results).
     #
     # For convenience in testing, a source is allowed to be a str,
     # in which case we will assume it is a LocalSource
@@ -2009,7 +2025,7 @@ class ShapeEnv:
     # some equality guards are nontrivial!  It would be nice to get simplified
     # output to print them too).  It's private because it's not
     # intended for normal use
-    def produce_guards(
+    def produce_guards_and_constraints(
         self,
         placeholders,
         sources,
@@ -2023,7 +2039,7 @@ class ShapeEnv:
         _simplified=False,
         # Indicates if we should produce guards for known static values.
         ignore_static=True,
-    ) -> List[str]:
+    ) -> Tuple[List[str], DimConstraints]:
         self.log.info("produce_guards")
 
         assert len(placeholders) == len(sources)
@@ -2318,10 +2334,6 @@ class ShapeEnv:
                 if len(bounds) > 1:
                     exprs.append(" <= ".join(bounds))
 
-        if torch._dynamo.config.dynamic_shapes and torch._dynamo.config.summarize_dim_constraints:
-            dim_constraints.solve()
-            log.warning("Summary of dimension constraints:%s", dim_constraints.prettify_results())
-
         if constraint_violations:
             warn_msgs = []
             error_msgs = []
@@ -2338,12 +2350,13 @@ class ShapeEnv:
             elif len(warn_msgs) > 0:
                 log.debug("%s Warning only constraints violated", len(warn_msgs))
 
-        return exprs
+        return exprs, dim_constraints
 
     def evaluate_guards_for_args(self, placeholders, args, *, ignore_static=True):
         from torch._dynamo.source import LocalSource
         arg_names = [f"t{i}" for i in range(len(args))]
-        guards = self.produce_guards(placeholders, [LocalSource(a) for a in arg_names], ignore_static=ignore_static)
+        guards, _ = self.produce_guards_and_constraints(placeholders,
+                                                        [LocalSource(a) for a in arg_names], ignore_static=ignore_static)
         if guards:
             code = " and ".join(guards)
             return eval(code, SYMPY_INTERP, {"L": dict(zip(arg_names, args))})

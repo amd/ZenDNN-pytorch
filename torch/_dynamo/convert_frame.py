@@ -473,6 +473,9 @@ def _compile(
         if hooks.guard_export_fn is not None:
             hooks.guard_export_fn(output.guards)
 
+        if hooks.constraint_export_fn is not None:
+            hooks.constraint_export_fn(getattr(output, "shape_constraints", None))
+
         return guarded_code
     except (
         Unsupported,

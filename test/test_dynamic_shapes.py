@@ -4,8 +4,10 @@
 import contextlib
 import copy
 import itertools
+import inspect
 import math
 import operator
+import re
 
 import sympy
 import torch
@@ -1769,6 +1771,36 @@ class TestDimConstraints(TestCase):
             "2 <= dynamic_dim(L['x6'], 1)",
             "dynamic_dim(L['x9'], 1) == dynamic_dim(L['x6'], 1)",
         })
+
+        def dummy_f(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x11, x12):
+            pass
+
+        action_code = dim_constraints.prettify_results(inspect.signature(dummy_f))
+        static_code, dynamic_code = re.findall(r"```(.*?)```", action_code, re.DOTALL)
+        expected_static = '''
+def static_constraints(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x11, x12):
+    x0.size()[0] = 8
+    x1.size()[2] = 96
+    x11.size()[1] == 1
+    x12.size()[2] == 3
+    x2.size()[0] == 8
+    x3.size()[0] == 8
+    x4.size()[0] == 8
+    x5.size()[1] = 22
+    x7.size()[3] == 96
+    x8.size()[1] == 22
+'''
+        expected_dynamic = '''
+def dynamic_constraints(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x11, x12):
+    return [
+        2 <= dynamic_dim(x6, 1),
+        dynamic_dim(x10, 1) == dynamic_dim(x6, 1),
+        dynamic_dim(x9, 1) == dynamic_dim(x6, 1),
+    ]
+'''
+
+        self.assertEqual(static_code, expected_static)
+        self.assertEqual(dynamic_code, expected_dynamic)
 
 
 

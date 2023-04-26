@@ -725,6 +725,7 @@ def export(
 
     graph = None
     out_guards = None
+    dim_constraints = None
     graph_captured_input = None
     graph_captured_result: Optional[Tuple[torch.Tensor, ...]] = None
 
@@ -761,6 +762,10 @@ def export(
         nonlocal out_guards
         assert out_guards is None, "whole graph export entails exactly one guard export"
         out_guards = guards
+
+    def constraint_export(constraints: torch.fx.symbolic_shape.DimConstraints):
+        nonlocal dim_constraints
+        dim_constraints = constraints
 
     fake_mode = None
     example_inputs = []
@@ -800,6 +805,7 @@ def export(
             hooks=Hooks(
                 guard_export_fn=guard_export_print,
                 guard_fail_fn=None,
+                constraint_export_fn=constraint_export,
             ),
             export=True,
             export_constraints=constraints,
@@ -814,6 +820,14 @@ def export(
     ), "Failed to produce a graph during tracing. Tracing through 'f' must produce a single graph."
     assert out_guards is not None, "Failed to produce guards during tracing"
     assert fake_mode is not None
+
+    if torch._dynamo.config.dynamic_shapes:
+        assert dim_constraints is not None
+        dim_constraints.solve()
+        log.warning(
+            "Summary of dimension constraints:%s",
+            dim_constraints.prettify_results(inspect.signature(f)),
+        )
 
     matched_input_elements_positions = produce_matching(flat_args, graph_captured_input)
 
