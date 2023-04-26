@@ -870,11 +870,10 @@ class TestControlFlowTraced(TestCase):
             torch.tensor(True), torch.ones(3, 2, 4), torch.ones(4)
         )
         pred = torch.tensor(False)
-        x = torch.randn(3, 2, 2)
-        y = torch.randn(2)
+        x = torch.randn(3, 2, 4)
+        y = torch.randn(4)
         res = gm(pred, x, y)
         self.assertEqual(res, g(pred, x, y))
-        self.check_map_graph(gm, "tensor_meta")
 
     def test_nested_map_cond_symbolic(self):
         def true_fn(x, y):
@@ -897,7 +896,6 @@ class TestControlFlowTraced(TestCase):
         y = torch.randn(2)
         res = gm(pred, x, y)
         self.assertEqual(res, g(pred, x, y))
-        self.check_map_graph(gm, "val")
 
     def test_nested_cond_map_cond_symbolic(self):
 

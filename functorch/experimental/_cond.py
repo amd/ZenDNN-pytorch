@@ -206,14 +206,17 @@ def _has_potential_branch_input_alias(branch, inputs):
 
     input_storages = set()
     for node in gm.graph.nodes:
-        if node.op == "placeholder":
+        # Scalars don't have node.meta
+        if node.op == "placeholder" and "val" in node.meta:
             input_storages.add(StorageWeakRef(node.meta['val']._typed_storage()))
         if node.op == "output":
-            for out in node.args:
-                out_storage = StorageWeakRef(out.meta["val"]._typed_storage())
-                if out_storage in input_storages:
-                    return True
-
+            def check_alias(out):
+                if "val" in out.meta:
+                    out_storage = StorageWeakRef(out.meta['val']._typed_storage())
+                    return out_storage in input_storages
+                return False
+            if any(pytree.tree_flatten(pytree.tree_map(check_alias, node.args))[0]):
+                return True
     return False
 
 

@@ -45,7 +45,7 @@ def map(f, xs, *args):
         flat_out, tmp_out_spec = pytree.tree_flatten(unflattened_out)
         out_spec[0] = tmp_out_spec
         return flat_out
-    return pytree.tree_unflatten(map_impl(flat_fn, num_mapped_args, *(*flat_xs, *args)), out_spec[0])
+    return pytree.tree_unflatten(map_impl(flat_fn, num_mapped_args, *flat_xs, *args), out_spec[0])
 
 class MapAutogradOp(torch.autograd.Function):
     @staticmethod
@@ -131,20 +131,24 @@ def map_dense(f, num_mapped_args, *args):
     assert (mode is None), "Mode should never be enabled for CPU/CUDA keyOne of the differentiated Tensors"
     pytrees = []
     for inp in _unstack_pytree(xs):
-        pytrees.append(f(num_mapped_args, *(inp + pos_args)))
+        pytrees.append(f(num_mapped_args, *inp, *pos_args))
     return _stack_pytree(pytrees)
+
 
 @map_impl.py_impl(DispatchKey.Autograd)
 def map_autograd(f, num_mapped_args, *args):
     mapped_xs = args[:num_mapped_args]
     pos_args = args[num_mapped_args:]
+    xs_slice = _unstack_pytree(mapped_xs)[0]
+    example_args = pytree.tree_map(lambda t: torch.empty_like(t, requires_grad=t.requires_grad), (*xs_slice, *pos_args))
+    example_xs = example_args[:num_mapped_args]
+    example_pos_args = example_args[num_mapped_args:]
 
     with disable_proxy_modes_tracing():
-        example_xs = _unstack_pytree(mapped_xs)[0]
-        example_flat_out, _ = pytree.tree_flatten(f(num_mapped_args, *example_xs, *pos_args))
+        example_flat_out, _ = pytree.tree_flatten(f(num_mapped_args, *example_xs, *example_pos_args))
         example_grad = [torch.ones_like(out) for out in example_flat_out if out is not None and out.requires_grad]
     
-    fw_graph = make_fx(f)(num_mapped_args, *example_xs, *pos_args)
+    fw_graph = make_fx(f)(num_mapped_args, *example_xs, *example_pos_args)
 
     def joint_f(num_mapped, *example_args):
         joint_mapped_args = example_args[:num_mapped]
@@ -162,7 +166,7 @@ def map_autograd(f, num_mapped_args, *args):
         return grads
         
     joint_num_mapped = len(example_grad) + len(example_xs) 
-    joint_graph = make_fx(joint_f)(joint_num_mapped, *example_xs, *example_grad, *pos_args)
+    joint_graph = make_fx(joint_f)(joint_num_mapped, *example_xs, *example_grad, *example_pos_args)
     flat_out = MapAutogradOp.apply(fw_graph, joint_graph, num_mapped_args, *args)
     return flat_out
 
@@ -182,12 +186,11 @@ def map_fake_tensor_mode(f, num_mapped, *args):
     pos_args = args[num_mapped:]
     leading_dims = pytree.tree_map(lambda t: t.shape[0], xs)
     xs_pytree = _unstack_pytree(xs)
-    example_out = f(xs_pytree[0], *pos_args)
+    example_out = f(num_mapped, *xs_pytree[0], *pos_args)
     return pytree.tree_map(lambda t: t.expand(leading_dims[0], *t.shape), example_out)
 
 @map_impl.py_impl(torch._C._functorch.TransformType.Functionalize)
 def map_functionalize(interpreter, f, num_mapped, *args):
-    print("map_functionalize")
     """
     Functionalization implementation for torch.map. Currently:
       1. We don't allow any input mutation inside the map function
@@ -204,7 +207,7 @@ def map_functionalize(interpreter, f, num_mapped, *args):
     functional_map_fn = functionalize(f, remove=mode)
 
     with interpreter.lower():
-        inputs = (unwrapped_xs,) + unwrapped_args
+        inputs = (num_mapped, *unwrapped_xs,  *unwrapped_args)
         if _has_potential_branch_input_mutation(functional_map_fn, inputs):
             raise UnsupportedAliasMutationException(
                 "torch.map is mutating the input!"
@@ -215,7 +218,7 @@ def map_functionalize(interpreter, f, num_mapped, *args):
                 "torch.map is aliasing the input!"
             )
 
-        map_return = map_impl(functional_map_fn, num_mapped, *unwrapped_xs, *unwrapped_args)
+        map_return = map_impl(functional_map_fn, *inputs)
         return _wrap_all_tensors_to_functional(map_return, level=interpreter.level())
 
 # TODO(voz) Make this automatic for keys, this is very ugly atm
