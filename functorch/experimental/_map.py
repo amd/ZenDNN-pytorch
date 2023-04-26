@@ -25,6 +25,14 @@ from ._cond import _has_potential_branch_input_alias, _has_potential_branch_inpu
 map_impl = HigherOrderOperator("map_impl")
 
 def map(f, xs, *args):
+    def check_tensor(arg):
+        if not isinstance(arg, torch.Tensor):
+            raise ValueError(f"mapped xs can only contain tensors got {type(arg)}")
+        if arg.shape[0] == 0:
+            raise ValueError(f"mapped dimension cannot be 0. Got {arg.shape}")
+
+    pytree.tree_map(check_tensor, xs)
+
     flat_xs, xs_spec = pytree.tree_flatten(xs)
     num_mapped_args = len(flat_xs)
     assert num_mapped_args > 0, "map must have at least one mapped argument."
@@ -49,41 +57,27 @@ class MapAutogradOp(torch.autograd.Function):
     @staticmethod
     def backward(ctx, *flat_grads):
         fw_args = ctx.saved_tensors
-        _ = torch._C._AutoDispatchBelowAutograd()
-        mapped_grads = [grad for grad in flat_grads if grad is not None]
-        num_mapped_args =  len(mapped_grads) + ctx._num_mapped_args
         fw_mapped_args = fw_args[:ctx._num_mapped_args]
         pos_args = fw_args[ctx._num_mapped_args:]
-        def bw_fn(xs, *args):
-            xs_primals, xs_grads = xs
-            flat_xs, _ = pytree.tree_flatten(xs_primals)
-            flat_args, _ = pytree.tree_flatten((flat_xs + list(args), xs_grads))
-            _, grads = pytree.tree_unflatten(ctx._joint_graph(*flat_args), ctx._out_spec)
-            return grads
-        grads = map_impl(ctx._joint_graph, num_mapped_args, (*fw_mapped_args, *mapped_grads, *pos_args))
-        return None, None, None, None, *grads
+        mapped_grads = [grad for grad in flat_grads if grad is not None]
 
-def trace_map(proxy_mode, func_overload, f, xs, *args):
-    if not all(isinstance(o, torch.Tensor) for o in args):
-        raise ValueError("map_impl() positional args must be a list of tensors")
-    
-    def check_tensor(arg):
-        if not isinstance(arg, torch.Tensor):
-            raise ValueError(f"map_impl() operands must be a list of tensors got {arg}")
-        if len(arg.shape) == 0 or arg.shape[0] == 0:
-            raise ValueError(f"map_impl() cannot be traced with scalar tensors or zero dimension tensors got {arg.shape}")
-        
-    pytree.tree_map(check_tensor, xs)
-    flat_xs, _ = pytree.tree_flatten(xs)
-    leading_dim_size = flat_xs[0].shape[0]
+        _ = torch._C._AutoDispatchBelowAutograd()
+        grads = map_impl(ctx._joint_graph, ctx._num_mapped_args + len(mapped_grads), *fw_mapped_args, *mapped_grads, *pos_args)
+        return None, None, *grads
 
-    xs_pytrees = _unstack_pytree(xs)
-    # Note: f is lowered to a fx.GraphModule in post_autograd make_fx tracing
-    if not isinstance(f, torch.fx.GraphModule):
-        with disable_proxy_modes_tracing():
-            body_graph = make_fx(f)(xs_pytrees[0], *args)
-    else:
-        body_graph = f
+def trace_map(proxy_mode, func_overload, f, num_mapped, *args):
+    xs = list(args[:num_mapped])
+    pos_args = list(args[num_mapped:])
+    leading_dim_size = xs[0].shape[0]
+
+    example_input = _unstack_pytree(xs)[0]
+    body_graph = f
+    if not isinstance(body_graph, torch.fx.GraphModule):
+        body_graph = make_fx(body_graph)(num_mapped, *example_input, *pos_args)
+
+    with disable_proxy_modes_tracing():
+        example_outs = body_graph(num_mapped, *example_input, *pos_args)
+        expanded_outs = pytree.tree_map(lambda t: t.expand(leading_dim_size, *t.shape) if isinstance(t, torch.Tensor) else t, example_outs)
 
     next_name = None
     i = 0
@@ -95,24 +89,16 @@ def trace_map(proxy_mode, func_overload, f, xs, *args):
             next_name = candidate
 
     proxy_mode.tracer.root.register_module(next_name, body_graph)
-    node_args = (body_graph, xs, *args)
+    node_args = (body_graph, num_mapped, *args)
     proxy_args = pytree.tree_map(partial(unwrap_proxy, proxy_mode), node_args)
     out_proxy = proxy_mode.tracer.create_proxy('call_function', func_overload, proxy_args, {},
                                                name="map_impl")
-    example_outs = body_graph(xs_pytrees[0], *args)
-    expanded_outs = pytree.tree_map(lambda t: t.expand(leading_dim_size, *t.shape) if t is not None else t, example_outs)
-    # # Implementation notes: we need to use new_empty() + copy_() here instead of stack() directly
-    # # because stack([...]) takes a fixed size list which will specialize dynamic shape here.
-    # # Meanwhile we want to preserve the looped over dimension as symbolic shape, such that:
-    # # ys: Tensor[s0, ...] = map_impl(xs: Tensor[s0, ...], *args)
-    # out = outs[0].new_empty([xs.shape[0], *outs[0].shape])
-    # out.copy_(torch.stack(outs))
     return track_tensor_tree(expanded_outs, out_proxy, constant=None, tracer=proxy_mode.tracer)
 
 def _unstack_pytree(xs):
     flat_xs, inspec = pytree.tree_flatten(xs)
     assert all([isinstance(xs, torch.Tensor) for xs in flat_xs]), f"Leaves of xs must be Tensor {flat_xs}"
-    assert all([xs.shape[0] == flat_xs[0].shape[0] for xs in flat_xs]), f"Leaves of xs must have same leading dimension size {flat_xs}"
+    assert all([xs.shape[0] == flat_xs[0].shape[0] for xs in flat_xs]), f"Leaves of xs must have same leading dimension size {[xs.shape for xs in flat_xs]}"
     a = list(zip(*flat_xs))
     pytrees = []
     for tuple in a:
@@ -178,27 +164,38 @@ def map_autograd(f, num_mapped_args, *args):
 
     with disable_proxy_modes_tracing():
         example_xs = _unstack_pytree(mapped_xs)[0]
-        example_input = (num_mapped_args, *example_xs, *pos_args)
-        example_flat_out, _ = pytree.tree_flatten(f(*example_input))
+        example_flat_out, _ = pytree.tree_flatten(f(num_mapped_args, *example_xs, *pos_args))
         example_grad = [torch.ones_like(out) for out in example_flat_out if out is not None and out.requires_grad]
     
-    fw_graph = make_fx(f)(*example_input)
-    print("forward graph")
-    fw_graph.print_readable()
-    joint_graph, out_spec = _make_flattend_joint_graph(fw_graph, example_input, example_grad)
-    print("joint graph")
-    joint_graph.print_readable()
+    fw_graph = make_fx(f)(num_mapped_args, *example_xs, *pos_args)
+
+    def joint_f(num_mapped, *example_args):
+        joint_mapped_args = example_args[:num_mapped]
+        args = example_args[num_mapped:]
+
+        mapped_input = joint_mapped_args[:num_mapped_args]
+        mapped_grads = joint_mapped_args[num_mapped_args:]
+
+        def fw_with_masks(num_mapped_args, *args):
+            fw_out = f(num_mapped_args, *args)
+            return fw_out, [True if isinstance(ret, torch.Tensor) and ret.requires_grad else False for ret in fw_out]
+
+        joint = create_joint(fw_with_masks)
+        _, grads = joint([num_mapped_args] + list(mapped_input) + list(args), list(mapped_grads))
+        return grads
+        
+    joint_num_mapped = len(example_grad) + len(example_xs) 
+    joint_graph = make_fx(joint_f)(joint_num_mapped, *example_xs, *example_grad, *pos_args)
     flat_out = MapAutogradOp.apply(fw_graph, joint_graph, num_mapped_args, *args)
     return flat_out
 
 
 @map_impl.py_impl(ProxyTorchDispatchMode)
-def map_proxy_torch_dispatch_mode(f, xs, *args):
-    print("map forward proxy torch dispatch")
+def map_proxy_torch_dispatch_mode(f, num_mapped, *args):
     mode = _get_current_dispatch_mode()
     assert (mode is not None), "Mode should always be enabled for python fallback key"
     with _pop_mode_temporarily() as mode:
-        res = trace_map(mode, map_impl, f, xs, *args)
+        res = trace_map(mode, map_impl, f, num_mapped, *args)
     return res
 
 

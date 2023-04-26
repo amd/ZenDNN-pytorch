@@ -686,6 +686,7 @@ class TestControlFlowTraced(TestCase):
         y = torch.randn(2)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
+        gm.print_readable()
 
     def test_tracing_map_symbolic_simple(self):
         def f(x, y):
@@ -699,6 +700,7 @@ class TestControlFlowTraced(TestCase):
         y = torch.randn(2)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
+        gm.print_readable()
 
     def test_tracing_map_symbolic_list(self):
         def f(x, y):
@@ -708,28 +710,28 @@ class TestControlFlowTraced(TestCase):
             out = control_flow.map(f, xs, y)
             return out[0] + z, out[1] * z 
 
-        example_x = [torch.ones(3, 2, 4), torch.ones(3, 2, 4)]
-        gm = make_fx(g, tracing_mode="symbolic")(example_x, torch.ones(4), torch.ones(1))
-        x = [torch.randn(4, 2, 2), torch.ones(4, 1, 1)]
-        y = torch.randn(2)
-        z = torch.ones(1)
+        example_x = [[torch.ones(3, 4, 5)], torch.ones(3, 4, 5)]
+        gm = make_fx(g, tracing_mode="symbolic")(example_x, torch.ones(5), torch.ones(5))
+        x = [[torch.randn(4, 5, 6)], torch.ones(4, 5, 6)]
+        y = torch.randn(6)
+        z = torch.ones(6)
         res = gm(x, y, z)
         self.assertEqual(res, g(x, y, z))
         gm.print_readable()
 
     def test_tracing_map_symbolic_dict(self):
         def f(x, y):
-            return [x["a"] + y, x["b"] * y]
+            return {"d":x["b"]["a"] + y, "e":x["c"] * y}
 
         def g(xs, y, z):
             out = control_flow.map(f, xs, y)
-            return out[0] + z, out[1] * z 
+            return {"f":out["d"] + z, "g":out["e"] * z}
 
-        traced_x = {"a":torch.ones(3, 2, 4), "b":torch.ones(3, 2, 4)}
-        gm = make_fx(g, tracing_mode="symbolic")(traced_x, torch.ones(4), torch.ones(1))
-        x = {"a":torch.randn(4, 2, 2), "b":torch.ones(4, 1, 1)}
-        y = torch.randn(2)
-        z = torch.ones(1)
+        example_x = {"b":{"a":torch.ones(3, 4, 5)}, "c":torch.ones(3, 4, 5)}
+        gm = make_fx(g, tracing_mode="symbolic")(example_x, torch.ones(5), torch.ones(5))
+        x = {"b":{"a":torch.randn(4, 5, 6)}, "c":torch.ones(4, 5, 6)}
+        y = torch.randn(6)
+        z = torch.ones(6)
         res = gm(x, y, z)
         self.assertEqual(res, g(x, y, z))
         gm.print_readable()
@@ -742,9 +744,9 @@ class TestControlFlowTraced(TestCase):
             out = control_flow.map(f, xs, y) 
             return torch.autograd.grad(out, (xs, y), torch.ones_like(out))
 
-        gm = make_fx(g, tracing_mode="symbolic")(torch.ones(3, 2, 4, requires_grad=True), torch.ones(4, requires_grad=True))
-        x = torch.randn(3, 2, 2, requires_grad=True)
-        y = torch.randn(2, requires_grad=True)
+        gm = make_fx(g, tracing_mode="symbolic")(torch.ones(3, 4, 5, requires_grad=True), torch.ones(5, requires_grad=True))
+        x = torch.randn(4, 5, 6, requires_grad=True)
+        y = torch.randn(6, requires_grad=True)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
         gm.print_readable()
@@ -762,12 +764,32 @@ class TestControlFlowTraced(TestCase):
             requires_grad_inp = [inp for inp in flat_inp if inp.requires_grad]
             return torch.autograd.grad(flat_out, requires_grad_inp, [torch.ones_like(out) for out in flat_out])
 
-        gm = make_fx(g, tracing_mode="symbolic")([torch.ones(3, 2, 4), torch.ones(3, 2, 4, requires_grad=True)], torch.ones(4, requires_grad=True))
+        gm = make_fx(g, tracing_mode="symbolic")([torch.ones(3, 4, 5), torch.ones(3, 4, 5, requires_grad=True)], torch.ones(5, requires_grad=True))
         gm.print_readable()
-        x = [torch.randn(4, 2, 2), torch.ones(4, 1, 2, requires_grad=True)]
-        y = torch.randn(2, requires_grad=True)
+        x = [torch.randn(4, 5, 6), torch.ones(4, 5, 6, requires_grad=True)]
+        y = torch.randn(6, requires_grad=True)
         res = gm(x, y)
         self.assertEqual(res, g(x, y))
+        gm.print_readable()
+
+    def test_tracing_map_autograd_symbolic_dict(self):
+        def f(x, y):
+            return [x["a"] + y, x["b"] * y]
+
+        def g(xs, y):
+            out = control_flow.map(f, xs, y)
+            flat_out, _ = pytree.tree_flatten(out)
+            flat_inp, _ = pytree.tree_flatten((xs, y))
+            requires_grad_inp = [inp for inp in flat_inp if inp.requires_grad]
+            return torch.autograd.grad(flat_out, requires_grad_inp, [torch.ones_like(out) for out in flat_out])
+
+        traced_x = {"a":torch.ones(3, 4, 5, requires_grad=True), "b":torch.ones(3, 4, 5, requires_grad=True)}
+        gm = make_fx(g, tracing_mode="symbolic")(traced_x, torch.ones(5, requires_grad=True))
+        x = {"a":torch.randn(4, 5, 6, requires_grad=True), "b":torch.ones(4, 5, 6, requires_grad=True)}
+        y = torch.randn(6, requires_grad=True)
+        res = gm(x, y)
+        self.assertEqual(res, g(x, y))
+        gm.print_readable()
 
     def test_map_functionalized(self):
         def map_fn(x, y):
