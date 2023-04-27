@@ -16,6 +16,7 @@
 #include <torch/csrc/autograd/utils/wrap_outputs.h>
 #include <torch/csrc/copy_utils.h>
 #include <torch/csrc/utils/python_arg_parser.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <c10/util/intrusive_ptr.h>
 #include <fmt/format.h>
@@ -313,9 +314,9 @@ static int THPStorage_set(THPStorage* self, PyObject* index, PyObject* value) {
 }
 
 static PyMappingMethods THPStorage_mappingmethods = {
-    (lenfunc)THPStorage_length,
-    (binaryfunc)THPStorage_get,
-    (objobjargproc)THPStorage_set};
+    torch::unsafe_cast_function<lenfunc>(THPStorage_length),
+    torch::unsafe_cast_function<binaryfunc>(THPStorage_get),
+    torch::unsafe_cast_function<objobjargproc>(THPStorage_set)};
 
 struct THPStorageMeta {
   PyHeapTypeObject base;
@@ -434,8 +435,16 @@ typedef PyObject* (*getter)(PyObject*, void*);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
 static struct PyGetSetDef THPStorage_properties[] = {
-    {"device", (getter)THPStorage_device, nullptr, nullptr, nullptr},
-    {"_cdata", (getter)THPStorage_get_cdata, nullptr, nullptr, nullptr},
+    {"device",
+     torch::unsafe_cast_function<getter>(THPStorage_device),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"_cdata",
+     torch::unsafe_cast_function<getter>(THPStorage_get_cdata),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 bool THPStorage_init(PyObject* module) {

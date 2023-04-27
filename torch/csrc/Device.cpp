@@ -6,6 +6,7 @@
 #include <torch/csrc/utils/python_arg_parser.h>
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/csrc/utils/python_strings.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <ATen/Device.h>
 #include <c10/util/Exception.h>
@@ -205,8 +206,16 @@ typedef PyObject* (*getter)(PyObject*, void*);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays)
 static struct PyGetSetDef THPDevice_properties[] = {
-    {"type", (getter)THPDevice_type, nullptr, nullptr, nullptr},
-    {"index", (getter)THPDevice_index, nullptr, nullptr, nullptr},
+    {"type",
+     torch::unsafe_cast_function<getter>(THPDevice_type),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"index",
+     torch::unsafe_cast_function<getter>(THPDevice_index),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays)
@@ -226,18 +235,18 @@ PyTypeObject THPDeviceType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPDevice_repr, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPDevice_repr), /* tp_repr */
     nullptr, /* tp_as_number */
     nullptr, /* tp_as_sequence */
     nullptr, /* tp_as_mapping */
-    (hashfunc)THPDevice_hash, /* tp_hash  */
+    torch::unsafe_cast_function<hashfunc>(THPDevice_hash), /* tp_hash  */
     // TODO: We're not sure if this is a good idea or not, because making
     // torch.device callable means that it will start returning true
     // for callable() queries, and that is unexpected.  We can always add
     // this later, so for now, don't actually implement this
     // THPDevice_call, /* tp_call */
     nullptr, /* tp_call */
-    (reprfunc)THPDevice_str, /* tp_str */
+    torch::unsafe_cast_function<reprfunc>(THPDevice_str), /* tp_str */
     nullptr, /* tp_getattro */
     nullptr, /* tp_setattro */
     nullptr, /* tp_as_buffer */
@@ -245,7 +254,7 @@ PyTypeObject THPDeviceType = {
     nullptr, /* tp_doc */
     nullptr, /* tp_traverse */
     nullptr, /* tp_clear */
-    (richcmpfunc)THPDevice_rc, /* tp_richcompare */
+    torch::unsafe_cast_function<richcmpfunc>(THPDevice_rc), /* tp_richcompare */
     0, /* tp_weaklistoffset */
     nullptr, /* tp_iter */
     nullptr, /* tp_iternext */

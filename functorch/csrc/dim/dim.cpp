@@ -13,6 +13,7 @@
 #include <vector>
 //#include <torch/csrc/autograd/python_variable.h>
 #include <torch/csrc/utils/python_compat.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 #include <torch/csrc/Export.h>
 #include <ATen/functorch/BatchedTensorImpl.h>
 #include <ATen/functorch/DynamicLayer.h>
@@ -283,14 +284,14 @@ static PyObject* Dim_get_batchtensor(Dim* self, void*) {
 
 
 static PyGetSetDef Dim_getsetters[] = {
-    {"size", (getter) Dim_getsize, (setter) Dim_setsize,
+    {"size", torch::unsafe_cast_function<getter>(Dim_getsize), torch::unsafe_cast_function<setter>(Dim_setsize),
      "Dimension size", NULL},
-    {"is_bound", (getter) Dim_getis_bound, NULL, "is_bound", NULL},
-    {"_level", (getter) Dim_getlevel, NULL, "_level", NULL},
-    {"_levels", (getter) Dim_get_levels, NULL, "_levels", NULL},
-    {"_has_device", (getter) Dim_get_has_device, NULL, "_has_device", NULL},
-    {"_tensor", (getter) Dim_get_tensor, NULL, "_tensor", NULL},
-    {"_batchtensor", (getter) Dim_get_batchtensor, NULL, "_batchtensor", NULL},
+    {"is_bound", torch::unsafe_cast_function<getter>(Dim_getis_bound), NULL, "is_bound", NULL},
+    {"_level", torch::unsafe_cast_function<getter>(Dim_getlevel), NULL, "_level", NULL},
+    {"_levels", torch::unsafe_cast_function<getter>(Dim_get_levels), NULL, "_levels", NULL},
+    {"_has_device", torch::unsafe_cast_function<getter>(Dim_get_has_device), NULL, "_has_device", NULL},
+    {"_tensor", torch::unsafe_cast_function<getter>(Dim_get_tensor), NULL, "_tensor", NULL},
+    {"_batchtensor", torch::unsafe_cast_function<getter>(Dim_get_batchtensor), NULL, "_batchtensor", NULL},
     {"ndim", (getter) [](PyObject* self, void*) -> PyObject* { return py::from_int(1).release(); }, NULL, "ndim", NULL},
     {NULL}  /* Sentinel */
 };
@@ -305,7 +306,7 @@ PyTypeObject Dim::Type = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_as_async */
-    (reprfunc)Dim_repr,           /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(Dim_repr),           /* tp_repr */
     0,                 /* tp_as_number */
     0,                              /* tp_as_sequence */
     0,                              /* tp_as_mapping */
@@ -466,10 +467,10 @@ PyObject * DimList_item(DimList* self, Py_ssize_t idx) {
 }
 
 PySequenceMethods DimList_seq {
-    (lenfunc) DimList_len, //lenfunc sq_length;
+    torch::unsafe_cast_function<lenfunc>(DimList_len), //lenfunc sq_length;
     0, //binaryfunc sq_concat;
     0, //ssizeargfunc sq_repeat;
-    (ssizeargfunc) DimList_item, //ssizeargfunc sq_item;
+    torch::unsafe_cast_function<ssizeargfunc>(DimList_item), //ssizeargfunc sq_item;
     0, //void *was_sq_slice;
     0, //ssizeobjargproc sq_ass_item;
     0, //void *was_sq_ass_slice;
@@ -484,7 +485,7 @@ static PyObject* DimList_getis_bound(DimList* self, void*) {
 }
 
 static PyGetSetDef DimList_getsetters[] = {
-    {"is_bound", (getter) DimList_getis_bound, NULL, "is_bound", NULL},
+    {"is_bound", torch::unsafe_cast_function<getter>(DimList_getis_bound), NULL, "is_bound", NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -528,7 +529,7 @@ PyTypeObject DimList::Type = {
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
     0,                              /* tp_as_async */
-    (reprfunc)DimList_repr,           /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(DimList_repr),           /* tp_repr */
     0,                 /* tp_as_number */
     &DimList_seq,                 /* tp_as_sequence */
     &DimList_mapping,             /* tp_as_mapping */
@@ -554,7 +555,7 @@ PyTypeObject DimList::Type = {
     0,                              /* tp_descr_get */
     0,                              /* tp_descr_set */
     0,                              /* tp_dictoffset */
-    (initproc) DimList_init,            /* tp_init */
+    torch::unsafe_cast_function<initproc>(DimList_init),            /* tp_init */
     0,                              /* tp_alloc */
     DimList::new_stub,                      /* tp_new */
 };
@@ -1373,7 +1374,7 @@ static PyGetSetDef Tensor_getsetters[] = {
        return levels_to_tuple(((Tensor*)self)->levels()).release();
        PY_END(nullptr)
    }},
-    {"ndim", (getter) Tensor_ndim, NULL, "ndim", NULL},
+    {"ndim", torch::unsafe_cast_function<getter>(Tensor_ndim), NULL, "ndim", NULL},
     {NULL}  /* Sentinel */
 };
 
