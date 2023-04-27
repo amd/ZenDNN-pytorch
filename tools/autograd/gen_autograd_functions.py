@@ -165,12 +165,12 @@ static struct PyGetSetDef ${op}_properties[] = {
 
 PY_GETSETDEF_STRUCT = CodeTemplate(
     """\
-{(char*)"_saved_${name}", (getter)THP${op}_${name}_getter, nullptr, nullptr, nullptr}"""
+{(char*)"_saved_${name}", torch::unsafe_cast_function<getter>(THP${op}_${name}_getter), nullptr, nullptr, nullptr}"""
 )
 
 PY_RAW_GETSETDEF_STRUCT = CodeTemplate(
     """\
-{(char*)"_raw_saved_${name}", (getter)THP${op}_${name}_raw_getter, nullptr, nullptr, nullptr}"""
+{(char*)"_raw_saved_${name}", torch::unsafe_cast_function<getter>(THP${op}_${name}_raw_getter), nullptr, nullptr, nullptr}"""
 )
 
 # Getter templates

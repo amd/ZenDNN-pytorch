@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <torch/csrc/dynamo/guards.h>
 #include <torch/csrc/utils/python_numbers.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 #include <torch/extension.h>
 #include <sstream>
 
@@ -381,9 +382,12 @@ PyObject* TensorGuards_check_verbose(
 }
 
 static PyMethodDef TensorGuards_methods[] = {
-    {"check", (PyCFunction)TensorGuards_check, METH_VARARGS, ""},
+    {"check",
+     torch::unsafe_cast_function<PyCFunction>(TensorGuards_check),
+     METH_VARARGS,
+     ""},
     {"check_verbose",
-     (PyCFunction)(void*)TensorGuards_check_verbose,
+     torch::unsafe_cast_function<PyCFunction>(TensorGuards_check_verbose),
      METH_VARARGS | METH_KEYWORDS,
      "verbose fail reasons for failed checks"},
     {NULL} /* Sentinel */
@@ -484,11 +488,13 @@ PyObject* torch_c_dynamo_guards_init() {
   TensorGuardsType.tp_name = "torch._C._dynamo.guards.TensorGuards";
   TensorGuardsType.tp_basicsize = sizeof(TensorGuards);
   TensorGuardsType.tp_itemsize = 0;
-  TensorGuardsType.tp_dealloc = (destructor)TensorGuards_dealloc;
+  TensorGuardsType.tp_dealloc =
+      torch::unsafe_cast_function<destructor>(TensorGuards_dealloc);
   TensorGuardsType.tp_flags = Py_TPFLAGS_DEFAULT;
   TensorGuardsType.tp_doc = "Check properties of a torch.Tensor";
   TensorGuardsType.tp_methods = TensorGuards_methods;
-  TensorGuardsType.tp_init = (initproc)TensorGuards_init;
+  TensorGuardsType.tp_init =
+      torch::unsafe_cast_function<initproc>(TensorGuards_init);
   TensorGuardsType.tp_new = TensorGuards_new;
 
   PyObject* m;
