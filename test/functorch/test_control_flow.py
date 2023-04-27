@@ -891,6 +891,7 @@ class TestControlFlowTraced(TestCase):
         gm = make_fx(g, tracing_mode="symbolic")(
             torch.tensor(True), torch.ones(3, 2, 4), torch.ones(4)
         )
+        gm.print_readable()
         pred = torch.tensor(False)
         x = torch.randn(3, 2, 2)
         y = torch.randn(2)

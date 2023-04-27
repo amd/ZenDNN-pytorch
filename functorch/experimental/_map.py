@@ -139,12 +139,12 @@ def map_dense(f, num_mapped_args, *args):
 def map_autograd(f, num_mapped_args, *args):
     mapped_xs = args[:num_mapped_args]
     pos_args = args[num_mapped_args:]
-    xs_slice = _unstack_pytree(mapped_xs)[0]
-    example_args = pytree.tree_map(lambda t: torch.empty_like(t, requires_grad=t.requires_grad), (*xs_slice, *pos_args))
-    example_xs = example_args[:num_mapped_args]
-    example_pos_args = example_args[num_mapped_args:]
 
     with disable_proxy_modes_tracing():
+        xs_slice = _unstack_pytree(mapped_xs)[0]
+        example_args = pytree.tree_map(lambda t: t, (*xs_slice, *pos_args))
+        example_xs = example_args[:num_mapped_args]
+        example_pos_args = example_args[num_mapped_args:]
         example_flat_out, _ = pytree.tree_flatten(f(num_mapped_args, *example_xs, *example_pos_args))
         example_grad = [torch.ones_like(out) for out in example_flat_out if out is not None and out.requires_grad]
     
@@ -176,8 +176,10 @@ def map_proxy_torch_dispatch_mode(f, num_mapped, *args):
     mode = _get_current_dispatch_mode()
     assert (mode is not None), "Mode should always be enabled for python fallback key"
     with _pop_mode_temporarily() as mode:
-        res = trace_map(mode, map_impl, f, num_mapped, *args)
-    return res
+        if not mode.enable_tracing:
+            return map_impl(f, num_mapped, *args)
+        else:
+            return trace_map(mode, map_impl, f, num_mapped, *args)
 
 
 @map_impl.py_impl(FakeTensorMode)
