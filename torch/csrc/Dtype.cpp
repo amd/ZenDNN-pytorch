@@ -3,6 +3,7 @@
 #include <structmember.h>
 #include <torch/csrc/Exceptions.h>
 #include <torch/csrc/utils/object_ptr.h>
+#include <torch/csrc/utils/python_numbers.h>
 #include <torch/csrc/utils/python_strings.h>
 #include <torch/csrc/utils/tensor_dtypes.h>
 #include <torch/csrc/utils/tensor_types.h>
@@ -12,6 +13,7 @@
 #include <torch/csrc/Exceptions.h>
 
 PyObject* THPDtype_New(at::ScalarType scalar_type, const std::string& name) {
+  HANDLE_TH_ERRORS
   AT_ASSERT(name.length() < DTYPE_NAME_LEN);
   auto type = (PyTypeObject*)&THPDtypeType;
   auto self = THPObjectPtr{type->tp_alloc(type, 0)};
@@ -21,22 +23,33 @@ PyObject* THPDtype_New(at::ScalarType scalar_type, const std::string& name) {
   self_->scalar_type = scalar_type;
   std::strncpy(self_->name, name.c_str(), DTYPE_NAME_LEN);
   return self.release();
+  END_HANDLE_TH_ERRORS
 }
 
 PyObject* THPDtype_is_floating_point(THPDtype* self, PyObject* noargs) {
+  HANDLE_TH_ERRORS
   if (at::isFloatingType(self->scalar_type)) {
     Py_RETURN_TRUE;
   } else {
     Py_RETURN_FALSE;
   }
+  END_HANDLE_TH_ERRORS
+}
+
+PyObject* THPDtype_itemsize(THPDtype* self, PyObject* noargs) {
+  HANDLE_TH_ERRORS
+  return THPUtils_packInt64(scalarTypeToTypeMeta(self->scalar_type).itemsize());
+  END_HANDLE_TH_ERRORS
 }
 
 PyObject* THPDtype_is_complex(THPDtype* self, PyObject* noargs) {
+  HANDLE_TH_ERRORS
   if (at::isComplexType(self->scalar_type)) {
     Py_RETURN_TRUE;
   } else {
     Py_RETURN_FALSE;
   }
+  END_HANDLE_TH_ERRORS
 }
 
 PyObject* THPDtype_is_signed(THPDtype* self, PyObject* noargs) {
@@ -50,12 +63,14 @@ PyObject* THPDtype_is_signed(THPDtype* self, PyObject* noargs) {
 }
 
 PyObject* THPDtype_reduce(PyObject* _self, PyObject* noargs) {
+  HANDLE_TH_ERRORS
   /*
    * For singletons, a string is returned. The string should be interpreted
    * as the name of a global variable.
    */
   auto self = (THPDtype*)_self;
   return THPUtils_packString(self->name);
+  END_HANDLE_TH_ERRORS
 }
 
 typedef PyObject* (*getter)(PyObject*, void*);
