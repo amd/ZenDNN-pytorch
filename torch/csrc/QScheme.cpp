@@ -3,6 +3,7 @@
 #include <torch/csrc/Exceptions.h>
 #include <torch/csrc/utils/object_ptr.h>
 #include <torch/csrc/utils/python_strings.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <c10/core/QScheme.h>
 
@@ -47,7 +48,7 @@ PyTypeObject THPQSchemeType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPQScheme_repr, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPQScheme_repr), /* tp_repr */
     nullptr, /* tp_as_number */
     nullptr, /* tp_as_sequence */
     nullptr, /* tp_as_mapping */
