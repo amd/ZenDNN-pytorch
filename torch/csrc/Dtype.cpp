@@ -7,6 +7,7 @@
 #include <torch/csrc/utils/python_strings.h>
 #include <torch/csrc/utils/tensor_dtypes.h>
 #include <torch/csrc/utils/tensor_types.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 #include <cstring>
 
 #include <torch/csrc/Exceptions.h>
@@ -77,13 +78,35 @@ typedef PyObject* (*getter)(PyObject*, void*);
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays)
 static struct PyGetSetDef THPDtype_properties[] = {
     {"is_floating_point",
-     (getter)THPDtype_is_floating_point,
+     torch::unsafe_cast_function<getter>(THPDtype_is_floating_point),
      nullptr,
      nullptr,
      nullptr},
-    {"is_complex", (getter)THPDtype_is_complex, nullptr, nullptr, nullptr},
-    {"is_signed", (getter)THPDtype_is_signed, nullptr, nullptr, nullptr},
-    {"itemsize", (getter)THPDtype_itemsize, nullptr, nullptr, nullptr},
+    {"is_complex",
+     torch::unsafe_cast_function<getter>(THPDtype_is_complex),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_signed",
+     torch::unsafe_cast_function<getter>(THPDtype_is_signed),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_complex",
+     torch::unsafe_cast_function<getter>(THPDtype_is_complex),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_signed",
+     torch::unsafe_cast_function<getter>(THPDtype_is_signed),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"itemsize",
+     torch::unsafe_cast_function<getter>(THPDtype_itemsize),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays)
@@ -106,7 +129,7 @@ PyTypeObject THPDtypeType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPDtype_repr, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPDtype_repr), /* tp_repr */
     nullptr, /* tp_as_number */
     nullptr, /* tp_as_sequence */
     nullptr, /* tp_as_mapping */

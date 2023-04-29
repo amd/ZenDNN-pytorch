@@ -17,6 +17,7 @@
 #include <torch/csrc/utils/python_strings.h>
 #include <torch/csrc/utils/tensor_new.h>
 #include <torch/csrc/utils/tensor_types.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <ATen/ATen.h>
 
@@ -159,11 +160,31 @@ typedef PyObject* (*getter)(PyObject*, void*);
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,modernize-avoid-c-arrays)
 static struct PyGetSetDef metaclass_properties[] = {
-    {"dtype", (getter)Tensor_dtype, nullptr, nullptr, nullptr},
-    {"layout", (getter)Tensor_layout, nullptr, nullptr, nullptr},
-    {"is_cuda", (getter)Tensor_is_cuda, nullptr, nullptr, nullptr},
-    {"is_sparse", (getter)Tensor_is_sparse, nullptr, nullptr, nullptr},
-    {"is_sparse_csr", (getter)Tensor_is_sparse_csr, nullptr, nullptr, nullptr},
+    {"dtype",
+     torch::unsafe_cast_function<getter>(Tensor_dtype),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"layout",
+     torch::unsafe_cast_function<getter>(Tensor_layout),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_cuda",
+     torch::unsafe_cast_function<getter>(Tensor_is_cuda),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_sparse",
+     torch::unsafe_cast_function<getter>(Tensor_is_sparse),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"is_sparse_csr",
+     torch::unsafe_cast_function<getter>(Tensor_is_sparse_csr),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 static PyTypeObject metaclass = {

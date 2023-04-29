@@ -27,6 +27,7 @@
 #include <torch/csrc/jit/python/pybind_utils.h>
 #include <torch/csrc/jit/python/python_tracer.h>
 #include <torch/csrc/utils/python_strings.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <exception>
 #include <functional>
@@ -1333,22 +1334,22 @@ PyObject* getRequiresGrad(PyObject* obj, void* _unused) {
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
 static struct PyGetSetDef THPFunction_properties[] = {
     {"saved_tensors",
-     (getter)THPFunction_saved_tensors,
+     torch::unsafe_cast_function<getter>(THPFunction_saved_tensors),
      nullptr,
      nullptr,
      nullptr},
     {"saved_variables",
-     (getter)THPFunction_saved_variables,
+     torch::unsafe_cast_function<getter>(THPFunction_saved_variables),
      nullptr,
      nullptr,
      nullptr},
     {"_raw_saved_tensors",
-     (getter)THPFunction_raw_saved_tensors,
+     torch::unsafe_cast_function<getter>(THPFunction_raw_saved_tensors),
      nullptr,
      nullptr,
      nullptr},
     {"next_functions",
-     (getter)THPFunction_next_functions,
+     torch::unsafe_cast_function<getter>(THPFunction_next_functions),
      nullptr,
      nullptr,
      nullptr},
@@ -1378,10 +1379,14 @@ static struct PyGetSetDef THPFunction_properties[] = {
      nullptr,
      nullptr},
     {"requires_grad", getRequiresGrad, nullptr, nullptr, nullptr},
-    {"metadata", (getter)THPFunction_metadata, nullptr, nullptr, nullptr},
+    {"metadata",
+     torch::unsafe_cast_function<getter>(THPFunction_metadata),
+     nullptr,
+     nullptr,
+     nullptr},
     {"materialize_grads",
      nullptr,
-     (setter)THPFunction_set_materialize_grads,
+     torch::unsafe_cast_function<setter>(THPFunction_set_materialize_grads),
      nullptr,
      nullptr},
     {nullptr}};
@@ -1406,7 +1411,8 @@ PyTypeObject THPFunctionType = {
     PyVarObject_HEAD_INIT(nullptr, 0) "torch._C._FunctionBase", /* tp_name */
     sizeof(THPFunction), /* tp_basicsize */
     0, /* tp_itemsize */
-    (destructor)THPFunction_dealloc, /* tp_dealloc */
+    torch::unsafe_cast_function<destructor>(
+        THPFunction_dealloc), /* tp_dealloc */
     0, /* tp_vectorcall_offset */
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
@@ -1424,8 +1430,9 @@ PyTypeObject THPFunctionType = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_HAVE_GC, /* tp_flags */
     nullptr, /* tp_doc */
-    (traverseproc)THPFunction_traverse, /* tp_traverse */
-    (inquiry)THPFunction_clear, /* tp_clear */
+    torch::unsafe_cast_function<traverseproc>(
+        THPFunction_traverse), /* tp_traverse */
+    torch::unsafe_cast_function<inquiry>(THPFunction_clear), /* tp_clear */
     nullptr, /* tp_richcompare */
     0, /* tp_weaklistoffset */
     nullptr, /* tp_iter */

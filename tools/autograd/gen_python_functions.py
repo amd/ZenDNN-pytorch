@@ -722,7 +722,7 @@ PyTypeObject* get_{name}_namedtuple() {{
     static PyStructSequence_Desc desc = {{ "torch.return_types.{name}", nullptr, NamedTuple_fields, {len(fieldnames)} }};
     if (!is_initialized) {{
         PyStructSequence_InitType(&{typename}, &desc);
-        {typename}.tp_repr = (reprfunc)torch::utils::returned_structseq_repr;
+        {typename}.tp_repr = torch::unsafe_cast_function<reprfunc>(torch::utils::returned_structseq_repr);
         is_initialized = true;
     }}
     return &{typename};

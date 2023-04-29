@@ -197,15 +197,15 @@ static PyObject* THPGenerator_getOffset(PyObject* _self, PyObject* noargs) {
   END_HANDLE_TH_ERRORS
 }
 
-static PyObject* THPGenerator_get_device(THPGenerator* self, void* unused) {
+static PyObject* THPGenerator_get_device(PyObject* self, void* unused) {
   HANDLE_TH_ERRORS
-  return THPDevice_New(self->cdata.device());
+  return THPDevice_New(reinterpret_cast<THPGenerator*>(self)->cdata.device());
   END_HANDLE_TH_ERRORS
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
 static struct PyGetSetDef THPGenerator_properties[] = {
-    {"device", (getter)THPGenerator_get_device, nullptr, nullptr, nullptr},
+    {"device", THPGenerator_get_device, nullptr, nullptr, nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)

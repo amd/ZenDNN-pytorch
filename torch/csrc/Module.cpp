@@ -78,6 +78,7 @@
 #include <torch/csrc/utils/tensor_new.h>
 #include <torch/csrc/utils/tensor_numpy.h>
 #include <torch/csrc/utils/tensor_qschemes.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 #include <torch/csrc/utils/verbose.h>
 
 #ifdef USE_DISTRIBUTED
@@ -1222,7 +1223,8 @@ static PyMethodDef TorchMethods[] = {
      METH_O,
      nullptr},
     {"_has_torch_function_variadic",
-     (PyCFunction)(void (*)(void))THPModule_has_torch_function_variadic,
+     torch::unsafe_cast_function<PyCFunction>(
+         THPModule_has_torch_function_variadic),
      METH_FASTCALL,
      nullptr},
     {nullptr, nullptr, 0, nullptr}};

@@ -8,6 +8,7 @@
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/csrc/utils/python_strings.h>
 #include <torch/csrc/utils/python_tuples.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 #include <string>
 
 #include <torch/csrc/autograd/python_variable.h>
@@ -236,7 +237,7 @@ PyTypeObject THPSizeType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPSize_repr, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPSize_repr), /* tp_repr */
     nullptr, /* tp_as_number */
     &THPSize_as_sequence, /* tp_as_sequence */
     &THPSize_as_mapping, /* tp_as_mapping */

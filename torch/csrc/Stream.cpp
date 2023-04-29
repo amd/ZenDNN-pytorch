@@ -3,6 +3,7 @@
 #include <torch/csrc/THP.h>
 #include <torch/csrc/utils/pybind.h>
 #include <torch/csrc/utils/python_arg_parser.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <structmember.h>
 
@@ -103,19 +104,26 @@ static struct PyMemberDef THPStream_members[] = {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
 static struct PyGetSetDef THPStream_properties[] = {
-    {"device", (getter)THPStream_get_device, nullptr, nullptr, nullptr},
+    {"device",
+     torch::unsafe_cast_function<getter>(THPStream_get_device),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
 static PyMethodDef THPStream_methods[] = {
-    {(char*)"__eq__", (PyCFunction)THPStream_eq, METH_O, nullptr},
+    {(char*)"__eq__",
+     torch::unsafe_cast_function<PyCFunction>(THPStream_eq),
+     METH_O,
+     nullptr},
     {nullptr}};
 
 PyTypeObject THPStreamType = {
     PyVarObject_HEAD_INIT(nullptr, 0) "torch.Stream", /* tp_name */
     sizeof(THPStream), /* tp_basicsize */
     0, /* tp_itemsize */
-    (destructor)THPStream_dealloc, /* tp_dealloc */
+    torch::unsafe_cast_function<destructor>(THPStream_dealloc), /* tp_dealloc */
     0, /* tp_vectorcall_offset */
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */

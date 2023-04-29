@@ -7,6 +7,7 @@
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/csrc/utils/python_strings.h>
 #include <torch/csrc/utils/tensor_dtypes.h>
+#include <torch/csrc/utils/unsafe_cast_function.h>
 
 #include <c10/util/Exception.h>
 
@@ -231,18 +232,46 @@ PyObject* THPIInfo_str(THPIInfo* self) {
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-c-arrays)
 static struct PyGetSetDef THPFInfo_properties[] = {
-    {"bits", (getter)THPDTypeInfo_bits, nullptr, nullptr, nullptr},
-    {"eps", (getter)THPFInfo_eps, nullptr, nullptr, nullptr},
-    {"max", (getter)THPFInfo_max, nullptr, nullptr, nullptr},
-    {"min", (getter)THPFInfo_min, nullptr, nullptr, nullptr},
-    {"smallest_normal",
-     (getter)THPFInfo_smallest_normal,
+    {"bits",
+     torch::unsafe_cast_function<getter>(THPDTypeInfo_bits),
      nullptr,
      nullptr,
      nullptr},
-    {"tiny", (getter)THPFInfo_tiny, nullptr, nullptr, nullptr},
-    {"resolution", (getter)THPFInfo_resolution, nullptr, nullptr, nullptr},
-    {"dtype", (getter)THPFInfo_dtype, nullptr, nullptr, nullptr},
+    {"eps",
+     torch::unsafe_cast_function<getter>(THPFInfo_eps),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"max",
+     torch::unsafe_cast_function<getter>(THPFInfo_max),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"min",
+     torch::unsafe_cast_function<getter>(THPFInfo_min),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"smallest_normal",
+     torch::unsafe_cast_function<getter>(THPFInfo_smallest_normal),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"tiny",
+     torch::unsafe_cast_function<getter>(THPFInfo_tiny),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"resolution",
+     torch::unsafe_cast_function<getter>(THPFInfo_resolution),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"dtype",
+     torch::unsafe_cast_function<getter>(THPFInfo_dtype),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-c-arrays)
@@ -259,13 +288,13 @@ PyTypeObject THPFInfoType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPFInfo_str, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPFInfo_str), /* tp_repr */
     nullptr, /* tp_as_number */
     nullptr, /* tp_as_sequence */
     nullptr, /* tp_as_mapping */
     nullptr, /* tp_hash  */
     nullptr, /* tp_call */
-    (reprfunc)THPFInfo_str, /* tp_str */
+    torch::unsafe_cast_function<reprfunc>(THPFInfo_str), /* tp_str */
     nullptr, /* tp_getattro */
     nullptr, /* tp_setattro */
     nullptr, /* tp_as_buffer */
@@ -273,7 +302,8 @@ PyTypeObject THPFInfoType = {
     nullptr, /* tp_doc */
     nullptr, /* tp_traverse */
     nullptr, /* tp_clear */
-    (richcmpfunc)THPDTypeInfo_compare, /* tp_richcompare */
+    torch::unsafe_cast_function<richcmpfunc>(
+        THPDTypeInfo_compare), /* tp_richcompare */
     0, /* tp_weaklistoffset */
     nullptr, /* tp_iter */
     nullptr, /* tp_iternext */
@@ -292,10 +322,26 @@ PyTypeObject THPFInfoType = {
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-c-arrays)
 static struct PyGetSetDef THPIInfo_properties[] = {
-    {"bits", (getter)THPDTypeInfo_bits, nullptr, nullptr, nullptr},
-    {"max", (getter)THPIInfo_max, nullptr, nullptr, nullptr},
-    {"min", (getter)THPIInfo_min, nullptr, nullptr, nullptr},
-    {"dtype", (getter)THPIInfo_dtype, nullptr, nullptr, nullptr},
+    {"bits",
+     torch::unsafe_cast_function<getter>(THPDTypeInfo_bits),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"max",
+     torch::unsafe_cast_function<getter>(THPIInfo_max),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"min",
+     torch::unsafe_cast_function<getter>(THPIInfo_min),
+     nullptr,
+     nullptr,
+     nullptr},
+    {"dtype",
+     torch::unsafe_cast_function<getter>(THPIInfo_dtype),
+     nullptr,
+     nullptr,
+     nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-c-arrays)
@@ -312,13 +358,13 @@ PyTypeObject THPIInfoType = {
     nullptr, /* tp_getattr */
     nullptr, /* tp_setattr */
     nullptr, /* tp_reserved */
-    (reprfunc)THPIInfo_str, /* tp_repr */
+    torch::unsafe_cast_function<reprfunc>(THPIInfo_str), /* tp_repr */
     nullptr, /* tp_as_number */
     nullptr, /* tp_as_sequence */
     nullptr, /* tp_as_mapping */
     nullptr, /* tp_hash  */
     nullptr, /* tp_call */
-    (reprfunc)THPIInfo_str, /* tp_str */
+    torch::unsafe_cast_function<reprfunc>(THPIInfo_str), /* tp_str */
     nullptr, /* tp_getattro */
     nullptr, /* tp_setattro */
     nullptr, /* tp_as_buffer */
@@ -326,7 +372,8 @@ PyTypeObject THPIInfoType = {
     nullptr, /* tp_doc */
     nullptr, /* tp_traverse */
     nullptr, /* tp_clear */
-    (richcmpfunc)THPDTypeInfo_compare, /* tp_richcompare */
+    torch::unsafe_cast_function<richcmpfunc>(
+        THPDTypeInfo_compare), /* tp_richcompare */
     0, /* tp_weaklistoffset */
     nullptr, /* tp_iter */
     nullptr, /* tp_iternext */
