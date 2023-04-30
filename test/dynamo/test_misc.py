@@ -550,7 +550,7 @@ class MiscTests(torch._dynamo.test_case.TestCase):
                 self.count = 3
 
         def fn(x, cfg):
-            for i in range(cfg.count):
+            for _i in range(cfg.count):
                 x = x + cfg.val
             return x
 
@@ -578,7 +578,7 @@ class MiscTests(torch._dynamo.test_case.TestCase):
         def fn(x, cfg):
             if getattr(cfg, "just_add_7", False):
                 return x + 7
-            for i in range(cfg.count):
+            for _i in range(cfg.count):
                 x = x + cfg.val
             return x
 
@@ -679,7 +679,7 @@ class MiscTests(torch._dynamo.test_case.TestCase):
     def test_tensor_dict2(self):
         def fn1(inputs):
             total = torch.zeros(1)
-            for k, v in inputs.items():
+            for _k, v in inputs.items():
                 total += v
             return total
 
@@ -890,7 +890,7 @@ class MiscTests(torch._dynamo.test_case.TestCase):
 
     def test_range_with_shape(self):
         def fn(a):
-            for i in range(1, a.shape[0]):
+            for _i in range(1, a.shape[0]):
                 a += 1
             return a
 
@@ -2080,13 +2080,13 @@ def fn():
     def test_python_slice(self):
         def f1(input):
             y = 0
-            for i, x in enumerate(input[2:], 1):
+            for _i, x in enumerate(input[2:], 1):
                 y = y + x
             return y
 
         def f2(input):
             y = 0
-            for i, x in enumerate(input.shape[2:], 1):
+            for _i, x in enumerate(input.shape[2:], 1):
                 y = y + x
             return y
 
@@ -2813,10 +2813,10 @@ def fn():
                 return logits, loss
 
             def foo(self, memo=None, prefix="", remove_duplicate=False):
-                for mn, m in self.named_modules(
+                for mn, _m in self.named_modules(
                     memo=memo, prefix=prefix, remove_duplicate=remove_duplicate
                 ):
-                    for pn, p in self.named_parameters():
+                    for pn, _p in self.named_parameters():
                         fpn = "%s.%s" % (mn, pn) if mn else pn
                         self.names.append(fpn)
 
@@ -4354,9 +4354,9 @@ def fn():
             lc_key = state[0]
             lc_val = state[1]
             bar = []
-            for i in range(0, 4):
+            for _i in range(0, 4):
                 bar2 = []
-                for j in range(0, 3):
+                for _j in range(0, 3):
                     bar2.append(
                         lc_key + lc_val + torch.tensor([0.1, 0.25, 0.4, 0.5, 0.1])
                     )
