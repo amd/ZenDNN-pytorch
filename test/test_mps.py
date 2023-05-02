@@ -84,6 +84,7 @@ def mps_ops_grad_modifier(ops):
         'cdist': [torch.float32],
         'masked.scatter': [torch.float16, torch.float32],
         'index_fill': [torch.float16, torch.float32],  # missing `aten::_unique`.
+        'linalg.lu_factor': [torch.float16, torch.float32],  # missing `aten::lu_unpack`.
 
         # Correctness issues
         'atanh': [torch.float32],
@@ -447,7 +448,6 @@ def mps_ops_modifier(ops):
         'linalg.lstsq': None,
         'linalg.lstsqgrad_oriented': None,
         'linalg.lu': None,
-        'linalg.lu_factor': None,
         'linalg.lu_factor_ex': None,
         'linalg.lu_solve': None,
         'linalg.matrix_norm': [torch.float32],
@@ -6963,6 +6963,30 @@ class TestNLLLoss(TestCaseMPS):
         helper((2, 8, 4, 5), diag=-1)
         helper((2, 8, 4, 5), diag=-2)
         helper((2, 8, 4, 5), diag=-3)
+
+    def test_lu_factor(self):
+        # TODO: Remove this test after at::lu_unpack is implemented in favor of OpInfo.
+        def helper(shape):
+            cpu_A = torch.randn(shape, device='cpu', dtype=torch.float32, requires_grad=True)
+            A = cpu_A.detach().clone().to('mps').requires_grad_()
+            LU_cpu, pivots_cpu = torch.linalg.lu_factor(cpu_A)
+            LU, pivots = torch.linalg.lu_factor(A)
+
+            self.assertEqual(LU, LU_cpu)
+            self.assertEqual(pivots, pivots_cpu)
+
+            # TODO: implement at::lu_unpack for backward pass
+            # cpu_grad = torch.randn(LU.shape)
+            # grad = cpu_grad.to('mps')
+
+            # LU_cpu.backward(gradient=cpu_grad)
+            # LU.backward(gradient=grad)
+
+            # self.assertEqual(cpu_A.grad, A.grad)
+
+        helper((3, 3))  # unbatched
+        helper((2, 3, 3))  # batched
+        helper((2, 2, 4))  # batched and non-square
 
     # test eye
     def test_eye(self):
