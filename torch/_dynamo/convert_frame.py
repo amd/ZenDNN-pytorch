@@ -238,7 +238,7 @@ def convert_frame_assert(
             recompiles_log.isEnabledFor(logging.DEBUG) or config.error_on_recompile
         ):
             message = (
-                f"Recompiling function {code.co_name} in {code.co_filename}",
+                f"Recompiling function {code.co_name} in {code.co_filename}:{code.co_firstlineno}",
                 f"triggered by the following guard failure: {str(guard_failures[code][-1])}",
             )
 
@@ -459,10 +459,24 @@ def _compile(
         guarded_code = GuardedCode(out_code, check_fn.check_fn)
 
         if guards_log.isEnabledFor(logging.DEBUG):
-            guard_str = "GUARDS:\n"
+            guard_str = f"GUARDS for {code.co_name} {code.co_filename} {code.co_firstlineno}:\n"
+
+            # Get tensor guards. Their code_list is empty and we have to
+            # specialize.
+            for guard in sorted(output.guards):
+                if guard.code_list is None:
+                    if guard.create_fn.__name__ == "TENSOR_MATCH":
+                        guard_str += f"  CHECK_TENSOR({guard.name})\n"
+
+            def get_origin(guard):
+                if guard.source_origin:
+                    return f"# Added at {guard.source_origin}"
+                else:
+                    return ""
+
             guard_str += "\n".join(
                 [
-                    f"  {code}"
+                    f"  {code} {get_origin(guard)}"
                     for guard in sorted(output.guards)
                     if guard.code_list is not None
                     for code in guard.code_list

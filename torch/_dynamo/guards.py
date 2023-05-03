@@ -194,8 +194,8 @@ class GuardBuilder(GuardBuilderBase):
         # ___check_type_id is same as `id(type(x)) == y`
         t = type(self.get(guard.name))
         obj_id = self.id_ref(t)
-        code = f"___check_type_id({self.arg_ref(guard)}, {obj_id})"
-        self._produce_guard_code(guard, [code])
+        # code = f"___check_type_id({self.arg_ref(guard)}, {obj_id})"
+        # self._produce_guard_code(guard, [code])
 
     def BOOL_FALSE(self, guard: Guard):
         # Guard on the runtime value being 'False',
@@ -222,8 +222,9 @@ class GuardBuilder(GuardBuilderBase):
                 Guard(m.group(1), guard.source, GuardBuilder.TYPE_MATCH)
             )
 
-        code = f"___check_obj_id({self.arg_ref(guard)}, {self.id_ref(self.get(guard.name))})"
-        self._produce_guard_code(guard, [code])
+        if "self" in self.arg_ref(guard):
+            code = f"___check_obj_id({self.arg_ref(guard)}, {self.id_ref(self.get(guard.name))})"
+            self._produce_guard_code(guard, [code])
 
     def NAME_MATCH(self, guard: Guard):
         obj = self.get(guard.name)
@@ -315,10 +316,10 @@ class GuardBuilder(GuardBuilderBase):
             # NB: LIST_LENGTH takes care of the outer __check_type_id test
             self.LIST_LENGTH(guard)
 
-            for idx, elem in enumerate(val):
-                code.append(
-                    f"___check_type_id({ref}[{idx}], {self.id_ref(type(elem))})"
-                )
+            # for idx, elem in enumerate(val):
+            #     code.append(
+            #         f"___check_type_id({ref}[{idx}], {self.id_ref(type(elem))})"
+            #     )
         else:
             # Add type check to prevent equality check between tensor and non-tensor.
             code.append(f"___check_type_id({ref}, {self.id_ref(t)})")
@@ -329,7 +330,7 @@ class GuardBuilder(GuardBuilderBase):
         # TODO: It feels like it would be better to just implement our own
         # equality test in C that handles all of the necessary type checking
         # and NaN tests
-        code.append(f"{ref} == {val!r}")
+        # code.append(f"{ref} == {val!r}")
         self._produce_guard_code(guard, code)
 
     def CONSTANT_MATCH(self, guard: Guard):
@@ -346,7 +347,7 @@ class GuardBuilder(GuardBuilderBase):
 
         def setup_guard():
             assert istype(val.training, bool)
-            self.code.append(f"{ref}.training == {val.training}")
+            # self.code.append(f"{ref}.training == {val.training}")
 
         if hasattr(val, "training"):
             # There are cases where a monkeypatched object has a guard made between __new__ and __init__
@@ -393,15 +394,15 @@ class GuardBuilder(GuardBuilderBase):
         t = type(value)
 
         code = list()
-        code.append(f"___check_type_id({ref}, {self.id_ref(t)})")
+        # code.append(f"___check_type_id({ref}, {self.id_ref(t)})")
         param_key_ids = set(dict_param_key_ids(value))
         const_keys = set(dict_const_keys(value))
         const_keys_repr = dict_const_keys_repr(const_keys, local=self.local)
-        if param_key_ids:
-            code.append(f"___dict_param_key_ids({ref}) == {param_key_ids!r}")
-            code.append(f"___dict_const_keys({ref}) == {const_keys_repr}")
-        else:
-            code.append(f"set({ref}.keys()) == {const_keys_repr}")
+        # if param_key_ids:
+        #     code.append(f"___dict_param_key_ids({ref}) == {param_key_ids!r}")
+        #     code.append(f"___dict_const_keys({ref}) == {const_keys_repr}")
+        # else:
+        #     code.append(f"set({ref}.keys()) == {const_keys_repr}")
 
         self._produce_guard_code(guard, code)
 
@@ -778,11 +779,11 @@ class CheckFunctionManager:
             )
             check_tensors_fn = tensor_guards.check
             check_tensors_verbose_fn = tensor_guards.check_verbose
-            code_parts.append(f"___check_tensors({', '.join(tensor_check_names)})")
-            verbose_args = ", ".join(
-                tensor_check_names + ["tensor_check_names=tensor_check_names"]
-            )
-            verbose_code_parts.append(f"___check_tensors_verbose({verbose_args})")
+            # code_parts.append(f"___check_tensors({', '.join(tensor_check_names)})")
+            # verbose_args = ", ".join(
+            #     tensor_check_names + ["tensor_check_names=tensor_check_names"]
+            # )
+            # verbose_code_parts.append(f"___check_tensors_verbose({verbose_args})")
 
         aotautograd_guards: List[GuardEnvExpr] = (
             self.output_graph.tracing_context.guards_context.aotautograd_guards
@@ -817,6 +818,7 @@ class CheckFunctionManager:
         py_code = f"""\
 def ___make_guard_fn({','.join(closure_vars.keys())}):
     return lambda L: {code}
+    # return lambda L: True
 """
         if os.environ.get("TORCHDYNAMO_PRINT_GUARDS", None) == "1":
             print("GUARDS", code)
@@ -859,12 +861,15 @@ def guard_fail_hook(
     index: int,
     last: bool,
 ) -> None:
+    return
     """
     called whenever a guard fails.
     """
     first = index == 0
     global stashed_first_fail_reason
     # Don't waste time computing the fail reason for guards we aren't going to report out.
+    if not config.report_guard_failures and not guard_fn.guard_fail_fn:
+        return
     if not guard_fn.guard_fail_fn and not (first or last):
         return
     scope = {"L": f_locals, "G": guard_fn.global_scope["G"]}
@@ -926,7 +931,7 @@ def guard_error_hook(
     print(" ", " and\n  ".join(guard_fn.code_parts))
 
 
-set_guard_error_hook(guard_error_hook)
+# set_guard_error_hook(guard_error_hook)
 
 
 def unique(seq):

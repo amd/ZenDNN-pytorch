@@ -234,13 +234,13 @@ class OutputGraph(fx.Tracer, Checkpointable[OutputGraphState]):
             # that show up in ShapeEnv
             self.guards.add(ShapeEnvSource().make_guard(GuardBuilder.SHAPE_ENV))
 
-        self.guards.add(
-            DeterministicAlgorithmsSource().make_guard(
-                GuardBuilder.DETERMINISTIC_ALGORITHMS
-            )
-        )
+        # self.guards.add(
+        #     DeterministicAlgorithmsSource().make_guard(
+        #         GuardBuilder.DETERMINISTIC_ALGORITHMS
+        #     )
+        # )
 
-        self.guards.add(DefaultDeviceSource().make_guard(GuardBuilder.DEFAULT_DEVICE))
+        # self.guards.add(DefaultDeviceSource().make_guard(GuardBuilder.DEFAULT_DEVICE))
 
         # tracked_fakes says where any tensor that was wrapped to fake came
         # from.  It is similar to GraphArg, in that all GraphArgs will get

@@ -63,6 +63,7 @@ def is_input_source(source):
 @dataclasses.dataclass(frozen=True)
 class LocalSource(Source):
     local_name: str
+    origin: str = ""
 
     def reconstruct(self, codegen):
         return [codegen.create_load(self.local_name)]

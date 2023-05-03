@@ -122,6 +122,7 @@ class Guard:
     source: GuardSource
     create_fn: Callable[[GuardBuilderBase, "Guard"], None]
     is_volatile: bool = False
+    source_origin: str = None
 
     # Export only. These values are written to at time of guard check_fn creation.
     guard_types: Optional[List[str]] = None
@@ -432,11 +433,13 @@ class Source:
 
     def name(self) -> str:
         raise NotImplementedError()
-
+    
     def make_guard(self, fn, is_volatile=False) -> Guard:
         if self.guard_source() is GuardSource.CONSTANT:
             raise NotImplementedError()
-        return Guard(self.name(), self.guard_source(), fn, is_volatile)
+        
+        origin = getattr(self, "origin", None)
+        return Guard(self.name(), self.guard_source(), fn, is_volatile, source_origin=origin)
 
     def is_nn_module(self) -> bool:
         return self.guard_source().is_nn_module()

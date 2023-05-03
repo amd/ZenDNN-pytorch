@@ -1953,10 +1953,11 @@ class InstructionTranslator(InstructionTranslatorBase):
         vars = list(code_options["co_varnames"])
         vars.extend(x for x in self.cell_and_freevars() if x not in vars)
 
+        origin = f"{code_options['co_filename']}:{code_options['co_filename']}:{code_options['co_firstlineno']}"
         self.symbolic_locals = collections.OrderedDict(
             (
                 k,
-                VariableBuilder(self, LocalSource(k))(f_locals[k]),
+                VariableBuilder(self, LocalSource(k, origin))(f_locals[k]),
             )
             for k in vars
             if k in f_locals

@@ -428,13 +428,13 @@ static PyObject* lookup(CacheEntry* e, THP_EVAL_API_FRAME_OBJECT *frame, CacheEn
     }
     return (PyObject*)e->code;
   }
-  if (unlikely(guard_fail_hook != NULL)) {
-    PyObject* r = call_guard_fail_hook(guard_fail_hook, e, index, f_locals);
-    if (r == NULL) {
-      return NULL;
-    }
-    Py_DECREF(r);
-  }
+  // if (unlikely(guard_fail_hook != NULL)) {
+  //   PyObject* r = call_guard_fail_hook(guard_fail_hook, e, index, f_locals);
+  //   if (r == NULL) {
+  //     return NULL;
+  //   }
+  //   Py_DECREF(r);
+  // }
   return lookup(e->next, frame, e, index + 1);
 }
 

@@ -1156,6 +1156,7 @@ class TorchPatcher:
                     multi_tensor_fn_name,
                     disable(getattr(opt_mod, multi_tensor_fn_name)),
                 )
+        sgd.sgd = disable(sgd.sgd)
 
         excluded_opts = {torch.optim.SparseAdam, torch.optim.RAdam, torch.optim.LBFGS}
         for opt in optimizers:

@@ -225,6 +225,9 @@ base_dir = dirname(dirname(dirname(abspath(__file__))))
 numpy_ndarray_as_tensor = False
 
 
+report_guard_failures = False
+
+
 def is_fbcode():
     return not hasattr(torch.version, "git_version")
 
