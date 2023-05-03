@@ -32,7 +32,6 @@ from torch._export.pass_infra.node_metadata import NodeMetadata
 __all__ = ["ExportPassBase"]
 
 
-PassType = Callable[[torch.fx.GraphModule], Optional[PassResult]]
 Argument = Any
 Value = Any
 Fn = Callable[..., Any]
