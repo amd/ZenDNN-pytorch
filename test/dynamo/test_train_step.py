@@ -9,6 +9,7 @@ import torch._dynamo.backends.ipex
 import torch._dynamo.test_case
 from torch._dynamo.backends.train_step import _compile_train_step
 from torch._dynamo.testing import same
+from torch._inductor.compile_fx import compile_fx_inner as inductor_compile_fx_inner
 
 
 class Seq(torch.nn.Module):
@@ -266,19 +267,39 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
                 self.assertTrue(loss[-2] > loss[-1])
 
         self.assertEqual(cnt.frame_count, 1)
-        self.assertEqual(cnt.op_count, 57)
+        self.assertEqual(cnt.op_count, 61)
 
-        # WIP - something is broken about decomps/faketensors when using inductor
-        # torch._dynamo.reset()
+    def test_inductor_backend(self):
+        def train_step(model, optimizer, inputs):
+            out = model(*inputs)
+            loss = out.sum()
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            return loss
 
-        # ind_train_step = _compile_train_step(train_step, backend=inductor_compile_fx_inner)
+        opt_model = Seq()
+        opt_model.apply(init_weights)
+        opt_optimizer = torch.optim.SGD(opt_model.parameters(), lr=0.01, momentum=0.9)
+        inputs = [torch.randn((128, 10))]
 
-        # loss = []
-        # for step in range(10):
-        #     ind_loss = ind_train_step(opt_model, opt_optimizer, inputs)
-        #     loss.append(ind_loss)
-        #     if step > 0:
-        #         self.assertTrue(loss[-2] > loss[-1])
+        torch._dynamo.reset()
+        ind_train_step = _compile_train_step(
+            train_step, backend=inductor_compile_fx_inner
+        )
+
+        loss = []
+        for step in range(10):
+            ind_loss = ind_train_step(opt_model, opt_optimizer, inputs)
+            loss.append(ind_loss)
+            if step > 0:
+                self.assertTrue(loss[-2] > loss[-1])
+
+        torch._dynamo.reset()
+        with self.assertRaisesRegex(
+            RuntimeError, r"_compile_train_step does not support inductor"
+        ):
+            ind_train_step = _compile_train_step(train_step, backend="inductor")
 
 
 if __name__ == "__main__":
