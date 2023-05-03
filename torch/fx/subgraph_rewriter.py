@@ -202,7 +202,7 @@ def replace_pattern_with_filters(
     gm: GraphModule,
     pattern: Union[Callable, GraphModule],
     replacement: Union[Callable, GraphModule],
-    match_filters: List[Callable[["InternalMatch", Graph, Graph], bool]],  # type: ignore[name-defined]
+    match_filters: List[Callable[["InternalMatch", Graph, Graph], bool]] = None,  # type: ignore[name-defined]
 ) -> List[ReplacedPatterns]:
     """
     See replace_pattern for documentation. This function is an overload with an additional match_filter argument.
@@ -311,8 +311,7 @@ def _replace_pattern(
                 return
             for arg in curr_node.args:
                 if isinstance(arg, Node):
-                    if arg not in val_map.values():
-                        get_replacement_nodes(arg)
+                    get_replacement_nodes(arg)
             replacement_nodes.append(curr_node)
 
         for ret_node in copied_returning_nodes:
