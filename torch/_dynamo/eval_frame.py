@@ -495,6 +495,7 @@ def optimize(
     guard_fail_fn=None,
     disable=False,
     dynamic=False,
+    trainstep=False,
 ):
     """
     The main entrypoint of TorchDynamo.  Do graph capture and call
@@ -520,6 +521,9 @@ def optimize(
         def toy_example(a, b):
             ...
     """
+    if trainstep:
+        nopython = True
+
     check_if_dynamo_supported()
     # Note: The hooks object could be global instead of passed around, *however* that would make
     # for a confusing API usage and plumbing story wherein we nest multiple .optimize calls.
@@ -536,11 +540,9 @@ def optimize(
     # Find if backend has any extra context manager
     backend_ctx_ctor = getattr(backend, "backend_ctx_ctor", null_context)
 
-    if nopython:
+    if nopython or trainstep:
         return optimize_assert(
-            backend,
-            dynamic=dynamic,
-            hooks=hooks,
+            backend, dynamic=dynamic, hooks=hooks, trainstep=trainstep
         )
     return _optimize_catch_errors(
         convert_frame.convert_frame(backend, hooks=hooks),
@@ -1052,6 +1054,7 @@ def optimize_assert(
     export=False,
     export_constraints=None,
     dynamic=False,
+    trainstep=False,
 ):
     """
     The same as `torch._dynamo.optimize(backend, nopython=True)`
@@ -1063,7 +1066,10 @@ def optimize_assert(
 
     return _optimize_catch_errors(
         convert_frame.convert_frame_assert(
-            backend, export=export, export_constraints=export_constraints
+            backend,
+            export=export,
+            export_constraints=export_constraints,
+            trainstep=trainstep,
         ),
         hooks,
         backend_ctx_ctor,
