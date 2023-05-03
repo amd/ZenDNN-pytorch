@@ -28,11 +28,10 @@ tools and their typical usage. For additional help see
      - Usage
    * - Info logging
      - View summarized steps of compilation
-     - ``torch._dynamo.config.log_level = logging.INFO``
+     - ``TORCH_LOGS="dynamo"``
    * - Debug logging
      - View detailed steps of compilation (print every instruction traced)
-     - ``torch._dynamo.config.log_level = logging.DEBUG`` and
-       ``torch._dynamo.config.verbose = True``
+     - set environment variable ``TORCH_LOGS="+dynamo``
    * - Minifier for any backend
      - Find smallest subgraph which reproduces errors for any backend
      - set environment variable ``TORCHDYNAMO_REPRO_AFTER="dynamo"``
@@ -76,6 +75,10 @@ Diagnosing Runtime Errors
 
 Below is the TorchDynamo compiler stack.
 
+.. image:: ../../_static/img/torchdynamo_stack.png
+   :width: 100%
+   :align: center
+
 At a high level, the TorchDynamo stack consists of a graph capture from
 Python code (TorchDynamo) and a backend compiler. In this example, the
 backend compiler consists of backward graph tracing (AOTAutograd) and
@@ -83,7 +86,7 @@ graph lowering (TorchInductor)*. Errors can occur in any component of
 the stack and will provide full stack traces.
 
 You may use info logging
-(``torch._dynamo.config.log_level = logging.INFO``) and look for
+(``TORCH_LOGS="dynamo"``) and look for
 ``Step #: ...`` outputs in order to determine in which component the
 error has occurred. Logs are made at the beginning and end of each step,
 so the step that an error should correspond to is the most recent logged
@@ -94,8 +97,8 @@ following parts of the stack (according to the image above):
 Step Component
 ==== ================
 1    TorchDynamo
-2    Compiler Backend
-3    TorchInductor
+2    Compiler Backend Call
+3    TorchInductor (if chosen as backend compiler)
 ==== ================
 
 The beginning and end of AOTAutograd is currently not logged, but we
@@ -104,7 +107,8 @@ plan to add it soon.
 If info logging is insufficient, then there are also some backend
 options which can enable you to determine which component is causing the
 error if you’re unable to understand the error message that is
-generated. These are the following:
+generated. These options are presented below.
+As a reminder, the backend is set by calling ``torch.compile(<backend_str>)``.
 
 -  ``"eager"``: only runs torchdynamo forward graph capture and then
    runs the captured graph with PyTorch. This provides an indication as
@@ -185,17 +189,16 @@ As the message suggests you can set
 ``torch._dynamo.config.verbose=True`` to get a full stack trace to both
 the error in TorchDynamo and the user code. In addition to this flag,
 you can also set the ``log_level`` of torchdynamo through
-``torch._dynamo.config.log_level``. The available levels are the
+``TORCH_LOGS`` environment variable. The available levels are the
 following:
 
-- ``logging.DEBUG``: Print every instruction that is
+- ``TORCH_LOGS="+dynamo"`` - DEBUG log level: Print every instruction that is
   encountered in addition to all below log levels.
-- ``logging.INFO``:
+- ``TORCH_LOGS="dynamo"`` - INFO log level:
   Print each function that is compiled (original and modified bytecode)
   and the graph that is captured in addition to all below log levels.
-- ``logging.WARNING`` (default): Print graph breaks in addition to all
-  below log levels.
-- ``logging.ERROR``: Print errors only.
+- unset (default) - WARNING log level: Print only warnings and errors.
+- ``TORCH_LOGS="-dynamo"`` - ERROR log level: Print errors only.
 
 If a model is sufficiently large, the logs can become overwhelming. If
 an error occurs deep within a model’s Python code, it can be useful to
@@ -732,6 +735,6 @@ OS, Python< PyTorch, CUDA, and Triton versions info by running:
 -  A description of the error
 -  The expected behavior
 -  A log (set ``torch._dynamo.config.log_file`` to a valid file name to
-   dump the logs to a file and
-   ``torch._dynamo.config.log_level = logging.DEBUG`` and
+   dump the logs to a file and set
+   ``TORCH_LOGS="+dynamo,aot,+inductor`` and
    ``torch._dynamo.config.verbose = True``)
