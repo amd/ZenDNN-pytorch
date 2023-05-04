@@ -56,7 +56,6 @@ from .source import (
     TensorPropertySource,
 )
 from .utils import (
-    assert_no_fake_params_or_buffers,
     checkpoint_params,
     CleanupHook,
     clone_inputs,
@@ -221,6 +220,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         export: bool,
         export_constraints,
         frame_state,
+        fake_mode,
     ):
         super().__init__()
         self.tracers = [SubgraphTracer(self)]
@@ -233,17 +233,20 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         self.tensor_weakref_to_sizes_strides: WeakIdKeyDictionary = {}
         # In export mode, we force the shape_env to strictly disallow any constraining
         # of the user marked dynamic dims
-        fake_mode = torch._subclasses.FakeTensorMode(
-            shape_env=ShapeEnv(
-                allow_scalar_outputs=config.capture_scalar_outputs,
-                allow_dynamic_output_shape_ops=config.capture_dynamic_output_shape_ops,
-                frame_id=frame_state["_id"],
-            )
-            if config.dynamic_shapes
-            else None,
-            # TODO (tmanlaibaatar) Remove this once we always lift params and buffers
-            allow_non_fake_inputs=True if self.export else False,
+        shape_env = ShapeEnv(
+            allow_scalar_outputs=config.capture_scalar_outputs,
+            allow_dynamic_output_shape_ops=config.capture_dynamic_output_shape_ops,
+            frame_id=frame_state["_id"],
         )
+        if fake_mode:
+            fake_mode.shape_env = shape_env if config.dynamic_shapes else None
+            fake_mode.allow_non_fake_inputs = True if self.export else False
+        else:
+            fake_mode = torch._subclasses.FakeTensorMode(
+                shape_env=shape_env if config.dynamic_shapes else None,
+                # TODO (tmanlaibaatar) Remove this once we always lift params and buffers
+                allow_non_fake_inputs=True if self.export else False,
+            )
         self.tracing_context: TracingContext = TracingContext(fake_mode)
         if config.dynamic_shapes:
             # Register a SHAPE_ENV guard to make sure we setup shape guards
@@ -834,7 +837,9 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         gm.compile_subgraph_reason = self.compile_subgraph_reason
         name = unique_id("__compiled_fn")
 
-        assert_no_fake_params_or_buffers(gm)
+        # for deferred-init, we probably want to assert _all_ fake params/buffers?
+        # and how does dynamo know we're in deferred init mode?
+        # assert_no_fake_params_or_buffers(gm)
         compiled_fn = self.call_user_compiler(gm)
         compiled_fn = disable(compiled_fn)
 

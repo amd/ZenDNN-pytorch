@@ -1,19 +1,35 @@
 import builtins
 import itertools
 import logging
+<<<<<<< HEAD
 from typing import Callable, Dict, List, Optional, Union
+=======
+
+from contextlib import contextmanager
+from copy import copy
+from typing import Any, Callable, Dict, List, Optional, Union
+>>>>>>> 5e7e651f907... Deferred model init
 
 import torch
+
 import torch.utils._pytree as pytree
 from torch import _C, fx
 from torch._dynamo.backends.registry import lookup_backend
+from torch._dynamo.utils import assert_no_fake_params_or_buffers, check_all_fake
 from torch._guards import detect_fake_mode, TracingContext
 from torch._inductor.compile_fx import compile_fx_inner
 
 from torch._inductor.decomposition import select_decomp_table
-from torch._subclasses.fake_tensor import FakeTensor, FakeTensorMode
+from torch._subclasses.fake_tensor import FakeTensorMode
+
 from torch.func import functionalize
-from torch.fx.experimental.proxy_tensor import make_fx
+from torch.fx.experimental.proxy_tensor import (
+    make_fx,
+    ProxyTorchDispatchMode,
+    PythonKeyTracer,
+)
+from torch.fx.graph import Graph
+from torch.fx.graph_module import GraphModule
 from torch.nn.utils import stateless
 from .is_train_step import TrainStepCompiler
 
@@ -27,6 +43,7 @@ def _compile_train_step(
     backend: Union[str, Callable] = "inductor",
     options: Optional[Dict[str, Union[str, builtins.int, builtins.bool]]] = None,
     disable: builtins.bool = False,
+    fake_mode: Optional[FakeTensorMode] = None,
 ) -> Callable:
     """
     Compiles a whole train step function, without graph-breaking on .backward() or optimizer.
@@ -42,8 +59,10 @@ def _compile_train_step(
     - Not all optimizers or forms of optimizers may be supported. Currently only tested with SGD and
       Adam(capturable=True)
 
+    Args:
     _compile_train_step args are copied from `torch.compile` so see those docs for more info.
     - note: fullgraph=True is implied
+    - fake_mode (Optional[FakeMode]): If using deferred initialization, provide the FakeMode.
 
     Example:
 
@@ -70,6 +89,51 @@ def _compile_train_step(
     )(train_step_fn)
 
 
+<<<<<<< HEAD
+=======
+@contextmanager
+def _rematerialize_optimizer(
+    opt: torch.optim.Optimizer,
+    named_states: Dict[str, Any],
+    params: Dict[str, torch.nn.Parameter],
+):
+    if opt is None:
+        try:
+            yield
+        finally:
+            pass
+        return
+
+    # update opt.state with proxy tensors
+    orig_states: Dict[str, Any] = copy(opt.state)
+    if named_states:
+        for n in named_states:
+            # opt.state's key type is string, but optimizer uses Parameter as keys
+            opt.state[params[n]] = named_states[n]  # type: ignore[index]
+
+    # FIXME: support multiple parameter groups
+    param_group = opt.param_groups[0]
+    orig_params = param_group["params"]
+    # FIXME(@mrshenli): exclude buffers
+    param_group["params"] = params.values()
+
+    try:
+        yield
+    finally:
+        param_group["params"] = orig_params
+        opt.state.update(orig_states)
+
+
+def get_deferred_modes():
+    fx_tracer = PythonKeyTracer()
+    fx_tracer.graph = Graph(fx_tracer)
+    fx_tracer.root = torch.nn.Module()
+    fx_tracer.tensor_attrs = {}
+    proxy_mode = ProxyTorchDispatchMode(fx_tracer, tracing_mode="real")
+    return proxy_mode, fx_tracer
+
+
+>>>>>>> 5e7e651f907... Deferred model init
 def _train_step_compiler(backend_compile_fn):
     """Note [Train Step Compile]
 
@@ -94,7 +158,11 @@ def _train_step_compiler(backend_compile_fn):
         assert (
             torch.is_grad_enabled()
         ), "Expected grad enabled when calling train_step_compile"
-        torch._dynamo.utils.assert_no_fake_params_or_buffers(mod)
+        if check_all_fake(mod):
+            deferred_init = True
+        else:
+            deferred_init = False
+            assert_no_fake_params_or_buffers(mod)
         assert len(real_inputs) > 0, "Expected at least one input"
         fake_mode = detect_fake_mode()
 
@@ -106,7 +174,7 @@ def _train_step_compiler(backend_compile_fn):
         )
         assert isinstance(fake_mode, FakeTensorMode), "Expected a valid FakeTensorMode"
 
-        def fakeify_inputs(flat_args):
+        def fakeify_tensors(flat_args):
             already_fake = {}
 
             def convert(idx, x):
@@ -123,8 +191,10 @@ def _train_step_compiler(backend_compile_fn):
         params = dict(itertools.chain(mod.named_parameters(), mod.named_buffers()))
         params_flat, params_spec = pytree.tree_flatten(params)
         params_len = len(params_flat)
-        fake_params_flat = fakeify_inputs(params_flat)
-        fake_inputs = fakeify_inputs(real_inputs)
+        fake_params_flat = (
+            params_flat if deferred_init else fakeify_tensors(params_flat)
+        )
+        fake_inputs = fakeify_tensors(real_inputs)
         assert (
             "optimizers" in mod.meta
         ), "Dynamo should populate GraphModule meta with optimizers dict"
@@ -174,6 +244,7 @@ def _train_step_compiler(backend_compile_fn):
             opt = optimizers["__optimizer_0"]
             dev = params_flat[0].device
 
+<<<<<<< HEAD
             # first, we modify the optimizer to swap real module param refs to corresponding fake ones
 
             # the id's of the model params and the optimizer's refs to those params don't match- different pytensor,
@@ -187,14 +258,80 @@ def _train_step_compiler(backend_compile_fn):
 
             # build the flat fake-args for the optimizer states for use during tracing
             fake_named_states = {}
+=======
+            # In order to trace optimizer _init_group, param grads must exist.
+            # But if I run the train_step graph to make param grads exist, it also initializes the optimizer
+            # which prevents re-initializing the optimizer during optimizer tracing.
+            with fake_mode:
+                for param in fake_params_flat:
+                    param.grad = torch.empty_like(param)
+
+            optimizer_proxy_mode, optimizer_fx_tracer = get_deferred_modes()
+            with fake_mode, optimizer_proxy_mode:
+                for group in opt.param_groups:
+                    if isinstance(opt, torch.optim.Adam):
+                        params_with_grad = []
+                        grads = []
+                        exp_avgs = []
+                        exp_avg_sqs = []
+                        max_exp_avg_sqs = []
+                        state_steps = []
+                        opt._init_group(
+                            group,
+                            params_with_grad,
+                            grads,
+                            exp_avgs,
+                            exp_avg_sqs,
+                            max_exp_avg_sqs,
+                            state_steps,
+                        )
+                    elif isinstance(opt, torch.optim.SGD):
+                        params_with_grad = []
+                        d_p_list = []
+                        momentum_buffer_list = []
+                        opt._init_group(
+                            group,
+                            d_p_list,
+                            momentum_buffer_list,
+                        )
+
+                # Convert the fake optimizer states to real
+                outputs = []
+                for param in fake_params_flat:
+                    assert (
+                        param in opt.state
+                    ), "all params expected handled by one optimizer, multi-opt NYI"
+                    for name, state in opt.state[param].items():
+                        if hasattr(state, "proxy"):
+                            print(f"Has proxy: {name} {state}")
+                            outputs.append(state.proxy.node)
+                        else:
+                            print(f"Missing proxy: {name} {state}")
+
+                optimizer_fx_tracer.graph.output(outputs)
+                optimizer_fx_tracer.graph.eliminate_dead_code()  # hmmm
+                opt_deferred_init = GraphModule(
+                    optimizer_fx_tracer.root, optimizer_fx_tracer.graph
+                )
+                results = opt_deferred_init()
+
+            # Build a mapping to use for reparametrizing the optimizer during tracing
+            named_states = {}
+>>>>>>> 5e7e651f907... Deferred model init
             for n, p in pytree.tree_unflatten(fake_params_flat, params_spec).items():
                 if p in opt.state:
                     fake_named_states[n] = opt.state[p]  # type: ignore[index]
 
+<<<<<<< HEAD
         fake_named_states_flat, named_states_spec = pytree.tree_flatten(
             fake_named_states
         )
         named_states_len = len(fake_named_states_flat)
+=======
+        named_states_flat, named_states_spec = pytree.tree_flatten(named_states)
+        fake_named_states_flat = fakeify_tensors(named_states_flat)
+        named_states_len = len(named_states_flat)
+>>>>>>> 5e7e651f907... Deferred model init
         full_fake_args = fake_params_flat + fake_named_states_flat + fake_inputs
 
         """
@@ -224,7 +361,17 @@ def _train_step_compiler(backend_compile_fn):
             backend_fx_g = backend_compile_fn(functional_fx_g, full_fake_args)
 
         """
-        Step 5: Reverse the calling-convention change we made above with _reparametrize_module,
+        Step 5: Make the model 'real' if it was deferred
+        """
+        results_iter = iter(mod.model._deferred_init())
+
+        for i, t in enumerate(params_flat):
+            if t is None:
+                continue
+            params_flat[i] = next(results_iter)
+
+        """
+        Step 6: Reverse the calling-convention change we made above with _reparametrize_module,
                 and return a function that accepts the arguments as originally provided by dynamo.
         """
         # We restore the optimizer's param refs to the real module param refs, and also make its states real
