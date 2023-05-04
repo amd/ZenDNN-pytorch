@@ -855,6 +855,12 @@ def wrap_fake_exception(fn):
 
 
 def deepcopy_to_fake_tensor(obj, fake_mode):
+    def is_already_fake(obj):
+        # hacky, but precise handling just for deferred init modules
+        return hasattr(obj, "_deferred")
+
+    if is_already_fake(obj):
+        return obj
     with torch._subclasses.fake_tensor.FakeCopyMode(fake_mode):
         return wrap_fake_exception(lambda: copy.deepcopy(obj))
 
@@ -1348,6 +1354,17 @@ def get_real_value(node, tracer):
     except RuntimeError as e:
         raise TorchRuntimeError() from e
     return real_value
+
+
+def check_all_fake(gm):
+    all_fake = True
+    for name, buffer in gm.named_buffers():
+        if not isinstance(buffer, torch._subclasses.FakeTensor):
+            all_fake = False
+    for name, param in gm.named_parameters():
+        if not isinstance(param, torch._subclasses.FakeTensor):
+            all_fake = False
+    return all_fake
 
 
 def assert_no_fake_params_or_buffers(gm):
