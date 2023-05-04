@@ -69,6 +69,7 @@ os.environ["KINETO_LOG_LEVEL"] = "5"
 
 current_name = ""
 current_device = ""
+current_onnx_compiler = ""
 current_batch_size = None
 output_filename = None
 
@@ -915,7 +916,7 @@ def speedup_experiment_onnx(
             timings,
         )
 
-    headers = ("dev", "name", "batch_size", "speedup", "abs_latency")
+    headers = ["dev", "name", "batch_size", "speedup", "abs_latency"]
     row = [
         current_device,
         current_name,
@@ -924,7 +925,7 @@ def speedup_experiment_onnx(
         median[1] * 1000,
     ]
     if "compilation_latency" in kwargs:
-        headers = headers + ("compilation_latency", "compression_ratio")
+        headers = headers + ["compilation_latency", "compression_ratio"]
         row.append(kwargs["compilation_latency"])
         row.append(kwargs["compression_ratio"])
 
@@ -1100,7 +1101,7 @@ class OnnxModel:
     # TorchScript based onnx export. `torch.onnx.export`
     #
     # TODO(bowbao):
-    # * large model export failed. 
+    # * large model export failed.
     #       Onnx Model is larger than 2GB, but exporter makes decision based pt model size, which is
     #       smaller than 2GB.
     # * HuggingFace accuracy check failed. Output is `ModelOutput` type.
@@ -1182,7 +1183,6 @@ class OnnxModel:
             # }
             # ort_providers = [("CUDAExecutionProvider", cuda_provider_options)]
             ort_providers = ["CUDAExecutionProvider"]
-
 
         # log.debug("Pre ort", torch.cuda.memory_summary(device=0, abbreviated=False))
         # log.debug("Pre ort", torch.cuda.memory_summary(device=1, abbreviated=False))
@@ -1317,7 +1317,6 @@ class OnnxModelV2(OnnxModel):
     def _export(
         self, model, example_inputs, output_path: str
     ) -> torch.onnx.ExportOutput:
-        from torch.onnx._internal import exporter
         example_args, example_kwargs = self._normalize_bench_inputs(example_inputs)
         options = torch.onnx.ExportOptions()
         export_output = torch.onnx.dynamo_export(
@@ -1369,6 +1368,7 @@ def optimize_onnx_ctx(
         from onnx_helper import reporter
         from torch.onnx._internal import exporter
         from torch.onnx._internal.fx import diagnostics
+
         # NOTE(bowbao): Capture all export & ort errors and diagnostics.
         # Serialize to csv, to be parsed and summarized later by '.onnx_helper/reporter.py'.
         # TODO: Realized accuracy mismatch is not coverred here. Let's add it next.
@@ -1376,11 +1376,15 @@ def optimize_onnx_ctx(
             output_filename.find(".csv") > 0
         ), f"expected output_filename to be a .csv, but got {output_filename}"
         output_error_filename = output_filename[:-4] + "_export_error.csv"
-        parser = reporter.ExportErrorParser(current_device, current_name, current_batch_size)
+        parser = reporter.ExportErrorParser(
+            current_device, current_name, current_batch_size
+        )
         try:
             nonlocal onnx_model
             if onnx_model is None:
-                onnx_model = onnx_model_cls(output_directory, model, copy.deepcopy(inputs))
+                onnx_model = onnx_model_cls(
+                    output_directory, model, copy.deepcopy(inputs)
+                )
 
             for _ in range(n - 1):
                 onnx_model.run(inputs)
@@ -1389,14 +1393,20 @@ def optimize_onnx_ctx(
             # `torch.onnx.dynamo_export` raises error that encloses diagnostics.
             diagnostic_context = e.diagnostic_context
             for parsed_error in parser.parse_diagnostic_context(diagnostic_context):
-                output_csv(output_error_filename, parsed_error.headers, parsed_error.row)
+                output_csv(
+                    output_error_filename, parsed_error.headers, parsed_error.row
+                )
 
             # Check also the raw exception that caused export failure.
             # Skip if it is already analyzed by diagnostics.
             cause_of_exception = e.__cause__
-            if not isinstance(cause_of_exception, diagnostics.RuntimeErrorWithDiagnostic):
+            if not isinstance(
+                cause_of_exception, diagnostics.RuntimeErrorWithDiagnostic
+            ):
                 parsed_error = parser.parse_exception(cause_of_exception)
-                output_csv(output_error_filename, parsed_error.headers, parsed_error.row)
+                output_csv(
+                    output_error_filename, parsed_error.headers, parsed_error.row
+                )
             raise
         except Exception as e:
             # `torch.onnx.export` errors.
@@ -1940,6 +1950,33 @@ class BenchmarkRunner:
 
             if name in self.skip_accuracy_check_as_eager_non_deterministic:
                 return record_status("pass_due_to_skip", dynamo_start_stats=start_stats)
+
+            # Workaround for ONNX for non-tensor outputs
+            # TODO: Maybe think of reverse formatting from onnx back to torch.
+            #       Still, torch.onnx.export won't have this kind of functionality.
+            if (
+                current_onnx_compiler == "torchscript"
+                or current_onnx_compiler == "dynamo"
+            ) and type(correct_result).__name__ in (
+                "MaskedLMOutput",
+                "Seq2SeqLMOutput",
+                "CausalLMOutputWithCrossAttentions",
+                "LongformerMaskedLMOutput",
+                "Instances",
+                "SquashedNormal",
+                "Boxes",
+                "Normal",
+                "TanhTransform",
+                "Foo",
+                "Variable",
+            ):
+                # Copied from `same`, assuming `correct_result` is not nested.
+                correct_result = [
+                    value
+                    for key in correct_result.__dict__.keys()
+                    if (value := getattr(correct_result, key)) is not None
+                ]
+                print(correct_result, new_result)
 
             try:
                 if not same(
@@ -2823,7 +2860,7 @@ def run(runner, args, original_dir=None):
         runner.skip_models.clear()
 
     experiment = null_experiment
-    global current_name, current_device, current_batch_size, output_filename, optimize_ctx
+    global current_name, current_device, current_batch_size, output_filename, optimize_ctx, current_onnx_compiler
     optimize_ctx = contextlib.nullcontext()
 
     if args.overhead:
@@ -2864,12 +2901,14 @@ def run(runner, args, original_dir=None):
         )
         experiment = functools.partial(speedup_experiment_onnx, OnnxModel)
         output_filename = "onnx.csv"
+        current_onnx_compiler = "torchscript"
     elif args.dynamo_onnx:
         optimize_ctx = functools.partial(
             optimize_onnx_ctx, args.output_directory or ".", OnnxModelV2
         )
         experiment = functools.partial(speedup_experiment_onnx, OnnxModelV2)
         output_filename = "dynamo_onnx.csv"
+        current_onnx_compiler = "dynamo"
     elif args.speedup_dynamo_ts:
         optimize_ctx = torch._dynamo.optimize("ts", nopython=args.nopython)
         experiment = speedup_experiment
