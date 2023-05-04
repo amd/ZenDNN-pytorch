@@ -11,7 +11,7 @@ from torch._guards import detect_fake_mode, TracingContext
 from torch._inductor.compile_fx import compile_fx_inner
 
 from torch._inductor.decomposition import select_decomp_table
-from torch._subclasses.fake_tensor import FakeTensorMode
+from torch._subclasses.fake_tensor import FakeTensor, FakeTensorMode
 from torch.func import functionalize
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch.nn.utils import stateless
@@ -29,14 +29,18 @@ def _compile_train_step(
     disable: builtins.bool = False,
 ) -> Callable:
     """
-    Compiles a whole train step function, without graph-breaking on .backward().
+    Compiles a whole train step function, without graph-breaking on .backward() or optimizer.
 
     EXPERIMENTAL: both how the API is constructed and how it behaves are experimental and subject to change.
 
     Limitations:
-    - No optimizer support yet
+    - (Currently) only a single optimizer may be used, plan to support multiple
+    - For each optimizer that .step() is called on, .zero_grad(set_to_none=True) must also be called
+      such that the compiled function has the same semantics as the uncompiled (eager) function.
     - All inputs to the train_step fn (whether args/kwargs or globals) must not have .grad_fn set, meaning
       you may not use these tensors in gradient-requiring operations outside of the compiled region
+    - Not all optimizers or forms of optimizers may be supported. Currently only tested with SGD and
+      Adam(capturable=True)
 
     _compile_train_step args are copied from `torch.compile` so see those docs for more info.
     - note: fullgraph=True is implied
@@ -45,7 +49,7 @@ def _compile_train_step(
 
         from torch._dynamo.backends._train_step import _compile_train_step
 
-        def train_step(model, inputs):
+        def train_step(model, optimizer, inputs):
             ...
 
         opt_train_step = _compile_train_step(train_step, ...)
@@ -74,7 +78,7 @@ def _train_step_compiler(backend_compile_fn):
     chunks of backwards, tying it back together with an AotFunction.
 
     Instead, TrainStepCompiler assumes the user compiles a full train_step function complete with calls to
-    .backward(), and zero_grad().  It additionally requires no graph-breaks.
+    .backward(), optimizer step(), and zero_grad().  It additionally requires no graph-breaks.
 
     Args:
         backend_compile_fn (callable): A dynamo compiler function, to be invoked to compile each subgraph.
@@ -84,7 +88,7 @@ def _train_step_compiler(backend_compile_fn):
 
     def _compile_fn(mod: fx.GraphModule, real_inputs: List[torch.Tensor]):
         """
-        Step 1: Assert inputs (from user) are already Fake, and user their FakeTensorMode
+        Step 0: Assert inputs (from user) are already Fake, and user their FakeTensorMode
                 (created by dynamo) to fakeify the module's parameters
         """
         assert (
@@ -95,6 +99,11 @@ def _train_step_compiler(backend_compile_fn):
         fake_mode = detect_fake_mode()
 
         tc = TracingContext.train_step_context(assert_if_missing=True)
+        assert tc.optimizers_stepped == tc.optimizers_zeroed_grad, (
+            "Not all calls to optimizer.step() were paired with a call to .zero_grad()."
+            " Calling .zero_grad() is required for train_step compilation, since it enforces parity in behavior"
+            " between compiled and eager mode.  Compiled mode never mutates the .grad fields of the outside module."
+        )
         assert isinstance(fake_mode, FakeTensorMode), "Expected a valid FakeTensorMode"
 
         def fakeify_inputs(flat_args):
@@ -116,6 +125,11 @@ def _train_step_compiler(backend_compile_fn):
         params_len = len(params_flat)
         fake_params_flat = fakeify_inputs(params_flat)
         fake_inputs = fakeify_inputs(real_inputs)
+        assert (
+            "optimizers" in mod.meta
+        ), "Dynamo should populate GraphModule meta with optimizers dict"
+        optimizers = mod.meta["optimizers"]
+        assert len(optimizers) <= 1, "Multiple optimizers NYI"
 
         log.debug("\n---original graph---\n%s\n\n", mod.graph)
 
@@ -125,7 +139,7 @@ def _train_step_compiler(backend_compile_fn):
             """
             _params = lifted_args[:params_len]
             _params_dict = pytree.tree_unflatten(_params, params_spec)
-            _user_args = lifted_args[params_len:]
+            _user_args = lifted_args[params_len + named_states_len :]
             with stateless._reparametrize_module(mod, _params_dict):
                 out = mod(*_user_args, **kwargs)
 
@@ -135,11 +149,53 @@ def _train_step_compiler(backend_compile_fn):
                 )
             return out
 
+        opt = None
+        # initialize closure vars for functional_call, will update after optimizer warmup
+        named_states_len = 0
+        fake_named_states = {}
+
         """
         Step 1: Warm up the optimizer(s) (if present).
+
+        The optimizer has no state tensors yet, but it has references to real module params.
+
+        The state-tensors will be lazily initialized on the first step, for any params with .grad.
+
+        Right now, the params have no grad.
+
+        By running functional_call, backward fills in .grad on the right params and then causes
+        the optimizer to initialize its states (to fake tensors).
+
+        Before doing this, the optimizer must reference the fake module params used during tracing
+        instead of the real module params it came with.  This is what `reparametrize_optimizer` does.
         """
-        # TODO support optimizers
-        full_fake_args = fake_params_flat + fake_inputs
+        if len(optimizers):
+            # TODO iterate properly
+            opt = optimizers["__optimizer_0"]
+            dev = params_flat[0].device
+
+            # first, we modify the optimizer to swap real module param refs to corresponding fake ones
+
+            # the id's of the model params and the optimizer's refs to those params don't match- different pytensor,
+            # same underling storage, i assume.  (todo confirm).
+            # for now, just blow them all away, but need a better solution
+            opt.param_groups[0]["params"] = fake_params_flat
+
+            with fake_mode:
+                # This adds fake state tensors to the previously empty optimizer state dicts.
+                _ = functional_call(*fake_params_flat + fake_inputs)
+
+            # build the flat fake-args for the optimizer states for use during tracing
+            fake_named_states = {}
+            for n, p in pytree.tree_unflatten(fake_params_flat, params_spec).items():
+                if p in opt.state:
+                    fake_named_states[n] = opt.state[p]  # type: ignore[index]
+
+        fake_named_states_flat, named_states_spec = pytree.tree_flatten(
+            fake_named_states
+        )
+        named_states_len = len(fake_named_states_flat)
+        full_fake_args = fake_params_flat + fake_named_states_flat + fake_inputs
 
         """
         Step 2: Trace the full graph, invoking backend-specific decomps.
@@ -171,12 +227,41 @@ def _train_step_compiler(backend_compile_fn):
         Step 5: Reverse the calling-convention change we made above with _reparametrize_module,
                 and return a function that accepts the arguments as originally provided by dynamo.
         """
+        # We restore the optimizer's param refs to the real module param refs, and also make its states real
+        named_states = {}
+        if len(optimizers):
+            # TODO cleaner iteration and deal with multiple param groups
+            opt.param_groups[0]["params"] = params_flat
+            fake_to_real_param = dict(zip(fake_params_flat, params_flat))
+            
+            # TODO try clearing states, setting (or asserting) param grads exist, and then running
+            # opt._init_group instead of manual zeroing
+            for fake, real in zip(fake_params_flat, params_flat):
+                if fake in opt.state:
+                    opt.state[real] = opt.state[fake]
+                    del opt.state[fake]
+                    states = opt.state[real]
+                    for name, state in states.items():
+                        if isinstance(state, FakeTensor):
+                            # we assume always init with zeros, which is lame: can we trace init separately?
+                            states[name] = torch.zeros(
+                                state.shape, dtype=state.dtype, device=dev
+                            )
+                        else:
+                            # some of the states are singleton cpu tensors, e.g. 'step'...
+                            states[name].zero_()
+
+            for n, p in pytree.tree_unflatten(params_flat, params_spec).items():
+                if p in opt.state:
+                    named_states[n] = opt.state[p]  # type: ignore[index]
+
+        named_states_flat, named_states_spec = pytree.tree_flatten(named_states)
 
         def call_without_params(*runtime_args):
             with torch.inference_mode():
                 # See note above about disabling grad
                 # TODO can this divergence be unified?
-                _args = params_flat + list(runtime_args)
+                _args = params_flat + named_states_flat + list(runtime_args)
                 if is_inductor:
                     return backend_fx_g(_args)
                 else:
