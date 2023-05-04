@@ -7,6 +7,7 @@
 #include <ATen/native/quantized/cpu/QnnpackUtils.h>
 #include <ATen/native/quantized/cpu/OnednnUtils.h>
 #include <ATen/native/quantized/cpu/QuantUtils.h>
+#include <ATen/native/mkldnn/MKLDNNCommon.h>
 #include <ATen/quantized/Quantizer.h>
 #include <torch/custom_class.h>
 #include <torch/library.h>
@@ -207,6 +208,51 @@ c10::intrusive_ptr<LinearPackedParamsBase> PackedLinearWeightFp16::prepack(
 #endif // USE_FBGEMM
 
 #if AT_MKLDNN_ENABLED()
+inline ideep::tensor pack_weight(
+    const at::Tensor& weight,
+    torch::List<int64_t>& input_shape) {
+  std::vector<int64_t> w_dims = weight.sizes().vec();
+  ideep::tensor wei = ideep::tensor({w_dims, dnnl::memory::data_type::s8}, weight.data_ptr());
+  wei.transpose_(0, 1); // ONEDNN requires transposed weight
+  ideep::dims input_dims = input_shape.vec();
+  auto w_desc = ideep::matmul_forward::expected_weights_desc(wei.get_dims(), dnnl::memory::data_type::s8,
+                                                             dnnl::memory::data_type::u8);
+  ideep::tensor exp_wgt(w_desc);
+  exp_wgt.feed_from(wei);
+  return exp_wgt;
+}
+
+inline ideep::tensor pack_bias(
+    const at::Tensor& b,
+    int64_t oc,
+    ideep::scale_t weight_scales = ideep::scale_t(),
+    double input_scale = 1,
+    int64_t input_zero_point = 0) {
+  auto bias_size = b.sizes().vec();
+  bias_size.insert(bias_size.begin(), 1);
+  TORCH_CHECK(
+      bias_size[1] == oc,
+      "bias should have N elements: ",
+      std::to_string(oc),
+      ", but got ", bias_size[1]);
+  auto bias_desc = ideep::tensor::desc(bias_size, dnnl::memory::data_type::f32);
+  ideep::tensor packed_bias;
+  packed_bias.init(bias_desc, b.data_ptr());
+  if (weight_scales.empty()) {
+    return packed_bias;
+  }
+  // Do not need real output scale/zero point for bias packing
+  double output_scale = 1.0;
+  ideep::scale_t bias_scales, op_scales;
+  std::tie(bias_scales, op_scales) = ideep::utils::compute_scales(
+      1.0/input_scale, output_scale, weight_scales);
+  int scale_size = weight_scales.size();
+  int mask = scale_size > 1 ? 1 << (packed_bias.ndims() - 1) : 0;
+  ideep::attr_t bias_attr = {mask, bias_scales};
+  auto expected_bias = packed_bias.reorder_if_differ_in(bias_desc, bias_attr);
+  return expected_bias;
+}
+
 c10::intrusive_ptr<LinearPackedParamsBase> PackedLinearWeightsOnednn::prepack(
     at::Tensor weight,
     c10::optional<at::Tensor> bias) {
@@ -243,13 +289,9 @@ c10::intrusive_ptr<LinearPackedParamsBase> PackedLinearWeightsOnednn::prepack(
   }
 
   // Prepack weight
+  auto input_shape = torch::List<int64_t>();
   auto weight_copy = weight.clone();
-  ideep::tensor wgt = ideep::tensor({dims, dnnl::memory::data_type::s8}, weight_copy.data_ptr());
-  wgt.transpose_(0, 1); // ONEDNN requires transposed weight
-  auto w_desc = ideep::matmul_forward::expected_weights_desc(wgt.get_dims(), dnnl::memory::data_type::s8,
-                                                             dnnl::memory::data_type::u8);
-  ideep::tensor exp_wgt(w_desc);
-  exp_wgt.feed_from(wgt);
+  auto exp_wgt = pack_weight(weight_copy, input_shape);
   ideep::tensor * packed_weight_p = new ideep::tensor(std::move(exp_wgt));
   packed_weight_p->set_scale(wgt_scales);
   packed_weight_p->set_zero_point(wgt_zero_points);
@@ -258,16 +300,7 @@ c10::intrusive_ptr<LinearPackedParamsBase> PackedLinearWeightsOnednn::prepack(
   c10::optional<ideep::tensor> onednn_bias{c10::nullopt};
   if (bias.has_value()) {
     auto& b = bias.value();
-    auto bias_size = b.sizes().vec();
-    bias_size.insert(bias_size.begin(), 1);
-    TORCH_CHECK(
-        bias_size[1] == weight_ptr->get_dim(1),
-        "bias should have N elements: ",
-        std::to_string(weight_ptr->get_dim(1)),
-        ", but got ", bias_size[1]);
-    auto bias_desc = ideep::tensor::desc(bias_size, dnnl::memory::data_type::f32);
-    ideep::tensor packed_bias;
-    packed_bias.init(bias_desc, b.data_ptr());
+    auto packed_bias = pack_bias(b, weight_ptr->get_dim(1));
     onednn_bias = c10::optional<ideep::tensor>(packed_bias);
   }
   auto ret_ptr = c10::make_intrusive<PackedLinearWeightsOnednn>(
@@ -277,6 +310,43 @@ c10::intrusive_ptr<LinearPackedParamsBase> PackedLinearWeightsOnednn::prepack(
         weight,
         bias});
   return ret_ptr;
+}
+
+std::tuple<at::Tensor, at::Tensor>
+prepack_linear_int8_weight_bias_to_mkldnn_tensors(
+    at::Tensor weight, // from CPU backend instead of QuantizedCPU
+    at::Tensor weight_scales, // Weight zero points must be 0s for onednn
+    torch::List<int64_t> input_shape,
+    double input_scale,
+    int64_t input_zero_point,
+    c10::optional<at::Tensor> bias) {
+  TORCH_CHECK(
+      weight.dim() == 2,
+      "Prepack qlinear weight: Expected 2-dimensional weight tensor.");
+  // Weight
+  auto weight_copy = weight.clone();
+  auto wgt = pack_weight(weight_copy, input_shape);
+  auto packed_weight = at::native::new_with_itensor_mkldnn(
+      std::move(wgt),
+      optTypeMetaToScalarType(weight.options().dtype_opt()),
+      weight.options().device_opt());
+
+  // Bias
+  at::Tensor packed_bias;
+  if (bias.has_value()) {
+    auto& b = bias.value();
+    ideep::scale_t weights_scales(weight_scales.numel());
+    for (int i = 0; i < weight_scales.numel(); ++i) {
+      weights_scales[i] = 1.0 / weight_scales[i].item().toDouble();
+    }
+    auto expected_bias = pack_bias(
+        b, packed_weight.size(1), weights_scales, input_scale, input_zero_point);
+    packed_bias = at::native::new_with_itensor_mkldnn(
+      std::move(expected_bias),
+      optTypeMetaToScalarType(b.options().dtype_opt()),
+      b.options().device_opt());
+  }
+  return std::tie(packed_weight, packed_bias);
 }
 #endif // #if AT_MKLDNN_ENABLED()
 
@@ -380,6 +450,24 @@ class QLinearPackWeightFp16Legacy final {
   }
 };
 
+class QLinearPackWeightBiasInt8Mkldnn final {
+ public:
+  static std::tuple<at::Tensor, at::Tensor> run(
+    at::Tensor weight, // from CPU backend instead of QuantizedCPU
+    at::Tensor weight_scales, // Weight zero points must be 0s for onednn
+    torch::List<int64_t> input_shape,
+    double input_scale,
+    int64_t input_zero_point,
+    c10::optional<at::Tensor> bias) {
+#if AT_MKLDNN_ENABLED()
+    return prepack_linear_int8_weight_bias_to_mkldnn_tensors(
+        weight, weight_scales, input_shape, input_scale, input_zero_point, bias);
+#else
+    TORCH_CHECK(false, "Unimplemented as onednn is not available.");
+#endif
+  }
+};
+
 TORCH_LIBRARY_IMPL(quantized, QuantizedCPU, m) {
   register_linear_params();
   m.impl(TORCH_SELECTIVE_NAME("quantized::linear_prepack"), TORCH_FN(QLinearPackWeightInt8::run));
@@ -401,6 +489,10 @@ TORCH_LIBRARY_IMPL(_quantized, CPU, m) {
   register_linear_params();
   m.impl(TORCH_SELECTIVE_NAME("_quantized::linear_prepack_fp16"), TORCH_FN(QLinearPackWeightFp16::run));
   m.impl(TORCH_SELECTIVE_NAME("_quantized::linear_prepack_fp16_legacy"), TORCH_FN(QLinearPackWeightFp16Legacy::run));
+}
+
+TORCH_LIBRARY_IMPL(quantized, CPU, m) {
+  m.impl(TORCH_SELECTIVE_NAME("quantized::linear_prepack_mkldnn"), TORCH_FN(QLinearPackWeightBiasInt8Mkldnn::run));
 }
 
 } // namespace
