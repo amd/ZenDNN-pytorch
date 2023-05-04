@@ -1216,6 +1216,16 @@ def get_fake_value(node, tx):
         # The actual return type here is None anyway (from .backward()) so no need to run it to find out.
         return None
 
+    if (
+        op == "call_method"
+        and (node.target == "step" or node.target == "zero_grad")
+        and len(node.args) == 1
+        and node.args[0].op == "get_attr"
+        and "__optimizer_" in node.args[0].target
+    ):
+        # same as above...
+        return None
+
     nnmodule = None
     if op == "call_method" and len(args) > 0 and isinstance(args[0], torch.nn.Module):
         # If the first argument is nn.Module, should copy to fake mode.
