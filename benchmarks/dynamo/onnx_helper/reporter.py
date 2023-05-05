@@ -9,7 +9,6 @@ import collections
 import logging
 import re
 import random
-import csv
 
 from torch.onnx._internal.fx import diagnostics
 
@@ -98,7 +97,7 @@ class ErrorAggregator(object):
             # Print test cases in error group on individual lines.
             indent = " " * 8
             indented_contexts = []
-            unique_contexts = set(context for _, context, _ in errors)
+            unique_contexts = {context for _, context, _ in errors}
 
             for context in unique_contexts:
                 indented_contexts.extend(
@@ -120,7 +119,7 @@ class ErrorAggregator(object):
         # For each error group, sort based on unique model.
         errors = sorted(
             self.error_groups,
-            key=lambda error_group: len(set(context for _, context, _ in error_group)),
+            key=lambda error_group: len({context for _, context, _ in error_group}),
             reverse=True,
         )
         return "\n".join(map(self.format_error_group, errors))
@@ -234,14 +233,14 @@ class ExportErrorCsvParser(object):
         str_io.write(f"# Export Error Summary Dashboard for {self.compiler} ##\n")
         str_io.write("\n")
 
-        str_io.write(f"## Summary Grouped by Error ##\n")
+        str_io.write("## Summary Grouped by Error ##\n")
         str_io.write("<details>\n<summary>See more</summary>\n")
         str_io.write(self._per_error_summary.format_report())
         str_io.write("\n")
         str_io.write("</details>\n")
         str_io.write("\n")
 
-        str_io.write(f"## Summary Grouped by Model ##\n")
+        str_io.write("## Summary Grouped by Model ##\n")
         str_io.write("<details>\n<summary>See more</summary>\n")
         str_io.write(self._per_model_summary.format_report())
         str_io.write("\n")

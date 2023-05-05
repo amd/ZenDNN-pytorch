@@ -16,7 +16,6 @@ import signal
 import subprocess
 import sys
 import time
-import warnings
 import pathlib
 import shutil
 from contextlib import contextmanager
@@ -1159,7 +1158,7 @@ class OnnxModel:
                     self.keys = keys
 
                 def forward(self, *args):
-                    return self.model(**{k: v for k, v in zip(self.keys, args)})
+                    return self.model(**dict(zip(self.keys, args)))
 
             model = WrapperModel(model, list(example_inputs.keys()))
 
@@ -1957,26 +1956,45 @@ class BenchmarkRunner:
             if (
                 current_onnx_compiler == "torchscript"
                 or current_onnx_compiler == "dynamo"
-            ) and type(correct_result).__name__ in (
-                "MaskedLMOutput",
-                "Seq2SeqLMOutput",
-                "CausalLMOutputWithCrossAttentions",
-                "LongformerMaskedLMOutput",
-                "Instances",
-                "SquashedNormal",
-                "Boxes",
-                "Normal",
-                "TanhTransform",
-                "Foo",
-                "Variable",
             ):
-                # Copied from `same`, assuming `correct_result` is not nested.
-                correct_result = [
-                    value
-                    for key in correct_result.__dict__.keys()
-                    if (value := getattr(correct_result, key)) is not None
-                ]
-                print(correct_result, new_result)
+                try:
+                    from transformers import modeling_outputs
+                except ImportError:
+                    has_transformers = False
+                else:
+                    has_transformers = True
+
+                if has_transformers and isinstance(correct_result, modeling_outputs.ModelOutput):
+                    correct_result = correct_result.to_tuple()
+                    fp64_outputs = fp64_outputs.to_tuple() if fp64_outputs is not None else None
+                elif type(correct_result).__name__ in (
+                    "MaskedLMOutput",
+                    "Seq2SeqLMOutput",
+                    "CausalLMOutputWithCrossAttentions",
+                    "LongformerMaskedLMOutput",
+                    "Instances",
+                    "SquashedNormal",
+                    "Boxes",
+                    "Normal",
+                    "TanhTransform",
+                    "Foo",
+                    "Variable",
+                ):
+                    # Copied from `same` function in `torch._dynamo.utils`
+                    correct_result = [
+                        value
+                        for key in correct_result.__dict__.keys()
+                        if (value := getattr(correct_result, key)) is not None
+                    ]
+                    fp64_outputs = [
+                        value
+                        for key in fp64_outputs.__dict__.keys()
+                        if (value := getattr(fp64_outputs, key)) is not None
+                    ] if fp64_outputs is not None else None
+
+            correct_result = pytree.tree_flatten(correct_result)[0]
+            new_result = pytree.tree_flatten(new_result)[0]
+            fp64_outputs = pytree.tree_flatten(fp64_outputs)[0]
 
             try:
                 if not same(
@@ -3143,11 +3161,12 @@ def run(runner, args, original_dir=None):
                 print(f"Running model {i+1}/{nmodels}", flush=True)
 
             def write_csv(status):
+                # TODO: Headers and placeholders are hardcoded for accuracy bench.
+                # crashes other benchmark parsing. Temporarily reverting.
+                # https://github.com/pytorch/pytorch/pull/100372/files
                 for device in args.devices:
                     output_csv(
-                        output_filename,
-                        ["dev", "name", "batch_size", "accuracy"],
-                        [device, name, placeholder_batch_size, status],
+                        output_filename, [], [device, name, placeholder_batch_size, 0.0]
                     )
 
             try:
