@@ -100,7 +100,7 @@ else()
     append_torchlib_if_found(XNNPACK)
   endif()
 
-  append_torchlib_if_found(caffe2_protos protobuf-lite protobuf protoc)
+  append_torchlib_if_found(caffe2_protos protobuf-lite libprotobuf protoc)
   append_torchlib_if_found(onnx onnx_proto)
 
   append_torchlib_if_found(foxi_loader fmt)
@@ -118,6 +118,12 @@ else()
 
   if(@USE_MKLDNN@)
     append_torchlib_if_found(dnnl mkldnn)
+  endif()
+
+  if(NOT @BUILD_SHARED_LIBS@)
+    if(@USE_GLOO@)
+      append_torchlib_if_found(gloo gloo_cu)
+    endif()
   endif()
 
   append_torchlib_if_found(sleef asmjit)
@@ -141,6 +147,10 @@ if(@USE_CUDA@)
     list(APPEND TORCH_INCLUDE_DIRS ${NVTOOLEXT_HOME}/include)
     find_library(CAFFE2_NVRTC_LIBRARY caffe2_nvrtc PATHS "${TORCH_INSTALL_PREFIX}/lib")
     list(APPEND TORCH_CUDA_LIBRARIES ${CAFFE2_NVRTC_LIBRARY})
+    if(@USE_LIBUV@)
+      find_library(UV_LIB uv)
+      list(APPEND TORCH_CUDA_LIBRARIES ${UV_LIB})
+    endif()
   elseif(APPLE)
     set(TORCH_CUDA_LIBRARIES
       ${CUDA_TOOLKIT_ROOT_DIR}/lib/libcudart.dylib
