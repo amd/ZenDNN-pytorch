@@ -1028,9 +1028,9 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   Tensor new_values = at::empty({nnz}, values.options());
   new_values.fill_(rop.identity());
 
-  AT_DISPATCH_INDEX_TYPES(col_indices.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
+  AT_DISPATCH_INDEX_TYPES(columns_map.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
                           [&]() {
-                            int64_t* columns_map_ptr = columns_map.data_ptr<int64_t>();
+                            index_t* columns_map_ptr = columns_map.data_ptr<index_t>();
                             scalar_t* values_ptr = values.data_ptr<scalar_t>();
                             scalar_t* new_values_ptr = new_values.data_ptr<scalar_t>();
 
