@@ -20,6 +20,7 @@ from .. import config, ir, scheduler
 from ..codecache import get_code_path
 from ..ir import ReductionHint
 from ..optimize_indexing import indexing_dtype_strength_reduction
+from ..scheduler import BaseScheduling
 from ..utils import (
     get_fused_kernel_name,
     get_kernel_category_by_source_code,
@@ -32,7 +33,6 @@ from ..utils import (
     unique,
 )
 from ..virtualized import ops, V
-
 from .common import (
     CSEVariable,
     DeferredLine,
@@ -1654,7 +1654,7 @@ class TritonKernel(Kernel):
         return TritonCSEVariable(*args, **kwargs)
 
 
-class TritonScheduling:
+class TritonScheduling(BaseScheduling):
     def __init__(self, scheduler):
         self.scheduler = scheduler
 
