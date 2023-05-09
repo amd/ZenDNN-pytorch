@@ -341,12 +341,6 @@ def _validate_sample_input_sparse_reduction_sum(sample, check_validate=False):
                         " layout but got Sparse(Bsr|Bsc)"
                     ),
                 )
-            else:
-                return ErrorInput(
-                    sample,
-                    error_type=NotImplementedError,
-                    error_regex="Could not run 'aten::sum.IntList_out' with arguments from the 'SparseCsr(CPU|CUDA)' backend",
-                )
         elif t_kwargs and not keepdim:
             # reductions on sparse compressed tensors require
             # keepdim==True when reduction is over sparse dimensions

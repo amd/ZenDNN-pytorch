@@ -2173,7 +2173,15 @@ Tensor sum_sparse_csr(const Tensor& self, at::OptionalIntArrayRef dim, bool keep
   // bit different in the second parameters `dim`, which causes the conversion of `dim`
   // to call into `_sparse_csr_sum`. Align the signatures would be a better choice.
   TORCH_CHECK(dim.has_value(),"dim has no value, cannot be used in sum.dim_IntList");
-  return at::_sparse_csr_sum(self, *dim, true, dtype);
+  if (self.is_sparse_csr()) {
+    return at::_sparse_csr_sum(self, *dim, true, dtype);
+  } else if (self.layout() == kSparseCsc) {
+    Tensor new_self = self.to_dense().to_sparse_csr();
+    return at::_sparse_csr_sum(new_self, *dim, true, dtype);
+  } else {
+    LOG(WARNING) << "Only SparseCsr and SparseCSC are supported for now";
+    return Tensor();
+  }
 }
 
 } // namespace native
