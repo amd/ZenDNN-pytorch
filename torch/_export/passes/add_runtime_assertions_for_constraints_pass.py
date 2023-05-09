@@ -1,18 +1,18 @@
+import math
+import operator
 from collections import defaultdict, namedtuple
 from functools import partial
 from typing import Dict, List, Tuple, Optional
 
-import math
-import operator
 import sympy
-
-import torch.utils._pytree as pytree
 import torch
 import torch.fx
-from torch.fx.passes.infra.pass_base import PassResult
-from torch._export.pass_base import ExportPassBase, ProxyValue
+
+import torch.utils._pytree as pytree
 from torch._export.graph_module import get_export_meta
+from torch._export.pass_base import ExportPassBase, ProxyValue
 from torch._export.pass_infra.node_metadata import NodeMetadata
+from torch.fx.passes.infra.pass_base import PassResult
 
 
 __all__ = ["AddRuntimeAssertionsForConstraintsPass"]
@@ -76,6 +76,7 @@ class AddRuntimeAssertionsForConstraintsPass(ExportPassBase):
         self.current_gm = graph_module
         assert isinstance(self.current_gm, torch.fx.GraphModule)
         self.constraints = self._process_constraints(get_export_meta(self.current_gm).input_shape_constraints)
+        self.inline_constraints = get_export_meta(self.current_gm).inline_constraints
         self.example_inputs = pytree.tree_flatten(get_export_meta(self.current_gm).example_inputs)[0]
         self.inline_constraints = get_export_meta(self.current_gm).inline_constraints
         return super().call(graph_module)
@@ -143,7 +144,6 @@ class AddRuntimeAssertionsForConstraintsPass(ExportPassBase):
                 f"Input #{self.input_tracker}'s dimension #{constraint.constraint_dim} size is "
                 f"outside of specified dynamic range [{constraint.min_val}, {constraint.max_val}]"
             )
-
             # TODO (tmanlaibaatar) we are making an assumption that graph generated for
             # input dim N >=2 generalizes to N < 2. Ideally we should check that:
             # 1. if we can generalize to N < 2, not add any assertion saying N >= 2

@@ -212,7 +212,6 @@ class TestPasses(TestCase):
 
         self.assertEqual(gm_result_for_1_size, eager_result_for_1_size)
 
-
     def test_runtime_assert_inline_constraints_for_item(self) -> None:
         class M(torch.nn.Module):
             def __init__(self):
@@ -237,7 +236,7 @@ class TestPasses(TestCase):
         self.assertEqual(num_assert, 3)
         self.assertEqual(num_scalar_tensor, 3)
 
-        with self.assertRaisesRegex(RuntimeError, r"_local_scalar_dense_default is outside of inline constraint \[2, 5\]."):
+        with self.assertRaisesRegex(RuntimeError, r"^_local_scalar_dense_default.*\[2, 5\].$"):
             new_gm(torch.tensor([6]))
 
         new_inp = torch.tensor([5])
@@ -269,18 +268,15 @@ class TestPasses(TestCase):
         self.assertEqual(num_assert, 2)
         self.assertEqual(num_scalar_tensor, 2)
 
-        new_gm.print_readable()
-        with self.assertRaisesRegex(RuntimeError, r"nonzero_default.shape\[0\] is outside of inline constraint \[3, 5\]."):
+        with self.assertRaisesRegex(RuntimeError, r"^nonzero_default.shape\[0\].*\[3, 5\].$"):
             new_gm(torch.tensor([1, 1, 0, 0, 0]))
 
-        with self.assertRaisesRegex(RuntimeError, r"nonzero_default.shape\[0\] is outside of inline constraint \[3, 5\]."):
+        with self.assertRaisesRegex(RuntimeError, r"^nonzero_default.shape\[0\].*\[3, 5\].$"):
             new_gm(torch.ones(6))
 
         new_inp = torch.tensor([1, 1, 1, 1])
         self.assertEqual(mod(new_inp), new_gm(new_inp))
 
-    # FIXME: support control flow operators for the pass
-    @unittest.expectedFailure
     def test_runtime_assert_inline_constraints_for_cond(self) -> None:
         class M(torch.nn.Module):
             def __init__(self):
@@ -305,9 +301,10 @@ class TestPasses(TestCase):
         mod = M()
         gm = _export(mod, (torch.tensor(True), x, y))
 
-        _ = AddRuntimeAssertionsForConstraintsPass()(gm)
+        pass_result = AddRuntimeAssertionsForConstraintsPass()(gm)
 
-
+        with self.assertRaisesRegex(RuntimeError, "_local_scalar_dense"):
+            pass_result.graph_module(torch.tensor(True), torch.tensor([7]), torch.tensor([7]))
 
 if __name__ == '__main__':
     run_tests()
