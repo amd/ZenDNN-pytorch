@@ -1026,12 +1026,21 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   new_crow_indices[1] = nnz;
 
   Tensor new_values = at::empty({nnz}, values.options());
+  bool need_acc = (values.scalar_type() == kHalf || values.scalar_type() == kBFloat16 || values.scalar_type() == kComplexHalf);
+  auto values_acc_option = values.options();
+  if (need_acc) {
+    values_acc_option = values.options().dtype(ScalarType::Float);
+  }
+  Tensor new_values_acc = at::empty({nnz}, values_acc_option);
   new_values.fill_(rop.identity());
+  new_values_acc.fill_(rop.identity());
 
+  using opmath_t = at::opmath_type<scalar_t>;
   AT_DISPATCH_INDEX_TYPES(columns_map.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
                           [&]() {
                             index_t* columns_map_ptr = columns_map.data_ptr<index_t>();
                             scalar_t* values_ptr = values.data_ptr<scalar_t>();
+                            opmath_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_t>();
                             scalar_t* new_values_ptr = new_values.data_ptr<scalar_t>();
 
                             // There is no point in parallelizing the following for-loop
@@ -1040,7 +1049,14 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
                             for (int64_t i=0; i<numel; i++) {
                               index_t col = columns_map_ptr[i];
                               scalar_t val = values_ptr[i];
-                              new_values_ptr[col] = rop(new_values_ptr[col], val);
+                              new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_t>(val));
+                            }
+                            for (int64_t i = 0; i < nnz; i++) {
+                              if (need_acc) {
+                                new_values_ptr[i] = static_cast<scalar_t>(new_values_acc_ptr[i]);
+                              } else {
+                                new_values_ptr[i] = new_values_acc_ptr[i];
+                              }
                             }
                           });
   return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
@@ -1107,6 +1123,9 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
   Tensor new_values = at::empty({}, values.options());
   Tensor row_map = at::empty({nrows}, ioptions);
 
+  bool need_acc = (values.scalar_type() == kHalf || values.scalar_type() == kBFloat16 || values.scalar_type() == kComplexHalf);
+
+  using opmath_t = at::opmath_type<scalar_t>;
   AT_DISPATCH_INDEX_TYPES(crow_indices.scalar_type(), "reduce_sparse_csr_dim1_cpu_indices",
                           [&]() {
     index_t* crow_indices_ptr = crow_indices.data_ptr<index_t>();
@@ -1138,11 +1157,15 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
               index_t i_start = i_end;
               i_end = crow_indices_ptr[h+1];
               if (i_start != i_end) {
-                scalar_t res = values_ptr[i_start];
+                opmath_t res = static_cast<opmath_t>(values_ptr[i_start]);
                 for (index_t i = i_start + 1; i < i_end; i++) {
-                  res = rop(res, values_ptr[i]);
+                  res = rop(res, static_cast<opmath_t>(values_ptr[i]));
                 }
-                new_values_ptr[row_map_ptr[h]] = res;
+                if (need_acc) {
+                  new_values_ptr[row_map_ptr[h]] = static_cast<scalar_t>(res);
+                } else {
+                  new_values_ptr[row_map_ptr[h]] = res;
+                }
               }
             }
         });
@@ -1266,7 +1289,8 @@ Tensor _sparse_csr_sum_cpu(const Tensor& input, IntArrayRef dims_to_sum, bool ke
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
     kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cpu",
     [&] {
-      result = reduce_sparse_csr_cpu_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
+      using opmath_t = at::opmath_type<scalar_t>;
+      result = reduce_sparse_csr_cpu_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<opmath_t>());
     });
   return result;
 }

@@ -2898,7 +2898,7 @@ class TestSparseCSR(TestCase):
                     self.assertEqual(sparse_sum.grad.view(dense_sum.shape), torch.ones(dense_sum.shape, dtype=dtype, device=device))
                     self.assertEqual(sparse_sum.grad.view(dense_sum.shape), dense_sum.grad)
         for shape, index_dtype in itertools.product(
-                [(5, 6)],
+                [(5, 6), (10, 5)],
                 [torch.int32, torch.int64]):
             run_test(shape, 0, index_dtype)
             run_test(shape, max(shape), index_dtype)
