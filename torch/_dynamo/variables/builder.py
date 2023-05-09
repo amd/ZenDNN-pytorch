@@ -304,6 +304,8 @@ class VariableBuilder:
 
     def _wrap(self, value):
         make_guards = self.make_guards
+        tc = TracingContext.get()
+        assert tc, "Expected valid TracingContext"
 
         # Handle exact type() match
         type_dispatch = self._type_dispatch().get(type(value))
@@ -550,6 +552,11 @@ class VariableBuilder:
             return NullContextVariable(
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+        elif isinstance(value, torch.optim.Optimizer) and tc.train_step_context():
+            return self.tx.output.register_optimizer(
+                value,
+                source=self.source,
             )
         else:
             result = UserDefinedObjectVariable(

@@ -1,5 +1,8 @@
 # Owner(s): ["module: dynamo"]
 
+import unittest
+from copy import deepcopy
+
 import torch
 
 import torch._dynamo
@@ -53,19 +56,147 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
 
         self.assertTrue(same(correct_loss, opt_loss))
 
+    def test_sgd_optimizer(self):
+        model = Seq()
+        model.apply(init_weights)
+
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+
+        def train_step(model, optimizer, inputs):
+            out = model(*inputs)
+            loss = out.sum()
+
+            # dynamo special case lets this pass through as a call in the FX graph
+            # it gets traced out in the train_step backend, before being functionalized
+            loss.backward()
+
+            # dynamo tracks the optimizer and smuggles it on the graphmodule as an attr
+            # train_step backend can reparametrize it with the fake parameter tensors it already
+            # uses for module tracing
+            optimizer.step()
+
+            optimizer.zero_grad()
+            return loss
+
+        # copy the model/optimizer up front so we don't have to reset them between eager/compile runs
+        opt_model = deepcopy(model)
+        opt_optimizer = deepcopy(optimizer)
+        inputs = [torch.randn((128, 10))]
+
+        correct_loss = train_step(model, optimizer, inputs)
+        correct_params = {
+            name: param.clone().detach() for name, param in model.named_parameters()
+        }
+
+        opt_train_step = _compile_train_step(train_step, backend=_train_step_eager)
+        opt_loss = opt_train_step(opt_model, opt_optimizer, inputs)
+        opt_params = {
+            name: param.clone().detach() for name, param in opt_model.named_parameters()
+        }
+
+        self.assertTrue(same(correct_loss, opt_loss))
+        for name in correct_params:
+            self.assertTrue(name in opt_params)
+            self.assertTrue(same(correct_params[name], opt_params[name]))
+
+            # Note: the train_step compiler never sets .grad on the original param objects due to how it traces,
+            # so we insist that the user puts .zero_grad in the train_step so there is no discrepancy between running
+            # under eager or under compile
+            self.assertTrue(correct_params[name].grad is None)
+            self.assertTrue(opt_params[name].grad is None)
+
+    @unittest.skipIf(not torch.cuda.is_available(), "requires cuda")
+    def test_adam_optimizer(self):
+        model = Seq().cuda()
+        model.apply(init_weights)
+
+        optimizer = torch.optim.Adam(model.parameters(), capturable=True)
+
+        def train_step(model, optimizer, inputs):
+            out = model(*inputs)
+            loss = out.sum()
+
+            # dynamo special case lets this pass through as a call in the FX graph
+            # it gets traced out in the train_step backend, before being functionalized
+            loss.backward()
+
+            # dynamo tracks the optimizer and smuggles it on the graphmodule as an attr
+            # train_step backend can reparametrize it with the fake parameter tensors it already
+            # uses for module tracing
+            optimizer.step()
+
+            optimizer.zero_grad()
+            return loss
+
+        # copy the model/optimizer up front so we don't have to reset them between eager/compile runs
+        opt_model = deepcopy(model)
+        opt_optimizer = deepcopy(optimizer)
+        inputs = [torch.randn((128, 10)).cuda()]
+
+        opt_train_step = _compile_train_step(train_step, backend=_train_step_eager)
+        for step in range(10):
+            correct_loss = train_step(model, optimizer, inputs)
+            opt_loss = opt_train_step(opt_model, opt_optimizer, inputs)
+            self.assertEqual(correct_loss, opt_loss)
+
+        correct_params = {
+            name: param.clone().detach() for name, param in model.named_parameters()
+        }
+
+        opt_params = {
+            name: param.clone().detach() for name, param in opt_model.named_parameters()
+        }
+
+        self.assertTrue(same(correct_loss, opt_loss))
+        for name in correct_params:
+            self.assertTrue(name in opt_params)
+            self.assertTrue(same(correct_params[name], opt_params[name]))
+
+            # Note: the train_step compiler never sets .grad on the original param objects due to how it traces,
+            # so we insist that the user puts .zero_grad in the train_step so there is no discrepancy between running
+            # under eager or under compile
+            self.assertTrue(correct_params[name].grad is None)
+            self.assertTrue(opt_params[name].grad is None)
+
+    def test_smoke(self):
+        def train_step(model, optimizer, inputs):
+            out = model(*inputs)
+            loss = out.sum()
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            return loss
+
+        opt_model = Seq()
+        opt_model.apply(init_weights)
+        opt_optimizer = torch.optim.SGD(opt_model.parameters(), lr=0.01, momentum=0.9)
+        inputs = [torch.randn((128, 10))]
+        opt_train_step = _compile_train_step(train_step, backend=_train_step_eager)
+
+        loss = []
+        for step in range(10):
+            opt_loss = opt_train_step(opt_model, opt_optimizer, inputs)
+            loss.append(opt_loss)
+            if step > 0:
+                # in practice, this model loss goes 684, 458, 264, 125, ... so this check should not be too noisy
+                self.assertTrue(loss[-2] > loss[-1])
+
     def test_dynamo_safety_checks(self):
         """Since dynamo train_step compile traces .backward() call, it's imperative that no .grad_fn exists
         for inputs to the train_step graph, otherwise their backwards will incorrectly be traced
         """
 
-        def train_step(model, inputs):
+        def train_step(model, optimizer, inputs):
             out = model(*inputs)
             loss = out.sum()
             loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
             return loss
 
         opt_model = Seq()
         opt_model.apply(init_weights)
+        opt_optimizer = torch.optim.SGD(opt_model.parameters(), lr=0.01, momentum=0.9)
 
         # Cause the inputs to the model to have grad_fn
         pre_inputs = torch.randn((128, 10))
@@ -76,9 +207,9 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
         opt_train_step = _compile_train_step(train_step, backend=_train_step_eager)
 
         with self.assertRaisesRegex(AssertionError, r"an input tensor has a grad_fn"):
-            opt_train_step(opt_model, inputs)
+            opt_train_step(opt_model, opt_optimizer, inputs)
 
-        def train_step_multi_backward(model, inputs):
+        def train_step_multi_backward(model, optimizer, inputs):
             out = model(*inputs)
             loss = out.sum()
             loss.backward()
@@ -93,9 +224,9 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
             train_step_multi_backward, backend=_train_step_eager
         )
         with self.assertRaisesRegex(AssertionError, r"multiple \.backward\(\) calls"):
-            opt_train_step(opt_model, inputs)
+            opt_train_step(opt_model, opt_optimizer, inputs)
 
-        def train_step_backward_args(model, inputs):
+        def train_step_backward_args(model, optimizer, inputs):
             out = model(*inputs)
             loss = out.sum()
             loss.backward(loss)
@@ -107,17 +238,20 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
         with self.assertRaisesRegex(
             AssertionError, r"\.backward\(\) call with non-empty args"
         ):
-            opt_train_step(opt_model, inputs)
+            opt_train_step(opt_model, opt_optimizer, inputs)
 
     def test_custom_backend(self):
-        def train_step(model, inputs):
+        def train_step(model, optimizer, inputs):
             out = model(*inputs)
             loss = out.sum()
             loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
             return loss
 
         opt_model = Seq()
         opt_model.apply(init_weights)
+        opt_optimizer = torch.optim.SGD(opt_model.parameters(), lr=0.01, momentum=0.9)
         inputs = [torch.randn((128, 10))]
 
         cnt = torch._dynamo.testing.CompileCounterWithBackend("eager")
@@ -125,38 +259,39 @@ class TestCompileTrainStep(torch._dynamo.test_case.TestCase):
         opt_train_step = _compile_train_step(train_step, backend=train_step_cnt)
 
         loss = []
-        for _ in range(10):
-            opt_loss = opt_train_step(opt_model, inputs)
+        for step in range(10):
+            opt_loss = opt_train_step(opt_model, opt_optimizer, inputs)
             loss.append(opt_loss)
-            # no-op until optimizer is added
-            # if step > 0:
-            #     # in practice, this model loss goes 684, 458, 264, 125, ... so this check should not be too noisy
-            #     self.assertTrue(loss[-2] > loss[-1])
+            if step > 0:
+                # in practice, this model loss goes 684, 458, 264, 125, ... so this check should not be too noisy
+                self.assertTrue(loss[-2] > loss[-1])
 
         self.assertEqual(cnt.frame_count, 1)
-        self.assertEqual(cnt.op_count, 37)
+        self.assertEqual(cnt.op_count, 57)
 
     def test_inductor_backend(self):
-        def train_step(model, inputs):
+        def train_step(model, optimizer, inputs):
             out = model(*inputs)
             loss = out.sum()
             loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
             return loss
 
         opt_model = Seq()
         opt_model.apply(init_weights)
+        opt_optimizer = torch.optim.SGD(opt_model.parameters(), lr=0.01, momentum=0.9)
         inputs = [torch.randn((128, 10))]
 
         torch._dynamo.reset()
         ind_train_step = _compile_train_step(train_step, backend=_train_step_inductor)
 
         loss = []
-        for _ in range(10):
-            ind_loss = ind_train_step(opt_model, inputs)
+        for step in range(10):
+            ind_loss = ind_train_step(opt_model, opt_optimizer, inputs)
             loss.append(ind_loss)
-            # no-op until optimizer is added
-            # if step > 0:
-            #     self.assertTrue(loss[-2] > loss[-1])
+            if step > 0:
+                self.assertTrue(loss[-2] > loss[-1])
 
         torch._dynamo.reset()
         with self.assertRaisesRegex(
