@@ -102,11 +102,13 @@ case "$image" in
     CONDA_CMAKE=yes
     TRITON=yes
     ;;
-  pytorch-linux-bionic-cuda11.8-cudnn8-py3-gcc7)
+  pytorch-linux-bionic-cuda11.8-cudnn8-py3-gcc10)
     CUDA_VERSION=11.8.0
     CUDNN_VERSION=8
     ANACONDA_PYTHON_VERSION=3.10
-    GCC_VERSION=7
+    GCC_VERSION=10
+    # Set GLIBCXX_USE_CXX11_ABI to 0 to make sure FBGEMM can work
+    GLIBCXX_USE_CXX11_ABI=0
     PROTOBUF=yes
     DB=yes
     VISION=yes
