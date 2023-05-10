@@ -2172,14 +2172,22 @@ Tensor sum_sparse_csr(const Tensor& self, at::OptionalIntArrayRef dim, bool keep
   // TODO: The signature of sum.dim_IntList and _sparse_csr_sum.dim_dtype is a little
   // bit different in the second parameters `dim`, which causes the conversion of `dim`
   // to call into `_sparse_csr_sum`. Align the signatures would be a better choice.
-  TORCH_CHECK(dim.has_value(),"dim has no value, cannot be used in sum.dim_IntList");
-  if (self.is_sparse_csr()) {
-    return at::_sparse_csr_sum(self, *dim, true, dtype);
-  } else if (self.layout() == kSparseCsc) {
-    Tensor new_self = self.to_dense().to_sparse_csr();
-    return at::_sparse_csr_sum(new_self, *dim, true, dtype);
+  TORCH_CHECK(
+      dim.has_value(), "dim has no value, cannot be used in sum.dim_IntList");
+  auto layout = self.layout();
+  if (layout == kSparseCsr) {
+    return at::_sparse_csr_sum(self, *dim, keepdim, dtype);
   } else {
-    LOG(WARNING) << "Only SparseCsr and SparseCSC are supported for now";
+    if (self.dim() != 2 || keepdim) {
+      TORCH_CHECK(
+          false,
+          "sum expected input with strided, sparse_csr layouts, got layout ",
+          layout);
+    } else if (!keepdim) {
+      TORCH_CHECK(
+          false,
+          "torch.empty: Only batched sparse compressed (non-block) tensors are supported");
+    }
     return Tensor();
   }
 }

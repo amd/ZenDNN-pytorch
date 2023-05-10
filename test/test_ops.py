@@ -549,7 +549,7 @@ class TestCommon(TestCase):
     @skipMeta
     @onlyNativeDeviceTypes
     @ops([op for op in op_db if op.error_inputs_sparse_func is not None], dtypes=OpDTypes.none)
-    @parametrize("layout", (torch.sparse_bsr, torch.sparse_bsc, torch.sparse_coo))
+    @parametrize("layout", (torch.sparse_csr, torch.sparse_csc, torch.sparse_bsr, torch.sparse_bsc, torch.sparse_coo))
     def test_errors_sparse(self, device, op, layout):
         for ei in op.error_inputs_sparse(device, layout):
             si = ei.sample_input

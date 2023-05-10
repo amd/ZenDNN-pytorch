@@ -1029,10 +1029,12 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   bool need_acc = (values.scalar_type() == kHalf || values.scalar_type() == kBFloat16 || values.scalar_type() == kComplexHalf);
   auto values_acc_option = values.options();
   if (need_acc) {
-    values_acc_option = values.options().dtype(ScalarType::Float);
+    values_acc_option = values.scalar_type() == kComplexHalf
+        ? values.options().dtype(ScalarType::ComplexFloat)
+        : values.options().dtype(ScalarType::Float);
   }
-  Tensor new_values_acc = at::empty({nnz}, values_acc_option);
-  new_values.fill_(rop.identity());
+  Tensor new_values_acc =
+      (need_acc ? at::empty({nnz}, values_acc_option) : new_values);
   new_values_acc.fill_(rop.identity());
 
   using opmath_t = at::opmath_type<scalar_t>;
@@ -1040,8 +1042,8 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
                           [&]() {
                             index_t* columns_map_ptr = columns_map.data_ptr<index_t>();
                             scalar_t* values_ptr = values.data_ptr<scalar_t>();
-                            opmath_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_t>();
-                            scalar_t* new_values_ptr = new_values.data_ptr<scalar_t>();
+                            opmath_t* new_values_acc_ptr =
+                                new_values_acc.data_ptr<opmath_t>();
 
                             // There is no point in parallelizing the following for-loop
                             // because about 99.3% of the computation time is spent in the
@@ -1051,14 +1053,10 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
                               scalar_t val = values_ptr[i];
                               new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_t>(val));
                             }
-                            for (int64_t i = 0; i < nnz; i++) {
-                              if (need_acc) {
-                                new_values_ptr[i] = static_cast<scalar_t>(new_values_acc_ptr[i]);
-                              } else {
-                                new_values_ptr[i] = new_values_acc_ptr[i];
-                              }
-                            }
                           });
+  if (need_acc) {
+    new_values.copy_(new_values_acc);
+  }
   return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
                                                {1, sparse.size(1)},
                                                new_values.scalar_type(),

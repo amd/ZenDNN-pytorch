@@ -2884,9 +2884,9 @@ class TestSparseCSR(TestCase):
         def run_test(shape, nnz, index_type):
             sparse = self.genSparseCSRTensor(shape, nnz, dtype=dtype, device=device, index_dtype=index_dtype)
             dense = sparse.to_dense()
-            for dim in (0, 1):
+            for dim in (0, 1, (0, )):
                 dense_sum = dense.sum(dim=dim)
-                sparse_sum = sparse.sum(dim=dim)
+                sparse_sum = sparse.sum(dim=dim, keepdim=True)
                 is_integral = dtype in integral_types()
                 self.assertEqual(sparse_sum.to_dense().view(dense_sum.shape)
                                  if not is_integral else sparse_sum.to_dense().to(torch.int64).view(dense_sum.shape), dense_sum)
