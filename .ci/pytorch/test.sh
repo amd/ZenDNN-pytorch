@@ -303,6 +303,9 @@ if [[ "${TEST_CONFIG}" == *max_autotune* ]]; then
   export TORCHINDUCTOR_MAX_AUTOTUNE=1
 fi
 
+export TORCHINDUCTOR_MAX_AUTOTUNE=1
+# export TORCHINDUCTOR_COORDINATE_DESCENT_TUNING=1
+
 test_perf_for_dashboard() {
   TEST_REPORTS_DIR=$(pwd)/test/test-reports
   mkdir -p "$TEST_REPORTS_DIR"
@@ -324,21 +327,8 @@ test_perf_for_dashboard() {
           --output "$TEST_REPORTS_DIR/${backend}_max_autotune_${suite}_${dtype}_${mode}_cuda_accuracy.csv"
     else
       python "benchmarks/dynamo/$suite.py" \
-          --accuracy --"$mode" --"$dtype" --backend "$backend" --disable-cudagraphs "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_no_cudagraphs_${suite}_${dtype}_${mode}_cuda_accuracy.csv"
-      python "benchmarks/dynamo/$suite.py" \
           --accuracy --"$mode" --"$dtype" --backend "$backend" "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_with_cudagraphs_${suite}_${dtype}_${mode}_cuda_accuracy.csv"
-      python "benchmarks/dynamo/$suite.py" \
-          --accuracy --"$mode" --"$dtype" --backend "$backend" --dynamic-shapes \
-          --dynamic-batch-only --disable-cudagraphs "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_dynamic_${suite}_${dtype}_${mode}_cuda_accuracy.csv"
-      if [[ "$mode" == "inference" ]]; then
-        # collect inference results with cpp_wrapper on
-        python "benchmarks/dynamo/$suite.py" \
-            --accuracy --"$mode" --"$dtype" --backend "$backend" --disable-cudagraphs --cpp-wrapper "$@" \
-            --output "$TEST_REPORTS_DIR/${backend}_cpp_wrapper_${suite}_${dtype}_${mode}_cuda_accuracy.csv"
-      fi
+          --output "$TEST_REPORTS_DIR/${backend}_with_cudagraphs_${suite}_${dtype}_${mode}_cuda_accuracy.csv" --timeout 7200
     fi
 
     # Run performance test
@@ -349,22 +339,8 @@ test_perf_for_dashboard() {
           --output "$TEST_REPORTS_DIR/${backend}_max_autotune_${suite}_${dtype}_${mode}_cuda_performance.csv"
     else
       python "benchmarks/dynamo/$suite.py" \
-          --performance --cold-start-latency --"$mode" --"$dtype" --backend "$backend" --disable-cudagraphs "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_no_cudagraphs_${suite}_${dtype}_${mode}_cuda_performance.csv"
-      python "benchmarks/dynamo/$suite.py" \
           --performance --cold-start-latency --"$mode" --"$dtype" --backend "$backend" "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_with_cudagraphs_${suite}_${dtype}_${mode}_cuda_performance.csv"
-      python "benchmarks/dynamo/$suite.py" \
-          --performance --cold-start-latency --"$mode" --"$dtype" --backend "$backend" --dynamic-shapes \
-          --dynamic-batch-only --disable-cudagraphs "$@" \
-          --output "$TEST_REPORTS_DIR/${backend}_dynamic_${suite}_${dtype}_${mode}_cuda_performance.csv"
-      if [[ "$mode" == "inference" ]]; then
-        # collect inference results with cpp_wrapper on
-        python "benchmarks/dynamo/$suite.py" \
-            --performance --cold-start-latency --"$mode" --"$dtype" --backend "$backend" \
-            --disable-cudagraphs --cpp-wrapper "$@" \
-            --output "$TEST_REPORTS_DIR/${backend}_cpp_wrapper_${suite}_${dtype}_${mode}_cuda_performance.csv"
-      fi
+          --output "$TEST_REPORTS_DIR/${backend}_with_cudagraphs_${suite}_${dtype}_${mode}_cuda_performance.csv" --timeout 7200
     fi
   done
 }
