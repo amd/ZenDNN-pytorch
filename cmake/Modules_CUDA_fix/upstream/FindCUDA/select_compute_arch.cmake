@@ -30,7 +30,7 @@ endif()
 set(CUDA_KNOWN_GPU_ARCHITECTURES  "Kepler" "Maxwell")
 
 # This list will be used for CUDA_ARCH_NAME = Common option (enabled by default)
-set(CUDA_COMMON_GPU_ARCHITECTURES "3.5" "5.0")
+set(CUDA_COMMON_GPU_ARCHITECTURES "5.0")
 
 # This list is used to filter CUDA archs when autodetecting
 set(CUDA_ALL_GPU_ARCHITECTURES "3.5" "5.0")
