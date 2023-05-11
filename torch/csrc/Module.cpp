@@ -17,6 +17,7 @@
 #include <ATen/dlpack.h>
 #include <ATen/native/ConvUtils.h>
 #include <c10/core/DispatchKeySet.h>
+#include <c10/util/Backtrace.h>
 #include <c10/util/Logging.h>
 #include <c10/util/irange.h>
 #include <libshm.h>
@@ -1712,6 +1713,21 @@ Call this whenever a new thread is created in order to propagate values from
       "_should_allow_numbers_as_tensors", [](const std::string& name) {
         return torch::should_allow_numbers_as_tensors(name);
       });
+
+  py_module.def(
+      "_storage_address",
+      [](const at::Tensor& tensor) {
+        return reinterpret_cast<std::intptr_t>(
+            tensor.storage().unsafeGetStorageImpl());
+      },
+      "Gets the memory address of the Tensor's StorageImpl.");
+
+  py_module.def(
+      "_data_address",
+      [](const at::Tensor& tensor) {
+        return reinterpret_cast<std::intptr_t>(tensor.storage().data());
+      },
+      "Gets the memory address of the Tensor's data pointer.");
 
   const auto& defaultGenerator = at::detail::getDefaultCPUGenerator();
   THPDefaultCPUGenerator =

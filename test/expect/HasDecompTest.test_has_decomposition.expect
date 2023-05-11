@@ -352,6 +352,7 @@ aten::_int_mm
 aten::_int_mm.out
 aten::_is_all_true
 aten::_is_any_true
+aten::_lazy_clone
 aten::_linalg_check_errors
 aten::_linalg_det
 aten::_linalg_det.result
@@ -488,6 +489,7 @@ aten::_standard_gamma
 aten::_standard_gamma.out
 aten::_standard_gamma_grad
 aten::_standard_gamma_grad.out
+aten::_structured_sparse_linear
 aten::_test_autograd_multiple_dispatch.fullcoverage
 aten::_test_autograd_multiple_dispatch.fullcoverage_out
 aten::_test_autograd_multiple_dispatch_view
