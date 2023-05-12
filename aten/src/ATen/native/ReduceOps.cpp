@@ -2178,17 +2178,10 @@ Tensor sum_sparse_csr(const Tensor& self, at::OptionalIntArrayRef dim, bool keep
   if (layout == kSparseCsr) {
     return at::_sparse_csr_sum(self, *dim, keepdim, dtype);
   } else {
-    if (self.dim() != 2 || keepdim) {
-      TORCH_CHECK(
-          false,
-          "sum expected input with strided, sparse_csr layouts, got layout ",
-          layout);
-    } else if (!keepdim) {
-      TORCH_CHECK(
-          false,
-          "torch.empty: Only batched sparse compressed (non-block) tensors are supported");
-    }
-    return Tensor();
+    TORCH_CHECK(
+        false,
+        "sum expected input with strided, sparse_csr layouts, got layout ",
+        layout);
   }
 }
 

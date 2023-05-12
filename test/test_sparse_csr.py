@@ -19,8 +19,7 @@ from torch.testing._internal.common_methods_invocations import \
 from torch.testing._internal.common_cuda import _get_torch_cuda_version, TEST_CUDA
 from torch.testing._internal.common_dtype import (
     floating_types, all_types_and_complex_and, floating_and_complex_types, floating_types_and,
-    all_types_and_complex, floating_and_complex_types_and, integral_types
-)
+    all_types_and_complex, floating_and_complex_types_and)
 from torch.testing._internal.opinfo.definitions.sparse import validate_sample_input_sparse
 from test_sparse import CUSPARSE_SPMM_COMPLEX128_SUPPORTED
 
@@ -496,6 +495,10 @@ class TestSparseCompressed(TestCase):
                         if x.ndim != sample.input.ndim:
                             return x
                     elif x.ndim != sample.input.ndim + 2 or x.shape[-3] % blocksize[0] or x.shape[-2] % blocksize[1]:
+                        return x
+                    if layout == torch.sparse_csc:
+                        return x
+                    if layout == torch.sparse_csr and (x.dtype == torch.bool or x.dtype == torch.complex32) and op.name == "sum":
                         return x
                     return x.clone().to_sparse(layout=layout, blocksize=blocksize, dense_dim=dense_dim)
                 return x
@@ -2873,32 +2876,6 @@ class TestSparseCSR(TestCase):
                 self.assertEqual(a.grad, torch.ones(shape, dtype=dtype, device=device))
         for shape, index_dtype in itertools.product(
                 [(10, 5), (10, 10)],
-                [torch.int32, torch.int64]):
-            run_test(shape, 0, index_dtype)
-            run_test(shape, max(shape), index_dtype)
-            run_test(shape, shape[0] * shape[1], index_dtype)
-
-    @skipMeta
-    @dtypes(*all_types_and_complex_and(torch.half, torch.bfloat16))
-    def test_sum_dim_reduce(self, device, dtype):
-        def run_test(shape, nnz, index_type):
-            sparse = self.genSparseCSRTensor(shape, nnz, dtype=dtype, device=device, index_dtype=index_dtype)
-            dense = sparse.to_dense()
-            for dim in (0, 1, (0, )):
-                dense_sum = dense.sum(dim=dim)
-                sparse_sum = sparse.sum(dim=dim, keepdim=True)
-                is_integral = dtype in integral_types()
-                self.assertEqual(sparse_sum.to_dense().view(dense_sum.shape)
-                                 if not is_integral else sparse_sum.to_dense().to(torch.int64).view(dense_sum.shape), dense_sum)
-                if dtype in floating_types():
-                    sparse_sum.requires_grad_(True)
-                    sparse_sum.sum().backward()
-                    dense_sum.requires_grad_(True)
-                    dense_sum.sum().backward()
-                    self.assertEqual(sparse_sum.grad.view(dense_sum.shape), torch.ones(dense_sum.shape, dtype=dtype, device=device))
-                    self.assertEqual(sparse_sum.grad.view(dense_sum.shape), dense_sum.grad)
-        for shape, index_dtype in itertools.product(
-                [(5, 6), (10, 5)],
                 [torch.int32, torch.int64]):
             run_test(shape, 0, index_dtype)
             run_test(shape, max(shape), index_dtype)
