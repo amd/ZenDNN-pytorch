@@ -35,7 +35,6 @@ from torch.utils.weak import WeakIdRef
 
 from . import config, convert_frame, mutation_guard
 from .eval_frame import set_guard_error_hook, set_guard_fail_hook
-from .exc import unimplemented
 from .types import GuardedCode, GuardFail, GuardFn  # noqa: F401
 from .utils import (
     dict_const_keys,
@@ -345,19 +344,21 @@ class GuardBuilder(GuardBuilderBase):
             self.EQUALS_MATCH(guard)
 
     def NN_MODULE(self, guard: Guard):
-        self.ID_MATCH(guard)
         ref = self.arg_ref(guard)
         val = self.get(guard.name)
-
-        def setup_guard():
-            assert istype(val.training, bool)
-            self.code.append(f"{ref}.training == {val.training}")
-
-        if hasattr(val, "training"):
-            # There are cases where a monkeypatched object has a guard made between __new__ and __init__
-            setup_guard()
-        else:
-            unimplemented(f"Guard setup for uninitialized class {type(val)}")
+        # The module guard checks for modifications to the Module's type, __dict__,
+        # and various nested OrderedDicts, such as _parameters, _buffers, and _modules.
+        # This subsumes the check for Module.training.
+        try:
+            g = torch._C._dynamo.guards.nn_module_guard(val)
+        except AttributeError:
+            # We get an attribute error if the module is partially initialized. For example,
+            # we might be trying to install a guard before a super().__init__() call when
+            # the module is missing _parameters, _modules, and other attributes.
+            # For now, we skip installing the guard.
+            return
+        name = self.check_fn_manager.add_extra_closure_var("__nn_module_guard", g)
+        self._produce_guard_code(guard, [f"{name}()"])
 
     def FUNCTION_MATCH(self, guard: Guard):
         """things like torch.add and user defined functions"""
@@ -694,6 +695,7 @@ class CheckFunctionManager:
         self.valid = True
         self._weakrefs: List["ReferenceType[object]"] = []
         self._seen_ids: Set[int] = set()
+        self._extra_closure_vars: Dict[str, object] = {}
         self.output_graph = output_graph
 
         # Note: right overrides left
@@ -742,6 +744,8 @@ class CheckFunctionManager:
                 and "__defaults__" not in guard.name
                 and "__kwdefaults__" not in guard.name
                 and (config.skip_nnmodule_hook_guards or "hooks" not in guard.name)
+                # Force-enable NN_MODULE checks for now
+                and guard.create_fn is not GuardBuilder.NN_MODULE
             ):
                 continue
             guard.create(local_builder, global_builder)
@@ -854,6 +858,7 @@ class CheckFunctionManager:
             + list(SYMPY_INTERP.items())
         )
         closure_vars.update(CLOSURE_VARS)
+        closure_vars.update(self._extra_closure_vars)
         py_code = f"""\
 def ___make_guard_fn({','.join(closure_vars.keys())}):
     return lambda L: {code}
@@ -894,6 +899,14 @@ def ___make_guard_fn({','.join(closure_vars.keys())}):
         except TypeError:
             pass  # cannot weakref bool object
         return id(obj)
+
+    def add_extra_closure_var(self, name_hint, obj):
+        idx = 0
+        while f"{name_hint}_{idx}" in self._extra_closure_vars:
+            idx += 1
+        name = f"{name_hint}_{idx}"
+        self._extra_closure_vars[name] = obj
+        return name
 
 
 stashed_first_fail_reason = None
