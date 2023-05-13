@@ -237,9 +237,9 @@ def convert_frame_assert(
 
         code = frame.f_code
 
-        if code in input_codes and (
-            recompiles_log.isEnabledFor(logging.DEBUG) or config.error_on_recompile
-        ):
+        if code in input_codes:
+        #     recompiles_log.isEnabledFor(logging.DEBUG) or config.error_on_recompile
+        # ):
             if config.report_guard_failures:
                 message = (
                     f"Recompiling function {code.co_name} in {code.co_filename}",
@@ -251,11 +251,11 @@ def convert_frame_assert(
                     "set env var TORCHDYNAMO_REPORT_GUARD_FAILURES=1 to debug further",
                 )
 
-            if recompiles_log.isEnabledFor(logging.DEBUG):
-                recompiles_log.debug(message)
+        if recompiles_log.isEnabledFor(logging.DEBUG):
+            print(message)
 
-            if config.error_on_recompile:
-                raise exc.RecompileError(message)
+        if config.error_on_recompile:
+            raise exc.RecompileError(message)
 
         input_codes.add(code)
         if code in output_codes:

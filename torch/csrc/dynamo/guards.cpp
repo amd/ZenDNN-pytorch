@@ -4,6 +4,7 @@
 #include <torch/csrc/utils/python_numbers.h>
 #include <torch/extension.h>
 #include <sstream>
+#include <iostream>
 
 namespace {
 
@@ -502,10 +503,12 @@ static PyObject* NNModuleGuard_call(
 
   PyObject* mod = PyWeakref_GetObject(guard->wr);
   if (mod == NULL) {
+    std::cout << "Failing because of NULL" << std::endl;
     Py_RETURN_FALSE;
   }
 
   if (Py_TYPE(mod)->tp_version_tag != guard->version_tag) {
+    std::cout << "Failing because of mod tag change" << std::endl;
     Py_RETURN_FALSE;
   }
 
@@ -514,12 +517,14 @@ static PyObject* NNModuleGuard_call(
   PyObject* dict = PyObject_GenericGetDict(mod, NULL);
   if (((PyDictObject*)dict)->ma_version_tag != guard->dict_version_tag) {
     Py_DECREF(dict);
+    std::cout << "Failing because of dict tag change" << std::endl;
     Py_RETURN_FALSE;
   }
   Py_DECREF(dict);
 
   for (auto& attr_tag : guard->attr_tags) {
     if (attr_tag.dict->ma_version_tag != attr_tag.dict_version_tag) {
+      std::cout << "Failing because of attr tag change" << std::endl;
       Py_RETURN_FALSE;
     }
   }

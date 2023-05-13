@@ -344,21 +344,37 @@ class GuardBuilder(GuardBuilderBase):
             self.EQUALS_MATCH(guard)
 
     def NN_MODULE(self, guard: Guard):
-        ref = self.arg_ref(guard)
-        val = self.get(guard.name)
-        # The module guard checks for modifications to the Module's type, __dict__,
-        # and various nested OrderedDicts, such as _parameters, _buffers, and _modules.
-        # This subsumes the check for Module.training.
-        try:
-            g = torch._C._dynamo.guards.nn_module_guard(val)
-        except AttributeError:
-            # We get an attribute error if the module is partially initialized. For example,
-            # we might be trying to install a guard before a super().__init__() call when
-            # the module is missing _parameters, _modules, and other attributes.
-            # For now, we skip installing the guard.
-            return
-        name = self.check_fn_manager.add_extra_closure_var("__nn_module_guard", g)
-        self._produce_guard_code(guard, [f"{name}()"])
+        old = False
+        if old:
+            self.ID_MATCH(guard)
+            ref = self.arg_ref(guard)
+            val = self.get(guard.name)
+
+            def setup_guard():
+                assert istype(val.training, bool)
+                self.code.append(f"{ref}.training == {val.training}")
+
+            if hasattr(val, "training"):
+                # There are cases where a monkeypatched object has a guard made between __new__ and __init__
+                setup_guard()
+            else:
+                unimplemented(f"Guard setup for uninitialized class {type(val)}")
+        else:
+            ref = self.arg_ref(guard)
+            val = self.get(guard.name)
+            # The module guard checks for modifications to the Module's type, __dict__,
+            # and various nested OrderedDicts, such as _parameters, _buffers, and _modules.
+            # This subsumes the check for Module.training.
+            try:
+                g = torch._C._dynamo.guards.nn_module_guard(val)
+            except AttributeError:
+                # We get an attribute error if the module is partially initialized. For example,
+                # we might be trying to install a guard before a super().__init__() call when
+                # the module is missing _parameters, _modules, and other attributes.
+                # For now, we skip installing the guard.
+                return
+            name = self.check_fn_manager.add_extra_closure_var("__nn_module_guard", g)
+            self._produce_guard_code(guard, [f"{name}()"])
 
     def FUNCTION_MATCH(self, guard: Guard):
         """things like torch.add and user defined functions"""
@@ -925,6 +941,7 @@ def guard_fail_hook(
     first = index == 0
     global stashed_first_fail_reason
     # Don't waste time computing the fail reason for guards we aren't going to report out.
+    
     if not guard_fn.guard_fail_fn and not (first or last):
         return
     scope = {"L": f_locals, "G": guard_fn.global_scope["G"]}
@@ -941,6 +958,7 @@ def guard_fail_hook(
             reason = part
             break
 
+    breakpoint()
     if first:
         stashed_first_fail_reason = reason
 
