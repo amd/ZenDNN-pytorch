@@ -1028,14 +1028,15 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   Tensor new_values = at::empty({nnz}, values.options());
   using opmath_t = at::opmath_type<scalar_t>;
   constexpr bool need_acc = !std::is_same<scalar_t, opmath_t>::value;
-  auto values_acc_option = values.options();
-  if (need_acc) {
-    values_acc_option = values.scalar_type() == kComplexHalf
-        ? values.options().dtype(ScalarType::ComplexFloat)
-        : values.options().dtype(ScalarType::Float);
+  Tensor new_values_acc;
+  if constexpr (need_acc) {
+    auto acc_dtype = values.scalar_type() == kComplexHalf
+        ? ScalarType::ComplexFloat
+        : ScalarType::Float;
+    new_values_acc = at::empty({nnz}, values.options().dtype(acc_dtype));
+  } else {
+    new_values_acc = new_values;
   }
-  Tensor new_values_acc =
-      (need_acc ? at::empty({nnz}, values_acc_option) : new_values);
   new_values_acc.fill_(rop.identity());
 
   AT_DISPATCH_INDEX_TYPES(columns_map.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
@@ -1284,7 +1285,8 @@ Tensor _sparse_csr_sum_cpu(const Tensor& input, IntArrayRef dims_to_sum, bool ke
       using opmath_t = at::opmath_type<scalar_t>;
       result = reduce_sparse_csr_cpu_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<opmath_t>());
     });
-  auto is_integral = at::isIntegralType(dtype_, /*includeBool=*/false);
+  auto is_integral =
+      !dtype.has_value() && at::isIntegralType(dtype_, /*includeBool=*/false);
   if (is_integral) {
     result = result.to(ScalarType::Long);
   }

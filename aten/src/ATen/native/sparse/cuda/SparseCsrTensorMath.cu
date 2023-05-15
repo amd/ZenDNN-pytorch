@@ -636,7 +636,8 @@ Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
     [&] {
       result = reduce_sparse_csr_cuda_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
     });
-  auto is_integral = at::isIntegralType(dtype_, /*includeBool=*/false);
+  auto is_integral =
+      !dtype.has_value() && at::isIntegralType(dtype_, /*includeBool=*/false);
   if (is_integral) {
     result = result.to(ScalarType::Long);
   }

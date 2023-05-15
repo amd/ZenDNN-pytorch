@@ -2168,7 +2168,11 @@ Tensor sum_sparse_coo(const Tensor& self, at::OptionalIntArrayRef dim, bool keep
   return result;
 }
 
-Tensor sum_sparse_csr(const Tensor& self, at::OptionalIntArrayRef dim, bool keepdim, c10::optional<ScalarType> dtype) {
+Tensor sum_sparse_compressed(
+    const Tensor& self,
+    at::OptionalIntArrayRef dim,
+    bool keepdim,
+    c10::optional<ScalarType> dtype) {
   // TODO: The signature of sum.dim_IntList and _sparse_csr_sum.dim_dtype is a little
   // bit different in the second parameters `dim`, which causes the conversion of `dim`
   // to call into `_sparse_csr_sum`. Align the signatures would be a better choice.
