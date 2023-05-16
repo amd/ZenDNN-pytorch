@@ -6052,6 +6052,14 @@ class CommonTemplate:
         opt_fn = torch._dynamo.optimize("inductor")(fn)
         same(fn(x, y), opt_fn(x_clone, y))
 
+    def test_uint(self):
+        def fn():
+            x = torch.tensor(5, device="cuda", dtype=torch.uint8)
+            y = torch.neg(x)
+            return x < y
+
+        self.common(fn, ())
+
 
 @dataclasses.dataclass
 class TestFailure:
