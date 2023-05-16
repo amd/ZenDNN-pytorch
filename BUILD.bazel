@@ -435,6 +435,7 @@ cu_library(
         "@cuda//:cublas",
         "@cuda//:cufft",
         "@cuda//:cusparse",
+        "@cuda//:cusparselt",
         "@cutlass",
     ],
     alwayslink = True,
