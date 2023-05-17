@@ -496,10 +496,6 @@ class TestSparseCompressed(TestCase):
                             return x
                     elif x.ndim != sample.input.ndim + 2 or x.shape[-3] % blocksize[0] or x.shape[-2] % blocksize[1]:
                         return x
-                    if layout == torch.sparse_csc:
-                        return x
-                    if layout == torch.sparse_csr and (x.dtype == torch.bool or x.dtype == torch.complex32) and op.name == "sum":
-                        return x
                     return x.clone().to_sparse(layout=layout, blocksize=blocksize, dense_dim=dense_dim)
                 return x
 
