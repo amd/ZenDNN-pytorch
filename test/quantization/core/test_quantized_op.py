@@ -4520,7 +4520,7 @@ class TestQuantizedConv(TestCase):
 
         if transposed:
             W_packed = qconv_prepack_fn(W_q, bias, strides, i_pads, o_pads,
-                                        dilations, groups)
+                                        groups, dilations)
         else:
             W_packed = qconv_prepack_fn(W_q, bias, strides, i_pads, dilations,
                                         groups)
@@ -4695,7 +4695,7 @@ class TestQuantizedConv(TestCase):
         if qconv_prepack_fn is not None:
             if use_transpose:
                 W_prepack = qconv_prepack_fn(
-                    W_q, bias_float, strides, pads, o_pads, dilations, groups)
+                    W_q, bias_float, strides, pads, o_pads, groups, dilations)
             else:
                 W_prepack = qconv_prepack_fn(
                     W_q, bias_float, strides, pads, dilations, groups)
@@ -6239,7 +6239,7 @@ class TestQuantizedConv(TestCase):
             x = torch.randn((bs, ic, ih, iw))
             qx = torch.quantize_per_tensor(x, scale=1.0, zero_point=0, dtype=torch.quint8)
             w_packed = torch.ops.quantized.conv_transpose2d_prepack(
-                qw, bias, strides, paddings, output_paddings, dilates, groups
+                qw, bias, strides, paddings, output_paddings, groups, dilates
             )
             torch.ops.quantized.conv_transpose2d(qx, w_packed, output_scale=1.0, output_zero_point=0)
             ih, iw = 5, 4
