@@ -3,7 +3,6 @@ import unittest
 
 import torch
 import torch._dynamo as torchdynamo
-from torch._dynamo.eval_frame import is_dynamo_supported
 from torch._export import _export, export, dynamic_dim
 from torch._export.trace import do_not_use_experimental_export
 from torch._export.constraints import constrain_as_size, constrain_as_value
