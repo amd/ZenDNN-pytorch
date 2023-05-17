@@ -553,7 +553,7 @@ class TestExport(TestCase):
         ):
             _ = _export(fn_ddo, (torch.tensor([2, 3, 5]),), constraints=None)
 
-    def test_export_preserve_constraints_as_metadata(self):
+    def test_export_constrain_static(self):
         def f(x, y):
             b = x.item()
             constrain_as_size(b, min=2, max=5)
@@ -566,29 +566,11 @@ class TestExport(TestCase):
         y = torch.randn([8, 8, 6])
         example_inputs = (x, y)
         constraints = [dynamic_dim(y, 0) >= 6, dynamic_dim(y, 0) <= 10]
-        # with self.assertRaisesRegex(
-        #     torchdynamo.exc.UserError, "Cannot constrain symbol with constraints"
-        # ):
-        export(f, example_inputs, constraints)
+        with self.assertRaisesRegex(
+            torchdynamo.exc.UserError, "It appears that you're trying to set a constraint on a value which we evaluated to have a static value of 3. "
+        ):
+            export(f, example_inputs, constraints)
     
-    def test_moo(self):
-        def f(x, y):
-            b = x.item()
-            constrain_as_size(b, min=2, max=5)
-            # constrain_as_size(b, min=3, max=4)
-            # c = y.shape[0]
-            # constrain_as_size(c, min=4, max=7)
-            return torch.ones(b)
-
-        x = torch.tensor([3])
-        y = torch.randn([6, 8, 6])
-        example_inputs = (x, y)
-        constraints = [dynamic_dim(y, 0) <= 10]
-        # with self.assertRaisesRegex(
-        #     torchdynamo.exc.UserError, "Cannot constrain symbol with constraints"
-        # ):
-        gm = export(f, example_inputs, constraints)
-
 
 if __name__ == '__main__':
     run_tests()
