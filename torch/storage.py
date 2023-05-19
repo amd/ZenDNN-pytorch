@@ -80,6 +80,8 @@ class _StorageBase:
     @classmethod
     def from_file(cls, filename, shared, nbytes) -> T: ...  # noqa: E704
     @classmethod
+    def _from_file_offset(cls, filename, fd, shared, nbytes, offset) -> T: ...  # noqa: E704
+    @classmethod
     def _expired(cls, *args, **kwargs) -> T: ...  # noqa: E704
 
     def __str__(self):

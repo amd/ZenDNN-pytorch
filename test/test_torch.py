@@ -7022,6 +7022,44 @@ class TestTorch(TestCase):
             with TemporaryDirectoryName(suffix='中文') as dname, TemporaryFileName(dir=dname) as fname:
                 assert_with_filename(fname)
 
+    def test_from_file_offset(self):
+        def assert_with_filename(filename):
+            dtype = torch.float32
+            real_dtype_size = torch._utils._element_size(dtype)
+            t1 = torch.randn((2, 3), dtype=dtype)
+            t2 = torch.randn((3, 5), dtype=dtype)
+            s1 = t1.storage()._untyped_storage
+            s2 = t2.storage()._untyped_storage
+            # offset must be page-aligned
+            offset1 = 4096
+            offset2 = offset1 * 2
+
+            with open(filename, 'wb') as f:
+                f.seek(offset1)
+                s1._write_file(f, True, False, torch._utils._element_size(torch.uint8))
+                f.seek(offset2)
+                s2._write_file(f, True, False, torch._utils._element_size(torch.uint8))
+
+
+            with open(filename, 'rb') as f:
+                fd = f.fileno()
+                s1_loaded = torch.UntypedStorage._from_file_offset(filename, fd, False, 6 * real_dtype_size, offset1)
+                s2_loaded = torch.UntypedStorage._from_file_offset(filename, fd, False, 15 * real_dtype_size, offset2)
+
+            typed_storage_1 = torch.storage.TypedStorage(wrap_storage=s1_loaded, dtype=dtype, _internal=True)
+            t_loaded_1 = torch._utils._rebuild_tensor_v2(
+                typed_storage_1, 0, t1.shape, None, False, None, metadata=None
+            )
+            typed_storage_2 = torch.storage.TypedStorage(wrap_storage=s2_loaded, dtype=dtype, _internal=True)
+            t_loaded_2 = torch._utils._rebuild_tensor_v2(
+                typed_storage_2, 0, t2.shape, None, False, None, metadata=None
+            )
+            self.assertEqual(t_loaded_1, t1)
+            self.assertEqual(t_loaded_2, t2)
+
+        with TemporaryFileName() as fname:
+            assert_with_filename(fname)
+
     def test_torch_from_file(self):
         def assert_with_filename(filename):
             size = 10000
