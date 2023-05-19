@@ -20,6 +20,7 @@ from torch._dynamo.utils import defake, detect_fake_mode
 from torch._functorch.aot_autograd import make_boxed_func
 from torch._ops import OpOverload
 from torch._subclasses.fake_tensor import FakeTensor
+from torch.fx.experimental.symbolic_shapes import free_symbols
 from torch.fx.passes.fake_tensor_prop import FakeTensorProp
 
 from .._dynamo.backends.common import aot_autograd
@@ -33,6 +34,7 @@ from .fx_passes.pre_grad import pre_grad_passes
 from .graph import GraphLowering
 from .utils import developer_warning, get_dtype_size, has_incompatible_cudagraph_ops
 from .virtualized import V
+
 
 if config.is_fbcode():
     from torch._inductor.fb.logging import time_and_log
@@ -296,11 +298,22 @@ def compile_fx_inner(
             if isinstance(t, torch.Tensor)
         )
 
+        def _has_dynamism(t):
+            return len(free_symbols(t)) > 0
+
+        # automatic_dynamic_shapes is rejected here because it can lead to a case of bifurcated memory, wherein
+        # you start off entirely static, and therefore produce cudagraphs, but on a subsequent frame you re-enter
+        # lowering with some dynamism on inputs, and therefore, cannot produce cudagraphs.
+        has_dynamism = any(
+            _has_dynamism(t) for t in example_inputs
+        )
+
         if (
             set(graph.device_types) == {"cuda"}
             and not graph.mutated_inputs
             and not has_incompatible_cudagraph_ops(gm)
             and not complex_memory_overlap_inputs
+            and not has_dynamism
             and all(isinstance(t, torch.Tensor) for t in example_inputs)
             and (len(graph.device_idxs) == 1 or not config.triton.cudagraph_trees)
         ):
@@ -659,9 +672,7 @@ def compile_fx(
 
     assert not config._raise_error_for_testing
     num_example_inputs = len(example_inputs_)
-    cudagraphs = BoxedBool(
-        config.triton.cudagraphs and not dynamo_config.dynamic_shapes
-    )
+    cudagraphs = BoxedBool(config.triton.cudagraphs)
     forward_device = BoxedDeviceIndex(None)
 
     graph_id = next(_graph_counter)
