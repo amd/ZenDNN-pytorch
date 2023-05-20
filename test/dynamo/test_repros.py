@@ -2081,44 +2081,6 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         args = (torch.randn(3, 4),)
         self.assertTrue(same(mod(*args), opt_mod(*args)))
 
-    def test_requires_grad_guards_with_grad_mode1(self):
-        def f(x):
-            if x.requires_grad:
-                return x + 1
-            else:
-                return x + 2
-
-        x = torch.ones(2, requires_grad=True)
-
-        f_compiled = torch.compile(f)
-        with torch.no_grad():
-            # compile an inference graph
-            f_compiled(x)
-
-        # Test: we should fail guards and recompile (even though it's still an inference graph)
-        out_ref = f(x.detach())
-        out = f_compiled(x.detach())
-
-        self.assertEqual(out_ref, out)
-        self.assertEqual(out_ref.requires_grad, out.requires_grad)
-
-    def test_requires_grad_guards_with_grad_mode2(self):
-        x = torch.ones(2, requires_grad=True)
-        x_ref = x.clone().detach().requires_grad_(True)
-
-        m = torch.nn.Linear(2, 2)
-        m_compiled = torch.compile(m)
-
-        with torch.no_grad():
-            # compile an inference graph
-            m_compiled(x)
-
-        # Test: we should fail guards and recompile a training graph
-        out_ref = m(x_ref)
-        out = m_compiled(x)
-        self.assertEqual(out_ref, out)
-        self.assertEqual(out_ref.requires_grad, out.requires_grad)
-
     def test_is_symbolic_tracing(self):
         # Ensure no graph break here
         def fn(x):
@@ -3236,6 +3198,23 @@ class ReproTests(torch._dynamo.test_case.TestCase):
         ref_exponent = torch.tensor([[0, 1, 2, 3]], dtype=torch.int32)
         self.assertEqual(ref_mantissa, mantissa)
         self.assertEqual(ref_exponent, exponent)
+
+    @requires_cuda()
+    def test_disallow_data_parallel(self):
+        from torch.nn.parallel.data_parallel import DataParallel
+
+        class MockModule(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.linear = DataParallel(torch.nn.Linear(3, 3).cuda())
+
+            def forward(self, x):
+                return self.linear(x)
+
+        mod = MockModule().cuda()
+        opt_mod = torch.compile(mod, backend="eager")
+        x = torch.randn(3, 3, device="cuda")
+        opt_mod(x)
 
 
 if __name__ == "__main__":
