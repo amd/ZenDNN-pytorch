@@ -227,7 +227,7 @@ load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
 python_configure(
     name = "local_config_python",
-    python_version = "3",
+    python_interpreter_target = "@python3_8//:python_bin",
 )
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
