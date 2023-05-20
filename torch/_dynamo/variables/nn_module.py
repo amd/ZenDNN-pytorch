@@ -63,6 +63,9 @@ def initialize_lazy_module(tx, mod, args, kwargs):
         mod._infer_parameters(mod, input)
 
 
+total = 0
+fail = 0
+
 class NNModuleVariable(VariableTracker):
     _nonvar_fields = ["module_type", "module_key"]
 
@@ -298,6 +301,23 @@ class NNModuleVariable(VariableTracker):
 
                 from .builder import wrap_fx_proxy
 
+                # breakpoint()
+                global total
+                global fail
+                # try:
+                #     total += 1
+                #     # Try to inline, this gives us more ops, less modules
+                #     return tx.inline_user_function_return(
+                #         variables.UserFunctionVariable(
+                #             mod.forward, source=self.source, **options
+                #         ),
+                #         [self] + args,
+                #         kwargs,
+                #     )
+                # except Exception as e:
+                # Failed to inline, back to call_module
+                fail += 1
+                # print(f"Failed {fail}/{total}", e)
                 return wrap_fx_proxy(
                     tx=tx,
                     proxy=tx.output.create_proxy(

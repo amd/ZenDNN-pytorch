@@ -2125,8 +2125,8 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
 
     @staticmethod
     def check_inlineable(func):
-        if func.has_self():
-            unimplemented("inline with __self__")
+        # if func.has_self():
+            # unimplemented("inline with __self__")
 
         if func.get_name() == "patched_init":
             unimplemented("Patched init cannot be inlined.")
