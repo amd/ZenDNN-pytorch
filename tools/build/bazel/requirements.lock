@@ -1,0 +1,12 @@
+certifi==2023.5.7
+charset-normalizer==3.1.0
+future==0.18.3
+idna==3.4
+numpy==1.24.3
+pip==23.1.2
+PyYAML==6.0
+requests==2.30.0
+setuptools==67.8.0
+six==1.16.0
+typing_extensions==4.5.0
+urllib3==2.0.2
