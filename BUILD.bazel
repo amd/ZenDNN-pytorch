@@ -1763,6 +1763,7 @@ py_library(
         rules.requirement("requests"),
         rules.requirement("setuptools"),
         rules.requirement("six"),
+        rules.requirement("sympy"),
         rules.requirement("typing_extensions"),
         "//torchgen",
     ],
