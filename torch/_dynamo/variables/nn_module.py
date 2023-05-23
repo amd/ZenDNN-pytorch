@@ -333,287 +333,287 @@ class NNModuleVariable(VariableTracker):
                     kwargs,
                 )
 
-    def call_method(
-        self,
-        tx,
-        name,
-        args: "List[VariableTracker]",
-        kwargs: "Dict[str, VariableTracker]",
-        constant=False,
-    ) -> "VariableTracker":
-        from . import ConstantVariable, ListIteratorVariable, TupleVariable
+    # def call_method(
+    #     self,
+    #     tx,
+    #     name,
+    #     args: "List[VariableTracker]",
+    #     kwargs: "Dict[str, VariableTracker]",
+    #     constant=False,
+    # ) -> "VariableTracker":
+    #     from . import ConstantVariable, ListIteratorVariable, TupleVariable
 
-        options = VariableTracker.propagate(self, args, kwargs.values())
-        key = self.module_key
-        module = tx.output.get_submodule(key)
+    #     options = VariableTracker.propagate(self, args, kwargs.values())
+    #     key = self.module_key
+    #     module = tx.output.get_submodule(key)
 
-        def generic_call_method_helper(name):
-            # Helper function to put a `call_method` node in FX graph,
-            # with nn.Module as the first arg.
-            mod_proxy = tx.output.create_proxy(
-                "get_attr",
-                self.module_key,
-                tuple(),
-                {},
-            )
-            mod_proxy.node.meta["example_value"] = module
+    #     def generic_call_method_helper(name):
+    #         # Helper function to put a `call_method` node in FX graph,
+    #         # with nn.Module as the first arg.
+    #         mod_proxy = tx.output.create_proxy(
+    #             "get_attr",
+    #             self.module_key,
+    #             tuple(),
+    #             {},
+    #         )
+    #         mod_proxy.node.meta["example_value"] = module
 
-            proxy_args, proxy_kwargs = proxy_args_kwargs(args, kwargs)
+    #         proxy_args, proxy_kwargs = proxy_args_kwargs(args, kwargs)
 
-            from .builder import wrap_fx_proxy
+    #         from .builder import wrap_fx_proxy
 
-            return wrap_fx_proxy(
-                tx=tx,
-                proxy=tx.output.create_proxy(
-                    "call_method",
-                    name,
-                    args=(mod_proxy, *proxy_args),
-                    kwargs=proxy_kwargs,
-                ),
-                **options,
-            )
+    #         return wrap_fx_proxy(
+    #             tx=tx,
+    #             proxy=tx.output.create_proxy(
+    #                 "call_method",
+    #                 name,
+    #                 args=(mod_proxy, *proxy_args),
+    #                 kwargs=proxy_kwargs,
+    #             ),
+    #             **options,
+    #         )
 
-        if name in ["_call_impl", "_wrapped_call_impl"]:
-            # Example: `self.layer.__call__(x)`
-            # This is used for explicit calling `__call__` in a forward function.
-            # Dynamo inlines `__call__`, includes hooks.
-            return self.call_function(tx, args, kwargs)
-        elif name == "forward":
-            # Example: `self.layer.forward(x)`
-            # This is used for explicit calling `forward` in a forward function.
-            # Dynamo puts `call_method` node in FX, doesn't trigger hooks.
-            with self.record_nn_module_stack(tx, module):
-                return generic_call_method_helper(name)
+    #     if name in ["_call_impl", "_wrapped_call_impl"]:
+    #         # Example: `self.layer.__call__(x)`
+    #         # This is used for explicit calling `__call__` in a forward function.
+    #         # Dynamo inlines `__call__`, includes hooks.
+    #         return self.call_function(tx, args, kwargs)
+    #     elif name == "forward":
+    #         # Example: `self.layer.forward(x)`
+    #         # This is used for explicit calling `forward` in a forward function.
+    #         # Dynamo puts `call_method` node in FX, doesn't trigger hooks.
+    #         with self.record_nn_module_stack(tx, module):
+    #             return generic_call_method_helper(name)
 
-        if name == "_check_input_dim" and skipfiles.is_torch_inline_allowed(
-            inspect.getfile(module.__class__._check_input_dim)
-        ):
-            return ConstantVariable(True, **options)
+    #     if name == "_check_input_dim" and skipfiles.is_torch_inline_allowed(
+    #         inspect.getfile(module.__class__._check_input_dim)
+    #     ):
+    #         return ConstantVariable(True, **options)
 
-        if name == "_get_item_by_idx":
-            assert args[1].is_python_constant()
-            assert isinstance(args[0], TupleVariable)
-            mod_var = args[0].items[args[1].value]
-            if isinstance(mod_var, UnspecializedNNModuleVariable):
-                return mod_var
-            key = mod_var.module_key
-            submod = tx.output.get_submodule(key)
-            return tx.output.register_attr_or_module(
-                submod,
-                key,
-                key,
-                source=NNModuleSource(GetItemSource(self.source, key)),
-                **options,
-            )
+    #     if name == "_get_item_by_idx":
+    #         assert args[1].is_python_constant()
+    #         assert isinstance(args[0], TupleVariable)
+    #         mod_var = args[0].items[args[1].value]
+    #         if isinstance(mod_var, UnspecializedNNModuleVariable):
+    #             return mod_var
+    #         key = mod_var.module_key
+    #         submod = tx.output.get_submodule(key)
+    #         return tx.output.register_attr_or_module(
+    #             submod,
+    #             key,
+    #             key,
+    #             source=NNModuleSource(GetItemSource(self.source, key)),
+    #             **options,
+    #         )
 
-        if constant:
-            fn = getattr(module, name)
-            name = f"{module.__class__.__name__}_{name}_result"
-            return invoke_and_store_as_constant(tx, fn, name, options, args, kwargs)
+    #     if constant:
+    #         fn = getattr(module, name)
+    #         name = f"{module.__class__.__name__}_{name}_result"
+    #         return invoke_and_store_as_constant(tx, fn, name, options, args, kwargs)
 
-        def assert_all_args_kwargs_const():
-            if not all(
-                x.is_python_constant() for x in itertools.chain(args, kwargs.values())
-            ):
-                raise unimplemented(f"non-const NNModule method {name}")
+    #     def assert_all_args_kwargs_const():
+    #         if not all(
+    #             x.is_python_constant() for x in itertools.chain(args, kwargs.values())
+    #         ):
+    #             raise unimplemented(f"non-const NNModule method {name}")
 
-        def get_kwargs(*names):
-            assert_all_args_kwargs_const()
-            fn = getattr(module, name)
-            bound_args = inspect.signature(fn).bind(
-                *([x.as_python_constant() for x in args]),
-                **{k: v.as_python_constant() for k, v in kwargs.items()},
-            )
-            bound_args.apply_defaults()
-            bound_args = bound_args.arguments
-            return {k: bound_args[k] for k in names}
+    #     def get_kwargs(*names):
+    #         assert_all_args_kwargs_const()
+    #         fn = getattr(module, name)
+    #         bound_args = inspect.signature(fn).bind(
+    #             *([x.as_python_constant() for x in args]),
+    #             **{k: v.as_python_constant() for k, v in kwargs.items()},
+    #         )
+    #         bound_args.apply_defaults()
+    #         bound_args = bound_args.arguments
+    #         return {k: bound_args[k] for k in names}
 
-        def wrap_values(items):
-            result = []
-            for name, submod in items:
-                result.append(
-                    tx.output.register_attr_or_module(
-                        submod,
-                        key,
-                        name,
-                        source=NNModuleSource(gen_source(self.source, name)),
-                        **options,
-                    )
-                )
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     def wrap_values(items):
+    #         result = []
+    #         for name, submod in items:
+    #             result.append(
+    #                 tx.output.register_attr_or_module(
+    #                     submod,
+    #                     key,
+    #                     name,
+    #                     source=NNModuleSource(gen_source(self.source, name)),
+    #                     **options,
+    #                 )
+    #             )
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
 
-        def named_embed(name, obj):
-            return TupleVariable(
-                [
-                    ConstantVariable(name, **options),
-                    tx.output.register_attr_or_module(
-                        obj,
-                        key,
-                        name,
-                        source=NNModuleSource(gen_source(self.source, name)),
-                        **options,
-                    ),
-                ]
-            )
+    #     def named_embed(name, obj):
+    #         return TupleVariable(
+    #             [
+    #                 ConstantVariable(name, **options),
+    #                 tx.output.register_attr_or_module(
+    #                     obj,
+    #                     key,
+    #                     name,
+    #                     source=NNModuleSource(gen_source(self.source, name)),
+    #                     **options,
+    #                 ),
+    #             ]
+    #         )
 
-        def gen_source(source, name):
-            name_split = name.split(".")
-            if name_split[0] == "":
-                return source
-            while len(name_split) > 0:
-                x = name_split.pop(0)
-                source = AttrSource(source, x)
-            return source
+    #     def gen_source(source, name):
+    #         name_split = name.split(".")
+    #         if name_split[0] == "":
+    #             return source
+    #         while len(name_split) > 0:
+    #             x = name_split.pop(0)
+    #             source = AttrSource(source, x)
+    #         return source
 
-        if name == "named_children":
-            assert not (args or kwargs)
-            result = []
-            for name, submod in module.named_children():
-                result.append(named_embed(name, submod))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "named_parameters":
-            result = []
-            for name, param in module.named_parameters(
-                **get_kwargs("prefix", "recurse")
-            ):
-                result.append(named_embed(name, param))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "named_buffers":
-            result = []
-            for name, buffer in module.named_buffers(
-                **get_kwargs("prefix", "recurse", "remove_duplicate")
-            ):
-                result.append(named_embed(name, buffer))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "named_modules":
-            result = []
-            for name, submod in module.named_modules(
-                **get_kwargs("memo", "prefix", "remove_duplicate")
-            ):
-                result.append(named_embed(name, submod))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "children":
-            assert not (args or kwargs)
-            return wrap_values(module.named_children())
-        elif name == "modules":
-            return wrap_values(module.named_modules())
-        elif name == "parameters":
-            return wrap_values(module.named_parameters(**get_kwargs("recurse")))
-        elif name == "keys":
-            assert not (args or kwargs)
-            result = []
-            for name in module.keys():
-                result.append(ConstantVariable(name, **options))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "values":
-            assert not (args or kwargs)
-            return wrap_values(module.items())
-        elif name == "items":
-            assert not (args or kwargs)
-            result = []
-            for name, submod in module.items():
-                result.append(named_embed(name, submod))
-            return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "__len__":
-            assert not (args or kwargs)
-            return ConstantVariable(len(module), **options)
-        elif (
-            name == "__contains__"
-            and isinstance(module, (torch.nn.ModuleDict, torch.nn.ParameterDict))
-            and args
-            and args[0].is_python_constant()
-        ):
-            return ConstantVariable(
-                args[0].as_python_constant() in module._modules, **options
-            )
-        elif name == "__getitem__":
-            assert not kwargs and len(args) == 1
-            builtin_supported = (
-                torch.nn.ModuleDict.__getitem__,
-                torch.nn.ModuleList.__getitem__,
-                torch.nn.ParameterList.__getitem__,
-                torch.nn.Sequential.__getitem__,
-            )
+    #     if name == "named_children":
+    #         assert not (args or kwargs)
+    #         result = []
+    #         for name, submod in module.named_children():
+    #             result.append(named_embed(name, submod))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "named_parameters":
+    #         result = []
+    #         for name, param in module.named_parameters(
+    #             **get_kwargs("prefix", "recurse")
+    #         ):
+    #             result.append(named_embed(name, param))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "named_buffers":
+    #         result = []
+    #         for name, buffer in module.named_buffers(
+    #             **get_kwargs("prefix", "recurse", "remove_duplicate")
+    #         ):
+    #             result.append(named_embed(name, buffer))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "named_modules":
+    #         result = []
+    #         for name, submod in module.named_modules(
+    #             **get_kwargs("memo", "prefix", "remove_duplicate")
+    #         ):
+    #             result.append(named_embed(name, submod))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "children":
+    #         assert not (args or kwargs)
+    #         return wrap_values(module.named_children())
+    #     elif name == "modules":
+    #         return wrap_values(module.named_modules())
+    #     elif name == "parameters":
+    #         return wrap_values(module.named_parameters(**get_kwargs("recurse")))
+    #     elif name == "keys":
+    #         assert not (args or kwargs)
+    #         result = []
+    #         for name in module.keys():
+    #             result.append(ConstantVariable(name, **options))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "values":
+    #         assert not (args or kwargs)
+    #         return wrap_values(module.items())
+    #     elif name == "items":
+    #         assert not (args or kwargs)
+    #         result = []
+    #         for name, submod in module.items():
+    #             result.append(named_embed(name, submod))
+    #         return ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "__len__":
+    #         assert not (args or kwargs)
+    #         return ConstantVariable(len(module), **options)
+    #     elif (
+    #         name == "__contains__"
+    #         and isinstance(module, (torch.nn.ModuleDict, torch.nn.ParameterDict))
+    #         and args
+    #         and args[0].is_python_constant()
+    #     ):
+    #         return ConstantVariable(
+    #             args[0].as_python_constant() in module._modules, **options
+    #         )
+    #     elif name == "__getitem__":
+    #         assert not kwargs and len(args) == 1
+    #         builtin_supported = (
+    #             torch.nn.ModuleDict.__getitem__,
+    #             torch.nn.ModuleList.__getitem__,
+    #             torch.nn.ParameterList.__getitem__,
+    #             torch.nn.Sequential.__getitem__,
+    #         )
 
-            if type(module).__getitem__ not in builtin_supported:
-                assert isinstance(args[0], variables.ConstantVariable), typestr(args[0])
-                key = args[0].as_python_constant()
-                assert isinstance(key, (str, int))
-                fn = getattr(module, name).__func__
+    #         if type(module).__getitem__ not in builtin_supported:
+    #             assert isinstance(args[0], variables.ConstantVariable), typestr(args[0])
+    #             key = args[0].as_python_constant()
+    #             assert isinstance(key, (str, int))
+    #             fn = getattr(module, name).__func__
 
-                assert isinstance(fn, types.FunctionType)
+    #             assert isinstance(fn, types.FunctionType)
 
-                src = AttrSource(AttrSource(self.source, name), "__func__")
-                return tx.inline_user_function_return(
-                    variables.UserFunctionVariable(fn, source=src, **options),
-                    [self] + list(args),
-                    kwargs,
-                )
+    #             src = AttrSource(AttrSource(self.source, name), "__func__")
+    #             return tx.inline_user_function_return(
+    #                 variables.UserFunctionVariable(fn, source=src, **options),
+    #                 [self] + list(args),
+    #                 kwargs,
+    #             )
 
-            assert self.source
+    #         assert self.source
 
-            if isinstance(args[0], SliceVariable):
-                # Build a TupleVariable of NNModules
-                result = []
-                submods = []
+    #         if isinstance(args[0], SliceVariable):
+    #             # Build a TupleVariable of NNModules
+    #             result = []
+    #             submods = []
 
-                # Turn the slice into the list of integers
-                keys = list(range(len(module)))[args[0].as_python_constant()]
-                for idx, submod in enumerate(module[args[0].as_python_constant()]):
-                    key = keys[idx]
-                    src = NNModuleSource(GetItemSource(self.source, key))
-                    result.append(
-                        tx.output.register_attr_or_module(
-                            submod,
-                            key,
-                            source=src,
-                            **options,
-                        )
-                    )
-                    submods.append(submod)
+    #             # Turn the slice into the list of integers
+    #             keys = list(range(len(module)))[args[0].as_python_constant()]
+    #             for idx, submod in enumerate(module[args[0].as_python_constant()]):
+    #                 key = keys[idx]
+    #                 src = NNModuleSource(GetItemSource(self.source, key))
+    #                 result.append(
+    #                     tx.output.register_attr_or_module(
+    #                         submod,
+    #                         key,
+    #                         source=src,
+    #                         **options,
+    #                     )
+    #                 )
+    #                 submods.append(submod)
 
-                new_module = torch.nn.Sequential(*submods)
-                new_module_variable = tx.output.register_attr_or_module(
-                    new_module,
-                    f"{self}.__getitem__(slice)",
-                    source=NNModuleSource(
-                        GetItemSource(self.source, args[0].as_python_constant())
-                    ),
-                    **options,
-                )
-                return new_module_variable
+    #             new_module = torch.nn.Sequential(*submods)
+    #             new_module_variable = tx.output.register_attr_or_module(
+    #                 new_module,
+    #                 f"{self}.__getitem__(slice)",
+    #                 source=NNModuleSource(
+    #                     GetItemSource(self.source, args[0].as_python_constant())
+    #                 ),
+    #                 **options,
+    #             )
+    #             return new_module_variable
 
-            key = args[0].as_python_constant()
-            submod = module[key]
-            return tx.output.register_attr_or_module(
-                submod,
-                key,
-                args[0].as_python_constant(),
-                source=NNModuleSource(GetItemSource(self.source, key)),
-                **options,
-            )
-        elif name == "_get_abs_string_index":
-            # Inline the function
-            fn = getattr(module, name).__func__
-            src = AttrSource(AttrSource(self.source, name), "__func__")
-            return tx.inline_user_function_return(
-                variables.UserFunctionVariable(fn, source=src, **options),
-                [self] + args,
-                kwargs,
-            )
-        # A loose heuristic, but seems to be generally good before we drop into the
-        # manual handling of inputs
-        elif (
-            name in module.__class__.__dict__
-            and callable(module.__class__.__dict__[name])
-            and all(
-                isinstance(x, variables.TensorVariable)
-                for x in itertools.chain(args, kwargs.values())
-            )
-        ):
-            return generic_call_method_helper(name)
-        else:
-            return super().call_method(tx, name, args, kwargs)
+    #         key = args[0].as_python_constant()
+    #         submod = module[key]
+    #         return tx.output.register_attr_or_module(
+    #             submod,
+    #             key,
+    #             args[0].as_python_constant(),
+    #             source=NNModuleSource(GetItemSource(self.source, key)),
+    #             **options,
+    #         )
+    #     elif name == "_get_abs_string_index":
+    #         # Inline the function
+    #         fn = getattr(module, name).__func__
+    #         src = AttrSource(AttrSource(self.source, name), "__func__")
+    #         return tx.inline_user_function_return(
+    #             variables.UserFunctionVariable(fn, source=src, **options),
+    #             [self] + args,
+    #             kwargs,
+    #         )
+    #     # A loose heuristic, but seems to be generally good before we drop into the
+    #     # manual handling of inputs
+    #     elif (
+    #         name in module.__class__.__dict__
+    #         and callable(module.__class__.__dict__[name])
+    #         and all(
+    #             isinstance(x, variables.TensorVariable)
+    #             for x in itertools.chain(args, kwargs.values())
+    #         )
+    #     ):
+    #         return generic_call_method_helper(name)
+    #     else:
+    #         return super().call_method(tx, name, args, kwargs)
 
 
 class UnspecializedNNModuleVariable(UserDefinedObjectVariable):
