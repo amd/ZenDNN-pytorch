@@ -94,6 +94,10 @@ local_repository(
     path = "third_party/protobuf",
 )
 
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
+
 new_local_repository(
     name = "eigen",
     build_file = "//third_party:eigen.BUILD",
@@ -232,10 +236,6 @@ python_configure(
     name = "local_config_python",
     python_interpreter_target = interpreter,
 )
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
 
 new_local_repository(
     name = "cuda",
