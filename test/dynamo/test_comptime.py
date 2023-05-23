@@ -1,5 +1,4 @@
 # Owner(s): ["module: dynamo"]
-
 import re
 import sys
 from io import StringIO
@@ -205,6 +204,14 @@ y = TensorVariable()
             }
 -
             global '' DEFAULT_DEVICE
+            {
+                'guard_types': None,
+                'code': None,
+                'obj_weakref': None
+                'guarded_class': None
+            }
+-
+            shape_env '' SHAPE_ENV
             {
                 'guard_types': None,
                 'code': None,

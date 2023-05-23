@@ -223,6 +223,7 @@ class UnspecTests(torch._dynamo.test_case.TestCase):
             res = opt_fn(x, y)
             self.assertTrue(same(ref, res))
 
+    @torch._dynamo.config.patch("assume_static_by_default", False)
     def test_shape_graph_break(self):
         from torch._dynamo.comptime import comptime
 

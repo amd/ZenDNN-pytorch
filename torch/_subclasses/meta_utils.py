@@ -5,7 +5,11 @@ from typing import ContextManager, List, Optional
 
 import torch
 from torch._guards import Source
-from torch.fx.experimental.symbolic_shapes import DimConstraint, DimDynamic
+from torch.fx.experimental.symbolic_shapes import (
+    DimConstraint,
+    DimDynamic,
+    free_symbols,
+)
 from torch.multiprocessing.reductions import StorageWeakRef
 from torch.utils.weak import WeakIdRef
 
@@ -239,10 +243,8 @@ class MetaConverter:
         if self.get_tensor_memo(t) is None:
             with torch.inference_mode(t.is_inference()):
                 if t.is_sparse:
-                    # TODO: Delete this assert, and just attempt making the
-                    # sparse tensor anyway; even if there is a shape_env, this
-                    # tensor might be all static
-                    assert shape_env is None, "symbolic on sparse NYI"
+                    static = len(free_symbols(t)) == 0
+                    assert static, "symbolic on sparse NYI"
                     is_leaf = safe_is_leaf(t)
                     r = callback(
                         lambda: torch.ops.aten._sparse_coo_tensor_with_dims(

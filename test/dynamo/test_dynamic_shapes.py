@@ -32,13 +32,6 @@ test_classes = {}
 
 ALL_DYNAMIC_XFAILS = {
     "MiscTests": [],
-    "ReproTests": [
-        # Could not infer dtype of torch._C.SymIntNode
-        "test_convert_boxes_to_pooler_format",
-    ],
-    "SubGraphTests": [
-        "test_enumerate_not_break_graph",
-    ],
 }
 
 XFAIL_HITS = 0
@@ -101,7 +94,6 @@ unittest.expectedFailure(
     # NB: I don't think this ever can actually work, cuz TorchScript
     # can't deal with SymInt inputs
 )
-
 
 unittest.expectedFailure(
     DynamicShapesMiscTests.test_slice_input_dynamic_shapes
