@@ -275,6 +275,7 @@ class UserFunctionVariable(BaseUserFunctionVariable):
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
+        print(f"UserDefinedFunction {self.fn} invoked")
         if self.is_constant:
             options = VariableTracker.propagate(self, args, kwargs.values())
             return invoke_and_store_as_constant(

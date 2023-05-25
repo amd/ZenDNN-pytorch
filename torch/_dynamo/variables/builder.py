@@ -409,6 +409,18 @@ class VariableBuilder:
                 source=self.source,
                 guards=make_guards(GuardBuilder.BUILTIN_MATCH),
             )
+        elif value in [
+            torch.distributed._functional_collectives.all_gather_tensor,
+            torch.distributed._functional_collectives._expand_group,
+            torch.distributed._functional_collectives._maybe_wrap_tensor,
+            torch.distributed._functional_collectives._are_we_tracing
+        ]:
+            print("REWROTE all_gather_tensor")
+            return UserFunctionVariable(
+                value,
+                source=self.source,
+                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
         elif is_allowed(value):
             return TorchVariable(
                 value,
@@ -448,6 +460,7 @@ class VariableBuilder:
             torch.distributed.distributed_c10d.all_gather_into_tensor,
             torch.distributed.distributed_c10d.reduce_scatter_tensor,
         ]:
+            print("Rewrote", value)
             from torch.distributed._functional_collectives import (
                 all_gather_tensor_inplace,
                 reduce_scatter_tensor_inplace,

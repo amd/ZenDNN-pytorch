@@ -532,7 +532,8 @@ def all_gather_tensor_inplace(
     gather_dim: int = 0
 ):
     assert not async_op, "Can't remap async version of inplace op to functional collective"
-    return output.copy_(all_gather_tensor(input, gather_dim, group, tag))
+    agt = all_gather_tensor(input, gather_dim, group, tag)
+    return output.copy_(agt)
 
 def reduce_scatter_tensor_inplace(
     output: torch.Tensor,
