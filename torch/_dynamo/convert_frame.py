@@ -144,6 +144,9 @@ def has_tensor_in_frame(frame):
     # Check if the function was decorated using torch._dynamo.optimize
     if frame.f_code in always_optimize_code_objects:
         return True
+    
+    if "torch/distributed" in frame.f_code.co_filename:
+        return True
 
     # Check if there is global import of torch.*
     for co_name in frame.f_code.co_names:

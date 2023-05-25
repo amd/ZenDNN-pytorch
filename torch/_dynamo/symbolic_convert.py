@@ -1091,6 +1091,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
     def CALL_FUNCTION(self, inst):
         args = self.popn(inst.argval)
         fn = self.pop()
+        print("Invoking", self, fn)
         self.call_function(fn, args, {})
 
     @break_graph_if_unsupported(push=1)
@@ -2224,6 +2225,7 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
             log.debug(msg)
             raise Unsupported(msg) from e
         except Exception as e:
+            print("FAILED INLINING", e)
             log.debug("FAILED INLINING %s", code)
             raise
         assert tracer.symbolic_result is not None

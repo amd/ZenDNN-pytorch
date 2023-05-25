@@ -393,7 +393,7 @@ class TestCollectivesInductor(DynamoDistributedSingleProcTestCase):
         inputs = torch.ones(local_size, device=self.device)
         outputs = torch.empty(global_size, device=self.device)
         correct_outputs = torch.empty(global_size, device=self.device)
-        counter = CompileCounter()
+        counter = CompileCounter()        
         compiled = torch.compile(func, backend=counter, fullgraph=True)
         compiled(inputs, outputs, pg=GroupMember.WORLD)
         func(inputs, correct_outputs, pg=GroupMember.WORLD)

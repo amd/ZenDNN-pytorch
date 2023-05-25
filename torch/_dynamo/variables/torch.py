@@ -504,6 +504,7 @@ class TorchVariable(VariableTracker):
             self.value == torch.distributed.get_process_group_ranks
             or self.value == torch.distributed.distributed_c10d._get_group_tag
         ):
+            print("PG GUARDING")
             # guard on this 'pg'
             # desugar it at trace-time into ranks by directly calling util
             # bake the result into the trace
@@ -576,7 +577,8 @@ For now, dynamo will explicitly graph break when it encounters user code with th
 
                 if isinstance(data_arg, ListVariable) and check_any_unspec(data_arg):
                     unimplemented("torch.tensor call with list of unspec")
-            # print("Making a call_function", fn_, *proxy_args_kwargs(args, kwargs))
+            print("Making a call_function", fn_)
+            # if fn_ is istorch.distributed.distributed_c10d.reduce_scatter_tensor,
             tensor_variable = wrap_fx_proxy(
                 tx=tx,
                 proxy=tx.output.create_proxy(
