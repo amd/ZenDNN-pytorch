@@ -309,7 +309,7 @@ class VariableBuilder:
 
         return result
 
-    def _wrap(self, value):
+    def _wrap(self, value):        
         make_guards = self.make_guards
 
         # Handle exact type() match
@@ -326,6 +326,10 @@ class VariableBuilder:
         # We want to get those out and wrap those.
         value = inspect.getattr_static(value, "_torchdynamo_inline", value)
 
+        if inspect.isfunction(value) and "needs_unshard" in value.__name__:
+            print("marking needs_unshard via builder")
+            value._dynamo_marked_constant = True
+            
         # Everything else (NB: order matters!)
         from torch.distributed.fsdp.flat_param import FlatParameter
         if istype(value, config.traceable_tensor_subclasses) or istype(value, FlatParameter):

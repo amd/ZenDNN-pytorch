@@ -51,6 +51,7 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+from torch._dynamo.external_utils import is_compiling as is_torchdynamo_compiling
 
 """
 [Note: Fully Sharded Module]
@@ -833,7 +834,10 @@ class FlatParamHandle:
                 flat_param.storage_offset() == 0,
                 "The `FlatParameter` is not the sole occupant of its storage",
             )
-            orig_storage = flat_param._typed_storage()
+            # TODO(voz): can we move it down?
+            if not is_torchdynamo_compiling():
+                orig_storage = flat_param._typed_storage()
+
             sharded_flat_param, numel_padded = FlatParamHandle._get_shard(
                 flat_param, self.rank, self.world_size
             )
@@ -841,8 +845,11 @@ class FlatParamHandle:
             start_idx = sharded_flat_param.numel() * self.rank
             end_idx = sharded_flat_param.numel() * (self.rank + 1) - 1  # inclusive
             self._init_shard_metadata(numel_padded, start_idx, end_idx)
-            if orig_storage._size() > 0:
-                orig_storage._resize_(0)
+
+            if not is_torchdynamo_compiling():
+                if orig_storage._size() > 0:
+                    orig_storage._resize_(0)
+
         if self._use_orig_params:
             self._use_sharded_views()
 
@@ -1222,6 +1229,7 @@ class FlatParamHandle:
         padded_unsharded_flat_param = self._all_gather_flat_param(unsharded_flat_param)
         self._use_unsharded_flat_param(padded_unsharded_flat_param)
 
+    
     def needs_unshard(self) -> bool:
         """Returns if the handle's flat parameter needs to be unsharded."""
         if not self.uses_sharded_strategy:

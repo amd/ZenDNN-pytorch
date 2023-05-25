@@ -372,6 +372,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         return subobj
 
     def var_getattr(self, tx, name):
+        print("User defined getattr", name)
         from . import ConstantVariable
         from .builder import VariableBuilder
 
@@ -383,6 +384,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
 
         try:
             subobj = self._getattr_static(name)
+            print("User defined getattr got via subobj")
         except AttributeError:
             subobj = None
             if isinstance(getattr_fn, types.FunctionType):
@@ -397,6 +399,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
                 subobj.fget, self, source=source, **options
             ).call_function(tx, [], {})
         elif isinstance(subobj, staticmethod):
+            print("User defined getattr got via types.FunctionType static WTF?")
             return variables.UserFunctionVariable(
                 subobj.__get__(self.value), source=source, **options
             )
@@ -405,12 +408,14 @@ class UserDefinedObjectVariable(UserDefinedVariable):
                 subobj.__func__, self, source=source, **options
             )
         elif isinstance(subobj, types.FunctionType):
+            print("User defined getattr got via types.FunctionType")
             # Check `__dict__` to bypass the function descriptor protocol to
             # accurately check for static method
             is_staticmethod = name in type(self.value).__dict__ and isinstance(
                 type(self.value).__dict__[name], staticmethod
             )
             if is_staticmethod:
+                print("User defined getattr got via types.FunctionType WTF?")
                 # Use `UserFunctionVariable` to avoid doubly passing in `self`
                 # as an argument, which happens if using `UserMethodVariable`
                 return variables.UserFunctionVariable(

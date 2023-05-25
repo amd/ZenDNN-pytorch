@@ -131,10 +131,14 @@ class UserFunctionVariable(BaseUserFunctionVariable):
     def __init__(self, fn, is_constant=False, **kwargs):
         super().__init__(**kwargs)
         if getattr(fn, "_dynamo_marked_constant", False):
+            print("MARKED CONSTANT", fn)
             # This method should be treated as a constant for the purposes of compilation
             self.is_constant = True
         else:
-            self.is_constant = False
+            if "needs_unshard" in str(fn):
+                self.is_constant = True
+            else:
+                self.is_constant = False
 
         assert isinstance(
             fn, (types.FunctionType, torch.jit.ScriptFunction)
@@ -275,12 +279,12 @@ class UserFunctionVariable(BaseUserFunctionVariable):
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
-        print(f"UserDefinedFunction {self.fn} invoked")
         if self.is_constant:
             options = VariableTracker.propagate(self, args, kwargs.values())
-            return invoke_and_store_as_constant(
+            result = invoke_and_store_as_constant(
                 tx, self.fn, self.get_name(), options, args, kwargs
             )
+            return result
 
         return super().call_function(tx, args, kwargs)
 
@@ -304,6 +308,9 @@ class UserMethodVariable(UserFunctionVariable):
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
+        if self.is_constant:
+            return super().call_function(tx, [self.obj] + [*args], kwargs)
+        
         # For nn.Module methods, redirecting to NNModuleVariable.call_method for optimized solution
         # rather than simple inlining. E.g, putting `call_method` op in FX graph for `forward` method
         # since we ensure `forward` of allowed modules can be traced by AOT safely.
@@ -372,10 +379,14 @@ def invoke_and_store_as_constant(tx, fn, name, options, args, kwargs):
     def convert(x):
         if isinstance(x, variables.TensorVariable):
             return x.get_real_value()
+        if isinstance(x, variables.UserDefinedObjectVariable):
+            return x.value
         return x.as_python_constant()
 
+        
     args = [convert(x) for x in args]
     kwargs = {k: convert(v) for k, v in kwargs.items()}
+    print(f"Invoking fn {fn} with args {args}")
     res = fn(*args, **kwargs)
     return tx.output.register_attr_or_module(
         res,
