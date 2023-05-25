@@ -469,9 +469,11 @@ class GetAttrVariable(VariableTracker):
     @staticmethod
     def create_getattr_proxy(base_proxy: torch.fx.Proxy, attr):
         return getattr(base_proxy, attr)
-
+        
     def as_proxy(self):
-        return GetAttrVariable.create_getattr_proxy(self.obj.as_proxy(), self.name)
+        getattr_proxy = GetAttrVariable.create_getattr_proxy(self.obj.as_proxy(), self.name)
+        # getattr_proxy.node.meta['example_value'] = getattr(self.obj.as_proxy().node.meta['example_value'], self.name)
+        return getattr_proxy
 
     def const_getattr(self, tx, name):
         if not isinstance(self.obj, variables.NNModuleVariable):

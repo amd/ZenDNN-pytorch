@@ -327,7 +327,8 @@ class VariableBuilder:
         value = inspect.getattr_static(value, "_torchdynamo_inline", value)
 
         # Everything else (NB: order matters!)
-        if istype(value, config.traceable_tensor_subclasses):
+        from torch.distributed.fsdp.flat_param import FlatParameter
+        if istype(value, config.traceable_tensor_subclasses) or istype(value, FlatParameter):
             return self.wrap_tensor(value)
         elif is_namedtuple(value):
             return self.wrap_listlike(value)
@@ -443,10 +444,10 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
             )
         # NB: These can't be put in type_dispatch, they have to run later
-        elif value in {
+        elif value in [
             torch.distributed.distributed_c10d.all_gather_into_tensor,
             torch.distributed.distributed_c10d.reduce_scatter_tensor,
-        }:
+        ]:
             from torch.distributed._functional_collectives import (
                 all_gather_tensor_inplace,
                 reduce_scatter_tensor_inplace,
@@ -1206,6 +1207,7 @@ def wrap_fx_proxy_cls(
         return SymNodeVariable(proxy, example_value, **options)
     elif proxy.node.target in [torch.cuda.streams.Stream, torch.cuda.current_stream]:
         proxy.node.meta["example_value"] = example_value
+        unimplemented("CUDAStreamVariable does not currently work soundly.")
         return CUDAStreamVariable(proxy, example_value, **options)
     elif config.numpy_ndarray_as_tensor and isinstance(example_value, torch_np.ndarray):
         proxy.node.meta["example_value"] = example_value
@@ -1348,7 +1350,8 @@ def _automatic_dynamic(e, tx, name, static_shapes):
 def wrap_to_fake_tensor_and_record(
     e, tx, ignore_subclass=False, *, source: Optional[Source], is_tensor: bool
 ):
-    if type(e) in (torch.Tensor, torch.nn.Parameter) or (
+    from torch.distributed.fsdp.flat_param import FlatParameter
+    if type(e) in (torch.Tensor, torch.nn.Parameter, FlatParameter) or (
         ignore_subclass and isinstance(e, torch.Tensor)
     ):
         assert source is not None

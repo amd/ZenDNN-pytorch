@@ -1230,6 +1230,8 @@ def get_fake_value(node, tx):
         return e
 
     def visit(n: torch.fx.Node):
+        if 'example_value' not in n.meta:
+            unimplemented(f"Missing meta? {n}, {n.op}, {n.target}, {n.args}")
         return n.meta["example_value"]
 
     args, kwargs = torch.fx.node.map_arg((node.args, node.kwargs), visit)

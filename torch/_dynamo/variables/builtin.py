@@ -990,6 +990,7 @@ class BuiltinVariable(VariableTracker):
     def call_getattr(
         self, tx, obj: VariableTracker, name_var: VariableTracker, default=None
     ):
+        # print("Getattr", obj, name_var.value)
         from . import (
             ConstantVariable,
             GetAttrVariable,

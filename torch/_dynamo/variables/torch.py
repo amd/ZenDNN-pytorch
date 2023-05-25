@@ -204,6 +204,7 @@ class TorchVariable(VariableTracker):
             TensorVariable,
             UserDefinedObjectVariable,
         )
+        # print("Calling ", self.value, [type(arg) for arg in args])
 
         from .builder import wrap_fx_proxy, wrap_fx_proxy_cls
 
@@ -575,6 +576,7 @@ For now, dynamo will explicitly graph break when it encounters user code with th
 
                 if isinstance(data_arg, ListVariable) and check_any_unspec(data_arg):
                     unimplemented("torch.tensor call with list of unspec")
+            # print("Making a call_function", fn_, *proxy_args_kwargs(args, kwargs))
             tensor_variable = wrap_fx_proxy(
                 tx=tx,
                 proxy=tx.output.create_proxy(

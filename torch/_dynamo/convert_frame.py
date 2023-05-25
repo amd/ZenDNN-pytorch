@@ -191,7 +191,7 @@ def has_tensor_in_frame(frame):
         if has_tensor(value):
             return True
 
-    log.debug(
+    print(
         "skipping because no torch.* %s \
             %s %s",
         frame.f_code.co_name,
