@@ -85,6 +85,7 @@ class TensorVariable(VariableTracker):
         is_sparse=None,
         class_type=torch.Tensor,
         specialized_value=None,
+        storage_offset=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -101,6 +102,7 @@ class TensorVariable(VariableTracker):
         self.is_sparse = is_sparse
         self.class_type = class_type
         self.specialized_value = specialized_value
+        self.storage_offset = storage_offset
 
     def as_proxy(self):
         return self.proxy
@@ -132,6 +134,7 @@ class TensorVariable(VariableTracker):
             "is_quantized": value.is_quantized,
             "is_sparse": value.is_sparse,
             "class_type": type(value),
+            "storage_offset": value.storage_offset()
         }
         if not free_symbols(value):
             # this is a fully static shape, and the keys on props here inform specialization.
@@ -181,6 +184,8 @@ class TensorVariable(VariableTracker):
             result = ConstantVariable(self.is_sparse, **options)
         elif name == "shape" and self.size is None:
             result = self.call_method(tx, "size", [], {})
+        elif name == "storage_offset" and self.size is None:
+            result = self.call_method(tx, "storage_offset", [], {})
         elif name == "ndim" and self.ndim is None:
             result = self.call_method(tx, "dim", [], {})
         elif name == "data":
@@ -315,6 +320,8 @@ class TensorVariable(VariableTracker):
             constant_result = ConstantVariable(self.ndim, **options)
         elif name == "is_floating_point" and self.dtype is not None:
             constant_result = ConstantVariable(self.dtype.is_floating_point, **options)
+        elif name == "storage_offset":
+            constant_result = ConstantVariable(self.storage_offset, **options)
         elif name == "is_contiguous" and self.is_contiguous is not None:
             if "memory_format" in kwargs:
                 memory_format = kwargs.pop("memory_format").as_python_constant()
@@ -733,7 +740,7 @@ class NumpyNdarrayVariable(VariableTracker):
                 example_value=None,
                 **options,
             )
-        elif name in ["size", "itemsize", "strides", "shape", "ndim"]:
+        elif name in ["size", "itemsize", "strides", "shape", "ndim", "storage_offset"]:
             result = wrap_fx_proxy_cls(
                 target_cls=ConstantVariable,
                 tx=tx,
