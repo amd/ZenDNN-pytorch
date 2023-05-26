@@ -214,11 +214,13 @@ class ConstDictVariable(VariableTracker):
 
     @classmethod
     def is_valid_key(cls, key):
-        return (
+        valid = (
             key.is_python_constant()
             or isinstance(key, TensorVariable)
             and key.specialized_value is not None
         )
+        
+        print(f"Is {key} valid? {valid} {key.items if hasattr(key, 'items') else ''}")
 
     @classmethod
     def _key_to_var(cls, tx, key, **options):

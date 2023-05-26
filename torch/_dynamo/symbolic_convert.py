@@ -1194,7 +1194,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         except Unsupported as e:
             if not self.should_compile_partial_graph():
                 raise
-            log.debug("STORE_ATTR triggered compile", exc_info=True)
+            log.debug(f"STORE_ATTR triggered compile. {obj} {inst.argval}, {val} {e}", exc_info=True)
             e.remove_from_stats()
             e.add_to_stats("graph_break")
             self.restore_graphstate(prior)
