@@ -1201,7 +1201,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
 
         # break the graph
         self.output.compile_subgraph(
-            self, reason=GraphCompileReason("store_attr", [self.frame_summary()])
+            self, reason=GraphCompileReason(f"store_attr {obj} {inst.argval}, {val}", [self.frame_summary()])
         )
         self.output.add_output_instructions([copy.copy(inst)])
         self.popn(2)

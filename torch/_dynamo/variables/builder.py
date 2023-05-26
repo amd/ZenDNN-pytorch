@@ -424,10 +424,13 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
             )
         elif istype(value, torch.distributed.fsdp.flat_param.FlatParamHandle):
-            return FlatParamHandleVariable(
+            result = FlatParamHandleVariable(
                 value,
                 source=self.source,
                 guards=self.make_guards(GuardBuilder.ID_MATCH),
+            )
+            return self.tx.output.side_effects.track_object_existing(
+                self.source, value, result
             )
         elif istype(value, torch._C._distributed_c10d.ProcessGroup):
             return ProcessGroupVariable(
@@ -623,6 +626,7 @@ class VariableBuilder:
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH),
             )
             if not SideEffects.cls_supports_mutation_side_effects(type(value)):
+                print("DISALLOWED SETATTR", value)
                 # don't allow STORE_ATTR mutation with custom __setattr__
                 return result
             return self.tx.output.side_effects.track_object_existing(
