@@ -414,9 +414,10 @@ class VariableBuilder:
             torch.distributed._functional_collectives.all_gather_tensor,
             torch.distributed._functional_collectives._expand_group,
             torch.distributed._functional_collectives._maybe_wrap_tensor,
-            torch.distributed._functional_collectives._are_we_tracing
+            torch.distributed._functional_collectives._are_we_tracing,
+            torch.distributed.utils._free_storage,
         ]:
-            print("REWROTE all_gather_tensor")
+            print(f"REWROTE AS USERFUNCTIONVARIABLE {value}")
             return UserFunctionVariable(
                 value,
                 source=self.source,
@@ -1369,6 +1370,7 @@ def wrap_to_fake_tensor_and_record(
         ignore_subclass and isinstance(e, torch.Tensor)
     ):
         assert source is not None
+
         static_shapes, reason = tensor_always_has_static_shape(
             e, is_tensor, guard_source=source.guard_source()
         )
@@ -1400,6 +1402,9 @@ def wrap_to_fake_tensor_and_record(
             "size": fake_e.size(),
             "stride": fake_e.stride(),
         }
+        if hasattr(e, "_full_param_padded"):
+            fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
+            
         return fake_e
     else:
         return e
