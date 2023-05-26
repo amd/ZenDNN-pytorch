@@ -509,7 +509,7 @@ class TorchVariable(VariableTracker):
             # desugar it at trace-time into ranks by directly calling util
             # bake the result into the trace
             assert len(args) == 1, "Expected one arg (pg)"
-            return ConstantVariable(self.value(args[0].value))
+            return ConstantVariable(self.value(args[0].as_python_constant()))
         else:
             any_symints_or_symfloats = any(isinstance(x, SymNodeVariable) for x in args)
             all_ints_or_floats = all(
