@@ -273,7 +273,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
                 return UserMethodVariable(
                     method, self, source=source, **options
                 ).call_function(tx, args, kwargs)
-
+            
         return super().call_method(tx, name, args, kwargs)
 
     def is_supported_random(self):

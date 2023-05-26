@@ -138,6 +138,7 @@ def _alloc_storage(tensor: torch.Tensor, size: torch.Size) -> bool:
         return not already_allocated
 
 
+
 def _free_storage(tensor: torch.Tensor) -> bool:
     """
     Frees the underlying storage of ``tensor``.
@@ -149,16 +150,24 @@ def _free_storage(tensor: torch.Tensor) -> bool:
     with torch.no_grad():
         already_freed = tensor._typed_storage()._size() == 0
         if not already_freed:
-            _p_assert(
-                tensor.storage_offset() == 0,
-                "Freeing a tensor's storage is unsafe when it is not the sole occupant\n"
-                f"storage offset: {tensor.storage_offset()}\n"
-                f"storage size: {tensor._typed_storage()._size()}\n"
-                f"tensor shape: {tensor.shape}",
-            )
-            tensor._typed_storage()._resize_(0)
+            # Hack for constant baking the result of this FN into the graph, but also avoiding
+            # _resize(0) on meta tensor. This is invoked w/ a fake tensor under @assume_constant_result
+            # as a constant UserFunction.
+            #
+            # We cannot use `is_compiling` here because its not compiling, its baking a constant.
+            # The goal of baking a constant from this is to avoid _typed_storage() calls in the graph.
+            if tensor._typed_storage().device.type != "meta":
+                _p_assert(
+                    tensor.storage_offset() == 0,
+                    "Freeing a tensor's storage is unsafe when it is not the sole occupant\n"
+                    f"storage offset: {tensor.storage_offset()}\n"
+                    f"storage size: {tensor._typed_storage()._size()}\n"
+                    f"tensor shape: {tensor.shape}",
+                )
+                tensor._typed_storage()._resize_(0)
         return not already_freed
 
+_free_storage._dynamo_marked_constant = True
 
 def _apply_to_tensors(
     fn: Callable,

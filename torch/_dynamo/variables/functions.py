@@ -381,12 +381,16 @@ def invoke_and_store_as_constant(tx, fn, name, options, args, kwargs):
             return x.get_real_value()
         if isinstance(x, variables.UserDefinedObjectVariable):
             return x.value
+        if isinstance(x, variables.GetAttrVariable):
+            if isinstance(x.obj, variables.TensorVariable):
+                return getattr(x.obj.get_real_value(), x.name)
+            # YOLO
+            return getattr(x.obj, x.name)
         return x.as_python_constant()
 
         
     args = [convert(x) for x in args]
     kwargs = {k: convert(v) for k, v in kwargs.items()}
-    print(f"Invoking fn {fn} with args {args}")
     res = fn(*args, **kwargs)
     return tx.output.register_attr_or_module(
         res,
