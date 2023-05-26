@@ -107,7 +107,7 @@ from .torch import (
     TorchHigherOrderOperatorVariable,
     TorchVariable,
 )
-from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable
+from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable
 
 
 log = logging.getLogger(__name__)
@@ -422,6 +422,12 @@ class VariableBuilder:
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+        elif istype(value, torch.distributed.fsdp.flat_param.FlatParamHandle):
+            return FlatParamHandleVariable(
+                value,
+                source=self.source,
+                guards=self.make_guards(GuardBuilder.ID_MATCH),
             )
         elif istype(value, torch._C._distributed_c10d.ProcessGroup):
             return ProcessGroupVariable(

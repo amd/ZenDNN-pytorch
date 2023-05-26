@@ -536,12 +536,6 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
 
     def as_python_constant(self):
         return self.value
-    
-    def call_function(
-        self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
-    ) -> "VariableTracker":
-        print("PG INVOKED", self, [type(arg) for arg in args])
-        return super().call_function(tx, args, kwargs)
 
     def call_method(
         self,
@@ -562,3 +556,11 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
                 lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)
             ).add_options(self)
         return super().var_getattr(tx, name)
+
+
+class FlatParamHandleVariable(UserDefinedObjectVariable):
+    def __init__(self, value, **kwargs):
+        super().__init__(value, **kwargs)
+
+    def as_python_constant(self):
+        return self.value
