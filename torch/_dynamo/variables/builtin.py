@@ -1241,6 +1241,14 @@ class BuiltinVariable(VariableTracker):
                 _unimplemented()
             return ConstantVariable(op(left.fn, right.fn))
 
+        if isinstance(left, variables.UserDefinedObjectVariable):
+            if op not in supported_const_comparison_ops.values():
+                _unimplemented()
+
+            if not isinstance(right, variables.UserDefinedObjectVariable):
+                _unimplemented()
+            
+            return ConstantVariable(op(left.value, right.value))
         # Note, we have a rare BaseListVariable subtype mismatch with valid comparison
         # x = torch.randn([3, 3])
         # x.size() == (3, 3) # True

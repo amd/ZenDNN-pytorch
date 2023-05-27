@@ -1434,7 +1434,7 @@ def wrap_to_fake_tensor_and_record(
                 print("HAS _full_param_padded")
                 fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
             else:
-                fake_e._full_param_padded = ConstantVariable(None)
+                # fake_e._full_param_padded = ConstantVariable(None)
                 print("NO _full_param_padded", type(e))
         return fake_e
     else:

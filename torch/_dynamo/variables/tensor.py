@@ -854,22 +854,17 @@ class TypedStorageVariable(VariableTracker):
         self.value = value
         super().__init__(**kwargs)
 
-    def call_function(
-        self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
-    ) -> "VariableTracker":
-        print("TypedStorageVariable Call function", self.value, args)
-        # unimplemented("typed_storage calls WIP")
-
-        return ConstantVariable(None)
-
     def call_method(
         self, tx, name, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
+        if name == "_data_ptr":
+            return ConstantVariable(self.value._data_ptr())
+            # return variables.LambdaVariable(
+            #     lambda *args, **kwargs: ConstantVariable(self.value._data_ptr())
+            # ).add_options(self)
         print("TypedStorageVariable Call method", name, self.value, args)
         unimplemented("typed_storage method calls WIP")
         
-        return ConstantVariable(None)
-
 class FlatParamVariable(TensorVariable):
     def __init__(self, proxy: torch.fx.Proxy, **kwargs):
         _fields = kwargs.pop("_fields", dict())
@@ -889,6 +884,7 @@ class FlatParamVariable(TensorVariable):
             key = args[0].as_python_constant()
             value = args[1]
             self._fields[key] = value
+            print("Setattr", key, value)
             if isinstance(value, TensorVariable):
                 setattr(self.as_proxy().node.meta['example_value'], key, value.as_proxy().node.meta['example_value'])
             else:
@@ -905,20 +901,7 @@ class FlatParamVariable(TensorVariable):
                 setattr(self.as_proxy().node.meta['example_value'], '_full_param_padded', result)
                 return result
             except:
-                try:
-                    options = VariableTracker.propagate(self)
-                
-                    from .builder import wrap_fx_proxy
-                    from .misc import GetAttrVariable
-                    result = wrap_fx_proxy(
-                        tx=tx,
-                        proxy=GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-                        **options,
-                    )
-                    print("GOT _full_param_padded just fine via proxy")
-                    return result
-                except:
-                    unimplemented("Brittle field simulation failed, we probably missed some code")
+                unimplemented("Brittle field simulation failed, we probably missed some code")
         
         return super().call_method(tx, name, args, kwargs)
 
