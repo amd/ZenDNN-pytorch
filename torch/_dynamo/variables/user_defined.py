@@ -384,7 +384,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
 
         try:
             subobj = self._getattr_static(name)
-            print("User defined getattr got via subobj")
+            print("User defined getattr got via subobj, got:", subobj, type(subobj))
         except AttributeError:
             subobj = None
             if isinstance(getattr_fn, types.FunctionType):
@@ -496,7 +496,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
             AttrSource(self.source, name).make_guard(GuardBuilder.HASATTR)
         )
         if self._check_for_getattribute() or self._check_for_getattr():
-            unimplemented("hasattr with custom __getattr__")
+            unimplemented(f"hasattr with custom __getattr__ {self._check_for_getattr()} {inspect.getattr_static(type(self.value), '__getattr__')}", )
 
         try:
             self._getattr_static(name)
@@ -564,3 +564,24 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
 
     def as_python_constant(self):
         return self.value
+
+    def _getattr_static(self, name):
+        if name == "flat_param":
+           result = super()._getattr_static(name)
+        #    print("ARGD", type(result))
+           if type(result) is torch.nn.Parameter:
+               unimplemented("How is this just a regular param?")
+           return result
+        return super()._getattr_static(name)
+           
+           
+
+    def var_getattr(self, tx, name):
+        if name == "flat_param":
+        #    print("ATTEMPT TO READ FLAT PARAM!? GETATTR")
+            result = super().var_getattr(tx, name)
+            if type(result) is torch.nn.Parameter:
+               unimplemented("How is this just a regular param?")
+        #    print("ARGD", type(result))
+            return result
+        return super().var_getattr(tx, name)
