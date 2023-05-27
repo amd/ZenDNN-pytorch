@@ -33,11 +33,11 @@ def run(model, optim):
     losses = []
     torch.manual_seed(dist.get_rank() + 1)
     inp = torch.randn((2, 3), device="cuda")
-    torch._dynamo.optimize(printing_eager)(model)(inp)
-    # explain = torch._dynamo.explain(model, inp)
-    # print(explain[0])
-    # for g in explain[2]:
-        # g.graph.print_tabular()
+    # torch._dynamo.optimize(printing_eager)(model)(inp)
+    explain = torch._dynamo.explain(model, inp)
+    print(explain[0])
+    for g in explain[2]:
+        g.graph.print_tabular()
     # for _ in range(3):
     #     optim.zero_grad(set_to_none=True)
     #     inp = torch.randn((2, 3), device="cuda")
