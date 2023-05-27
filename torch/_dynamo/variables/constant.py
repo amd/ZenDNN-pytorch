@@ -132,6 +132,10 @@ class ConstantVariable(VariableTracker):
             search = args[0].as_python_constant()
             result = search in self.value
             return ConstantVariable(result, **options)
+        # TODO(voz): Why is there a size in const? Add an assert at ctor and check on this later.
+        elif isinstance(self.value, torch.Size) and name == "numel":
+            return ConstantVariable(self.value.numel(), **options)
+
 
         unimplemented(f"const method call {typestr(self.value)}.{name}")
 

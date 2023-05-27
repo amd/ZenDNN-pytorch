@@ -558,17 +558,8 @@ class GetAttrVariable(VariableTracker):
                 tx, self.name, args[1:], kwargs
             )
         if isinstance(self.obj, GetAttrVariable):
-        #     nested_obj = self.obj
-        #     while isinstance(nested_obj,  GetAttrVariable):
-        #         nested_obj = self.obj
-        #         return nested_obj.call_method(tx, self.name, args, kwargs).add_options(self)
-            
-            # Not GetAttrVariable anymore
-        #     # Nested
-            print("NESTED SHIT?", self.obj)
             obj = self.obj.call_function(tx, args, kwargs)
             return GetAttrVariable(obj, self.name).call_function(tx, args, kwargs)
-            # return obj.call_method(tx, self.name, args, kwargs).add_options(self)
 
         return self.obj.call_method(tx, self.name, args, kwargs).add_options(self)
 

@@ -1056,8 +1056,13 @@ class BuiltinVariable(VariableTracker):
             ),
         ):
             try:
+                result = obj.var_getattr(tx, name)
+                # TODO(voz): Wtf? device none should be const, but its raw none.
+                if result is None:
+                    result = ConstantVariable(None)
+                print(f"RESULT {obj}.{name} is {result}")
                 return (
-                    obj.var_getattr(tx, name).clone(source=source).add_options(options)
+                    result.clone(source=source).add_options(options)
                 )
             except NotImplementedError:
                 return GetAttrVariable(obj, name, **options)
@@ -1231,8 +1236,23 @@ class BuiltinVariable(VariableTracker):
 
         op = self.fn
 
+
         def _unimplemented():
             unimplemented(f"comparison {typestr(left)} {op} {typestr(right)}")
+            
+        def _resolve_getattr(get_attr_var):
+            assert isinstance(get_attr_var, variables.GetAttrVariable)
+            try:
+                return get_attr_var.call_function(tx, [], {})
+            except:
+                _unimplemented()
+
+        if isinstance(left, variables.GetAttrVariable):
+            left = _resolve_getattr(left)
+        
+        if isinstance(right, variables.GetAttrVariable):
+            right = _resolve_getattr(right)
+
 
         if isinstance(left, UserFunctionVariable):
             if op not in supported_const_comparison_ops.values():

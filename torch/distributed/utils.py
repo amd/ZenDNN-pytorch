@@ -107,10 +107,10 @@ def _recursive_to(inputs, target_device, use_side_stream_for_tensor_copies):
         to_map = None  # type: ignore[assignment]
     return res
 
-
 def _p_assert(cond: Any, s: str, raise_assertion_error: bool = True) -> None:
     """This is used as an alternate to ``assert`` when in the backward context
     to print the error message ``s`` since otherwise, it is swallowed."""
+
     if not cond:
         print(s)
         traceback.print_stack()

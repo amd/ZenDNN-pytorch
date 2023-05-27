@@ -1071,6 +1071,13 @@ class FlatParamHandle:
             shard_param_offsets,
         )
 
+    def _populate_flat_param(self, flat_param, padded_unsharded_numel, unsharded_param_dtype):
+        flat_param._full_param_padded = torch.zeros(
+            padded_unsharded_numel,
+            device=self.device,
+            dtype=unsharded_param_dtype,
+        )
+
     @no_type_check
     @torch.no_grad()
     def init_flat_param_attributes(self) -> None:
@@ -1109,7 +1116,7 @@ class FlatParamHandle:
             )
         else:
             self._check_on_compute_device(self.flat_param)
-        flat_param._local_shard = flat_param.data
+        # flat_param._local_shard = flat_param.data
         if self._offload_params:
             # Pin the memory for faster H2D transfer
             flat_param._local_shard = flat_param._local_shard.pin_memory()
@@ -1138,11 +1145,13 @@ class FlatParamHandle:
                 else flat_param.dtype
             )  # use low precision if parameter mixed precision is enabled
             padded_unsharded_numel = flat_param.numel() * self.world_size
-            flat_param._full_param_padded = torch.zeros(
+            # self._populate_flat_param(flat_param, padded_unsharded_numel, unsharded_param_dtype)
+            self.flat_param._full_param_padded = torch.zeros(
                 padded_unsharded_numel,
                 device=self.device,
                 dtype=unsharded_param_dtype,
             )
+            # flat_param._full_param_padded = _full_param_padded
             flat_param._padded_unsharded_size = flat_param._full_param_padded.size()
             _free_storage(flat_param._full_param_padded)
 
@@ -1218,11 +1227,11 @@ class FlatParamHandle:
         if not self.needs_unshard():
             # Even when not needing an unshard, we should switch to using
             # the unsharded flat parameter
-            unsharded_flat_param = (
-                self._get_padded_unsharded_flat_param()
-                if self.uses_sharded_strategy
-                else self.flat_param
-            )
+            if self.uses_sharded_strategy:
+                unsharded_flat_param = self._get_padded_unsharded_flat_param()
+            else:
+                unsharded_flat_param = self.flat_param
+            
             self._use_unsharded_flat_param(unsharded_flat_param)
             return
         unsharded_flat_param = self._alloc_padded_unsharded_flat_param()
@@ -2373,12 +2382,16 @@ class FlatParamHandle:
         _p_assert(self.uses_sharded_strategy, "Expects sharded strategy")
 
     def _check_on_compute_device(self, tensor: Tensor):
+        if is_torchdynamo_compiling():
+            return
         _p_assert(
             tensor.device == self.device,
             f"Expects tensor to be on the compute device {self.device}",
         )
 
     def _check_on_cpu(self, tensor: Tensor):
+        if is_torchdynamo_compiling():
+            return
         _p_assert(
             tensor.device == torch.device("cpu"),
             f"Expects tensor to be on CPU but got {tensor.device}",

@@ -748,6 +748,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         assert name not in self.cell_and_freevars()
         if name not in self.symbolic_locals:
             unimplemented("undefined LOAD_FAST")
+        print("LOAD_FAST", self.symbolic_locals[name])
         self.push(self.symbolic_locals[name])
         if name.startswith("___stack"):
             self.symbolic_locals.pop(name)
@@ -763,7 +764,11 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         self.push(self.symbolic_locals[inst.argval])
 
     def STORE_FAST(self, inst):
-        self.symbolic_locals[inst.argval] = self.pop()
+        result = self.pop()
+        if isinstance(result, variables.GetAttrVariable):
+            result = result.call_function(self, [], {})
+        print("STORE_FAST", result)
+        self.symbolic_locals[inst.argval] = result
 
     def DELETE_FAST(self, inst):
         del self.symbolic_locals[inst.argval]

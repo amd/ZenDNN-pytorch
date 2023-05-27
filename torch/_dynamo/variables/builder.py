@@ -1077,10 +1077,10 @@ def wrap_fx_proxy(tx, proxy, example_value=None, **options):
         example_value=example_value,
         **options,
     )
-    if hasattr(example_value, '_is_flat_param'):
-        return tx.output.side_effects.track_object_existing(
-            options['source'], example_value, result
-        )
+    # if hasattr(example_value, '_is_flat_param'):
+    #     return tx.output.side_effects.track_object_existing(
+    #         options['source'], example_value, result
+    #     )
     return result
 
 
@@ -1116,7 +1116,7 @@ def wrap_fx_proxy_cls(
         elif isinstance(example_value, FakeTensor):
             pass
 
-        elif isinstance(example_value, torch.Tensor):
+        elif isinstance(example_value, torch.Tensor) or hasattr(example_value, '_is_flat_param'):
             if tx.export:
                 # The legacy behavior for real value cache with subclasses was
                 # to perform a clone WITHOUT preserving the subclass.  It's
@@ -1429,13 +1429,14 @@ def wrap_to_fake_tensor_and_record(
             "size": fake_e.size(),
             "stride": fake_e.stride(),
         }
-        if hasattr(e, '_is_flat_param'):
-            if hasattr(e, '_full_param_padded'):
-                print("HAS _full_param_padded")
-                fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
-            else:
-                # fake_e._full_param_padded = ConstantVariable(None)
-                print("NO _full_param_padded", type(e))
+        # if hasattr(e, '_is_flat_param'):
+        if hasattr(e, '_full_param_padded'):
+            print("HAS _full_param_padded")
+            fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
+        else:
+            # fake_e._full_param_padded = ConstantVariable(None)
+            print("NO _full_param_padded", type(e), hasattr(e, '_is_flat_param'))
+            # unimplemented("FlatParam without _full_param_padded?")
         return fake_e
     else:
         return e

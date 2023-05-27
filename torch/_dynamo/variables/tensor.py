@@ -871,6 +871,18 @@ class FlatParamVariable(TensorVariable):
         super().__init__(proxy, **kwargs)
         self._fields = _fields
 
+    def call_hasattr(self, tx, name: str) -> "VariableTracker":
+        return ConstantVariable((name in self._fields))
+
+
+    def var_getattr(self, tx, name):
+        if name in self._fields:
+            result = self._fields[name]
+            if result is None:
+                unimplemented("None WTF?")
+            return result
+        super().var_getattr(tx, name)
+
     def call_method(
         self,
         tx,
@@ -894,14 +906,28 @@ class FlatParamVariable(TensorVariable):
         if name == '_full_param_padded':
             try:
                 if '_full_param_padded' not in self._fields:
-                    _full_param_padded = self.as_proxy().node.meta['example_value']._full_param_padded
-                    self._fields['_full_param_padded'] = _full_param_padded
-                print("GOT _full_param_padded just fine")
+                    from .builder import VariableBuilder
+                    print("PARAM NOT IN FIELDS BUT FOUND??")
+                    if hasattr(self.as_proxy().node.meta['example_value'], '_full_param_padded'):
+                        _full_param_padded = self.as_proxy().node.meta['example_value']._full_param_padded
+                        print("PARAM NOT IN FIELDS BUT FOUND", type(_full_param_padded))
+                        _full_param_padded = VariableBuilder(tx, AttrSource(self.source, '_full_param_padded'))(_full_param_padded)
+                        self._fields['_full_param_padded'] = _full_param_padded
+                    else:
+                        unimplemented("Brittle field simulation failed, we probably missed some code")
+                        # return ConstantVariable(None)
                 result = self._fields[name]
+                print("GOT _full_param_padded just fine", type(result))
+                if result is None or isinstance(result, ConstantVariable):
+                    unimplemented("HOW ARE YOU NONE")
                 setattr(self.as_proxy().node.meta['example_value'], '_full_param_padded', result)
                 return result
             except:
+                # return ConstantVariable(None)
                 unimplemented("Brittle field simulation failed, we probably missed some code")
+        elif name in self._fields:
+            return self._fields[name]
         
+        print("FPV", name)
         return super().call_method(tx, name, args, kwargs)
 
