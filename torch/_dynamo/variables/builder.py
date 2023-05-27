@@ -332,8 +332,7 @@ class VariableBuilder:
         #     value._dynamo_marked_constant = True
             
         # Everything else (NB: order matters!)
-        from torch.distributed.fsdp.flat_param import FlatParameter
-        if istype(value, config.traceable_tensor_subclasses) or istype(value, FlatParameter):
+        if istype(value, config.traceable_tensor_subclasses) or hasattr(value, '_is_flat_param'):
             return self.wrap_tensor(value)
         elif is_namedtuple(value):
             return self.wrap_listlike(value)
@@ -1066,8 +1065,7 @@ def _dataclasses_fields_lambda(obj):
 
 
 def wrap_fx_proxy(tx, proxy, example_value=None, **options):
-    from torch.distributed.fsdp.flat_param import FlatParameter
-    if isinstance(example_value, FlatParameter):
+    if hasattr(example_value, '_is_flat_param'):
         target_cls = FlatParamVariable
     else:
         target_cls = TensorVariable
@@ -1079,7 +1077,7 @@ def wrap_fx_proxy(tx, proxy, example_value=None, **options):
         example_value=example_value,
         **options,
     )
-    if isinstance(example_value, FlatParameter):
+    if hasattr(example_value, '_is_flat_param'):
         return tx.output.side_effects.track_object_existing(
             options['source'], example_value, result
         )
@@ -1395,8 +1393,7 @@ def _automatic_dynamic(e, tx, name, static_shapes):
 def wrap_to_fake_tensor_and_record(
     e, tx, ignore_subclass=False, *, source: Optional[Source], is_tensor: bool
 ):
-    from torch.distributed.fsdp.flat_param import FlatParameter
-    if type(e) in (torch.Tensor, torch.nn.Parameter, FlatParameter) or (
+    if type(e) in (torch.Tensor, torch.nn.Parameter) or hasattr(e, '_is_flat_param') or (
         ignore_subclass and isinstance(e, torch.Tensor)
     ):
         assert source is not None
@@ -1432,11 +1429,13 @@ def wrap_to_fake_tensor_and_record(
             "size": fake_e.size(),
             "stride": fake_e.stride(),
         }
-        if hasattr(e, "_full_param_padded"):
-            print("HAS _full_param_padded")
-            fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
-        else:
-            print("NO _full_param_padded", type(e))
+        if hasattr(e, '_is_flat_param'):
+            if hasattr(e, '_full_param_padded'):
+                print("HAS _full_param_padded")
+                fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
+            else:
+                fake_e._full_param_padded = ConstantVariable(None)
+                print("NO _full_param_padded", type(e))
         return fake_e
     else:
         return e

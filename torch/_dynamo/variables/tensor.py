@@ -86,6 +86,7 @@ class TensorVariable(VariableTracker):
         class_type=torch.Tensor,
         specialized_value=None,
         storage_offset=None,
+        _typed_storage=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -103,6 +104,7 @@ class TensorVariable(VariableTracker):
         self.class_type = class_type
         self.specialized_value = specialized_value
         self.storage_offset = storage_offset
+        self._typed_storage = _typed_storage
 
     def as_proxy(self):
         return self.proxy
@@ -134,7 +136,8 @@ class TensorVariable(VariableTracker):
             "is_quantized": value.is_quantized,
             "is_sparse": value.is_sparse,
             "class_type": type(value),
-            "storage_offset": value.storage_offset()
+            "storage_offset": value.storage_offset(),
+            "_typed_storage": value._typed_storage
         }
         if not free_symbols(value):
             # this is a fully static shape, and the keys on props here inform specialization.
@@ -192,6 +195,13 @@ class TensorVariable(VariableTracker):
             result = self.call_method(tx, "detach", [], {})
         if name == "__class__":
             return TorchVariable(self.python_type(), **options)
+        if name == "_typed_storage":
+            print("TYPE STORAGE???", self._typed_storage)
+            return variables.LambdaVariable(
+                lambda *args, **kwargs: TypedStorageVariable(self._typed_storage())
+            ).add_options(self)
+        
+            # return TypedStorageVariable(self._typed_storage())
 
         # Add a guard for type matching, these guards are checked before tensor guards
         # In some cases, a <tensor>.<attr> guard can be evaluated first, and break if
@@ -369,6 +379,9 @@ class TensorVariable(VariableTracker):
         elif name == "get_device" and isinstance(self.device, torch.device):
             index = self.device.index if self.device.type != "cpu" else -1
             constant_result = ConstantVariable(index, **options)
+        elif name == "_typed_storage":
+            print("TYPE STORAGE func???", self._typed_storage)
+            return TypedStorageVariable(self._typed_storage)
         else:
             constant_result = None
 
@@ -836,6 +849,27 @@ class FakeItemVariable(TensorVariable):
     def from_tensor_variable(cls, tensor_variable):
         return FakeItemVariable(**dict(tensor_variable.__dict__))
 
+class TypedStorageVariable(VariableTracker):
+    def __init__(self, value, **kwargs):
+        self.value = value
+        super().__init__(**kwargs)
+
+    def call_function(
+        self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
+    ) -> "VariableTracker":
+        print("TypedStorageVariable Call function", self.value, args)
+        # unimplemented("typed_storage calls WIP")
+
+        return ConstantVariable(None)
+
+    def call_method(
+        self, tx, name, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
+    ) -> "VariableTracker":
+        print("TypedStorageVariable Call method", name, self.value, args)
+        unimplemented("typed_storage method calls WIP")
+        
+        return ConstantVariable(None)
+
 class FlatParamVariable(TensorVariable):
     def __init__(self, proxy: torch.fx.Proxy, **kwargs):
         _fields = kwargs.pop("_fields", dict())
@@ -867,7 +901,9 @@ class FlatParamVariable(TensorVariable):
                     _full_param_padded = self.as_proxy().node.meta['example_value']._full_param_padded
                     self._fields['_full_param_padded'] = _full_param_padded
                 print("GOT _full_param_padded just fine")
-                return self._fields[name]
+                result = self._fields[name]
+                setattr(self.as_proxy().node.meta['example_value'], '_full_param_padded', result)
+                return result
             except:
                 try:
                     options = VariableTracker.propagate(self)
