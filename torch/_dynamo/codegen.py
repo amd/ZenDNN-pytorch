@@ -24,6 +24,7 @@ from .variables.tensor import (
     NumpyNdarrayVariable,
     SymNodeVariable,
     TensorVariable,
+    FlatParamVariable,
     TensorWithTFOverrideVariable,
     UnspecializedPythonVariable,
 )
@@ -130,6 +131,9 @@ class PyCodegen:
             )
             output.append(create_instruction("BINARY_SUBSCR"))
 
+            if isinstance(value, FlatParamVariable):
+                print("CODEGEN FOR FLATPARAM")
+                
             if isinstance(value, UnspecializedPythonVariable) and value.need_unwrap:
                 output.extend(
                     [self.create_load_attr("item")] + create_call_function(0, True)

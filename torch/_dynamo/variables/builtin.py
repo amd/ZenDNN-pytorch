@@ -1095,6 +1095,10 @@ class BuiltinVariable(VariableTracker):
     def call_setattr(
         self, tx, obj: VariableTracker, name_var: VariableTracker, val: VariableTracker
     ):
+        from .tensor import FlatParamVariable
+
+        if isinstance(obj, FlatParamVariable):
+            return obj.call_method(tx, "__setattr__", [name_var, val], {})
         if isinstance(obj, variables.DataClassVariable):
             return obj.call_method(tx, "__setattr__", [name_var, val], {})
         elif (

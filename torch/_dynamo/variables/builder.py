@@ -100,6 +100,7 @@ from .tensor import (
     TensorVariable,
     TensorWithTFOverrideVariable,
     UnspecializedPythonVariable,
+    FlatParamVariable
 )
 from .torch import (
     tensor_dunder_fns,
@@ -326,9 +327,9 @@ class VariableBuilder:
         # We want to get those out and wrap those.
         value = inspect.getattr_static(value, "_torchdynamo_inline", value)
 
-        if inspect.isfunction(value) and "needs_unshard" in value.__name__:
-            print("marking needs_unshard via builder")
-            value._dynamo_marked_constant = True
+        # if inspect.isfunction(value) and "needs_unshard" in value.__name__:
+        #     print("marking needs_unshard via builder")
+        #     value._dynamo_marked_constant = True
             
         # Everything else (NB: order matters!)
         from torch.distributed.fsdp.flat_param import FlatParameter
@@ -919,7 +920,6 @@ class VariableBuilder:
                 subclass_torch_function__func,
                 subclass_type,
             )
-
         return tensor_variable
 
     def wrap_unspecialized_primitive(self, value):
@@ -1063,13 +1063,24 @@ def _dataclasses_fields_lambda(obj):
 
 
 def wrap_fx_proxy(tx, proxy, example_value=None, **options):
-    return wrap_fx_proxy_cls(
-        target_cls=TensorVariable,
+    from torch.distributed.fsdp.flat_param import FlatParameter
+    if isinstance(example_value, FlatParameter):
+        target_cls = FlatParamVariable
+    else:
+        target_cls = TensorVariable
+
+    result = wrap_fx_proxy_cls(
+        target_cls=target_cls,
         tx=tx,
         proxy=proxy,
         example_value=example_value,
         **options,
     )
+    if isinstance(example_value, FlatParameter):
+        return tx.output.side_effects.track_object_existing(
+            options['source'], example_value, result
+        )
+    return result
 
 
 # Note: Unfortunate split due to some gross classes existing that subclass TensorVariable
@@ -1419,8 +1430,10 @@ def wrap_to_fake_tensor_and_record(
             "stride": fake_e.stride(),
         }
         if hasattr(e, "_full_param_padded"):
+            print("HAS _full_param_padded")
             fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
-            
+        else:
+            print("NO _full_param_padded", type(e))
         return fake_e
     else:
         return e

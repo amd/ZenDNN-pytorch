@@ -135,10 +135,10 @@ class UserFunctionVariable(BaseUserFunctionVariable):
             # This method should be treated as a constant for the purposes of compilation
             self.is_constant = True
         else:
-            if "needs_unshard" in str(fn):
-                self.is_constant = True
-            else:
-                self.is_constant = False
+            # if "needs_unshard" in str(fn):
+                # self.is_constant = True
+            # else:
+            self.is_constant = False
 
         assert isinstance(
             fn, (types.FunctionType, torch.jit.ScriptFunction)
@@ -308,7 +308,7 @@ class UserMethodVariable(UserFunctionVariable):
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
-        if self.is_constant:
+        if self.is_constant or getattr(self.obj, "_dynamo_marked_constant", False):
             return super().call_function(tx, [self.obj] + [*args], kwargs)
         
         # For nn.Module methods, redirecting to NNModuleVariable.call_method for optimized solution

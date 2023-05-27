@@ -835,3 +835,54 @@ class FakeItemVariable(TensorVariable):
     @classmethod
     def from_tensor_variable(cls, tensor_variable):
         return FakeItemVariable(**dict(tensor_variable.__dict__))
+
+class FlatParamVariable(TensorVariable):
+    def __init__(self, proxy: torch.fx.Proxy, **kwargs):
+        _fields = kwargs.pop("_fields", dict())
+        super().__init__(proxy, **kwargs)
+        self._fields = _fields
+
+    def call_method(
+        self,
+        tx,
+        name,
+        args: "List[VariableTracker]",
+        kwargs: "Dict[str, VariableTracker]",
+    ) -> "VariableTracker":
+        print("FLAT PARAM INVOKE", name)
+        if name == "__setattr__":
+            assert len(args) == 2
+            key = args[0].as_python_constant()
+            value = args[1]
+            self._fields[key] = value
+            if isinstance(value, TensorVariable):
+                setattr(self.as_proxy().node.meta['example_value'], key, value.as_proxy().node.meta['example_value'])
+            else:
+                setattr(self.as_proxy().node.meta['example_value'], key, value.as_python_constant())
+            return ConstantVariable(None)
+        
+        if name == '_full_param_padded':
+            try:
+                if '_full_param_padded' not in self._fields:
+                    _full_param_padded = self.as_proxy().node.meta['example_value']._full_param_padded
+                    self._fields['_full_param_padded'] = _full_param_padded
+                print("GOT _full_param_padded just fine")
+                return self._fields[name]
+            except:
+                try:
+                    options = VariableTracker.propagate(self)
+                
+                    from .builder import wrap_fx_proxy
+                    from .misc import GetAttrVariable
+                    result = wrap_fx_proxy(
+                        tx=tx,
+                        proxy=GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
+                        **options,
+                    )
+                    print("GOT _full_param_padded just fine via proxy")
+                    return result
+                except:
+                    unimplemented("Brittle field simulation failed, we probably missed some code")
+        
+        return super().call_method(tx, name, args, kwargs)
+
