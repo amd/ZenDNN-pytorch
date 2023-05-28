@@ -680,8 +680,14 @@ class SkipFilesVariable(VariableTracker):
                 unimplemented(f"functools.wraps({fn})")
 
             return variables.LambdaVariable(wraps, **options)
-        elif self.value is collections.deque and not kwargs and len(args) == 1:
-            items = args[0].items
+        elif self.value is collections.deque and not kwargs:
+            if len(args) == 0:
+                items = []
+            elif len(args) == 1:
+                items = args[0].items
+            else:
+                # Can also unimplemented
+                raise RuntimeError("Unexpected number of args to dequeue")
             return variables.lists.DequeVariable(
                 items, mutable_local=MutableLocal(), **options
             )
