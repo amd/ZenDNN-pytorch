@@ -155,7 +155,7 @@ class UserDefinedClassVariable(UserDefinedVariable):
         elif variables.DataClassVariable.is_matching_cls(self.value):
             options["mutable_local"] = MutableLocal()
             return variables.DataClassVariable.create(self.value, args, kwargs, options)
-
+        
         return super().call_function(tx, args, kwargs)
 
     def const_getattr(self, tx, name):

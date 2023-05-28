@@ -1146,7 +1146,7 @@ class FlatParamHandle:
             )  # use low precision if parameter mixed precision is enabled
             padded_unsharded_numel = flat_param.numel() * self.world_size
             # self._populate_flat_param(flat_param, padded_unsharded_numel, unsharded_param_dtype)
-            self.flat_param._full_param_padded = torch.zeros(
+            flat_param._full_param_padded = torch.zeros(
                 padded_unsharded_numel,
                 device=self.device,
                 dtype=unsharded_param_dtype,
@@ -1164,6 +1164,7 @@ class FlatParamHandle:
                     dtype=flat_param.dtype,  # full precision
                 )
                 _free_storage(flat_param._full_prec_full_param_padded)
+        return flat_param
 
     ###################
     # UNSHARD/RESHARD #

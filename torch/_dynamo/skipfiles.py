@@ -74,7 +74,7 @@ SKIP_DIRS = [
     _module_dir(m)
     for m in (
         abc,
-        collections,
+        # collections,
         contextlib,
         copy,
         copyreg,

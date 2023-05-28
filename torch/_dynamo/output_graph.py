@@ -933,6 +933,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
             return None
 
         def remove_unused(node):
+            return
             log.debug("REMOVE UNUSED GRAPHARG %s", node.meta["grapharg"].source.name())
             # I'm not really sure why you need to delete these from the
             # node since the node is going to get removed
