@@ -1097,7 +1097,6 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
     def CALL_FUNCTION(self, inst):
         args = self.popn(inst.argval)
         fn = self.pop()
-        print("Invoking", self, fn)
         self.call_function(fn, args, {})
 
     @break_graph_if_unsupported(push=1)
@@ -1200,7 +1199,6 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         except Unsupported as e:
             if not self.should_compile_partial_graph():
                 raise
-            print("FAILING WITH", e)
             log.debug(f"STORE_ATTR triggered compile. {obj} {inst.argval}, {val} {e}", exc_info=True)
             e.remove_from_stats()
             e.add_to_stats("graph_break")
@@ -2110,8 +2108,8 @@ class InstructionTranslator(InstructionTranslatorBase):
         return cg.get_instructions()
 
     def RETURN_VALUE(self, inst):
-        # if self.output.count_calls() == 0 and not self.export:
-            # raise exc.SkipFrame("because no content in function call")
+        if self.output.count_calls() == 0 and not self.export:
+            raise exc.SkipFrame("because no content in function call")
         self.instruction_pointer = None
         _step_logger()(
             logging.INFO,

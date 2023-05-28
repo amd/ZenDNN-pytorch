@@ -539,9 +539,6 @@ def clone_input(x, *, dtype=None):
             y.grad = clone_input(x.grad, dtype=dtype)
         if hasattr(x, "_dynamo_dynamic_indices"):
             y._dynamo_dynamic_indices = x._dynamo_dynamic_indices.copy()
-        if hasattr(x, "_full_param_padded"):
-            print("COPYINGFULLPARAM")
-            result._full_param_padded = x._full_param_padded.copy()
         return y
 
     with torch.no_grad():
@@ -575,9 +572,6 @@ def clone_input(x, *, dtype=None):
             return torch_clone(x)
         if hasattr(x, "_dynamo_dynamic_indices"):
             result._dynamo_dynamic_indices = x._dynamo_dynamic_indices.copy()
-        if hasattr(x, "_full_param_padded"):
-            print("COPYINGFULLPARAM")
-            result._full_param_padded = x._full_param_padded.copy()
         return result
 
 
