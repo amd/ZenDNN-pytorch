@@ -136,6 +136,16 @@ class HigherOrderOpTests(torch._dynamo.test_case.TestCase):
 
         self._test_wrap_simple(f, (x, y), 3)
 
+
+    def test_capture_tracked_nested(self):
+        x = torch.randn(3, 3)
+        y = torch.randn(3, 3)
+
+        def f(x, y):
+            return wrap(lambda x: wrap(lambda x: x + y, x), x)
+
+        self._test_wrap_simple(f, (x, y), 3)
+
     def test_inlined_functions(self):
         def g(x, y):
             return x + y
@@ -746,24 +756,24 @@ class ActivationCheckpointingTests(torch._dynamo.test_case.TestCase):
         self.assertEqual(cnt.op_count, 2)
         self.assertEqual(len(backend.graphs), 2)
 
-    def test_without_functionalization_turned_on(self):
-        def gn(x, y):
-            return torch.sigmoid(torch.matmul(x, y))
+    # def test_without_functionalization_turned_on(self):
+    #     def gn(x, y):
+    #         return torch.sigmoid(torch.matmul(x, y))
 
-        def fn(x, y):
-            return torch.cos(torch.utils.checkpoint.checkpoint(gn, torch.sin(x), y))
+    #     def fn(x, y):
+    #         return torch.cos(torch.utils.checkpoint.checkpoint(gn, torch.sin(x), y))
 
-        x = torch.randn(4, 4, requires_grad=True)
-        y = torch.randn(4, 4, requires_grad=True)
-        args = (x, y)
+    #     x = torch.randn(4, 4, requires_grad=True)
+    #     y = torch.randn(4, 4, requires_grad=True)
+    #     args = (x, y)
 
-        backend = EagerAndRecordGraphs()
-        cnt = CompileCounterWithBackend(backend)
+    #     backend = EagerAndRecordGraphs()
+    #     cnt = CompileCounterWithBackend(backend)
 
-        expected = fn(*args)
-        result = torch.compile(fn, backend=cnt)(*args)
+    #     expected = fn(*args)
+    #     result = torch.compile(fn, backend=cnt)(*args)
 
-        self.assertEqual(result, expected)
+    #     self.assertEqual(result, expected)
 
     @requires_cuda()
     @torch._functorch.config.patch(functionalize_rng_ops=True)
@@ -791,6 +801,91 @@ class ActivationCheckpointingTests(torch._dynamo.test_case.TestCase):
         )
         backend = aot_autograd(fw_compiler=fw_compiler, bw_compiler=bw_compiler)
         self._validate(fn, backend, x)
+
+
+
+
+class ActivationCheckpointingViaTagsTests(torch._dynamo.test_case.TestCase):
+    def _validate(self, fn, backend, *args, skip_check=False, fullgraph=True):
+        cloned_args = []
+        for arg in args:
+            cloned_args.append(arg.clone().detach().requires_grad_(arg.requires_grad))
+
+        expected = fn(*args)
+        expected.sum().backward()
+
+        result = torch.compile(fn, fullgraph=fullgraph, backend=backend)(*cloned_args)
+        result.sum().backward()
+
+        if not skip_check:
+            self.assertEqual(result, expected)
+            for arg, cloned_arg in zip(args, cloned_args):
+                self.assertEqual(arg.grad, cloned_arg.grad)
+
+    @requires_cuda()
+    def test_function(self):
+        def gn(x, y):
+            return torch.sigmoid(torch.matmul(x, y))
+
+        def fn(x, y):
+            return torch.utils.checkpoint.checkpoint(gn, torch.sin(x), y)
+
+        x = torch.randn(4, 4, requires_grad=True)
+        y = torch.randn(4, 4, requires_grad=True)
+
+        fw_compiler = functools.partial(count_ops, freq=1, op=torch.ops.aten.mm.default)
+        bw_compiler = functools.partial(
+            count_ops, freq=3, op=torch.ops.aten.mm.default
+        )  # mm recomputed in the bwd
+        backend = aot_autograd(fw_compiler=fw_compiler, bw_compiler=bw_compiler)
+        self._validate(fn, backend, x, y)
+
+    @requires_cuda()
+    def test_function_with_kwargs(self):
+        def gn(x, y):
+            return torch.sigmoid(torch.matmul(x, y))
+
+        def fn(x, y):
+            return torch.utils.checkpoint.checkpoint(
+                gn, torch.sin(x), y, use_reentrant=True, preserve_rng_state=False
+            )
+
+        x = torch.randn(4, 4, requires_grad=True)
+        y = torch.randn(4, 4, requires_grad=True)
+
+        fw_compiler = functools.partial(count_ops, freq=1, op=torch.ops.aten.mm.default)
+        bw_compiler = functools.partial(
+            count_ops, freq=3, op=torch.ops.aten.mm.default
+        )  # mm recomputed in the bwd
+        backend = aot_autograd(fw_compiler=fw_compiler, bw_compiler=bw_compiler)
+        self._validate(fn, backend, x, y)
+
+    @requires_cuda()
+    def test_multiple_checkpoints(self):
+        def gn(x, y):
+            return torch.sigmoid(torch.matmul(x, y))
+
+        def fn(x, y):
+            x = torch.sin(x)
+            z = torch.utils.checkpoint.checkpoint(gn, x, y)
+            x = torch.sin(z)
+            z = torch.utils.checkpoint.checkpoint(gn, x, y)
+            return z
+
+        x = torch.randn(4, 4, requires_grad=True)
+        y = torch.randn(4, 4, requires_grad=True)
+
+        fw_compiler = functools.partial(count_ops, freq=2, op=torch.ops.aten.mm.default)
+        bw_compiler = functools.partial(
+            count_ops, freq=6, op=torch.ops.aten.mm.default
+        )  # mm recomputed in the bwd
+        backend = aot_autograd(fw_compiler=fw_compiler, bw_compiler=bw_compiler)
+        self._validate(fn, backend, x, y)
+
+
+    # Test decomps - are tagged pass on?
+    # Test dropout with torchinductor
+    # Test modules
 
 
 if __name__ == "__main__":

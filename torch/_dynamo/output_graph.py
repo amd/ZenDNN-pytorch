@@ -1073,8 +1073,11 @@ class SubgraphTracer(fx.Tracer):
         #   higher-order-op subgraph until we hit the subgraph where the free
         #   variable is bound
         if self.parent is not None:
-            flat_args, _ = pytree.tree_flatten(args)
+            flat_args, tree_spec = pytree.tree_flatten(args)
+            new_args = []
             for arg in flat_args:
+                new_args.append(arg)
+
                 if not isinstance(arg, torch.fx.Proxy):
                     # Is a constant
                     continue
@@ -1087,7 +1090,13 @@ class SubgraphTracer(fx.Tracer):
                 if "saved_tensor_marked" in arg.node.meta:
                     continue
 
-                self.lift_tracked_freevar_to_input(arg)
+                # Create a new input for this arg, and replace the current arg
+                # with the new arg
+                new_arg = self.lift_tracked_freevar_to_input(arg)
+                new_args.pop()
+                new_args.append(new_arg)
+
+            args = pytree.tree_unflatten(new_args, tree_spec)
 
         rv = super().create_proxy(
             kind, target, args, kwargs, name, type_expr, proxy_factory_fn
@@ -1197,10 +1206,12 @@ class SubgraphTracer(fx.Tracer):
         assert (
             self.parent is not None
         ), "lift_tracked_freevar_to_input on root SubgraphTracer"
-        self.create_graph_input(proxy.node.name)
+        new_proxy = self.create_graph_input(proxy.node.name)
+        new_proxy.node.meta["example_value"] = proxy.node.meta["example_value"]
         self.lifted_freevars[proxy] = None
         if self.parent is not None and not self.parent.is_name_bound(proxy.node.name):
             self.parent.lift_tracked_freevar_to_input(proxy)
+        return new_proxy
 
 
 # NOTE: [HigherOrderOperator tracing design]
