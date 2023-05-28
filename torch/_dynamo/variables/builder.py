@@ -331,10 +331,6 @@ class VariableBuilder:
         # We want to get those out and wrap those.
         value = inspect.getattr_static(value, "_torchdynamo_inline", value)
 
-        # if inspect.isfunction(value) and "needs_unshard" in value.__name__:
-        #     print("marking needs_unshard via builder")
-        #     value._dynamo_marked_constant = True
-            
         # Everything else (NB: order matters!)
         if istype(value, config.traceable_tensor_subclasses) or hasattr(value, '_is_flat_param'):
             return self.wrap_tensor(value)

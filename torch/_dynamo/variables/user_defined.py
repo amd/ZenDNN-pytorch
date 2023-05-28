@@ -566,22 +566,11 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         return self.value
 
     def _getattr_static(self, name):
-        if name == "flat_param":
-           result = super()._getattr_static(name)
-        #    print("ARGD", type(result))
-        #    if type(result) is torch.nn.Parameter:
-            #    unimplemented("How is this just a regular param?")
-           return result
+        # Note - here for easier printing as needed, will delete
         return super()._getattr_static(name)
            
            
 
     def var_getattr(self, tx, name):
-        if name == "flat_param":
-        #    print("ATTEMPT TO READ FLAT PARAM!? GETATTR")
-            result = super().var_getattr(tx, name)
-            # if type(result) is torch.nn.Parameter:
-            #    unimplemented("How is this just a regular param?")
-        #    print("ARGD", type(result))
-            return result
+        # Note - here for easier printing as needed, will delete
         return super().var_getattr(tx, name)
