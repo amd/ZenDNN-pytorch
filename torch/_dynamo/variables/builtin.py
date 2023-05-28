@@ -1102,6 +1102,8 @@ class BuiltinVariable(VariableTracker):
     ):
         from .tensor import FlatParamVariable
 
+        if isinstance(obj, FlatParamVariable):
+            print("attempting flat param here", obj.mutable_local, tx.output.side_effects.is_attribute_mutation(obj), name_var.is_python_constant())
         if isinstance(obj, variables.DataClassVariable):
             return obj.call_method(tx, "__setattr__", [name_var, val], {})
         elif (
@@ -1109,8 +1111,9 @@ class BuiltinVariable(VariableTracker):
             and name_var.is_python_constant()
         ):
             tx.output.side_effects.store_attr(obj, name_var.as_python_constant(), val)
-            # if isinstance(obj, FlatParamVariable):
-            #     return obj.call_method(tx, "__setattr__", [name_var, val], {})
+            if isinstance(obj, FlatParamVariable):
+                print("Handling flat param here")
+                return obj.call_method(tx, "__setattr__", [name_var, val], {})
             return val.add_options(self, obj, name_var)
         elif isinstance(obj, variables.UserDefinedObjectVariable):
             unimplemented(

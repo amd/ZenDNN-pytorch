@@ -1081,10 +1081,10 @@ def wrap_fx_proxy(tx, proxy, example_value=None, **options):
         example_value=example_value,
         **options,
     )
-    # if hasattr(example_value, '_is_flat_param'):
-    #     return tx.output.side_effects.track_object_existing(
-    #         options['source'], example_value, result
-    #     )
+    if hasattr(example_value, '_is_flat_param'):
+        return tx.output.side_effects.track_object_existing(
+            options['source'], example_value, result
+        )
     return result
 
 

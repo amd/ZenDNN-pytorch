@@ -88,11 +88,13 @@ class VariableTracker(metaclass=HasPostInit):
         if idx in cache:
             return cache[idx][0]
 
+        seen_keys = set()
         if isinstance(value, VariableTracker):
             if not skip_fn(value):
                 updated_dict = dict(value.__dict__)
                 for key in updated_dict.keys():
-                    if key not in value._nonvar_fields:
+                    if key not in value._nonvar_fields and key not in seen_keys:
+                        seen_keys.add(key)
                         updated_dict[key] = cls.apply(
                             fn, updated_dict[key], cache, skip_fn
                         )

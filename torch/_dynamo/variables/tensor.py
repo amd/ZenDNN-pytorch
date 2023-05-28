@@ -883,58 +883,69 @@ class FlatParamVariable(TensorVariable):
             return result
         super().var_getattr(tx, name)
 
-    def call_method(
-        self,
-        tx,
-        name,
-        args: "List[VariableTracker]",
-        kwargs: "Dict[str, VariableTracker]",
-    ) -> "VariableTracker":
-        print("FLAT PARAM INVOKE", name)
-        if name == "__setattr__":
-            if name == '_full_param_padded':
-                return super().call_method(tx, name, args, kwargs)
-            assert len(args) == 2
-            key = args[0].as_python_constant()
-            value = args[1]
-            self._fields[key] = value
-            return ConstantVariable(None)
-            #     from .builder import wrap_fx_proxy
+    # def call_method(
+    #     self,
+    #     tx,
+    #     name,
+    #     args: "List[VariableTracker]",
+    #     kwargs: "Dict[str, VariableTracker]",
+    # ) -> "VariableTracker":
+    #     print("FLAT PARAM INVOKE", name)
+    #     if name == "__setattr__":
+    #         if name == '_full_param_padded':
+    #             from .builder import wrap_fx_proxy
+    #             # return super().call_method(tx, name, args, kwargs)
+    #             param_padded_proxy = tx.output.create_proxy(
+    #                 "call_function",
+    #                 object.__setattr__,
+    #                 (self.as_proxy(), "_full_param_padded", value.as_proxy()),
+    #                 {},
+    #             )
+    #             return wrap_fx_proxy(
+    #                 tx=tx,
+    #                 proxy=param_padded_proxy
+    #             )
+    #         assert len(args) == 2
+    #         key = args[0].as_python_constant()
+    #         value = args[1]
+    #         self._fields[key] = value
+    #         return ConstantVariable(None)
+    #         #     from .builder import wrap_fx_proxy
 
-            #     param_padded_proxy = tx.output.create_proxy(
-            #         "call_function",
-            #         object.__setattr__,
-            #         (self.as_proxy(), "_full_param_padded", value.as_proxy()),
-            #         {},
-            #     )
-            #     return wrap_fx_proxy(
-            #         tx=tx,
-            #         proxy=param_padded_proxy
-            #     )
-            # else:
-            #     return ConstantVariable(None)
+    #         #     param_padded_proxy = tx.output.create_proxy(
+    #         #         "call_function",
+    #         #         object.__setattr__,
+    #         #         (self.as_proxy(), "_full_param_padded", value.as_proxy()),
+    #         #         {},
+    #         #     )
+    #         #     return wrap_fx_proxy(
+    #         #         tx=tx,
+    #         #         proxy=param_padded_proxy
+    #         #     )
+    #         # else:
+    #         #     return ConstantVariable(None)
         
-        # if name == '_full_param_padded':
-        #     # if '_full_param_padded' not in self._fields:
-        #     from .builder import wrap_fx_proxy
+    #     # if name == '_full_param_padded':
+    #     #     # if '_full_param_padded' not in self._fields:
+    #     #     from .builder import wrap_fx_proxy
 
-        #     param_padded_proxy = tx.output.create_proxy(
-        #         "call_function",
-        #         object.__getattribute__,
-        #         (self.as_proxy(), "_full_param_padded"),
-        #         {},
-        #     )
-        #     return wrap_fx_proxy(
-        #         tx=tx,
-        #         proxy=param_padded_proxy
-        #     )
-        #     result = self._fields[name]
-        #     print("GOT _full_param_padded just fine", type(result))
-        #     setattr(self.as_proxy().node.meta['example_value'], '_full_param_padded', result)
-        #     return result
-        elif name in self._fields:
-            return self._fields[name]
+    #     #     param_padded_proxy = tx.output.create_proxy(
+    #     #         "call_function",
+    #     #         object.__getattribute__,
+    #     #         (self.as_proxy(), "_full_param_padded"),
+    #     #         {},
+    #     #     )
+    #     #     return wrap_fx_proxy(
+    #     #         tx=tx,
+    #     #         proxy=param_padded_proxy
+    #     #     )
+    #     #     result = self._fields[name]
+    #     #     print("GOT _full_param_padded just fine", type(result))
+    #     #     setattr(self.as_proxy().node.meta['example_value'], '_full_param_padded', result)
+    #     #     return result
+    #     elif name in self._fields:
+    #         return self._fields[name]
         
-        # print("FPV", name)
-        return super().call_method(tx, name, args, kwargs)
+    #     # print("FPV", name)
+    #     return super().call_method(tx, name, args, kwargs)
 
