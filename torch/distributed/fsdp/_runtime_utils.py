@@ -212,6 +212,7 @@ def _share_state_and_init_handle_attrs(
     ``root_module`` 's module tree, and initializes handle attributes. These
     are done together to require a single loop over the states.
     """
+    # flat_params = []
     for handle in root_state._handles:
         handle.init_flat_param_attributes()
     inter_node_state = _validate_and_get_hybrid_shard_state(root_module)

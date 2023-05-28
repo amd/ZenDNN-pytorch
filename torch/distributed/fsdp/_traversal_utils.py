@@ -78,17 +78,17 @@ def _get_fsdp_states_with_modules(
     deque.append(module)
     while deque:
         submodule = deque.popleft()
-        # visited_modules.add(submodule)
+        visited_modules.add(submodule)
         if not _composable(submodule):
             continue
-        # for child_module in reversed(list(submodule.children())):
-            # if child_module not in visited_modules:
-                # deque.appendleft(child_module)
+        for child_module in reversed(list(submodule.children())):
+            if child_module not in visited_modules:
+                deque.appendleft(child_module)
         optional_state = _get_module_fsdp_state(submodule)
         if optional_state is not None and optional_state not in visited_fsdp_states:
             visited_fsdp_states.add(optional_state)
             fsdp_states.append(optional_state)
-            # fsdp_modules.append(submodule)
+            fsdp_modules.append(submodule)
     return fsdp_states, fsdp_modules
 
 

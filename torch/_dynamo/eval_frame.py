@@ -1239,7 +1239,8 @@ class TorchPatcher:
         torch.onnx.export_to_pretty_string = disable(torch.onnx.export_to_pretty_string)
         torch.distributions.Distribution.set_default_validate_args(False)
 
-        torch.distributed.utils._free_storage._dynamo_marked_constant = True
+        # torch.distributed.utils._free_storage._dynamo_marked_constant = True
+        torch.distributed.fsdp._common_utils._get_sharding_strategy._dynamo_marked_constant = True
         # torch.distributed.fsdp._utils._same_storage_as_data_ptr._dynamo_marked_constant = True
 
         proxy_tensor.dispatch_trace = disable(proxy_tensor.dispatch_trace)

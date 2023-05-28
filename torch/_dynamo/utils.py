@@ -539,6 +539,9 @@ def clone_input(x, *, dtype=None):
             y.grad = clone_input(x.grad, dtype=dtype)
         if hasattr(x, "_dynamo_dynamic_indices"):
             y._dynamo_dynamic_indices = x._dynamo_dynamic_indices.copy()
+        if hasattr(x, "_full_param_padded"):
+            print("COPYINGFULLPARAM")
+            result._full_param_padded = x._full_param_padded.copy()
         return y
 
     with torch.no_grad():
@@ -572,6 +575,9 @@ def clone_input(x, *, dtype=None):
             return torch_clone(x)
         if hasattr(x, "_dynamo_dynamic_indices"):
             result._dynamo_dynamic_indices = x._dynamo_dynamic_indices.copy()
+        if hasattr(x, "_full_param_padded"):
+            print("COPYINGFULLPARAM")
+            result._full_param_padded = x._full_param_padded.copy()
         return result
 
 
@@ -1324,6 +1330,8 @@ def run_node(tracer, node, args, kwargs, nnmodule):
             return node.meta["example_value"]
     except Exception as e:
         fn_str = f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n"
+        from .exc import unimplemented
+        unimplemented(fn_str)
         raise RuntimeError(fn_str + str(e)).with_traceback(e.__traceback__) from e
 
     raise AssertionError(op)

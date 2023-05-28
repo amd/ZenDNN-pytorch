@@ -339,6 +339,43 @@ class ListVariable(CommonListMethodsVariable):
         else:
             return super().call_method(tx, name, args, kwargs)
 
+class SetVariable(CommonListMethodsVariable):
+    def python_type(self):
+        return list
+
+    def reconstruct(self, codegen):
+        import sys
+        if sys.version_info >= (3, 11):
+            codegen.foreach(self.items)
+            return [create_instruction("BUILD_SET", arg=len(self.items))]
+        else:
+            create_instruction("LOAD_GLOBAL", arg="set"),
+            codegen.foreach(self.items)
+            return [create_instruction("CALL_FUNCTION", arg=len(self.items))]
+
+    def call_method(
+        self,
+        tx,
+        name,
+        args: "List[VariableTracker]",
+        kwargs: "Dict[str, VariableTracker]",
+    ) -> "VariableTracker":
+        options = VariableTracker.propagate(self, args, kwargs.values())
+        if (
+            name == "add"
+            and args
+        ):
+            if not self.mutable_local:
+                self.mutable_local = MutableLocal()
+            assert not kwargs
+            item = args[0]
+            items = set(self.items)
+            items.add(item)
+            result = SetVariable(list(items), regen_guards=False, **options)
+            return tx.replace_all(self, result)
+        else:
+            return super().call_method(tx, name, args, kwargs)
+
 
 class DequeVariable(CommonListMethodsVariable):
     def python_type(self):

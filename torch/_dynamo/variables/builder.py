@@ -81,6 +81,7 @@ from .lists import (
     SliceVariable,
     TupleIteratorVariable,
     TupleVariable,
+    SetVariable,
 )
 from .misc import (
     AutogradFunctionContextVariable,
@@ -214,6 +215,7 @@ class VariableBuilder:
         return {
             tuple: TupleVariable,
             list: ListVariable,
+            set: SetVariable,
             odict_values: ListVariable,
             torch.nn.ParameterList: ListVariable,
             torch.nn.ModuleList: ListVariable,
@@ -310,7 +312,9 @@ class VariableBuilder:
 
         return result
 
-    def _wrap(self, value):        
+    def _wrap(self, value):  
+        if hasattr(value, '_is_flat_param'):
+            print("NEWTENSOR?", hasattr(value, '_full_param_padded'))      
         make_guards = self.make_guards
 
         # Handle exact type() match
@@ -1206,7 +1210,7 @@ def wrap_fx_proxy_cls(
     ):
         sizes = [ConstantVariable(x) for x in example_value]
         return SizeVariable(sizes, **options)
-    elif isinstance(example_value, (tuple, list)):
+    elif isinstance(example_value, (tuple, list, set)):
         proxy.node.meta["example_value"] = example_value
         unpacked = []
         for i, val in enumerate(example_value):
@@ -1231,6 +1235,8 @@ def wrap_fx_proxy_cls(
             return TupleVariable(unpacked, **options)
         elif istype(example_value, (list, immutable_list)):
             return ListVariable(unpacked, mutable_local=MutableLocal(), **options)
+        elif istype(example_value, set):
+            return SetVariable(unpacked, mutable_local=MutableLocal(), **options)
         else:
             assert (
                 example_value.__class__.__module__ == "torch.return_types"

@@ -86,6 +86,12 @@ class ConstantVariable(VariableTracker):
                 items=self.unpack_var_sequence(tx), source=self.source, **options
             ).call_method(tx, name, args, kwargs)
 
+        if istype(self.value, set):
+            # empty tuple constant etc
+            return variables.lists.SetVariable(
+                items=self.unpack_var_sequence(tx), source=self.source, **options
+            ).call_method(tx, name, args, kwargs)
+
         if any(isinstance(x, SymNodeVariable) for x in args):
             # Promote to SymNodeVariable for operations involving dynamic shapes.
             return variables.SymNodeVariable(self.as_proxy(), self.value).call_method(
@@ -136,7 +142,7 @@ class ConstantVariable(VariableTracker):
         elif isinstance(self.value, torch.Size) and name == "numel":
             return ConstantVariable(self.value.numel(), **options)
 
-
+        
         unimplemented(f"const method call {typestr(self.value)}.{name}")
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":

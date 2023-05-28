@@ -84,6 +84,7 @@ from .variables.lists import (
     ListVariable,
     SliceVariable,
     TupleVariable,
+    SetVariable,
 )
 from .variables.misc import (
     ClosureVariable,
@@ -1243,6 +1244,12 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         items = self.popn(inst.argval)
         options = VariableTracker.propagate(items)
         self.push(TupleVariable(items, **options))
+
+    def BUILD_SET(self, inst):
+        items = self.popn(inst.argval)
+        options = VariableTracker.propagate(items)
+        self.push(SetVariable(items, **options))
+
 
     def BUILD_SLICE(self, inst):
         items = self.popn(inst.argval)

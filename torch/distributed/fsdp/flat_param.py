@@ -1116,7 +1116,7 @@ class FlatParamHandle:
             )
         else:
             self._check_on_compute_device(self.flat_param)
-        # flat_param._local_shard = flat_param.data
+        flat_param._local_shard = flat_param.data
         if self._offload_params:
             # Pin the memory for faster H2D transfer
             flat_param._local_shard = flat_param._local_shard.pin_memory()
@@ -1164,7 +1164,7 @@ class FlatParamHandle:
                     dtype=flat_param.dtype,  # full precision
                 )
                 _free_storage(flat_param._full_prec_full_param_padded)
-        return flat_param
+        return 
 
     ###################
     # UNSHARD/RESHARD #
