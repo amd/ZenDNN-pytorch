@@ -1247,7 +1247,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
     def BUILD_SET(self, inst):
         items = self.popn(inst.argval)
         options = VariableTracker.propagate(items)
-        self.push(SetVariable(items, **options))
+        self.push(SetVariable(items, mutable_local=MutableLocal(), **options))
 
 
     def BUILD_SLICE(self, inst):
@@ -1372,6 +1372,8 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
                 **VariableTracker.propagate([obj, v]),
             ),
         )
+
+    
 
     def MAKE_FUNCTION(self, inst):
         flags = inst.arg
@@ -1526,6 +1528,34 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
             assert isinstance(str_var, ConstantVariable)
             result = str_var.value + result
         self.push(ConstantVariable(value=result))
+
+    def SET_ADD(self, inst):
+        v = self.pop()
+        assert inst.argval > 0
+        obj = self.stack[-inst.arg]
+        assert isinstance(obj, SetVariable)
+        assert obj.mutable_local
+        # only copy if the new obj contains other mutables
+        new_rec_contains = obj.recursively_contains
+        if v.recursively_contains or v.mutable_local:
+            new_rec_contains = obj.recursively_contains.union(v.recursively_contains)
+
+            if v.mutable_local:
+                new_rec_contains.add(v.mutable_local)
+
+        nitems = set(obj.items)
+        nitems.add(v)
+        obj.items = list(nitems)
+        self.replace_all(
+            obj,
+            SetVariable(
+                obj.items,
+                mutable_local=obj.mutable_local,
+                recursively_contains=new_rec_contains,
+                regen_guards=False,
+                **VariableTracker.propagate([obj, v]),
+            ),
+        )
 
     def IS_OP(self, inst):
         assert inst.argval == 0 or inst.argval == 1

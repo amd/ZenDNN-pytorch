@@ -371,7 +371,7 @@ class SetVariable(CommonListMethodsVariable):
             item = args[0]
             items = set(self.items)
             items.add(item)
-            result = SetVariable(list(items), regen_guards=False, **options)
+            result = SetVariable(list(items), mutable_local=self.mutable_local, regen_guards=False, **options)
             return tx.replace_all(self, result)
         else:
             return super().call_method(tx, name, args, kwargs)
