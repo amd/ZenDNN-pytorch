@@ -866,23 +866,6 @@ class TypedStorageVariable(VariableTracker):
         unimplemented("typed_storage method calls WIP")
         
 class FlatParamVariable(TensorVariable):
-    def __init__(self, proxy: torch.fx.Proxy, **kwargs):
-        _fields = kwargs.pop("_fields", dict())
-        super().__init__(proxy, **kwargs)
-        self._fields = _fields
-
-    def call_hasattr(self, tx, name: str) -> "VariableTracker":
-        return ConstantVariable((name in self._fields))
-
-
-    def var_getattr(self, tx, name):
-        if name in self._fields:
-            result = self._fields[name]
-            if result is None:
-                unimplemented("None WTF?")
-            return result
-        super().var_getattr(tx, name)
-
     def call_method(
         self,
         tx,
@@ -891,12 +874,20 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name == '_full_param_padded':
+        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size'):
             val = self.as_proxy().node.meta['example_value']
-            if hasattr(val, '_full_param_padded'):
-                print("FPP found")
-                return tx.output.side_effects.track_object_existing(
-                    AttrSource(self.source, '_full_param_padded'), val, self
+            if hasattr(val, name):
+                val = getattr(val, name)
+                from .builder import VariableBuilder
+                src = AttrSource(self.source, name)
+                tx.output.side_effects.track_object_existing(
+                    src, val, self
                 )
+                out = VariableBuilder(tx, src)(val)
+                print(f"FPP found {type(val)} {type(out)}")
+                return out
+
+            else:
+                print(f"FPP no {name}")
         return super().call_method(tx, name, args, kwargs)
 

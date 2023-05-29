@@ -16,6 +16,7 @@ import operator
 import os
 import pstats
 import sys
+import builtins
 import textwrap
 import time
 import types
@@ -1231,7 +1232,14 @@ def get_fake_value(node, tx):
 
     def visit(n: torch.fx.Node):
         if 'example_value' not in n.meta:
-            unimplemented(f"Missing meta? {n}, {n.op}, {n.target}, {n.args}")
+            if n.target == builtins.getattr:
+                try:
+                    result = getattr(visit(n.args[0]), n.args[1])
+                    print(f"Hack garbage, where is example for this? {type(result)}")
+                    return result
+                except Exception as e:
+                    print("Failed hack garbage", e)
+            raise RuntimeError(f"Missing meta? {n}, {n.meta}, {n.op}, {n.target}, {n.args}")
         return n.meta["example_value"]
 
     args, kwargs = torch.fx.node.map_arg((node.args, node.kwargs), visit)

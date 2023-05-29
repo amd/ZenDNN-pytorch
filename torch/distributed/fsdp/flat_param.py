@@ -175,6 +175,17 @@ class FlatParamShardMetadata(NamedTuple):
     param_offsets: Tuple[Tuple[int, int], ...]
 
 
+def _check_sharded(flat_param_handle, tensor: Tensor):
+    if is_torchdynamo_compiling():
+        return
+    msg_prefix = "Expects tensor to be sharded "
+    _p_assert(tensor is not None, msg_prefix + "but got `None`")
+    sharded_size = flat_param_handle.flat_param._sharded_size  # type: ignore[attr-defined]
+    _p_assert(
+        tensor.size() == sharded_size,
+        msg_prefix + f"with size {sharded_size} but got {tensor.size()}",
+    )
+
 class _FlatParameterMeta(_ParameterMeta):
     # Make `isinstance(t, FlatParameter)` return True for custom tensor
     # instances that have the _is_flat_param flag for BC
@@ -2427,6 +2438,8 @@ class FlatParamHandle:
         )
 
     def _check_unsharded(self, tensor: Tensor):
+        if is_torchdynamo_compiling():
+            return
         msg_prefix = "Expects tensor to be unsharded "
         _p_assert(tensor is not None, msg_prefix + "but got `None`")
         unsharded_size = self.flat_param._unpadded_unsharded_size
@@ -2436,13 +2449,7 @@ class FlatParamHandle:
         )
 
     def _check_sharded(self, tensor: Tensor):
-        msg_prefix = "Expects tensor to be sharded "
-        _p_assert(tensor is not None, msg_prefix + "but got `None`")
-        sharded_size = self.flat_param._sharded_size  # type: ignore[attr-defined]
-        _p_assert(
-            tensor.size() == sharded_size,
-            msg_prefix + f"with size {sharded_size} but got {tensor.size()}",
-        )
+        _check_sharded(self, tensor)
 
     ##############
     # PROPERTIES #
