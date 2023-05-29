@@ -38,6 +38,8 @@ def run(model, optim):
     print(explain[0])
     for g in explain[2]:
         g.graph.print_tabular()
+    for i, gb in enumerate(explain[4]):
+        print(f"{i}. {gb}")
     # for _ in range(3):
     #     optim.zero_grad(set_to_none=True)
     #     inp = torch.randn((2, 3), device="cuda")
