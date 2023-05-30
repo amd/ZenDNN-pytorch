@@ -180,6 +180,9 @@ def _allowed_function_ids():
             return
         torch_object_ids[id(module)] = module.__name__
         for name, obj in list(module.__dict__.items()):
+            import torch.utils._pytree
+            if obj is torch.utils._pytree.tree_map:
+                continue
             if id(obj) not in torch_object_ids:
                 # Dynamo allows all builtins into the graph and does not attempt
                 # to introspect into them. We don't want to allow instances of
