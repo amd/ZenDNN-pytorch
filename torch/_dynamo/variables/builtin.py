@@ -610,6 +610,7 @@ class BuiltinVariable(VariableTracker):
                     "Calling round() on symbolic value is not supported. "
                     "You can use floor() to implement this functionality",
                 )
+        
         return super().call_function(tx, args, kwargs)
 
     def _call_min_max(self, tx, *args):
@@ -762,6 +763,8 @@ class BuiltinVariable(VariableTracker):
                 [],
                 mutable_local=MutableLocal(),
             )
+        elif isinstance(obj, variables.GetAttrVariable):
+            return self._call_iter_tuple_list(tx, obj.call_function(tx, [], {}), args, kwargs)
         elif obj.has_unpack_var_sequence(tx):
             guards = set()
             if obj.source and not is_constant_source(obj.source):
@@ -1283,6 +1286,8 @@ class BuiltinVariable(VariableTracker):
 
         if isinstance(left, BaseListVariable):
             if not type(left) == type(right):  # Mismatch in BaseListVariable subclasses
+                if (isinstance(right, ConstantVariable) and right.value is None):
+                    return ConstantVariable(op(left.items, right.value))
                 _unimplemented()
             return BaseListVariable.list_compare(tx, op, left, right)
 
@@ -1308,6 +1313,7 @@ class BuiltinVariable(VariableTracker):
 
         if isinstance(left, ConstantVariable) and isinstance(right, ConstantVariable):
             return ConstantVariable(op(left.value, right.value))
+
 
         if isinstance(left, variables.tensor.FlatParamVariable) or isinstance(right, variables.tensor.FlatParamVariable):
             if isinstance(left, ConstantVariable) and isinstance(right, ConstantVariable):

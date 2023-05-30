@@ -862,8 +862,12 @@ class TypedStorageVariable(VariableTracker):
             # return variables.LambdaVariable(
             #     lambda *args, **kwargs: ConstantVariable(self.value._data_ptr())
             # ).add_options(self)
+        if name == '_size':
+            return ConstantVariable(self.value._size())
+        if name == 'device':
+            return ConstantVariable(self.value.device)
         print("TypedStorageVariable Call method", name, self.value, args)
-        unimplemented("typed_storage method calls WIP")
+        unimplemented(f"typed_storage method calls WIP {name}")
         
 class FlatParamVariable(TensorVariable):
     def call_method(
@@ -874,16 +878,22 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params'):
+        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params', '_unpadded_unsharded_size'):
             val = self.as_proxy().node.meta['example_value']
             if hasattr(val, name):
-                val = getattr(val, name)
+                if name is '_params':
+                    # Massive hack, same as _full_param_padded_original
+                    val = val._r_params
+                else:
+                    val = getattr(val, name)
+
                 if name is '_full_param_padded':
                     # This is a huge hack to get around shortcomings with side_effects
                     # If we just build with the stored fake tensor, we *should* short circuit
                     # fakificaiton of a fake (illegal atm) but we fail the side_effects id check
                     # for some reason.
                     val = getattr(val, '_full_param_padded_original')
+
                     
                 from .builder import VariableBuilder
                 src = AttrSource(self.source, name)

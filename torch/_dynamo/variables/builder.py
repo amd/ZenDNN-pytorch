@@ -1446,12 +1446,17 @@ def wrap_to_fake_tensor_and_record(
             fake_e._sharded_size =  e._sharded_size
         if hasattr(e, '_params'):
             f_params = []
+            r_params = []
             f_params_source = AttrSource(source, "_params")
             for i, param in enumerate(e._params):
+                r_params.append(param)
                 f_param_source = GetItemSource(AttrSource(f_params_source, "_full_param_padded"), i)
                 f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
                 f_params.append(f_param)
             fake_e._params = f_params
+            fake_e._r_params = r_params
+        if hasattr(e, '_unpadded_unsharded_size'):
+            setattr(fake_e, '_unpadded_unsharded_size', e._unpadded_unsharded_size)
         
         return fake_e
     else:
