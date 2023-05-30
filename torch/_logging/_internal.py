@@ -8,6 +8,8 @@ from importlib import __import__
 from typing import Dict, Optional, Set, Union
 from weakref import WeakSet
 
+import torch
+
 log = logging.getLogger(__name__)
 
 DEFAULT_LOG_LEVEL = logging.WARN
@@ -55,6 +57,7 @@ class LogRegistry:
     # register a log with an alias
     def register_log(self, alias, log_qname):
         self.log_alias_to_log_qname[alias] = log_qname
+        torch._C._register_log_component(alias, log_qname)
 
     # register an artifact name
     def register_artifact_name(self, name, off_by_default):

@@ -24,6 +24,7 @@ import textwrap
 import subprocess
 import weakref
 import sys
+import logging
 from torch import inf, nan
 from itertools import product, combinations, permutations
 from functools import partial
@@ -6038,6 +6039,24 @@ class TestTorch(TestCase):
         with self.assertRaisesRegex(RuntimeError,
                                     r"the unspecified dimension size -1 can be any value and is ambiguous"):
             torch.randn(2, 0).unflatten(1, (2, -1, 0))
+
+    def test_log_cpp(self):
+        log_level_names = [
+            "CRITICAL",
+            "ERROR",
+            "WARNING",
+            "INFO",
+            "DEBUG",
+        ]
+        test_cases = product(
+            torch._logging._internal.log_registry.log_alias_to_log_qname.items(),
+            log_level_names)
+
+        for (alias, qname), log_level_name in test_cases:
+            log_level = getattr(logging, log_level_name)
+            with self.assertLogs(qname, level=logging.DEBUG) as cm:
+                torch._C._log(alias, log_level, 'test message')
+                self.assertEqual(cm.output, [f'{log_level_name}:{qname}:test message'])
 
     # Test that warnings generated from C++ are translated to the correct type
     def test_warn_types(self):
