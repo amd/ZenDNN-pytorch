@@ -868,7 +868,7 @@ class VariableBuilder:
             # a later point in time.
             ignore_subclass = True
         else:
-            assert type(value) in (torch.Tensor, torch.nn.Parameter), type(value)
+            assert type(value) in (torch.Tensor, torch.nn.Parameter, torch._subclasses.FakeTensor), type(value)
             ignore_subclass = False
 
         is_duplicate_tensor = source in self.tx.output.input_source_to_var
@@ -1448,7 +1448,7 @@ def wrap_to_fake_tensor_and_record(
             f_params = []
             f_params_source = AttrSource(source, "_params")
             for i, param in enumerate(e._params):
-                f_param_source = GetItemSource(AttrSource(source, "_full_param_padded"), i)
+                f_param_source = GetItemSource(AttrSource(f_params_source, "_full_param_padded"), i)
                 f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
                 f_params.append(f_param)
             fake_e._params = f_params
