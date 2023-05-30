@@ -1440,24 +1440,24 @@ def wrap_to_fake_tensor_and_record(
         if hasattr(e, '_local_shard'):
             # setattr(fake_e, '_local_shard', e._local_shard)
             fake_e._local_shard = wrap_to_fake_tensor_and_record(e._local_shard, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_local_shard"), is_tensor=is_tensor)
-        if hasattr(e, '_numels_with_padding'):
-            setattr(fake_e, '_numels_with_padding', e._numels_with_padding)
-        if hasattr(e, '_sharded_size'):
-            fake_e._sharded_size =  e._sharded_size
-        if hasattr(e, '_params'):
-            f_params = []
-            r_params = []
-            f_params_source = AttrSource(source, "_params")
-            for i, param in enumerate(e._params):
-                r_params.append(param)
-                f_param_source = GetItemSource(AttrSource(f_params_source, "_full_param_padded"), i)
-                f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
-                f_params.append(f_param)
-            fake_e._params = f_params
-            fake_e._r_params = r_params
-        if hasattr(e, '_unpadded_unsharded_size'):
-            setattr(fake_e, '_unpadded_unsharded_size', e._unpadded_unsharded_size)
-        
+        for _p_name in ['_params', '_tensors']:
+            if hasattr(e, _p_name):
+                f_params = []
+                r_params = []
+                f_params_source = AttrSource(source, _p_name)
+                for i, param in enumerate(getattr(e , _p_name)):
+                    r_params.append(param)
+                    f_param_source = GetItemSource(f_params_source, i)
+                    f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
+                    f_params.append(f_param)
+                setattr(fake_e, _p_name, f_params)
+                setattr(fake_e, "_r" + _p_name, r_params)
+        param_names = ['_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions']
+
+        for name in param_names:
+            if hasattr(e, name):
+                setattr(fake_e, name, getattr(e, name))
+                
         return fake_e
     else:
         return e

@@ -579,6 +579,12 @@ class GetAttrVariable(VariableTracker):
                 self.obj.inspected.num_parameters(),
                 **VariableTracker.propagate(self, self.obj, self.obj.inspected),
             )
+        if (
+            name == "__getitem__"
+        ) or name == "__setitem__":
+            obj = self.call_function(tx, [], {})
+            return obj.call_method(tx, name, args, kwargs)
+        
         return super().call_method(tx, name, args, kwargs)
 
 

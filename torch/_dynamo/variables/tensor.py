@@ -878,12 +878,12 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params', '_unpadded_unsharded_size'):
+        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors'):
             val = self.as_proxy().node.meta['example_value']
             if hasattr(val, name):
-                if name is '_params':
+                if name in ['_params', '_tensors']:
                     # Massive hack, same as _full_param_padded_original
-                    val = val._r_params
+                    val = getattr(val, '_r' + name)
                 else:
                     val = getattr(val, name)
 
@@ -902,6 +902,8 @@ class FlatParamVariable(TensorVariable):
                 out = tx.output.side_effects.track_object_existing(
                     src, val, out
                 )
+                if isinstance(out, variables.ListVariable) and not out.mutable_local:
+                    out.mutable_local = variables.base.MutableLocal()
                 
                     # out = tx.output.side_effects[val]
                 print(f"FPP found {type(val)} {type(out)}")

@@ -334,7 +334,7 @@ class ListVariable(CommonListMethodsVariable):
                 items[key.as_python_constant()] = list(value.items)
             else:
                 items[key.as_python_constant()] = value
-            result = ListVariable(items, regen_guards=False, **options)
+            result = ListVariable(items, mutable_local=self.mutable_local, regen_guards=False, **options)
             return tx.replace_all(self, result)
         else:
             return super().call_method(tx, name, args, kwargs)

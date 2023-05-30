@@ -484,7 +484,6 @@ class FlatParamHandle:
             raise ValueError(
                 f"Cannot construct a {self.__class__.__name__} with an empty parameter list"
             )
-        self._init_setattr_fns()
         self._skip_writeback_check = (
             os.environ.get(_FSDP_SKIP_WRITEBACK_CHECK, "") == "1"
         )
@@ -497,7 +496,7 @@ class FlatParamHandle:
             )
         # Only align addresses for `use_orig_params=True` (for now)
         align_addresses = use_orig_params
-        self._init_get_unflat_views_fn(align_addresses)
+        # self._init_get_unflat_views_fn(align_addresses)
         self.device = device
         self._device_handle = _FSDPDeviceHandle.from_device(self.device)
         self.process_group = process_group
@@ -530,23 +529,35 @@ class FlatParamHandle:
         )
         self._use_unsharded_views(as_params=False)
 
-    def _init_setattr_fns(self):
-        use_unsafe_setattr = os.environ.get(_FSDP_USE_UNSAFE_SETATTR, "") == "1"
-        self._setattr_tensor: Callable[[nn.Module, str, Tensor], None]
-        self._setattr_param: Callable[[nn.Module, str, nn.Parameter], None]
-        if use_unsafe_setattr:
-            self._setattr_tensor = _unsafe_setattr_tensor
-            self._setattr_param = _unsafe_setattr_param
-        else:
-            self._setattr_tensor = _safe_setattr_tensor_or_param
-            self._setattr_param = _safe_setattr_tensor_or_param
+    # def _init_setattr_fns(self):
+    #     use_unsafe_setattr = os.environ.get(_FSDP_USE_UNSAFE_SETATTR, "") == "1"
+    #     self._setattr_tensor: Callable[[nn.Module, str, Tensor], None]
+    #     self._setattr_param: Callable[[nn.Module, str, nn.Parameter], None]
+    #     if use_unsafe_setattr:
+    #         self._setattr_tensor = _unsafe_setattr_tensor
+    #         self._setattr_param = _unsafe_setattr_param
+    #     else:
+    #         self._setattr_tensor = _safe_setattr_tensor_or_param
+    #         self._setattr_param = _safe_setattr_tensor_or_param
 
-    def _init_get_unflat_views_fn(self, align_addresses: bool):
-        self._get_unflat_views = (
-            self._get_unflat_views_aligned
-            if align_addresses
-            else self._get_unflat_views_unaligned
-        )
+    # def _init_get_unflat_views_fn(self, align_addresses: bool):
+    #     self._get_unflat_views = (
+    #         self._get_unflat_views_aligned
+    #         if align_addresses
+    #         else self._get_unflat_views_unaligned
+    #     )
+
+    def _setattr_tensor(self, *args):
+        use_unsafe_setattr = os.environ.get(_FSDP_USE_UNSAFE_SETATTR, "") == "1"
+        if use_unsafe_setattr:
+            return _unsafe_setattr_tensor(*args)
+        return _safe_setattr_tensor_or_param(*args)
+
+    def _setattr_param(self, *args):
+        use_unsafe_setattr = os.environ.get(_FSDP_USE_UNSAFE_SETATTR, "") == "1"
+        if use_unsafe_setattr:
+            return _unsafe_setattr_param(*args)
+        return _safe_setattr_tensor_or_param(*args)
 
     def _init_flat_param_and_metadata(
         self,
@@ -1724,6 +1735,13 @@ class FlatParamHandle:
             )
         )
         return views
+
+    def _get_unflat_views(self, tensor: Optional[Tensor] = None):
+        align_addresses = self._use_orig_params
+        if align_addresses:
+            return self._get_unflat_views_aligned(tensor)
+        return self._get_unflat_views_unaligned(tensor)
+
 
     @no_type_check
     def _get_unflat_views_aligned(

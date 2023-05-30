@@ -552,7 +552,21 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
             and inner_fn._dynamo_forbidden
         ):
             raise AssertionError(f"Attempt to trace forbidden callable {inner_fn}")
-        self.push(fn.call_function(self, args, kwargs))
+        for i, arg in enumerate(args):
+            if isinstance(arg, GetAttrVariable):
+                args[i] = arg.call_function(self, [], {})
+
+        if kwargs:
+            new_kwargs = {}
+            for k, v in kwargs.items():
+                if isinstance(v, GetAttrVariable):
+                    new_kwargs[k] = v.call_function(self, [], {})
+                else:
+                    new_kwargs[k] = v
+        else:
+            new_kwargs = kwargs
+
+        self.push(fn.call_function(self, args, new_kwargs))
 
     def update_locals_and_stack(self, oldvar: VariableTracker, newvar: VariableTracker):
         def repl(v: VariableTracker):
@@ -577,8 +591,8 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         if isinstance(oldvar.mutable_local, side_effects.MutableSideEffects):
             newvar = self.output.side_effects.mutation(oldvar, newvar)
         else:
-            assert isinstance(oldvar.mutable_local, variables.base.MutableLocal)
-            newvar = newvar.clone(mutable_local=variables.base.MutableLocal())
+            assert oldvar.mutable_local
+            newvar = newvar.clone(mutable_local=oldvar.mutable_local)
         self.update_locals_and_stack(oldvar, newvar)
         return newvar
 
