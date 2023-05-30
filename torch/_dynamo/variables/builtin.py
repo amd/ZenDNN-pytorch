@@ -1309,6 +1309,17 @@ class BuiltinVariable(VariableTracker):
         if isinstance(left, ConstantVariable) and isinstance(right, ConstantVariable):
             return ConstantVariable(op(left.value, right.value))
 
+        if isinstance(left, variables.tensor.FlatParamVariable) or isinstance(right, variables.tensor.FlatParamVariable):
+            if isinstance(left, ConstantVariable) and isinstance(right, ConstantVariable):
+                def _value(item):
+                    if isinstance(item, variables.tensor.FlatParamVariable):
+                        return item.as_proxy().node.meta['example_value']
+                    else:
+                        return item.value
+                    
+                if op in supported_const_comparison_ops.values():
+                    return ConstantVariable(op(_value(left), _value(right)))
+
         _unimplemented()
 
     # and_ is a constant fold function, so we only get here if constant fold is not valid

@@ -874,17 +874,30 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size'):
+        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params'):
             val = self.as_proxy().node.meta['example_value']
             if hasattr(val, name):
                 val = getattr(val, name)
+                if name is '_full_param_padded':
+                    # This is a huge hack to get around shortcomings with side_effects
+                    # If we just build with the stored fake tensor, we *should* short circuit
+                    # fakificaiton of a fake (illegal atm) but we fail the side_effects id check
+                    # for some reason.
+                    val = getattr(val, '_full_param_padded_original')
+                    
                 from .builder import VariableBuilder
                 src = AttrSource(self.source, name)
-                tx.output.side_effects.track_object_existing(
-                    src, val, self
-                )
+                # if val in tx.output.side_effects:
                 out = VariableBuilder(tx, src)(val)
+                out = tx.output.side_effects.track_object_existing(
+                    src, val, out
+                )
+                
+                    # out = tx.output.side_effects[val]
                 print(f"FPP found {type(val)} {type(out)}")
+                    # return out
+                # else:
+                    # print("HASATTR but side effects not found")
                 return out
 
             else:

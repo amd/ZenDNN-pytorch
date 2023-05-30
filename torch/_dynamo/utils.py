@@ -1239,7 +1239,7 @@ def get_fake_value(node, tx):
                     return result
                 except Exception as e:
                     print("Failed hack garbage", e)
-            raise RuntimeError(f"Missing meta? {n}, {n.meta}, {n.op}, {n.target}, {n.args}")
+            unimplemented(f"Missing meta? {n}, {n.meta}, {n.op}, {n.target}, {n.args}")
         return n.meta["example_value"]
 
     args, kwargs = torch.fx.node.map_arg((node.args, node.kwargs), visit)

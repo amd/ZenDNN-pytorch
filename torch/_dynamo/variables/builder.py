@@ -1431,10 +1431,12 @@ def wrap_to_fake_tensor_and_record(
             "size": fake_e.size(),
             "stride": fake_e.stride(),
         }
+        
         # TODO(voz): this is garbage, and needs a real plan
         if hasattr(e, '_full_param_padded'):
             print("HAS _full_param_padded")
             fake_e._full_param_padded = wrap_to_fake_tensor_and_record(e._full_param_padded, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_full_param_padded"), is_tensor=is_tensor)
+            fake_e._full_param_padded._full_param_padded_original = e._full_param_padded
         if hasattr(e, '_local_shard'):
             # setattr(fake_e, '_local_shard', e._local_shard)
             fake_e._local_shard = wrap_to_fake_tensor_and_record(e._local_shard, tx, ignore_subclass=ignore_subclass, source=AttrSource(source, "_local_shard"), is_tensor=is_tensor)
@@ -1442,6 +1444,14 @@ def wrap_to_fake_tensor_and_record(
             setattr(fake_e, '_numels_with_padding', e._numels_with_padding)
         if hasattr(e, '_sharded_size'):
             fake_e._sharded_size =  e._sharded_size
+        if hasattr(e, '_params'):
+            f_params = []
+            f_params_source = AttrSource(source, "_params")
+            for i, param in enumerate(e._params):
+                f_param_source = GetItemSource(AttrSource(source, "_full_param_padded"), i)
+                f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
+                f_params.append(f_param)
+            fake_e._params = f_params
         
         return fake_e
     else:
