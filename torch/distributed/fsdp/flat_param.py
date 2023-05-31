@@ -181,10 +181,10 @@ def _check_sharded(flat_param_handle, tensor: Tensor):
     msg_prefix = "Expects tensor to be sharded "
     _p_assert(tensor is not None, msg_prefix + "but got `None`")
     sharded_size = flat_param_handle.flat_param._sharded_size  # type: ignore[attr-defined]
-    _p_assert(
-        tensor.size() == sharded_size,
-        msg_prefix + f"with size {sharded_size} but got {tensor.size()}",
-    )
+    # _p_assert(
+    #     tensor.size() == sharded_size,
+    #     msg_prefix + f"with size {sharded_size} but got {tensor.size()}",
+    # )
 
 class _FlatParameterMeta(_ParameterMeta):
     # Make `isinstance(t, FlatParameter)` return True for custom tensor

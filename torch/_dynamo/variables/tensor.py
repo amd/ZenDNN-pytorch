@@ -444,10 +444,11 @@ class TensorVariable(VariableTracker):
         elif name == "__len__":
             return self.call_method(tx, "size", [ConstantVariable(0, **options)], {})
         elif name == "__setattr__":
+            print("TENSOR SETATTR", args)
             tx.output.guards.update(options["guards"])
             tx.output.create_proxy(
-                "call_function",
-                object.__setattr__,
+                "call_method",
+                "__setattr__",
                 *proxy_args_kwargs([self] + list(args), kwargs),
             )
             return ConstantVariable(None, **options)
@@ -886,41 +887,50 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ('_full_param_padded', '_local_shard', '_numels_with_padding', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos'):
-            val = self.as_proxy().node.meta['example_value']
-            if hasattr(val, name):
-                if name in ['_params', '_tensors']:
-                    # Massive hack, same as _full_param_padded_original
-                    val = getattr(val, '_r' + name)
-                else:
-                    val = getattr(val, name)
+        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
+            from .builder import wrap_fx_proxy
+            return wrap_fx_proxy(
+                tx=tx,
+                proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
+            )
+        # if name in ['_numels_with_padding']:
+        #     return variables.LambdaVariable(
+        #         lambda *args, **kwargs: TypedStorageVariable(self._typed_storage())
+        #     ).add_options(self)
+        #     val = self.as_proxy().node.meta['example_value']
+        #     if hasattr(val, name):
+        #         if name in ['_params', '_tensors']:
+        #             # Massive hack, same as _full_param_padded_original
+        #             val = getattr(val, '_r' + name)
+        #         else:
+        #             val = getattr(val, name)
 
-                if name is '_full_param_padded':
-                    # This is a huge hack to get around shortcomings with side_effects
-                    # If we just build with the stored fake tensor, we *should* short circuit
-                    # fakificaiton of a fake (illegal atm) but we fail the side_effects id check
-                    # for some reason.
-                    val = getattr(val, '_full_param_padded_original')
+        #         if name is '_full_param_padded':
+        #             # This is a huge hack to get around shortcomings with side_effects
+        #             # If we just build with the stored fake tensor, we *should* short circuit
+        #             # fakificaiton of a fake (illegal atm) but we fail the side_effects id check
+        #             # for some reason.
+        #             val = getattr(val, '_full_param_padded_original')
 
                     
-                from .builder import VariableBuilder
-                src = AttrSource(self.source, name)
-                # if val in tx.output.side_effects:
-                out = VariableBuilder(tx, src)(val)
-                out = tx.output.side_effects.track_object_existing(
-                    src, val, out
-                )
-                if isinstance(out, variables.ListVariable) and not out.mutable_local:
-                    out.mutable_local = variables.base.MutableLocal()
+        #         from .builder import VariableBuilder
+        #         src = AttrSource(self.source, name)
+        #         # if val in tx.output.side_effects:
+        #         out = VariableBuilder(tx, src)(val)
+        #         out = tx.output.side_effects.track_object_existing(
+        #             src, val, out
+        #         )
+        #         if isinstance(out, variables.ListVariable) and not out.mutable_local:
+        #             out.mutable_local = variables.base.MutableLocal()
                 
-                    # out = tx.output.side_effects[val]
-                print(f"FPP found {type(val)} {type(out)}")
-                    # return out
-                # else:
-                    # print("HASATTR but side effects not found")
-                return out
+        #             # out = tx.output.side_effects[val]
+        #         print(f"FPP found {type(val)} {type(out)}")
+        #             # return out
+        #         # else:
+        #             # print("HASATTR but side effects not found")
+        #         return out
 
-            else:
-                print(f"FPP no {name}")
+        else:
+            print(f"FPP no {name}")
         return super().call_method(tx, name, args, kwargs)
 
