@@ -86,7 +86,7 @@ SKIP_DIRS = [
         logging,
         multiprocessing,
         operator,
-        os,
+        # os,
         posixpath,
         random,
         re,
@@ -100,7 +100,7 @@ SKIP_DIRS = [
         typing,
         unittest,
         weakref,
-        _collections_abc,
+        # _collections_abc,
         _weakrefset,
     )
 ]

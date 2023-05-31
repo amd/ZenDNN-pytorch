@@ -185,12 +185,22 @@ class ConstDictVariable(VariableTracker):
             result = self.items[ConstDictVariable.get_key(args[0])]
             return result.add_options(options)
         elif (
+            name in ("get", "__getattr__")
+            and args
+            and ConstDictVariable.is_valid_key(args[0])
+            and ConstDictVariable.get_key(args[0]) in self.items
+        ):
+            result = self.items[ConstDictVariable.get_key(args[0])]
+            return result.add_options(options)
+        elif (
             name == "__contains__" and args and ConstDictVariable.is_valid_key(args[0])
         ):
             return ConstantVariable(
                 ConstDictVariable.get_key(args[0]) in self.items, **options
-            )
+            )            
         else:
+            if name == "get":
+                print(f"FAILED GET {args}, {ConstDictVariable.is_valid_key(args[0])}, {ConstDictVariable.get_key(args[0]) in self.items}", )
             return super().call_method(tx, name, args, kwargs)
 
     def modifed(self, items, recursively_contains, **options):
@@ -221,6 +231,7 @@ class ConstDictVariable(VariableTracker):
         )
         
         print(f"Is {key} valid? {valid} {key.items if hasattr(key, 'items') else ''}")
+        return valid
 
     @classmethod
     def _key_to_var(cls, tx, key, **options):

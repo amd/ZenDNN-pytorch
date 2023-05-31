@@ -8,6 +8,7 @@ import logging
 import operator
 import re
 import types
+import os
 from typing import List, NamedTuple, Optional, Union
 
 import torch
@@ -337,7 +338,7 @@ class VariableBuilder:
         elif is_namedtuple(value):
             return self.wrap_listlike(value)
         elif istype(
-            value, (dict, collections.defaultdict, collections.OrderedDict)
+            value, (dict, collections.defaultdict, collections.OrderedDict, os._Environ)
         ) and all(
             (
                 ConstantVariable.is_literal(k)
@@ -412,7 +413,7 @@ class VariableBuilder:
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.BUILTIN_MATCH),
-            )
+            )            
         elif value in [
             torch.distributed._functional_collectives.all_gather_tensor,
             torch.distributed._functional_collectives._expand_group,

@@ -220,7 +220,7 @@ class PyCodegen:
         return create_load_global(name, push_null)
 
     def create_load_const(self, value):
-        assert is_safe_constant(value), f"unsafe constant {value}"
+        # assert is_safe_constant(value), f"unsafe constant {value}"
         return self._create_load_const(value)
 
     def _create_load_const(self, value):
