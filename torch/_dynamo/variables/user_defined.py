@@ -7,6 +7,7 @@ import itertools
 import random
 import types
 from typing import Dict, List
+from torch._dynamo.variables.base import VariableTracker
 
 import torch.nn
 
@@ -570,7 +571,30 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         return super()._getattr_static(name)
            
            
-
     def var_getattr(self, tx, name):
         # Note - here for easier printing as needed, will delete
         return super().var_getattr(tx, name)
+
+class FSDPStateVariable(UserDefinedObjectVariable):
+    def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        if name == "__setattr__":
+            assert len(args) == 2
+            key = args[0].as_python_constant()
+            value_obj = args[1]
+
+            def _convert(item):
+                if isinstance(item, variables.NNModuleVariable):
+                    value = tx.output.get_submodule(item.module_key)
+                elif isinstance(item, variables.TensorVariable):
+                    value = item.as_proxy().node.meta['example_value']
+                elif item.has_unpack_var_sequence(tx):
+                    value = [_convert(x) for x in item]
+                else:
+                    value = item.as_python_constant()
+                return value
+
+            value = _convert(value_obj)
+            
+            setattr(self.value, key, value)
+            return variables.ConstantVariable(None)
+        return super().call_method(tx, name, args, kwargs)

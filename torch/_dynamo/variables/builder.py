@@ -110,7 +110,7 @@ from .torch import (
     TorchHigherOrderOperatorVariable,
     TorchVariable,
 )
-from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable
+from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable, FSDPStateVariable
 
 
 log = logging.getLogger(__name__)
@@ -347,17 +347,22 @@ class VariableBuilder:
                 for k in value.keys()
             )
         ):
-            if not value and self.get_source().is_nn_module():
-                # It is faster to guard on 'false' property than to guard
-                # on actual dict keys, but we can't do this fast guard in general because
-                # it omits a crucial type check that ensures the value is actually still a dict at runtime.
-
-                # Why is this OK for (specialized) nnmodules? We set up a setattr hook
-                # to check for module property mutations, which does a reasonable,
-                # but not completely secure job ensuring a property wasn't changed.
-                guards = self.make_guards(GuardBuilder.BOOL_FALSE)
+            if isinstance(value, os._Environ):
+                # Super spammy to not do this, but also super hacky and unsound to have this here.
+                # real fix is to only guard on environ keys we use.
+                guards = set()
             else:
-                guards = self.make_guards(GuardBuilder.DICT_KEYS)
+                if not value and self.get_source().is_nn_module():
+                    # It is faster to guard on 'false' property than to guard
+                    # on actual dict keys, but we can't do this fast guard in general because
+                    # it omits a crucial type check that ensures the value is actually still a dict at runtime.
+
+                    # Why is this OK for (specialized) nnmodules? We set up a setattr hook
+                    # to check for module property mutations, which does a reasonable,
+                    # but not completely secure job ensuring a property wasn't changed.
+                    guards = self.make_guards(GuardBuilder.BOOL_FALSE)
+                else:
+                    guards = self.make_guards(GuardBuilder.DICT_KEYS)
 
             # store key variables in global location for reconstruction
             for key in value.keys():
@@ -369,12 +374,19 @@ class VariableBuilder:
                     return GlobalWeakRefSource(global_key_name(key))
                 else:
                     return key
-
+            
+            if isinstance(value, os._Environ):
+                if '_FSDP_USE_UNSAFE_SETATTR' in value.keys():
+                    keys = ['_FSDP_USE_UNSAFE_SETATTR']
+                else:
+                    keys = []
+            else:
+                keys = value.keys()
             result = {
                 k: VariableBuilder(
                     self.tx, GetItemSource(self.get_source(), index_source(k))
                 )(value[k]).add_guards(guards)
-                for k in value.keys()
+                for k in keys
             }
 
             if istype(value, collections.defaultdict):
@@ -421,11 +433,19 @@ class VariableBuilder:
             torch.distributed._functional_collectives._are_we_tracing,
             torch.distributed.utils._free_storage,
         ]:
-            print(f"REWROTE AS USERFUNCTIONVARIABLE {value}")
             return UserFunctionVariable(
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+        elif istype(value, torch.distributed.fsdp._common_utils._FSDPState):
+            result = FSDPStateVariable(
+                value,
+                source=self.source,
+                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+            return self.tx.output.side_effects.track_object_existing(
+                self.source, value, result
             )
         elif istype(value, torch.distributed.fsdp.flat_param.FlatParamHandle):
             result = FlatParamHandleVariable(
@@ -779,11 +799,15 @@ class VariableBuilder:
             #
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
-            return FSDPManagedNNModuleVariable(
+            result = FSDPManagedNNModuleVariable(
                 value,
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
+            return result
+            # return self.tx.output.side_effects.track_object_existing(
+                # self.source, value, result
+            # )
         else:
             return self.tx.output.register_attr_or_module(
                 value,
@@ -1453,7 +1477,7 @@ def wrap_to_fake_tensor_and_record(
                     f_params.append(f_param)
                 setattr(fake_e, _p_name, f_params)
                 setattr(fake_e, "_r" + _p_name, r_params)
-        param_names = ['_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions']
+        param_names = ['_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_shared_param_infos']
 
         for name in param_names:
             if hasattr(e, name):

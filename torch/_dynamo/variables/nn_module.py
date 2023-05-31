@@ -792,3 +792,41 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
     def as_python_constant(self):
         return self.value
+
+    def call_method(
+        self,
+        tx,
+        name,
+        args: "List[VariableTracker]",
+        kwargs: "Dict[str, VariableTracker]",
+    ) -> "VariableTracker":
+        if name == "__setattr__":
+            assert len(args) == 2
+            key = args[0].as_python_constant()
+            value_obj = args[1]
+
+            def _convert(item):
+                if isinstance(item, variables.NNModuleVariable):
+                    value = tx.output.get_submodule(item.module_key)
+                    # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item.module_key}")
+                elif isinstance(item, variables.TensorVariable):
+                    # value = item.as_proxy().node.meta['example_value']
+                    unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{type(item)}")
+                elif item.has_unpack_var_sequence(tx):
+                    value = [_convert(x) for x in item]
+                elif isinstance(item, variables.DeletedVariable):
+                    value = None
+                else:
+                    unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
+                # else:
+                #     value = item.as_python_constant()
+                print(f"SETATTRFSDP {key} {type(item)} -> {type(value)}")
+                return value
+
+            value = _convert(value_obj)
+            if value is None:
+                delattr(self.value, key)
+            else:
+                setattr(self.value, key, value)
+            return variables.ConstantVariable(None)
+        return super().call_method(tx, name, args, kwargs)

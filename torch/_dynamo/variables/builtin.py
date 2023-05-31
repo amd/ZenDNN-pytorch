@@ -1119,8 +1119,11 @@ class BuiltinVariable(VariableTracker):
                 return obj.call_method(tx, "__setattr__", [name_var, val], {})
             return val.add_options(self, obj, name_var)
         elif isinstance(obj, variables.UserDefinedObjectVariable):
+            if isinstance(obj, variables.nn_module.FSDPManagedNNModuleVariable):
+                return obj.call_method(tx, "__setattr__", [name_var, val], {})
+
             unimplemented(
-                f"setattr(UserDefinedObjectVariable) {type(obj.value).__setattr__}"
+                f"USERDEFINEDSETATTR setattr({type(obj)}) {tx.output.side_effects.is_attribute_mutation(obj)} {type(obj.value).__setattr__}"
             )
         elif isinstance(obj, variables.NNModuleVariable):
             obj.convert_to_unspecialized(tx)

@@ -1649,8 +1649,8 @@ class Module:
         elif params is not None and name in params:
             if value is not None:
                 raise TypeError("cannot assign '{}' as parameter '{}' "
-                                "(torch.nn.Parameter or None expected)"
-                                .format(torch.typename(value), name))
+                                "(torch.nn.Parameter or None expected on '{}')"
+                                .format(torch.typename(value), name, self))
             self.register_parameter(name, value)
         else:
             modules = self.__dict__.get('_modules')
