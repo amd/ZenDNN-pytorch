@@ -110,7 +110,7 @@ from .torch import (
     TorchHigherOrderOperatorVariable,
     TorchVariable,
 )
-from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable, FSDPStateVariable
+from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable, FSDPStateVariable, FSDPStateVariable
 
 
 log = logging.getLogger(__name__)

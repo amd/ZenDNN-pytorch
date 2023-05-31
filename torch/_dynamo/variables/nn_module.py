@@ -805,13 +805,29 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             key = args[0].as_python_constant()
             value_obj = args[1]
 
+            print("SETTING UP", name, key, value_obj)
             def _convert(item):
                 if isinstance(item, variables.NNModuleVariable):
                     value = tx.output.get_submodule(item.module_key)
                     # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item.module_key}")
                 elif isinstance(item, variables.TensorVariable):
                     # value = item.as_proxy().node.meta['example_value']
-                    unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{type(item)}")
+                    # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{type(item)}")
+                    fake = item.as_proxy().node.meta['example_value']
+                    param = torch.zeros(fake.size(), dtype=fake.dtype, device=fake.device)
+                    value = torch.nn.Parameter(param)
+                    from .builder import wrap_fx_proxy
+
+                    # return wrap_fx_proxy(
+                    #     tx=tx,
+                    #     proxy=tx.output.create_proxy(
+                    #         "call_function",
+                    #         object.__setattr__,
+                    #         [self.value, key, value],
+                    #         {},
+                    #     )
+                    # )
+                    return value
                 elif item.has_unpack_var_sequence(tx):
                     value = [_convert(x) for x in item]
                 elif isinstance(item, variables.DeletedVariable):

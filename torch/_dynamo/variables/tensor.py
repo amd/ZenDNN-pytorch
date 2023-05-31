@@ -443,6 +443,14 @@ class TensorVariable(VariableTracker):
             )
         elif name == "__len__":
             return self.call_method(tx, "size", [ConstantVariable(0, **options)], {})
+        elif name == "__setattr__":
+            tx.output.guards.update(options["guards"])
+            tx.output.create_proxy(
+                "call_function",
+                object.__setattr__,
+                *proxy_args_kwargs([self] + list(args), kwargs),
+            )
+            return ConstantVariable(None, **options)
         elif name == "__setitem__":
             tx.output.guards.update(options["guards"])
             tx.output.create_proxy(

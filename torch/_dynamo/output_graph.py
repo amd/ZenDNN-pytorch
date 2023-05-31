@@ -312,6 +312,10 @@ class OutputGraph(Checkpointable[OutputGraphState]):
     def graph(self):
         return self.current_tracer.graph
 
+    @property
+    def root(self):
+        return FakeRootModule(self.nn_modules)
+
     # TODO(rzou): can delete after we refactor speculate_subgraph to use nested GraphTracer.
     @graph.setter
     def graph(self, value):
@@ -1182,6 +1186,10 @@ class SubgraphTracer(fx.Tracer):
             else:
                 self.input_name_to_proxy[name] = proxy
             return proxy
+
+    @property
+    def root(self):
+        return self.output_graph.root
 
     def is_name_bound(self, name):
         if name in self.input_name_to_proxy:
