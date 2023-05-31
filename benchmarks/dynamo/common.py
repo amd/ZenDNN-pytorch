@@ -637,53 +637,37 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
     # graph size changes
     tolerance = args.xla_tolerance if args.trace_on_xla else 1e-4
     torch._dynamo.config.repro_tolerance = tolerance
-
-    with maybe_profile(args.export_profiler_trace) as p:
+    frozen_model_iter_fn = torch._dynamo.run(model_iter_fn)
+    # get env variable profile_folder
+    profile_folder = os.environ.get("PROFILE_FOLDER", torch._dynamo.config.base_dir)
+    # append model.name to the profile_folder
+    profile_folder = os.path.join(profile_folder, model.name)
+    from torch import profiler
+    with torch.profiler.profile(schedule=profiler.schedule(wait=0, warmup=3, active=1, repeat=1),activities= [
+                profiler.ProfilerActivity.CUDA,
+                profiler.ProfilerActivity.CPU,
+            ],
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True,
+            with_flops=False,
+            with_modules=True,
+            on_trace_ready=profiler.tensorboard_trace_handler(profile_folder)
+            ) as prof:
         frozen_model_iter_fn = torch._dynamo.run(model_iter_fn)
-        for rep in trange(args.repeat, desc="running benchmark"):
+        for rep in trange(4, desc="running benchmark"):
             inputs = (
                 randomize_input(copy.deepcopy(example_inputs))
                 if should_randomize_input
                 else example_inputs
             )
-            # need call mark_step to perform the computation
-            # on randomize_input. Otherwise the first call using the
-            # inputs will incur high penalty then the next one.
-            maybe_mark_step(args)
-
-            # interleave the runs to handle frequency scaling and load changes
-            with maybe_mark_profile(p=p, mark="expected"):
-                timings[rep, 0], expected_output = timed(
-                    model,
-                    model_iter_fn,
-                    inputs,
-                    return_result=True,
-                    times=times,
-                    collect_outputs=args.collect_outputs,
-                )
-
-            # call mark_step between the 2 calls to make the comparison fair.
-            maybe_mark_step(args)
-
-            with maybe_mark_profile(p=p, mark="actual"):
-                timings[rep, 1], actual_output = timed(
-                    model,
-                    frozen_model_iter_fn,
-                    inputs,
-                    return_result=True,
-                    times=times,
-                    collect_outputs=args.collect_outputs,
-                )
-
-            if should_check_result:
-                is_correct = is_correct and same(
-                    expected_output, actual_output, tol=tolerance
-                )
-
-    if args.export_profiler_trace:
-        name = args.profiler_trace_name + "_" + model.name + ".json"
-        name = os.path.join(torch._dynamo.config.base_dir, name)
-        p.export_chrome_trace(name)
+            frozen_model_iter_fn(model, inputs)
+            prof.step()
+    print("saved profile to ", profile_folder)
+    # if args.export_profiler_trace:
+    #     name = args.profiler_trace_name + "_" + model.name + ".json"
+    #     name = os.path.join(torch._dynamo.config.base_dir, name)
+    #     p.export_chrome_trace(name)
     median = np.median(timings, axis=0)
     speedup = median[0] / median[1]
     if args.dump_raw_metrics:
