@@ -323,7 +323,7 @@ def _validate_sample_input_sparse_reduction_sum(sample, check_validate=False):
     dim = t_kwargs.get("dim")
     keepdim = t_kwargs.get("keepdim")
     layout = t_inp.layout
-    if (isinstance(dim, int) or isinstance(dim, (list, tuple))):
+    if isinstance(dim, (int, list, tuple)):
         if layout in {
             torch.sparse_csr,
             torch.sparse_csc,
