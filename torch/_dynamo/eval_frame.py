@@ -1300,6 +1300,7 @@ class TorchPatcher:
         #     TorchDynamo does not trigger again on the frames created by
         #     utils.checkpoint innards.
         torch.utils.checkpoint.checkpoint = disable(torch.utils.checkpoint.checkpoint)
+        torch._functorch.eager_transforms.grad_impl = disable(torch._functorch.eager_transforms.grad_impl)
 
     @staticmethod
     def suppress_torch_distributed_warnings(fn):
