@@ -162,7 +162,11 @@ class GraphSignature:
 @dataclass
 class GraphModule:
     graph: Graph
-    buffers: Dict[str, TensorMeta]
-    parameters: Dict[str, TensorMeta]
-    metadata: Dict[str, str]
     signature: GraphSignature
+    call_spec: CallSpec
+
+
+@dataclass
+class ExportedProgram:
+    graph_module: GraphModule
+    opset_version: Dict[str, int]
