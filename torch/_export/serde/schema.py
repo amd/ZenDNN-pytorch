@@ -113,14 +113,8 @@ class NamedArgument:
 
 
 @dataclass
-class Operator:
-    name: str
-    version: Optional[int]
-
-
-@dataclass
 class Node:
-    target: Operator
+    target: str
     inputs: List[NamedArgument]
     outputs: List[Argument]
     metadata: Dict[str, str]
@@ -154,9 +148,13 @@ class GraphSignature:
     user_inputs: List[str]
     user_outputs: List[str]
     buffers_to_mutate: Dict[str, str]
+    backward_signature: Optional[BackwardSignature]
+
+
+@dataclass
+class CallSpec:
     in_spec: str
     out_spec: str
-    backward_signature: Optional[BackwardSignature]
 
 
 @dataclass
