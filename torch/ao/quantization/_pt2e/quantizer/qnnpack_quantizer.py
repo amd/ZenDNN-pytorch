@@ -289,6 +289,7 @@ class QNNPackQuantizer(Quantizer):
         self._annotate_conv2d_relu(model, config)
         self._annotate_conv2d(model, config)
         self._annotate_maxpool2d(model, config)
+        print("I'm here about to call annotate add relu")
         self._annotate_add_relu(model, config)
         self._annotate_add(model, config)
         self._annotate_hardtanh(model, config)
@@ -630,6 +631,7 @@ class QNNPackQuantizer(Quantizer):
         self, gm: torch.fx.GraphModule, quantization_config: QuantizationConfig
     ) -> None:
         fused_partitions = find_sequential_partitions(gm, [torch.add, torch.nn.ReLU])
+        print("annotatin add relu got partitions?", len(fused_partitions))
         for fused_partition in fused_partitions:
             add_partition, relu_partition = fused_partition
             if len(relu_partition.output_nodes) > 1:
@@ -639,7 +641,10 @@ class QNNPackQuantizer(Quantizer):
                 raise ValueError("add partition has more than one output node")
             add_node = add_partition.output_nodes[0]
 
+            print("annotatin add relu ", add_node, relu_node)
+
             if _is_annotated([relu_node, add_node]):
+                print("was annotated oops ", add_node, relu_node)
                 continue
 
             act_qspec = get_act_qspec(quantization_config)
@@ -652,6 +657,8 @@ class QNNPackQuantizer(Quantizer):
             input_act1 = add_node.args[1]
             if isinstance(input_act1, Node):
                 input_qspec_map[input_act1] = act_qspec
+
+            print("ADD RELU ANNOTATION ", add_node, input_qspec_map)
 
             add_node.meta["quantization_annotation"] = QuantizationAnnotation(
                 input_qspec_map=input_qspec_map,
@@ -682,6 +689,8 @@ class QNNPackQuantizer(Quantizer):
             input_act1 = add_node.args[1]
             if isinstance(input_act1, Node):
                 input_qspec_map[input_act1] = act_qspec
+
+            print("ADD ANNOTATION ", add_node, input_qspec_map)
 
             add_node.meta["quantization_annotation"] = QuantizationAnnotation(
                 input_qspec_map=input_qspec_map,
