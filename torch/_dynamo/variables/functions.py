@@ -59,7 +59,7 @@ def wrap_bound_arg(tx, val, options, source=None):
     elif istensor(val):
         from torch._dynamo.variables.builder import VariableBuilder
 
-        return VariableBuilder(tx, source=source, **options)(val)
+        return VariableBuilder(tx, source=source)(val)
     else:
         assert isinstance(val, VariableTracker), typestr(val)
         return val
@@ -168,48 +168,60 @@ class UserFunctionVariable(BaseUserFunctionVariable):
     def get_globals(self):
         return self.fn.__globals__
 
+    def get_default_args(self):
+        return self.fn.__defaults__
+    
+    def get_default_kwargs(self):
+        return self.fn.__kwdefaults__
+
+    def get_name(self):
+        return self.fn.__name__
+
+    def get_closure(self):
+        return self.fn.__closure__
+
     def bind_args(self, parent, args, kwargs):
         assert not self.is_constant
         options = VariableTracker.propagate([self])
         tx = parent.output.root_tx
         wrap = functools.partial(wrap_bound_arg, tx=tx, options=options)
 
-        fn: types.FunctionType = self.fn
-        defaults = fn.__defaults__ or []
+        defaults = self.get_default_args() or []
         defaults_sources = [
             None if self.source is None else DefaultsSource(self.source, idx)
             for idx, _ in enumerate(defaults)
         ]
+        print("SOURCES", defaults_sources)
         fake_func = types.FunctionType(
-            fn.__code__,
-            fn.__globals__,
-            fn.__name__,
+            self.get_code(),
+            self.get_globals(),
+            self.get_name(),
             tuple(
                 [
                     wrap(val=arg, source=source)
                     for arg, source in zip(defaults, defaults_sources)
                 ]
             ),
-            fn.__closure__,
+            self.get_closure(),
         )
-        if fn.__kwdefaults__:
+        if self.get_default_kwargs():
             kwdefaults_sources = {
                 k: None
                 if self.source is None
                 else DefaultsSource(self.source, k, is_kw=True)
-                for k in fn.__kwdefaults__
+                for k in self.get_default_kwargs()
             }
             fake_func.__kwdefaults__ = {
                 k: wrap(val=v, source=kwdefaults_sources[k])
-                for k, v in fn.__kwdefaults__.items()
+                for k, v in self.get_default_kwargs().items()
             }
 
         bound = inspect.signature(fake_func).bind(*args, **kwargs)
         bound.apply_defaults()
         result = dict(bound.arguments.items())
-
+        print("BOUND ARGS RESULT", result)
         wrap_args_kwargs(tx, result, options)
-        closure_cells = init_cellvars(parent, result, fn.__code__)
+        closure_cells = init_cellvars(parent, result, self.get_code())
         closure = self.fn.__closure__ or ()
         assert len(closure) == len(self.fn.__code__.co_freevars)
         for idx, name, cell in zip(
@@ -339,6 +351,55 @@ class UserMethodVariable(UserFunctionVariable):
 
     def num_parameters(self):
         return super().num_parameters() - 1
+
+class PartialUserFunctionVariable(BaseUserFunctionVariable):
+    def __init__(self, fn, is_constant=False, **kwargs):
+        inner_fn = kwargs.pop("inner_fn", None)
+        if not inner_fn:
+            inner_fn = UserFunctionVariable(fn.func, source=AttrSource(kwargs["source"], "func"), is_constant=is_constant)
+        assert isinstance(fn, functools.partial)
+        super().__init__(**kwargs)
+        self.fn = fn
+        self.is_constant = is_constant
+        self.inner_fn = inner_fn
+
+    def bind_args(self, parent, args, kwargs):
+        if self.fn.args:
+            unimplemented(f"NYI - partials w/ non-keyword args")
+        result, closure_cells = self.inner_fn.bind_args(parent, args, kwargs)
+        if closure_cells:
+            unimplemented("NYI - partials w/ closure_cells")
+        wrapped_args =  dict(self.fn.keywords)
+        options = VariableTracker.propagate([self])
+        defaults_sources = [
+            None if self.source is None else DefaultsSource(AttrSource(self.source, "func"), idx)
+            for idx, _ in enumerate(wrapped_args)
+        ]
+        wrap_args_kwargs(parent.output.root_tx, wrapped_args, VariableTracker.propagate(self))
+        wrap = functools.partial(wrap_bound_arg, tx=parent.output.root_tx, options=options)
+        for i, key in enumerate(wrapped_args.keys()):
+            value = wrapped_args[key]
+            value = wrap(val=value, source=defaults_sources[i])
+            result[key] = value
+        return result, closure_cells
+
+    def self_args(self):
+        return []
+
+    def has_self(self):
+        return False
+    
+    def get_code(self):
+        return self.inner_fn.get_code()
+    
+    def get_function(self):
+        return self.inner_fn.get_function()
+
+    def get_globals(self):
+        return self.inner_fn.get_globals()
+    
+    def export_freevars(self, parent, child):
+        return self.inner_fn.export_freevars(parent, child)
 
 
 class WrappedUserMethodVariable(UserMethodVariable):

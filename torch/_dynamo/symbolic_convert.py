@@ -77,6 +77,7 @@ from .variables.functions import (
     NestedUserFunctionVariable,
     UserFunctionVariable,
     UserMethodVariable,
+    PartialUserFunctionVariable
 )
 from .variables.lists import (
     BaseListVariable,
@@ -2228,12 +2229,13 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
     ):
         assert isinstance(
             func,
-            (UserFunctionVariable, NestedUserFunctionVariable),
+            (UserFunctionVariable, NestedUserFunctionVariable, PartialUserFunctionVariable),
         )
         InliningInstructionTranslator.check_inlineable(func)
         try:
             sub_locals, closure_cells = func.bind_args(parent, args, kwargs)
         except TypeError as e:
+            raise
             # Wrap the general TypeError during bind_args() to the internal ArgsMismatchError with detailed info
             print("WTFMISSINGARG?", func, [arg.python_type() for arg in args], kwargs)
             raise ArgsMismatchError(

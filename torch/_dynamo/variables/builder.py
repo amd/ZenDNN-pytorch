@@ -9,6 +9,7 @@ import operator
 import re
 import types
 import os
+import functools
 from typing import List, NamedTuple, Optional, Union
 
 import torch
@@ -73,7 +74,7 @@ from .dicts import (
     DefaultDictVariable,
     HFPretrainedConfigVariable,
 )
-from .functions import UserFunctionVariable, UserMethodVariable
+from .functions import UserFunctionVariable, UserMethodVariable, PartialUserFunctionVariable
 from .lists import (
     ListVariable,
     NamedTupleVariable,
@@ -314,8 +315,7 @@ class VariableBuilder:
         return result
 
     def _wrap(self, value):  
-        if hasattr(value, '_is_flat_param'):
-            print("NEWTENSOR?", hasattr(value, '_full_param_padded'))      
+        
         make_guards = self.make_guards
 
         # Handle exact type() match
@@ -425,7 +425,13 @@ class VariableBuilder:
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.BUILTIN_MATCH),
-            )            
+            )          
+        elif isinstance(value, functools.partial):
+            return PartialUserFunctionVariable(
+                value,
+                source=self.source,
+                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
         elif value in [
             torch.distributed._functional_collectives.all_gather_tensor,
             torch.distributed._functional_collectives._expand_group,
