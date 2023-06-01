@@ -115,6 +115,9 @@ class OptimStateKeyType(Enum):
     PARAM_ID = auto()
 
 
+def _invoke_stored(mod, *args, **kwargs):
+    return mod(*args, **kwargs)
+
 class FullyShardedDataParallel(nn.Module, _FSDPState):
     """
     A wrapper for sharding module parameters across data parallel workers. This
@@ -458,7 +461,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
             sync_module_states,
             FullyShardedDataParallel,
         )
-        self._fsdp_wrapped_module = module
+        self._stored_fsdp_wrapped_module = module
         if not use_orig_params:
             _check_orig_params_flattened(self, self._ignored_params)
             _register_flat_param(self, self)
@@ -467,6 +470,10 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         # implemented using post-save and pre-load hooks
         _init_state_dict_state(self)
         _register_all_state_dict_hooks(self)
+
+    @property
+    def _fsdp_wrapped_module(self):
+        return self._stored_fsdp_wrapped_module
 
     @property
     def module(self) -> nn.Module:
@@ -787,7 +794,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
                     "Expected `FlatParameter` to be on the compute device "
                     f"{self.compute_device} but got {handle.flat_param.device}",
                 )
-            output = self._fsdp_wrapped_module(*args, **kwargs)
+            output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
             return _post_forward(self, self._handles, reshard_fn, self, unused, output)
 
     @staticmethod

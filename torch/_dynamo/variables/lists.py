@@ -533,6 +533,9 @@ class SizeVariable(TupleVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         options = VariableTracker.propagate(self, args, kwargs.values())
+        if name == "numel":
+            values = [item.as_python_constant() for item in self.items]
+            return ConstantVariable(torch.Size(values).numel())
         if name == "__getitem__":
             assert not kwargs and len(args) == 1
             if config.dynamic_shapes:

@@ -832,6 +832,10 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     value = [_convert(x) for x in item]
                 elif isinstance(item, variables.DeletedVariable):
                     value = None
+                elif isinstance(item, variables.EnumVariable):
+                    return item.as_python_constant()
+                # elif isinstance(item, variables.ConstantVariable):
+                    # return item.as_python_constant()
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
                 # else:

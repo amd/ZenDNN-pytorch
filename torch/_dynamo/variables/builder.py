@@ -1481,6 +1481,7 @@ def wrap_to_fake_tensor_and_record(
 
         for name in param_names:
             if hasattr(e, name):
+                print("SETTINGONFAKE", name, getattr(e, name))
                 setattr(fake_e, name, getattr(e, name))
                 
         return fake_e
