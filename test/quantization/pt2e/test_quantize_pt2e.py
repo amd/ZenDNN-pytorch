@@ -1245,12 +1245,11 @@ class TestQuantizePT2E(QuantizationTestCase):
     def test_qat_conv_bn_relu_numerics(self):
         m = TestHelperModules.ConvWithBNRelu(relu=True)
         example_inputs = (torch.randn(1, 3, 5, 5),)
-        # TODO: verify convert numerics in a future PR
         self._verify_symmetric_qnnpack_qat_numerics(
-            m, example_inputs, is_per_channel=False, verify_convert=False,
+            M(), example_inputs, is_per_channel=False, verify_convert=True,
         )
         self._verify_symmetric_qnnpack_qat_numerics(
-            m, example_inputs, is_per_channel=True, verify_convert=False,
+            M(), example_inputs, is_per_channel=True, verify_convert=True,
         )
 
     def _verify_symmetric_qnnpack_qat_numerics(
