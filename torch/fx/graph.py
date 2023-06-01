@@ -16,6 +16,7 @@ import builtins
 import math
 import warnings
 import inspect
+import os 
 
 __all__ = ["PythonCode", "CodeGen", "Graph"]
 
@@ -1299,6 +1300,9 @@ class Graph:
                       for n in self.nodes]
         print(tabulate(node_specs,
               headers=['opcode', 'name', 'target', 'args', 'kwargs']))
+        with open(f"graphs_{os.getpid()}.txt", 'a') as f:
+            print(tabulate(node_specs,
+              headers=['opcode', 'name', 'target', 'args', 'kwargs']), file=f)
 
     @compatibility(is_backward_compatible=True)
     def lint(self):
