@@ -1039,22 +1039,19 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   }
   new_values_acc.fill_(rop.identity());
 
-  AT_DISPATCH_INDEX_TYPES(columns_map.scalar_type(), "reduce_sparse_csr_dim0_cpu_indices",
-                          [&]() {
-                            index_t* columns_map_ptr = columns_map.data_ptr<index_t>();
-                            scalar_t* values_ptr = values.data_ptr<scalar_t>();
-                            opmath_t* new_values_acc_ptr =
-                                new_values_acc.data_ptr<opmath_t>();
+  int64_t* columns_map_ptr = columns_map.data_ptr<int64_t>();
+  scalar_t* values_ptr = values.data_ptr<scalar_t>();
+  opmath_t* new_values_acc_ptr =
+      new_values_acc.data_ptr<opmath_t>();
 
-                            // There is no point in parallelizing the following for-loop
-                            // because about 99.3% of the computation time is spent in the
-                            // at::_unique call above.
-                            for (int64_t i=0; i<numel; i++) {
-                              index_t col = columns_map_ptr[i];
-                              scalar_t val = values_ptr[i];
-                              new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_t>(val));
-                            }
-                          });
+  // There is no point in parallelizing the following for-loop
+  // because about 99.3% of the computation time is spent in the
+  // at::_unique call above.
+  for (int64_t i=0; i<numel; i++) {
+    int64_t col = columns_map_ptr[i];
+    scalar_t val = values_ptr[i];
+    new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_t>(val));
+  }
   if (need_acc) {
     new_values.copy_(new_values_acc);
   }
