@@ -1585,8 +1585,10 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         assert inst.argval == 0 or inst.argval == 1
         left, right = self.popn(2)
         op = inst.argval
-        self.push(right.call_method(self, "__contains__", [left], {}))
+        pushed = right.call_method(self, "__contains__", [left], {})
+        self.push(pushed)
         if op == 1:
+            print("UNARY NOT", left, right, pushed)
             self.UNARY_NOT(inst)
 
     def LIST_EXTEND(self, inst):

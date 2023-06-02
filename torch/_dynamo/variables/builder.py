@@ -600,13 +600,13 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
             )
         elif isinstance(value, torch.cuda.streams.Stream):
-            unimplemented("CUDAStreamVariable does not currently work soundly.")
-            # return CUDAStreamVariable(
-            #     None,
-            #     value,
-            #     source=self.source,
-            #     guards=self.make_guards(GuardBuilder.ID_MATCH),
-            # )
+            # unimplemented("CUDAStreamVariable does not currently work soundly.")
+            return CUDAStreamVariable(
+                None,
+                value,
+                source=self.source,
+                guards=self.make_guards(GuardBuilder.ID_MATCH),
+            )
         elif issubclass(type(value), type):
             # TODO(whc) the following seems preferable but breaks some tests, debug
             # elif inspect.isclass(value):
@@ -805,11 +805,21 @@ class VariableBuilder:
             #
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
+            name = "fsdp_module_" + self.name
+            name = re.sub(r"[^a-zA-Z0-9]+", "_", name)
+            proxy = self.tx.output.root_tracer.create_graph_input(
+                name, type(value)
+            )
             result = FSDPManagedNNModuleVariable(
                 value,
+                proxy,
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
+            grapharg = GraphArg(self.get_source(), value, False, value)
+            proxy.node.meta["grapharg"] = grapharg
+            proxy.node.meta["example_value"] = value
+            print("SOURCE FOR FSDP:", self.get_source())
             return result
             # return self.tx.output.side_effects.track_object_existing(
                 # self.source, value, result
@@ -1283,7 +1293,7 @@ def wrap_fx_proxy_cls(
         return SymNodeVariable(proxy, example_value, **options)
     elif proxy.node.target in [torch.cuda.streams.Stream, torch.cuda.current_stream]:
         proxy.node.meta["example_value"] = example_value
-        unimplemented("CUDAStreamVariable does not currently work soundly.")
+        # unimplemented("CUDAStreamVariable does not currently work soundly.")
         return CUDAStreamVariable(proxy, example_value, **options)
     elif config.numpy_ndarray_as_tensor and isinstance(example_value, torch_np.ndarray):
         proxy.node.meta["example_value"] = example_value
@@ -1294,6 +1304,10 @@ def wrap_fx_proxy_cls(
     ]:
         proxy.node.meta["example_value"] = example_value
         return ConstantVariable(example_value, **options)
+    elif hasattr(example_value, '_is_fsdp_managed_module'):
+        unimplemented("Cannot return an FSDP module")
+        # assert "source" in options and options["source"] is not None
+        # return VariableBuilder(tx, FunctionSource("inlinemodule"))(example_value)
     else:
         unimplemented(
             "torch.* op returned non-Tensor "

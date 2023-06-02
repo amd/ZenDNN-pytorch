@@ -777,7 +777,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     compilation.
     """
 
-    def __init__(self, value, **kwargs):
+    def __init__(self, value, proxy, **kwargs):
         source = kwargs.get("source", None)
         assert (
             source is not None
@@ -789,9 +789,18 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         else:
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
             self.source = NotNNModuleSource(source)
+        self.proxy = proxy
 
     def as_python_constant(self):
         return self.value
+
+    def as_proxy(self):
+        return self.proxy
+        # unimplemented("Proxy access on FSDPManagedNNModuleVariable")
+
+    def var_getattr(self, tx, name):
+        print("ATTEMPT GETATTR?", name, tx.output.side_effects.id_to_variable, tx.output.side_effects.store_attr_mutations)
+        return super().var_getattr(tx, name)
 
     def call_method(
         self,
@@ -800,6 +809,23 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        def wrap_values(items):
+            result = []
+            for name, submod in items:
+                result.append(
+                    tx.output.register_attr_or_module(
+                        self.value,
+                        "",
+                        name,
+                        source=NNModuleSource(AttrSource(self.source, name)),
+                    )
+                )
+            result = variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+            print("RESULT IS", result.items)
+            return result
+        
+        if name == "__dict__":
+            return variables.ConstDictVariable(self.value.__dict__, type(self.value.__dict__), mutable_local=MutableLocal())
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()
@@ -834,8 +860,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     value = None
                 elif isinstance(item, variables.EnumVariable):
                     return item.as_python_constant()
-                # elif isinstance(item, variables.ConstantVariable):
-                    # return item.as_python_constant()
+                elif isinstance(item, variables.ConstantVariable):
+                    return item.as_python_constant()
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
                 # else:
@@ -849,4 +875,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             else:
                 setattr(self.value, key, value)
             return variables.ConstantVariable(None)
+        elif name == "children":
+            assert not (args or kwargs)
+            return wrap_values(self.value.named_children())
         return super().call_method(tx, name, args, kwargs)

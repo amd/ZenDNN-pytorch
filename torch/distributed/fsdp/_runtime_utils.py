@@ -168,9 +168,28 @@ def _lazy_init(
     # The following logic is only run on the root FSDP instance since it will
     # set `_is_root=False` for the non-root instances
     state._is_root = True
+    assert state._is_root
+    assert state._device_handle.is_available()
+    # Stream for unshard logic, including allocating the all-gather destination
+    # tensors and the all-gathers themselves.
+    
+    state._streams["unshard"] = state._device_handle.Stream()
+    # Stream for overlapping gradient reduction with the backward pass gradient
+    # computation.
+    state._streams["post_backward"] = state._device_handle.Stream()
+    # Stream for pre-unshard logic, namely allocations and writes for CPU
+    # offloading (H2D copy) and mixed precision (low precision cast).
+    state._streams["pre_unshard"] = state._device_handle.Stream()
+    # Default stream for computation
+    state._streams["default"] = state._device_handle.current_stream()
+    # state._stream_to_name = {
+    #     state._device_handle.current_stream(): "default",
+    #     state._streams["unshard"]: "unshard",
+    #     state._streams["pre_unshard"]: "pre_unshard",
+    #     state._streams["post_backward"]: "post_backward",
+    # }
     _assert_in_training_states(state, [TrainingState.IDLE])
     _check_flat_params_on_expected_device(state, root_module)
-    _init_streams(state)
     buffers, buffer_dtypes = _get_buffers_and_dtypes_for_computation(state, root_module)
     _cast_buffers_to_dtype_and_device(buffers, buffer_dtypes, state.compute_device)
     state._exec_order_data.init(state, root_module, state.process_group)
@@ -255,7 +274,7 @@ def _share_state_and_init_handle_attrs(
         )
         fsdp_state._is_root = False
         fsdp_state._streams = root_state._streams
-        fsdp_state._stream_to_name = root_state._stream_to_name
+        # fsdp_state._stream_to_name = root_state._stream_to_name
         fsdp_state._exec_order_data = root_state._exec_order_data
         fsdp_state._free_event_queue = root_state._free_event_queue
         fsdp_state._handles_prefetched = root_state._handles_prefetched
@@ -269,33 +288,6 @@ def _share_state_and_init_handle_attrs(
             )
 
 
-@no_type_check
-def _init_streams(
-    state: _FSDPState,
-) -> _FSDPState:
-    """
-    Initializes CUDA streams for overlapping communication, computation, and
-    data transfers. The streams should be shared across FSDP instances.
-    """
-    assert state._is_root
-    assert state._device_handle.is_available()
-    # Stream for unshard logic, including allocating the all-gather destination
-    # tensors and the all-gathers themselves.
-    state._streams["unshard"] = state._device_handle.Stream()
-    # Stream for overlapping gradient reduction with the backward pass gradient
-    # computation.
-    state._streams["post_backward"] = state._device_handle.Stream()
-    # Stream for pre-unshard logic, namely allocations and writes for CPU
-    # offloading (H2D copy) and mixed precision (low precision cast).
-    state._streams["pre_unshard"] = state._device_handle.Stream()
-    # Default stream for computation
-    state._streams["default"] = state._device_handle.current_stream()
-    state._stream_to_name = {
-        state._device_handle.current_stream(): "default",
-        state._streams["unshard"]: "unshard",
-        state._streams["pre_unshard"]: "pre_unshard",
-        state._streams["post_backward"]: "post_backward",
-    }
 
 
 @no_type_check

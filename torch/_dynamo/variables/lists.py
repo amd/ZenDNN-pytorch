@@ -373,6 +373,33 @@ class SetVariable(CommonListMethodsVariable):
             items.add(item)
             result = SetVariable(list(items), mutable_local=self.mutable_local, regen_guards=False, **options)
             return tx.replace_all(self, result)
+        if name == "__contains__":
+            print("SET CONTAINS?")
+            assert len(args) == 1
+            assert not kwargs
+
+            search = args[0]
+            if check_constant_args(args, {}) and search.is_python_constant():
+                result = any(
+                    x.as_python_constant() == search.as_python_constant()
+                    for x in self.items
+                )
+                return variables.ConstantVariable(result, **options)
+
+            from .builtin import BuiltinVariable
+
+            result = None
+            for x in self.items:
+                check = BuiltinVariable(operator.eq).call_function(tx, [x, search], {})
+                print("SET RESULT CHECK?", check)
+                if result is None:
+                    result = check
+                else:
+                    result = BuiltinVariable(operator.or_).call_function(
+                        tx, [check, result], {}
+                    )
+            if result is None:
+                return ConstantVariable(False)
         else:
             return super().call_method(tx, name, args, kwargs)
 
@@ -433,6 +460,16 @@ class DequeVariable(CommonListMethodsVariable):
                 DequeVariable(list(items), regen_guards=False, **options),
             )
             return result
+        elif name == "appendleft" and self.mutable_local:
+            assert not kwargs
+            return tx.replace_all(
+                self,
+                DequeVariable(
+                    [args[0]] + list(self.items),
+                    regen_guards=False,
+                    **options,
+                ),
+            )
         else:
             return super().call_method(tx, name, args, kwargs)
 

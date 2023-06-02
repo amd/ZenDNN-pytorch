@@ -443,6 +443,7 @@ class BuiltinVariable(VariableTracker):
     ) -> "VariableTracker":
         from .builder import wrap_fx_proxy, wrap_fx_proxy_cls
 
+        print("CALLED WITH", self, args)
         constant_args = check_constant_args(args, kwargs)
         tensor_args = self.tensor_args(*args, **kwargs)
         unspec_python_args = self.unspec_python_args(*args, **kwargs)
@@ -1063,7 +1064,7 @@ class BuiltinVariable(VariableTracker):
                 # TODO(voz): Wtf? device none should be const, but its raw none.
                 if result is None:
                     result = ConstantVariable(None)
-                print(f"RESULT {obj}.{name} is {result}")
+                print(f"RESULT {obj}.{name} is {result} {result.items if isinstance(result, variables.ConstDictVariable) else ''}")
                 return (
                     result.clone(source=source).add_options(options)
                 )
@@ -1105,6 +1106,8 @@ class BuiltinVariable(VariableTracker):
     ):
         from .tensor import FlatParamVariable
 
+        if isinstance(obj, variables.TensorVariable):
+            return obj.call_method(tx, "__setattr__", [name_var, val], {})
         if isinstance(obj, FlatParamVariable):
             print("attempting flat param here", obj.mutable_local, tx.output.side_effects.is_attribute_mutation(obj), name_var.is_python_constant())
         if isinstance(obj, variables.DataClassVariable):

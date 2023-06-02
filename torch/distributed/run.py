@@ -573,7 +573,7 @@ def get_args_parser() -> ArgumentParser:
     parser.add_argument(
         "--master-port",
         "--master_port",
-        default=29500,
+        default=29501,
         type=int,
         action=env,
         help="Port on the master node (rank 0) to be used for communication during distributed "

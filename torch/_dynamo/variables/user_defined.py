@@ -496,8 +496,8 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         options["guards"].add(
             AttrSource(self.source, name).make_guard(GuardBuilder.HASATTR)
         )
-        if self._check_for_getattribute() or self._check_for_getattr():
-            unimplemented(f"hasattr with custom __getattr__ {self._check_for_getattr()} {inspect.getattr_static(type(self.value), '__getattr__')}", )
+        # if self._check_for_getattribute() or self._check_for_getattr():
+            # unimplemented(f"hasattr with custom __getattr__ {self._check_for_getattr()} {inspect.getattr_static(type(self.value), '__getattr__')}", )
 
         try:
             self._getattr_static(name)
@@ -577,7 +577,9 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
 
 class FSDPStateVariable(UserDefinedObjectVariable):
     def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("FSDPState", name)
         if name == "__setattr__":
+            print("FSDPSTATESET", args)
             assert len(args) == 2
             key = args[0].as_python_constant()
             value_obj = args[1]

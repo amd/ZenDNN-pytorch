@@ -76,8 +76,12 @@ class ConstDictVariable(VariableTracker):
         options = VariableTracker.propagate(self, args, kwargs.values())
         val = self.items
 
+        print("GETTING",args[0].as_python_constant(), self.items, id(self),  tx.output.side_effects.id_to_variable, tx.output.side_effects.store_attr_mutations)
         if name == "__getitem__":
-            return self.getitem_const(args[0])
+            try:
+                return self.getitem_const(args[0])
+            except:
+                unimplemented(f"Wtf? missing key? {args[0].as_python_constant()}")
 
         elif name == "items":
             assert not (args or kwargs)
@@ -138,10 +142,15 @@ class ConstDictVariable(VariableTracker):
             if args[1].mutable_local is not None:
                 new_rec_contains.add(args[1].mutable_local)
 
+            print("SETITEM", args[0].as_python_constant(), args[1], newval)
+            if isinstance(args[1], variables.CUDAStreamVariable):
+                unimplemented("This doen't work")
             return tx.replace_all(
                 self,
                 self.modifed(newval, new_rec_contains, **options),
             )
+        elif name == "__setitem__":
+            unimplemented(f"INVALID __setitem__ valid key? {ConstDictVariable.is_valid_key(args[0])} mutable local? {self.mutable_local}")
         elif (
             name in ("pop", "get")
             and args
@@ -275,7 +284,6 @@ class DefaultDictVariable(ConstDictVariable):
 
         if name == "__getitem__":
             k = ConstDictVariable.get_key(args[0])
-
             if k in self.items:
                 return self.getitem_const(args[0])
             else:
