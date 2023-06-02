@@ -414,6 +414,15 @@ class VariableBuilder:
                 source=self.source,
                 guards=make_guards(GuardBuilder.ID_MATCH),
             )
+        elif istype(value, torch.distributed.fsdp._common_utils._FSDPState):
+            result = FSDPStateVariable(
+                value,
+                source=self.source,
+                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+            )
+            return self.tx.output.side_effects.track_object_existing(
+                self.source, value, result
+            )
         elif isinstance(value, enum.Enum):
             return EnumVariable(
                 value=value,
@@ -443,15 +452,6 @@ class VariableBuilder:
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
-            )
-        elif istype(value, torch.distributed.fsdp._common_utils._FSDPState):
-            result = FSDPStateVariable(
-                value,
-                source=self.source,
-                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
-            )
-            return self.tx.output.side_effects.track_object_existing(
-                self.source, value, result
             )
         elif istype(value, torch.distributed.fsdp.flat_param.FlatParamHandle):
             result = FlatParamHandleVariable(

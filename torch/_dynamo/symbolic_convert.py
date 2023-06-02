@@ -1296,6 +1296,19 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
 
     BUILD_TUPLE_UNPACK_WITH_CALL = BUILD_TUPLE_UNPACK
 
+    def GET_YIELD_FROM_ITER(self, inst):
+        tos = self.stack[-1]
+        if not isinstance(tos, ListIteratorVariable):
+            return self.GET_ITER(inst)
+
+    def YIELD_FROM(self, inst):
+        print("GOT YIELD FROM?", inst)
+        tos = self.stack[-1]
+        if isinstance(tos, ConstantVariable) and tos.value == None:
+            self.pop()
+            return
+        return self.FOR_ITER(inst)
+
     def BUILD_MAP(self, inst):
         items = self.popn(inst.argval * 2)
         options = VariableTracker.propagate(items)

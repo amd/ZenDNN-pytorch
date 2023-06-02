@@ -522,6 +522,9 @@ class NestedUserFunctionVariable(BaseUserFunctionVariable):
             assert isinstance(annotations, dict)
             func.__annotations__ = annotations
         return func
+    
+    def as_python_constant(self):
+        return self.get_function()
 
     def has_closure(self):
         return self.closure is not None

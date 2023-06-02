@@ -92,6 +92,7 @@ class _UninitializedDeviceHandle(_FSDPDeviceHandle):
 
 class _FSDPState(_State):
     def __init__(self) -> None:
+        super(_FSDPState, self).__init__()
         # TODO: Move all the attributes to this class to enable typing for
         # FSDP/fully_shard.
         self._ignored_modules: Set[nn.Module] = set()
@@ -119,6 +120,7 @@ class _FSDPState(_State):
         # Save these static lists to avoid the repeated tree traversals
         self._all_fsdp_states: List[_FSDPState] = []
         self._all_handles: List[flat_param_file.FlatParamHandle] = []
+        print("Made FSDP State")
 
 
 def _get_module_fsdp_state(module: nn.Module) -> Optional[_FSDPState]:

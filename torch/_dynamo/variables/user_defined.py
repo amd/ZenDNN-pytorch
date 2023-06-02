@@ -510,6 +510,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         return variables.GetAttrVariable(self, name, **options)
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
+        print("HASATTR?", self, name)
         if tx.output.side_effects.is_attribute_mutation(self):
             try:
                 result = tx.output.side_effects.load_attr(self, name, deleted_ok=True)
@@ -605,6 +606,7 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
 
 class FSDPStateVariable(UserDefinedObjectVariable):
     def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("METHOD ON STATE", name)
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()

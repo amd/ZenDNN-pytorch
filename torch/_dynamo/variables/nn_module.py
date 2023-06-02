@@ -799,6 +799,29 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         print("FSDPManagedNNModuleVariableATTR", name)
         return super().var_getattr(tx, name)
 
+    def call_hasattr(self, tx, name: str) -> "VariableTracker":
+        print("HASATTR?", self, name)
+        
+        if tx.output.side_effects.is_attribute_mutation(self):
+            try:
+                result = tx.output.side_effects.load_attr(self, name, deleted_ok=True)
+                return variables.ConstantVariable(
+                    not isinstance(result, variables.DeletedVariable)
+                ).add_options(self, result)
+            except KeyError:
+                pass
+        if not self.source:
+            unimplemented("hasattr no source")
+        options = VariableTracker.propagate(self)
+        options["guards"].add(
+            AttrSource(self.source, name).make_guard(GuardBuilder.HASATTR)
+        )
+        try:
+            getattr(self.value, name)
+            return variables.ConstantVariable(True, **options)
+        except AttributeError:
+            return variables.ConstantVariable(False, **options)
+
     def call_method(
         self,
         tx,
@@ -807,6 +830,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FSDPManagedNNModuleVariableMETHOD", name)
+        options = VariableTracker.propagate([self])
+
         def wrap_values(items):
             result = []
             for name, submod in items:
@@ -814,6 +839,14 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     FSDPManagedNNModuleVariable(value=submod, source=AttrSource(self.source, name))
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+
+        def named_embed(name, obj):
+            return variables.TupleVariable(
+                [
+                    variables.ConstantVariable(name, **options),
+                    FSDPManagedNNModuleVariable(value=obj, source=AttrSource(self.source, name))
+                ]
+            )
 
 
         def get_kwargs(*names):
@@ -829,8 +862,14 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
         if name == "children":
             return wrap_values(self.value.named_children())
-        # if name == "_named_members":
-            # return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
+        if name == "named_children":
+            result = []
+            for name, submod in self.value.named_children():
+                result.append(named_embed(name, submod))
+            return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+
+        if name == "_named_members":
+            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()
@@ -867,6 +906,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     return item.as_python_constant()
                 elif isinstance(item, variables.ConstantVariable):
                     return item.as_python_constant()
+                elif isinstance(item, variables.CUDAStreamVariable):
+                    return item.value
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
                 # else:

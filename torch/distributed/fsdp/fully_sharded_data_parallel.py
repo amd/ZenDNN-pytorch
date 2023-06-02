@@ -470,6 +470,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         # implemented using post-save and pre-load hooks
         _init_state_dict_state(self)
         _register_all_state_dict_hooks(self)
+        print("INITIALIZED FSDP", self.__dict__)
 
     @property
     def _fsdp_wrapped_module(self):

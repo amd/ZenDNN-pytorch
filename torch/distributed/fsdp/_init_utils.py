@@ -369,7 +369,7 @@ def _init_core_state(
     state.training_state = TrainingState.IDLE
     state._is_root = None
     _streams: Dict[str, torch.cuda.Stream] = {}
-    state._streams = _streams
+    # state._streams = _streams
     # _stream_to_name: Dict[torch.cuda.Stream, str] = {}
     # state._stream_to_name = _stream_to_name
     state._free_event_queue = _FreeEventQueue()
