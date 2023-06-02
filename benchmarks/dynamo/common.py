@@ -648,10 +648,10 @@ def speedup_experiment(args, model_iter_fn, model, example_inputs, **kwargs):
                 profiler.ProfilerActivity.CPU,
             ],
             record_shapes=True,
-            profile_memory=True,
-            with_stack=True,
-            with_flops=False,
-            with_modules=True,
+            # profile_memory=True,
+            # with_stack=True,
+            # with_flops=False,
+            # with_modules=True,
             on_trace_ready=profiler.tensorboard_trace_handler(profile_folder)
             ) as prof:
         frozen_model_iter_fn = torch._dynamo.run(model_iter_fn)
