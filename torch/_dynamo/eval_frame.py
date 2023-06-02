@@ -1239,9 +1239,15 @@ class TorchPatcher:
         torch.onnx.export_to_pretty_string = disable(torch.onnx.export_to_pretty_string)
         torch.distributions.Distribution.set_default_validate_args(False)
 
+        torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored = torch._dynamo.allow_in_graph(torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored)
         # torch._dynamo.allow_in_graph(torch.distributed.fsdp.flat_param._check_sharded)
         # torch.distributed.utils._free_storage._dynamo_marked_constant = True
+        torch.distributed.fsdp._traversal_utils._composable._dynamo_marked_constant = True
+        torch.distributed.fsdp._init_utils._get_ignored_modules._dynamo_marked_constant = True
         torch.distributed.fsdp.flat_param._check_sharded._dynamo_marked_constant = True
+        torch.distributed.fsdp._common_utils._get_sharding_strategy._dynamo_marked_constant = True
+        torch.distributed.fsdp.flat_param._check_sharded._dynamo_marked_constant = True
+        torch.distributed.fsdp._common_utils._get_module_fsdp_state._dynamo_marked_constant = True
         torch.distributed.fsdp._common_utils._get_sharding_strategy._dynamo_marked_constant = True
         # torch.distributed.fsdp._utils._same_storage_as_data_ptr._dynamo_marked_constant = True
 

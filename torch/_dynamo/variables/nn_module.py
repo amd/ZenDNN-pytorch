@@ -800,6 +800,16 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        def wrap_values(items):
+            result = []
+            for name, submod in items:
+                result.append(
+                    FSDPManagedNNModuleVariable(value=submod, source=AttrSource(self.source, name))
+                )
+            return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+
+        if name == "children":
+            return wrap_values(self.value.named_children())
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()
@@ -834,8 +844,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     value = None
                 elif isinstance(item, variables.EnumVariable):
                     return item.as_python_constant()
-                # elif isinstance(item, variables.ConstantVariable):
-                    # return item.as_python_constant()
+                elif isinstance(item, variables.ConstantVariable):
+                    return item.as_python_constant()
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
                 # else:

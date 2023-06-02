@@ -216,6 +216,7 @@ class UserFunctionVariable(BaseUserFunctionVariable):
                 for k, v in self.get_default_kwargs().items()
             }
 
+        print("BINDING?", fake_func, args, kwargs)
         bound = inspect.signature(fake_func).bind(*args, **kwargs)
         bound.apply_defaults()
         result = dict(bound.arguments.items())

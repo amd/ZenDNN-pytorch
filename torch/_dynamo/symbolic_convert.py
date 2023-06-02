@@ -2285,6 +2285,7 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
         except Exception as e:
             print("FAILED INLINING", e)
             log.debug("FAILED INLINING %s", code)
+            exit(-1)
             raise
         assert tracer.symbolic_result is not None
         func.export_freevars(parent, tracer)
