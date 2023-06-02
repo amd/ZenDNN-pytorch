@@ -94,7 +94,8 @@ class BaseListVariable(VariableTracker):
         elif name == "__contains__":
             assert len(args) == 1
             assert not kwargs
-
+            if len(self.items) == 0:
+                return ConstantVariable(False)
             search = args[0]
             if check_constant_args(args, {}) and search.is_python_constant():
                 result = any(

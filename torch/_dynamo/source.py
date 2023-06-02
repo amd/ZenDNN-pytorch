@@ -16,6 +16,7 @@ _GUARD_SOURCE_NN_MODULE = {
     GuardSource.GLOBAL: GuardSource.GLOBAL_NN_MODULE,
     GuardSource.LOCAL_NN_MODULE: GuardSource.LOCAL_NN_MODULE,
     GuardSource.GLOBAL_NN_MODULE: GuardSource.GLOBAL_NN_MODULE,
+    GuardSource.CONSTANT: GuardSource.CONSTANT
 }
 
 _GUARD_SOURCE_FSDP_MODULE = {
@@ -425,6 +426,7 @@ class NNModuleSource(Source):
         return self.inner.reconstruct(codegen)
 
     def guard_source(self):
+        print("GOING IN", self.inner.guard_source())
         return _GUARD_SOURCE_NN_MODULE[self.inner.guard_source()]
 
     def name(self):

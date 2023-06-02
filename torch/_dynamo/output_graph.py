@@ -570,7 +570,8 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                     f"but were detected in your model and will be silently ignored. {nnmodule_doc_url_msg}",
                 )
 
-            options["guards"].add(source.make_guard(GuardBuilder.NN_MODULE))
+            if not is_constant_source(source):
+                options["guards"].add(source.make_guard(GuardBuilder.NN_MODULE))
 
             def wrap_name(module_key):
                 return NNModuleVariable(type(target), module_key, **options)
