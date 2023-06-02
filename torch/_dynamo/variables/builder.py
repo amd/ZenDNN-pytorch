@@ -247,7 +247,7 @@ class VariableBuilder:
                 (torch.Tensor, torch.nn.Parameter, torch._subclasses.FakeTensor),
                 cls.wrap_tensor,
             ),
-            ((tuple, list, odict_values), cls.wrap_listlike),
+            ((tuple, list, odict_values, set), cls.wrap_listlike),
             (tuple_iterator, cls.wrap_tuple_iterator),
             ((slice, range), cls.wrap_slice_range),
             (
@@ -402,6 +402,8 @@ class VariableBuilder:
             return self.tx.output.side_effects.track_dict(self.source, value, result)
         elif isinstance(value, torch.nn.Module):
             return self.wrap_module(value)
+        # elif istype(value, set):
+        #     return SetVariable(list(value), mutable_local=MutableLocal())
         elif ConstantVariable.is_literal(value):  # non-atomic literals
             return self.wrap_literal(value)
         elif istype(value, frozenset) and (
@@ -692,11 +694,11 @@ class VariableBuilder:
             )
         )
 
-    def wrap_listlike(self, value: Union[tuple, list, odict_values, NamedTuple]):
+    def wrap_listlike(self, value: Union[tuple, list, set, odict_values, NamedTuple]):
         # One can index a tensor with a list/tuple. Therefore, we need to
         # have a stricter match.
         if (
-            istype(value, (tuple, list))
+            istype(value, (tuple, list, set))
             and all(
                 isinstance(x, int) or is_numpy_int_type(x) or x is None for x in value
             )

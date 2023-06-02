@@ -796,11 +796,17 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         return self.value
 
     def var_getattr(self, tx, name):
+        if "." in name:
+            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
+            raise RuntimeError(f"What the hell is {name}")
         print("FSDPManagedNNModuleVariableATTR", name)
         return super().var_getattr(tx, name)
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
         print("HASATTR?", self, name)
+        if "." in name:
+            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
+            raise RuntimeError(f"What the hell is {name}")
         
         if tx.output.side_effects.is_attribute_mutation(self):
             try:
@@ -830,6 +836,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FSDPManagedNNModuleVariableMETHOD", name)
+        if "." in name:
+            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
+            raise RuntimeError(f"What the hell is {name}")
         options = VariableTracker.propagate([self])
 
         def wrap_values(items):
@@ -850,7 +859,6 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
 
         def get_kwargs(*names):
-            # assert_all_args_kwargs_const()
             fn = getattr(self.value, name)
             bound_args = inspect.signature(fn).bind(
                 *([x.as_python_constant() for x in args]),
@@ -858,7 +866,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             )
             bound_args.apply_defaults()
             bound_args = bound_args.arguments
-            return {k: bound_args[k] for k in names}
+            return {k: bound_args[k] for k in names if k in bound_args}
 
         if name == "children":
             return wrap_values(self.value.named_children())
@@ -867,7 +875,12 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             for name, submod in self.value.named_children():
                 result.append(named_embed(name, submod))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-
+        if name == "named_parameters":
+            result = []
+            for name, param in self.value.named_parameters(
+                **get_kwargs("prefix", "recurse")
+            ):
+                result.append(named_embed(name, param))
         if name == "_named_members":
             return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
         if name == "__setattr__":
@@ -899,7 +912,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     # )
                     return value
                 elif item.has_unpack_var_sequence(tx):
-                    value = [_convert(x) for x in item]
+                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
                 elif isinstance(item, variables.DeletedVariable):
                     value = None
                 elif isinstance(item, variables.EnumVariable):
@@ -907,6 +920,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                 elif isinstance(item, variables.ConstantVariable):
                     return item.as_python_constant()
                 elif isinstance(item, variables.CUDAStreamVariable):
+                    return item.value
+                elif isinstance(item, variables.UserDefinedObjectVariable):
                     return item.value
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")

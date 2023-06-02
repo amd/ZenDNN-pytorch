@@ -172,9 +172,9 @@ def _lazy_init(
     _check_flat_params_on_expected_device(state, root_module)
     _init_streams(state)
     buffers, buffer_dtypes = _get_buffers_and_dtypes_for_computation(state, root_module)
+    _share_state_and_init_handle_attrs(state, root_module)
     _cast_buffers_to_dtype_and_device(buffers, buffer_dtypes, state.compute_device)
     state._exec_order_data.init(state, root_module, state.process_group)
-    _share_state_and_init_handle_attrs(state, root_module)
     return state
 
 
