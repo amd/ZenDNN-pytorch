@@ -311,6 +311,48 @@ def _get_conv_bn_getitem_nodes(nodes: List[Node]) -> Tuple[Node, Node, Node]:
     assert getitem_node is not None
     return (conv_node, bn_node, getitem_node)
 
+def _node_is_input_to_matched_pattern(original_node: Node) -> bool:
+    """
+    Return whether the node is an input to the matched pattern in the original graph.
+
+    We expect the subgraph rewriter to erase the non-literal args of the matched nodes.
+    However, this is not done for nodes that are inputs to the matched pattern, since
+    these nodes do not need to be replaced. We wish to filter out these input nodes
+    since they do not need metadata copying. For example, in the following pattern:
+
+      getitem_input -> conv -> bn -> getitem
+
+    The args of the above nodes should look like:
+
+      getitem_input(some_node, 0)
+      conv(None, None, None, ...)         # args: input, weight, bias
+      bn(None, None, None, ...)           # args: input, weight, bias
+      getitem(None, 0)
+
+    In this example, this function will return True only for `getitem_input`.
+    """
+    return any(isinstance(a, Node) for a in original_node.args)
+
+def _copy_over_literal_conv_args(original_node: Node, new_node: Node):
+    """
+    Copy over literal args in conv, such as stride and padding, from the matched node
+    in the original graph to its replacement in the new graph.
+
+    This is needed due to the following limitation in the subgraph rewriter when used
+    with dynamo export: literal (non-tensor) args are not supported in the match and
+    replacement patterns. This is because dynamo export automatically inlines these
+    literal args, making them dead placeholder nodes. In the future, we should check
+    if dynamo export can optionally disable this inlining, or if subgraph rewriter
+    can do the copying for us. See https://github.com/pytorch/pytorch/issues/100419.
+
+    Note: Unlike other tensor args like conv weights and biases, literal args are
+    preserved in the original nodes after replacement, so we can access them here.
+    """
+    assert original_node.target == torch.ops.aten.convolution.default
+    assert new_node.target == torch.ops.aten.convolution.default
+    # x, weight, bias, [stride, padding, dilation, transposed, output_padding, groups]
+    new_node.args = new_node.args[:3] + original_node.args[3:]
+
 def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
     """
     Given a graph of decomposed aten ops, replace the (conv + bn) pattern with
@@ -367,8 +409,8 @@ def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
     #   (1) Copy over metadata from original subgraph. This ensures the stack traces
     #       and annotations are preserved in the new subgraph
     #
-    #   (2) Copy over constant args for conv from the original subgraph
-    #       TODO: do this for constant args for batchnorm as well
+    #   (2) Copy over literal args for conv from the original subgraph
+    #       TODO: do this for literal args for batchnorm as well
     #
     # In the future, we should try to push as much of this functionality into the
     # subgraph rewriter as possible, so we don't have to manually copy anything over.
@@ -379,34 +421,20 @@ def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
             _get_conv_bn_getitem_nodes(r.replacements)
 
         # Copy over metadata for all three nodes in [conv - bn - getitem]
-        # Also copy over constant args for conv
+        # Also copy over literal args for conv
         for match_pattern_node, original_node in r.nodes_map.items():
             # bias can be None
-            if original_node is None:
-                continue
-            # We expect the subgraph rewriter to erase the non-literal args of the matched nodes.
-            # However, this is not done for placeholder nodes, since these nodes do not need to
-            # be replaced. Here we filter out these placeholder nodes since they do not need
-            # metadata copying. E.g. we want to filter out `getitem_placeholder` in this pattern:
-            #
-            #   getitem_placeholder -> conv -> bn -> getitem
-            #
-            if any(isinstance(a, Node) for a in original_node.args):
+            if original_node is None or _node_is_input_to_matched_pattern(original_node):
                 continue
             if original_node.target == torch.ops.aten.convolution.default:
+                _copy_over_literal_conv_args(original_node, replacement_conv_node)
                 replacement_conv_node.meta = original_node.meta
-                # Note: Unlike other tensor args like conv weights and biases, literal args are
-                # preserved in the original nodes after replacement, so we can access them here
-                # x, weight, bias, [stride, padding, dilation, transposed, output_padding, groups]
-                replacement_conv_node.args = replacement_conv_node.args[:3] + original_node.args[3:]
-
                 # original annotation is referring to the node object in the graph
                 # after rewrite we'll need to update this mapping (input_qspec_map)
                 # update quantization_annotation
                 original_input_qspec_map = original_node.meta["quantization_annotation"].input_qspec_map
                 if "quantization_annotation" not in original_node.meta:
                     continue
-
                 input_qspec_map = {}
                 # get the list of configs, it should be ordered as input, weight, bias
                 # note: this is really hacky, we need a better solution, hopefully
@@ -417,10 +445,8 @@ def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
                 # weight
                 input_qspec_map[replacement_conv_node.args[1]] = all_configs[1][1]
                 # bias
-                print("lens:", len(replacement_conv_node.args), len(all_configs))
                 if len(replacement_conv_node.args) > 2 and len(all_configs) > 2:
                     input_qspec_map[replacement_conv_node.args[2]] = all_configs[2][1]
-
                 replacement_conv_node.meta["quantization_annotation"].input_qspec_map = input_qspec_map
             if original_node.target == torch.ops.aten._native_batch_norm_legit.default:
                 replacement_bn_node.meta = original_node.meta
@@ -515,6 +541,14 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
 
         # fold bn weights into conv
         _fold_bn_weights_into_conv_node(conv_node, conv_weight, conv_bias, bn_node, m)
+
+        # Copy over literal args for conv
+        for _, original_node in r.nodes_map.items():
+            # bias can be None
+            if original_node is None or _node_is_input_to_matched_pattern(original_node):
+                continue
+            if original_node.target == torch.ops.aten.convolution.default:
+                _copy_over_literal_conv_args(original_node, conv_node)
 
     m.graph.eliminate_dead_code()
     m.recompile()
