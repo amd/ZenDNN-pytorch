@@ -18,7 +18,8 @@ from .tensor import TensorVariable
 class ConstDictVariable(VariableTracker):
     def __init__(self, items, user_cls, recursively_contains=None, **kwargs):
         super().__init__(recursively_contains=recursively_contains, **kwargs)
-
+        # if "mutable_local" not in kwargs:
+            # raise RuntimeError("wheres my mutable??")
         self.guards.update(VariableTracker.propagate(items.values())["guards"])
         self.items = items
         self.user_cls = user_cls
@@ -142,6 +143,8 @@ class ConstDictVariable(VariableTracker):
                 self,
                 self.modifed(newval, new_rec_contains, **options),
             )
+        elif name == "__setitem__":
+            unimplemented(f"FAILEDTOSET {type(self)} {ConstDictVariable.is_valid_key(args[0])}, {self.mutable_local} {self.items}, {args}")
         elif (
             name in ("pop", "get")
             and args

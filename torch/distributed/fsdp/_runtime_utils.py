@@ -255,7 +255,7 @@ def _share_state_and_init_handle_attrs(
         )
         fsdp_state._is_root = False
         fsdp_state._streams = root_state._streams
-        fsdp_state._stream_to_name = root_state._stream_to_name
+        # fsdp_state._stream_to_name = root_state._stream_to_name
         fsdp_state._exec_order_data = root_state._exec_order_data
         fsdp_state._free_event_queue = root_state._free_event_queue
         fsdp_state._handles_prefetched = root_state._handles_prefetched
@@ -290,12 +290,12 @@ def _init_streams(
     state._streams["pre_unshard"] = state._device_handle.Stream()
     # Default stream for computation
     state._streams["default"] = state._device_handle.current_stream()
-    state._stream_to_name = {
-        state._device_handle.current_stream(): "default",
-        state._streams["unshard"]: "unshard",
-        state._streams["pre_unshard"]: "pre_unshard",
-        state._streams["post_backward"]: "post_backward",
-    }
+    # state._stream_to_name = {
+    #     state._device_handle.current_stream(): "default",
+    #     state._streams["unshard"]: "unshard",
+    #     state._streams["pre_unshard"]: "pre_unshard",
+    #     state._streams["post_backward"]: "post_backward",
+    # }
 
 
 @no_type_check

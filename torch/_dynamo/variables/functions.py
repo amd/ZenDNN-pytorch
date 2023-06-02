@@ -14,7 +14,7 @@ from ..bytecode_transformation import create_call_function, create_rot_n
 from ..exc import unimplemented
 from ..source import AttrSource, ConstantSource, DefaultsSource, GetItemSource
 from ..utils import istensor, istype, make_cell
-from .base import typestr, VariableTracker
+from .base import MutableLocal, typestr, VariableTracker
 
 
 def wrap_bound_arg(tx, val, options, source=None):
@@ -30,6 +30,7 @@ def wrap_bound_arg(tx, val, options, source=None):
                 for k, v in val.items()
             },
             dict,
+            mutable_local=MutableLocal(),
             **options,
         )
     elif isinstance(val, (tuple, list)):

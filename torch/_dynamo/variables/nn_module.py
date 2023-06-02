@@ -502,6 +502,8 @@ class NNModuleVariable(VariableTracker):
             return wrap_values(module.named_modules())
         elif name == "parameters":
             return wrap_values(module.named_parameters(**get_kwargs("recurse")))
+        elif name == "buffers":
+            return wrap_values(module.named_buffers(**get_kwargs("recurse")))
         elif name == "keys":
             assert not (args or kwargs)
             result = []
@@ -793,6 +795,10 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     def as_python_constant(self):
         return self.value
 
+    def var_getattr(self, tx, name):
+        print("FSDPManagedNNModuleVariableATTR", name)
+        return super().var_getattr(tx, name)
+
     def call_method(
         self,
         tx,
@@ -800,6 +806,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        print("FSDPManagedNNModuleVariableMETHOD", name)
         def wrap_values(items):
             result = []
             for name, submod in items:
@@ -808,8 +815,22 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
+
+        def get_kwargs(*names):
+            # assert_all_args_kwargs_const()
+            fn = getattr(self.value, name)
+            bound_args = inspect.signature(fn).bind(
+                *([x.as_python_constant() for x in args]),
+                **{k: v.as_python_constant() for k, v in kwargs.items()},
+            )
+            bound_args.apply_defaults()
+            bound_args = bound_args.arguments
+            return {k: bound_args[k] for k in names}
+
         if name == "children":
             return wrap_values(self.value.named_children())
+        # if name == "_named_members":
+            # return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()

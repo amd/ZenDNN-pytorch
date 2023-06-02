@@ -423,7 +423,6 @@ class UserDefinedObjectVariable(UserDefinedVariable):
                     subobj, name, source=source, **options
                 )
             return variables.UserMethodVariable(subobj, self, source=source, **options)
-
         if (
             name in getattr(value, "__dict__", {})
             or ConstantVariable.is_literal(subobj)
@@ -478,6 +477,12 @@ class UserDefinedObjectVariable(UserDefinedVariable):
 
         if name == "__class__":
             return UserDefinedClassVariable(type(self.value), **options)
+
+        elif isinstance(subobj, dict):
+            print("DICT SUBOBJ W/", name, self)
+            # if name == "__dict__" and isinstance(self, variables.FSDPManagedNNModuleVariable):
+
+            return variables.ConstDictVariable(subobj, dict, mutable_local=self.mutable_local if self.mutable_local else MutableLocal(), **options)
 
         return variables.GetAttrVariable(self, name, **options)
 

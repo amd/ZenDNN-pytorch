@@ -397,7 +397,7 @@ class VariableBuilder:
                     guards=guards,
                 )
             else:
-                result = ConstDictVariable(result, type(value), guards=guards)
+                result = ConstDictVariable(result, type(value), mutable_local=MutableLocal(), guards=guards)
 
             return self.tx.output.side_effects.track_dict(self.source, value, result)
         elif isinstance(value, torch.nn.Module):
@@ -600,13 +600,13 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
             )
         elif isinstance(value, torch.cuda.streams.Stream):
-            unimplemented("CUDAStreamVariable does not currently work soundly.")
-            # return CUDAStreamVariable(
-            #     None,
-            #     value,
-            #     source=self.source,
-            #     guards=self.make_guards(GuardBuilder.ID_MATCH),
-            # )
+            # unimplemented("CUDAStreamVariable does not currently work soundly.")
+            return CUDAStreamVariable(
+                None,
+                value,
+                source=self.source,
+                guards=self.make_guards(GuardBuilder.ID_MATCH),
+            )
         elif issubclass(type(value), type):
             # TODO(whc) the following seems preferable but breaks some tests, debug
             # elif inspect.isclass(value):
@@ -1183,6 +1183,7 @@ def wrap_fx_proxy_cls(
         # tensor, the stored example value will update too!)
         example_value = _clone_input(example_value)
         proxy.node.meta["example_value"] = example_value
+        print("SPECIALIZING", target_cls, type(example_value))
         specialized_props = target_cls.specialize(example_value)
         if isinstance(example_value, torch._subclasses.fake_tensor.FakeTensor):
             # NB: This will be wrong for ignore_subclass; fix it up later!
@@ -1283,7 +1284,7 @@ def wrap_fx_proxy_cls(
         return SymNodeVariable(proxy, example_value, **options)
     elif proxy.node.target in [torch.cuda.streams.Stream, torch.cuda.current_stream]:
         proxy.node.meta["example_value"] = example_value
-        unimplemented("CUDAStreamVariable does not currently work soundly.")
+        # unimplemented("CUDAStreamVariable does not currently work soundly.")
         return CUDAStreamVariable(proxy, example_value, **options)
     elif config.numpy_ndarray_as_tensor and isinstance(example_value, torch_np.ndarray):
         proxy.node.meta["example_value"] = example_value

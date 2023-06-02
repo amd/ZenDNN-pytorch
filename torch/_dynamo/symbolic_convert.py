@@ -1360,6 +1360,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
             ConstDictVariable(
                 items,
                 obj.user_cls,
+                mutable_local=obj.mutable_local,
                 **VariableTracker.propagate([obj, k, v]),
             ),
         )

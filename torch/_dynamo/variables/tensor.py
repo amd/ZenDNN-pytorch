@@ -887,12 +887,19 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos', 'device']:
+        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
             from .builder import wrap_fx_proxy
             return wrap_fx_proxy(
                 tx=tx,
                 proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
             )
+        if name == "device" and self.device is not None:
+            return ConstantVariable(self.device)
+    
+        
+        # variables.LambdaVariable(
+        #         lambda *args, **kwargs: self.var_getattr(tx, name)
+        #     ).add_options(self)
         # if name in ['_numels_with_padding']:
         #     return variables.LambdaVariable(
         #         lambda *args, **kwargs: TypedStorageVariable(self._typed_storage())
