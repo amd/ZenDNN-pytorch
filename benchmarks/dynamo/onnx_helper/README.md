@@ -9,13 +9,13 @@ It is recommended to create a fresh python environment, clone and build PyTorch 
 Then install the benchmark dependencies:
 
 ```bash
-./build_bench.sh
+./0_build_bench.sh
 ```
 
 ## Run Benchmark
 
 ```bash
-./bench.sh
+./1_bench.sh
 ```
 
 ## Generate Report
@@ -23,5 +23,11 @@ Then install the benchmark dependencies:
 After benchmark completes. Run the following script to generate a markdown report and archive the benchmark results.
 
 ```bash
-./generate_report_and_archive.sh
+./2_generate_report_and_archive.sh
+```
+
+## Bench single model
+
+```bash
+./bench_single_model.sh BertForMaskedLM
 ```

@@ -30,7 +30,8 @@ class ErrorAggregator(object):
     # If these keywords are found in an error message, it won't be aggregated with other errors,
     # unless it is an exact match.
     _EXACT_MATCH_KEYWORDS = [
-        "Unknown call_function target",
+        "Cannot find symbolic function",
+        "Unsupported FX nodes",
     ]
 
     def __init__(self, log: Optional[logging.Logger] = None):
