@@ -51,6 +51,7 @@ def _conv2d_bn_pattern(
     x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True)
     return x
 
+# TODO: merge this with the `no_conv_bias` case
 def _qat_conv2d_bn_pattern(
     x: torch.Tensor,
     conv_weight: torch.Tensor,
@@ -108,7 +109,7 @@ def _qat_conv2d_bn_pattern_no_conv_bias(
     x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
     return x
 
-def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool):
+def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, has_bias: bool):
     """
     Return the quantized version of QAT conv + BN pattern.
     This is based on `nniqat.ConvBn2d._forward_approximate`,
@@ -150,7 +151,6 @@ def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool):
         scaled_weight = conv_weight * scale_factor.reshape(weight_shape)
         x = torch.ops.quantized_decomposed.dequantize_per_tensor(
             x, input_scale, input_zero_point, input_quant_min, input_quant_max, torch.int8)
-        zero_bias = torch.zeros_like(conv_bias, dtype=x.dtype)
         if is_per_channel:
             scaled_weight = torch.ops.quantized_decomposed.quantize_per_channel(
                 scaled_weight, weight_scale, weight_zero_point, per_channel_axis,
@@ -167,9 +167,14 @@ def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool):
             scaled_weight = torch.ops.quantized_decomposed.dequantize_per_tensor(
                 scaled_weight, weight_scale, weight_zero_point, weight_quant_min, weight_quant_max, torch.int8,
             )
-        x = F.conv2d(x, scaled_weight, zero_bias)
+        if has_bias:
+            zero_bias = torch.zeros_like(conv_bias, dtype=x.dtype)
+            x = F.conv2d(x, scaled_weight, zero_bias)
+        else:
+            x = F.conv2d(x, scaled_weight, None)
         x = x / scale_factor.reshape(bias_shape)
-        x = x + conv_bias.reshape(bias_shape)
+        if has_bias:
+            x = x + conv_bias.reshape(bias_shape)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
             x = F.relu(x)
@@ -178,7 +183,7 @@ def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool):
         return x
     return _quantized_qat_conv2d_bn_pattern
 
-def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool):
+def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, has_bias: bool):
     """
     Quantized QAT conv - bn pattern with bn weights being folded into conv.
     """
@@ -225,7 +230,10 @@ def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: 
             conv_weight = torch.ops.quantized_decomposed.dequantize_per_tensor(
                 conv_weight, weight_scale, weight_zero_point, weight_quant_min, weight_quant_max, torch.int8,
             )
-        x = F.conv2d(x, conv_weight, conv_bias)
+        if has_bias:
+            x = F.conv2d(x, conv_weight, conv_bias)
+        else:
+            x = F.conv2d(x, conv_weight, None)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
             x = F.relu(x)
@@ -420,6 +428,23 @@ def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
                 replacement_getitem_node.meta = original_node.meta
     return m
 
+def _remove_placeholder_node(m: GraphModule, placeholder_index: int):
+    """
+    Helper function to erase the N'th placeholder node from the graph.
+    This assumes the specified placeholder node has no users.
+    """
+    num_placeholders_seen = 0
+    for n in m.graph.nodes:
+        if n.op != "placeholder":
+            continue
+        if num_placeholders_seen == placeholder_index:
+            m.graph.erase_node(n)
+            m.recompile()
+            return
+        num_placeholders_seen += 1
+    assert placeholder_index >= num_placeholders_seen
+    raise ValueError("Placeholder index %s out of bounds" % placeholder_index)
+
 def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
     """
     Replace the quantized (conv + bn) pattern with conv with bn weights folded into the weights of conv.
@@ -432,13 +457,21 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
     replacement_options = itertools.product(
         [True, False],  # is_per_channel
         [True, False],  # has_relu
+        [True, False],  # has_bias
     )
-    for is_per_channel, has_relu in replacement_options:
+    for is_per_channel, has_relu, has_bias in replacement_options:
         example_inputs = _quantized_conv2d_bn_pattern_example_inputs
-        match_pattern = _get_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu)
+        match_pattern = _get_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu, has_bias)
         match_pattern = _get_aten_graph_module(match_pattern, example_inputs)
-        replacement_pattern = _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu)
+        replacement_pattern = _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu, has_bias)
         replacement_pattern = _get_aten_graph_module(replacement_pattern, example_inputs)
+
+        # In the no conv bias case, remove the `conv_bias` placeholder nodes from the graph so
+        # subgraph rewriter doesn't complain
+        if not has_bias:
+            _remove_placeholder_node(match_pattern, 2)
+            _remove_placeholder_node(replacement_pattern, 2)
+
         # Workaround: current convert does not produce q/dq ops with a specific overload
         # we'll remove the overload from the pattern here as a workaround since we do not want to break BC
         for n in match_pattern.graph.nodes:
@@ -478,7 +511,7 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
         assert isinstance(conv_weight, Node)
         assert conv_weight.op == "get_attr"
         conv_bias = conv_node.args[2]
-        assert isinstance(conv_bias, Node)
+        assert conv_bias is None or isinstance(conv_bias, Node)
 
         # fold bn weights into conv
         _fold_bn_weights_into_conv_node(conv_node, conv_weight, conv_bias, bn_node, m)
