@@ -15,10 +15,11 @@ from .. import variables
 from ..allowed_functions import is_allowed
 from ..exc import unimplemented
 from ..guards import GuardBuilder
-from ..source import AttrSource, ODictGetItemSource, RandomValueSource
+from ..source import AttrSource, ODictGetItemSource, RandomValueSource, GetItemSource, GlobalWeakRefSource, LocalSource
 from ..utils import (
     all_hook_names,
     check_constant_args,
+    global_key_name,
     get_custom_getattr,
     is_namedtuple_cls,
     istype,
@@ -478,11 +479,33 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         if name == "__class__":
             return UserDefinedClassVariable(type(self.value), **options)
 
-        elif isinstance(subobj, dict):
+        def tensor_can_be_dict_key(source, value):
+            # only allow Parameter and another specific Tensor can be used as dict key
+            return (
+                isinstance(value, torch.nn.Parameter)
+                or isinstance(source, AttrSource)
+                and source.member == "state"
+                and isinstance(source.base, LocalSource)
+            )
+
+        if isinstance(subobj, dict):
+            def index_source(key):
+                if tensor_can_be_dict_key(source, key):
+                    return GlobalWeakRefSource(global_key_name(key))
+                else:
+                    return key
+        
             print("DICT SUBOBJ W/", name, self)
             # if name == "__dict__" and isinstance(self, variables.FSDPManagedNNModuleVariable):
+            keys = subobj.keys()
+            result = {
+                k: VariableBuilder(
+                    tx, GetItemSource(source, index_source(k))
+                )(subobj[k])
+                for k in keys
+            }
 
-            return variables.ConstDictVariable(subobj, dict, mutable_local=self.mutable_local if self.mutable_local else MutableLocal(), **options)
+            return variables.ConstDictVariable(result, dict, mutable_local=self.mutable_local if self.mutable_local else MutableLocal(), **options)
 
         return variables.GetAttrVariable(self, name, **options)
 
