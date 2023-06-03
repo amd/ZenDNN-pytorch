@@ -843,17 +843,17 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
         def wrap_values(items):
             result = []
-            for name, submod in items:
+            for submod_name, submod in items:
                 result.append(
-                    FSDPManagedNNModuleVariable(value=submod, source=AttrSource(self.source, name))
+                    FSDPManagedNNModuleVariable(value=submod, source=AttrSource(self.source, submod_name))
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
-        def named_embed(name, obj):
+        def named_embed(embed_name, obj):
             return variables.TupleVariable(
                 [
                     variables.ConstantVariable(name, **options),
-                    FSDPManagedNNModuleVariable(value=obj, source=AttrSource(self.source, name))
+                    FSDPManagedNNModuleVariable(value=obj, source=AttrSource(self.source, embed_name))
                 ]
             )
 
@@ -872,15 +872,16 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             return wrap_values(self.value.named_children())
         if name == "named_children":
             result = []
-            for name, submod in self.value.named_children():
-                result.append(named_embed(name, submod))
+            for childname, submod in self.value.named_children():
+                result.append(named_embed(childname, submod))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "named_parameters":
             result = []
-            for name, param in self.value.named_parameters(
+            for paramname, param in self.value.named_parameters(
                 **get_kwargs("prefix", "recurse")
             ):
-                result.append(named_embed(name, param))
+                result.append(named_embed(paramname, param))
+            return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "_named_members":
             return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
         if name == "__setattr__":
@@ -911,8 +912,10 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     #     )
                     # )
                     return value
-                elif item.has_unpack_var_sequence(tx):
-                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
+                elif isinstance(item, variables.ListVariable):
+                    return [_convert(x) for x in item.unpack_var_sequence(tx)]
+                elif isinstance(item, variables.ConstDictVariable):
+                    return {key.value: _convert(value) for key, value in item.items.items()}
                 elif isinstance(item, variables.DeletedVariable):
                     value = None
                 elif isinstance(item, variables.EnumVariable):
@@ -936,4 +939,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             else:
                 setattr(self.value, key, value)
             return variables.ConstantVariable(None)
+        if name == "forward":
+            unimplemented("Forward broken AF")
+            
+        print("FALLTHROIGH", name, ("." in name), args, kwargs)
         return super().call_method(tx, name, args, kwargs)

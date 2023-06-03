@@ -362,7 +362,9 @@ class CUDAStreamVariable(VariableTracker):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
-        unimplemented("cuda stream")
+        print("Black holing", name)
+        # unimplemented(f"CUDASTREAMCALL {name}, {args}")
+        return variables.ConstantVariable(None)
 
     def as_proxy(self):
         return self.proxy

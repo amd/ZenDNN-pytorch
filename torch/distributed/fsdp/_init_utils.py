@@ -374,7 +374,7 @@ def _init_core_state(
     # state._stream_to_name = _stream_to_name
     state._free_event_queue = _FreeEventQueue()
     state._debug_level = dist.get_debug_level()
-    state._exec_order_data = exec_order_utils._ExecOrderData(
+    state._exec_order_data = exec_order_utils._ExecOrderData.create_exec_order_data(
         state._debug_level,
         backward_prefetch_limit,
         forward_prefetch_limit,

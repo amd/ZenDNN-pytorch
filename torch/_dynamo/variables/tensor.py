@@ -895,6 +895,8 @@ class FlatParamVariable(TensorVariable):
             )
         if name == "device" and self.device is not None:
             return ConstantVariable(self.device)
+        if name == "dtype" and self.dtype is not None:
+            return ConstantVariable(self.dtype)
     
         
         # variables.LambdaVariable(

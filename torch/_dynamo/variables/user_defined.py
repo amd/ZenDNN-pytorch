@@ -176,8 +176,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         self.value = value
         self.value_type = value_type or type(value)
         assert type(value) is self.value_type
-        if isinstance(value, set):
-            raise RuntimeError("WHAT? WHY AM I SET")
+        # print(f"UserDefinedObjectVariableMADE A {type(self.value)} with {self.value.__dict__}")
 
     def __str__(self):
         inner = self.value_type.__name__
@@ -576,6 +575,7 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        print("ProcessGroupVariable", name)
         if name == "rank":
             return variables.ConstantVariable(self.value.rank)
         if name == "size":
@@ -583,6 +583,7 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
         return super().call_method(tx, name, args, kwargs)
         
     def var_getattr(self, tx, name):
+        print("ProcessGroupVariable", name)
         if name in ["rank", "size"]:
             return variables.LambdaVariable(
                 lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)

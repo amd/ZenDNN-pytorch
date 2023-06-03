@@ -29,6 +29,13 @@ class _ExecOrderData:
     iteration for backward prefetching (which thus does not assume static
     graph but may be provide an incorrect order).
     """
+    @staticmethod
+    def create_exec_order_data(
+        debug_level: dist.DebugLevel,
+        backward_prefetch_limit: int,
+        forward_prefetch_limit: int,
+    ):
+        return _ExecOrderData(debug_level, backward_prefetch_limit, forward_prefetch_limit)
 
     def __init__(
         self,
@@ -71,7 +78,6 @@ class _ExecOrderData:
 
     def init(
         self,
-        state: _FSDPState,
         root_module: nn.Module,
         process_group: dist.ProcessGroup,
     ) -> None:

@@ -17,6 +17,7 @@ from ..utils import istensor, istype, make_cell
 from .base import MutableLocal, typestr, VariableTracker
 
 
+# Like builder, but shittier lol
 def wrap_bound_arg(tx, val, options, source=None):
     # Source propagation is best effort since not every object we encounter has a source to begin with.
     assert (
@@ -58,6 +59,10 @@ def wrap_bound_arg(tx, val, options, source=None):
     elif isinstance(val, (type, abc.ABCMeta)):
         return variables.UserDefinedClassVariable(val, source=source, **options)
     elif istensor(val):
+        from torch._dynamo.variables.builder import VariableBuilder
+
+        return VariableBuilder(tx, source=source)(val)
+    elif isinstance(val, (torch.distributed.fsdp.flat_param.FlatParamHandle, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel)):
         from torch._dynamo.variables.builder import VariableBuilder
 
         return VariableBuilder(tx, source=source)(val)
@@ -222,6 +227,8 @@ class UserFunctionVariable(BaseUserFunctionVariable):
         bound.apply_defaults()
         result = dict(bound.arguments.items())
         print("BOUND ARGS RESULT", result)
+        if 'self' in result and isinstance(result['self'], variables.UserDefinedObjectVariable):
+            print("SELF DICT?", result['self'].value.__dict__)
         wrap_args_kwargs(tx, result, options)
         closure_cells = init_cellvars(parent, result, self.get_code())
         closure = self.fn.__closure__ or ()
@@ -367,18 +374,27 @@ class PartialUserFunctionVariable(BaseUserFunctionVariable):
 
     def bind_args(self, parent, args, kwargs):
         if self.fn.args:
-            unimplemented(f"NYI - partials w/ non-keyword args")
+            unimplemented(f"NYI - partials w/ non-keyword arg {self.fn}, {self.inner_fn} {len(self.fn.args)}")
+        wrapped_args =  dict(self.fn.keywords)
+        options = VariableTracker.propagate([self])
+
+        wrap_args_kwargs(parent.output.root_tx, wrapped_args, VariableTracker.propagate(self))
+        wrap_args_kwargs(parent.output.root_tx, kwargs, VariableTracker.propagate(self))
+
+        kwargs = {**wrapped_args, **kwargs}
+        print("wrapped_args?", [type(k) for k in wrapped_args.values()])
+        print("kwargs?", [type(k) for k in kwargs.values()])
         result, closure_cells = self.inner_fn.bind_args(parent, args, kwargs)
         if closure_cells:
             unimplemented("NYI - partials w/ closure_cells")
-        wrapped_args =  dict(self.fn.keywords)
-        options = VariableTracker.propagate([self])
+
+        wrap = functools.partial(wrap_bound_arg, tx=parent.output.root_tx, options=options)
         defaults_sources = [
             None if self.source is None else DefaultsSource(AttrSource(self.source, "func"), idx)
             for idx, _ in enumerate(wrapped_args)
         ]
-        wrap_args_kwargs(parent.output.root_tx, wrapped_args, VariableTracker.propagate(self))
-        wrap = functools.partial(wrap_bound_arg, tx=parent.output.root_tx, options=options)
+
+        print("SOURCES ARE?", defaults_sources)
         for i, key in enumerate(wrapped_args.keys()):
             value = wrapped_args[key]
             value = wrap(val=value, source=defaults_sources[i])

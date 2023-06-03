@@ -1047,7 +1047,7 @@ class BuiltinVariable(VariableTracker):
                         )
                 unimplemented("tensor grad")
             else:
-                unimplemented("tensor grad")
+                return variables.ConstantVariable(obj.as_proxy().node.meta['example_value'].grad)
         elif isinstance(
             obj,
             (

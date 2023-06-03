@@ -143,6 +143,8 @@ def _validate_and_get_hybrid_shard_state(
         raise ValueError(error_prefix + "inter-node process groups do not match")
     return next(iter(inter_node_states))
 
+def _populate_exec_order_data(state, root_module):
+    state._exec_order_data.init(root_module, state.process_group)
 
 @no_type_check
 def _lazy_init(
@@ -172,9 +174,9 @@ def _lazy_init(
     _check_flat_params_on_expected_device(state, root_module)
     _init_streams(state)
     buffers, buffer_dtypes = _get_buffers_and_dtypes_for_computation(state, root_module)
-    _share_state_and_init_handle_attrs(state, root_module)
     _cast_buffers_to_dtype_and_device(buffers, buffer_dtypes, state.compute_device)
-    state._exec_order_data.init(state, root_module, state.process_group)
+    _populate_exec_order_data(state, root_module)
+    _share_state_and_init_handle_attrs(state, root_module)
     return state
 
 
@@ -262,11 +264,11 @@ def _share_state_and_init_handle_attrs(
         fsdp_state._needs_pre_backward_unshard = root_state._needs_pre_backward_unshard
         for handle in fsdp_state._handles:
             handle.init_flat_param_attributes()
-    for attr_name, attr_values in attr_name_to_values.items():
-        if len(attr_values) != 1:
-            raise ValueError(
-                f"Expects one homogeneous value for {attr_name} but got {attr_values}"
-            )
+    # for attr_name, attr_values in attr_name_to_values.items():
+    #     if len(attr_values) != 1:
+    #         raise RuntimeError(
+    #             f"Expects one homogeneous value for {attr_name} but got {attr_values}"
+    #         )
 
 
 @no_type_check
@@ -1193,11 +1195,11 @@ def _register_pre_forward_hooks(
         if module_param_handles:
             unshard_fn = functools.partial(
                 _pre_forward_unshard,
-                state,
-                module_param_handles,
+                state=state,
+                handles=module_param_handles,
             )
             hook = functools.partial(
-                _pre_forward, state, module_param_handles, unshard_fn
+                _pre_forward, state=state, handles=module_param_handles, unshard_fn=unshard_fn
             )
             state._pre_forward_handles.append(
                 module.register_forward_pre_hook(hook, prepend=True, with_kwargs=True)
