@@ -500,7 +500,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         """Forward missing attributes to the wrapped module."""
         try:
             return super().__getattr__(name)  # defer to nn.Module's logic
-        except AttributeError:
+        except:
             return getattr(self._fsdp_wrapped_module, name)
 
     def __getitem__(self, key: int) -> Any:

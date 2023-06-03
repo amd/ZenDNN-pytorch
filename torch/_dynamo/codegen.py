@@ -130,9 +130,6 @@ class PyCodegen:
                 self._create_load_const(graph_outputs[graph_outputs_key].index)
             )
             output.append(create_instruction("BINARY_SUBSCR"))
-
-            if isinstance(value, FlatParamVariable):
-                print("CODEGEN FOR FLATPARAM")
                 
             if isinstance(value, UnspecializedPythonVariable) and value.need_unwrap:
                 output.extend(
@@ -216,7 +213,7 @@ class PyCodegen:
     def create_load_global(self, name, push_null, add=False):
         if add:
             self.tx.output.update_co_names(name)
-        assert name in self.code_options["co_names"], f"{name} not in co_names"
+        assert name in self.code_options["co_names"], f"{name} not in co_names {self.code_options['co_names']}"
         return create_load_global(name, push_null)
 
     def create_load_const(self, value):

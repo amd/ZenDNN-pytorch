@@ -1114,9 +1114,9 @@ class BuiltinVariable(VariableTracker):
             and name_var.is_python_constant()
         ):
             tx.output.side_effects.store_attr(obj, name_var.as_python_constant(), val)
-            if isinstance(obj, FlatParamVariable):
-                print("Handling flat param here")
-                return obj.call_method(tx, "__setattr__", [name_var, val], {})
+            # if isinstance(obj, FlatParamVariable):
+            #     print("Handling flat param here")
+            #     return obj.call_method(tx, "__setattr__", [name_var, val], {})
             return val.add_options(self, obj, name_var)
         elif isinstance(obj, variables.UserDefinedObjectVariable):
             if isinstance(obj, variables.nn_module.FSDPManagedNNModuleVariable):
@@ -1269,6 +1269,18 @@ class BuiltinVariable(VariableTracker):
             if not isinstance(right, UserFunctionVariable):
                 _unimplemented()
             return ConstantVariable(op(left.fn, right.fn))
+
+        def _get_module(obj):
+            if isinstance(obj, variables.NNModuleVariable):
+                return tx.output.get_submodule(obj.module_key)
+            return obj.value
+
+        if isinstance(left, (variables.NNModuleVariable, variables.nn_module.FSDPManagedNNModuleVariable)):
+            if op not in supported_const_comparison_ops.values():
+                _unimplemented()
+            if not isinstance(right, (variables.NNModuleVariable, variables.nn_module.FSDPManagedNNModuleVariable)):
+                _unimplemented()
+            return ConstantVariable(op(_get_module(left), _get_module(right)))
 
         if isinstance(left, variables.UserDefinedObjectVariable):
             if op not in supported_const_comparison_ops.values():

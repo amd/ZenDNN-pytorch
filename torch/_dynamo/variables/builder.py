@@ -764,24 +764,7 @@ class VariableBuilder:
             and not config.allow_rnn
         ):
             unimplemented("TorchDynamo purposely graph breaks on RNN, GRU, LSTMs")
-        if mutation_guard.is_dynamic_nn_module(value):
-            # created dynamically, don't specialize on it
-            result = UnspecializedNNModuleVariable(
-                value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
-            )
-            if not SideEffects.cls_supports_mutation_side_effects(type(value)):
-                # don't allow STORE_ATTR mutation with custom __setattr__
-                return result
-            return self.tx.output.side_effects.track_object_existing(
-                self.source, value, result
-            )
-        elif issubclass(
-            value.__class__, torch.nn.parallel.distributed.DistributedDataParallel
-        ):
-            return UnspecializedNNModuleVariable(
-                value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
-            )
-        elif getattr(value, "_is_fsdp_managed_module", False):
+        if getattr(value, "_is_fsdp_managed_module", False):
             # See note [Dynamo treats FSDP wrapped modules as UnspecializedNNModule]
             # in fully_sharded_data_parallel.py for more information
 
@@ -812,10 +795,31 @@ class VariableBuilder:
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
-            return result
-            # return self.tx.output.side_effects.track_object_existing(
-                # self.source, value, result
-            # )
+            # return result
+            return self.tx.output.side_effects.track_object_existing(
+                self.source, value, result
+            )
+        elif mutation_guard.is_dynamic_nn_module(value):
+            # created dynamically, don't specialize on it
+            if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:
+                raise RuntimeError("NOO")
+            result = UnspecializedNNModuleVariable(
+                value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
+            )
+            if not SideEffects.cls_supports_mutation_side_effects(type(value)):
+                # don't allow STORE_ATTR mutation with custom __setattr__
+                return result
+            return self.tx.output.side_effects.track_object_existing(
+                self.source, value, result
+            )
+        elif issubclass(
+            value.__class__, torch.nn.parallel.distributed.DistributedDataParallel
+        ):
+            if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:
+                raise RuntimeError("NOO")
+            return UnspecializedNNModuleVariable(
+                value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
+            )
         else:
             return self.tx.output.register_attr_or_module(
                 value,

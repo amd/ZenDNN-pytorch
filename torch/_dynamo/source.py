@@ -26,6 +26,7 @@ _GUARD_SOURCE_FSDP_MODULE = {
     GuardSource.GLOBAL_NN_MODULE: GuardSource.GLOBAL_FSDP_MODULE,
     GuardSource.LOCAL_FSDP_MODULE: GuardSource.LOCAL_FSDP_MODULE,
     GuardSource.GLOBAL_FSDP_MODULE: GuardSource.GLOBAL_FSDP_MODULE,
+    GuardSource.CONSTANT: GuardSource.CONSTANT
 }
 
 _GUARD_SOURCE_NOT_NN_MODULE = {
@@ -477,7 +478,7 @@ class ConstantSource(Source):
     source_name: str
 
     def reconstruct(self, codegen):
-        return [codegen.create_load_global(self.source_name, False, add=False)]
+        return [codegen.create_load_global(self.source_name, False, add=True)]
 
     def guard_source(self):
         return GuardSource.CONSTANT

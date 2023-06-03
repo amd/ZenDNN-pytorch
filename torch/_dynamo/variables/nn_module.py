@@ -117,11 +117,13 @@ class NNModuleVariable(VariableTracker):
         options = VariableTracker.propagate(self)
         mod = tx.output.get_submodule(self.module_key)
         result = hasattr(mod, name)
-        return variables.ConstantVariable(result, **options).add_guard(
+        var = variables.ConstantVariable(result, **options)
+        if not self.source.guard_source() is torch._guards.GuardSource.CONSTANT:
+            var.add_guard(
             NNModuleSource(AttrSource(self.source, name)).make_guard(
                 GuardBuilder.HASATTR
-            )
-        )
+            ))
+        return var
 
     def is_training(self, tx):
         mod = tx.output.get_submodule(self.module_key)
@@ -648,9 +650,13 @@ class UnspecializedNNModuleVariable(UserDefinedObjectVariable):
                 kwargs["value_type"] = type(value)
 
         super().__init__(value=value, **kwargs)
-        if self.source and self.source.is_nn_module():
-            # force guard checks even when `not config.guard_nn_modules``
-            self.source = NotNNModuleSource(self.source)
+        try:
+            if self.source and self.source.is_nn_module():
+                # force guard checks even when `not config.guard_nn_modules``
+                self.source = NotNNModuleSource(self.source)
+        except:
+            # Constant source
+            pass
 
     @staticmethod
     @functools.lru_cache(None)
@@ -792,6 +798,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
             self.source = NotNNModuleSource(source)
 
+        self.value._dynamo_var = self
+
     def as_python_constant(self):
         return self.value
 
@@ -819,9 +827,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         if not self.source:
             unimplemented("hasattr no source")
         options = VariableTracker.propagate(self)
-        options["guards"].add(
-            AttrSource(self.source, name).make_guard(GuardBuilder.HASATTR)
-        )
+        # options["guards"].add(
+        #     AttrSource(self.source, name)
+        # )
         try:
             getattr(self.value, name)
             return variables.ConstantVariable(True, **options)
@@ -836,9 +844,6 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FSDPManagedNNModuleVariableMETHOD", name)
-        if "." in name:
-            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
-            raise RuntimeError(f"What the hell is {name}")
         options = VariableTracker.propagate([self])
 
         def wrap_values(items):
@@ -911,21 +916,21 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     #         {},
                     #     )
                     # )
-                    return value
                 elif isinstance(item, variables.ListVariable):
-                    return [_convert(x) for x in item.unpack_var_sequence(tx)]
+                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
                 elif isinstance(item, variables.ConstDictVariable):
-                    return {key.value: _convert(value) for key, value in item.items.items()}
+                    value = {key.value: _convert(value) for key, value in item.items.items()}
                 elif isinstance(item, variables.DeletedVariable):
                     value = None
                 elif isinstance(item, variables.EnumVariable):
-                    return item.as_python_constant()
+                    value = item.as_python_constant()
                 elif isinstance(item, variables.ConstantVariable):
-                    return item.as_python_constant()
+                    value = item.as_python_constant()
                 elif isinstance(item, variables.CUDAStreamVariable):
-                    return item.value
+                    print("SET STREAM", name)
+                    value = item.value
                 elif isinstance(item, variables.UserDefinedObjectVariable):
-                    return item.value
+                    value = item.value
                 else:
                     unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
                 # else:

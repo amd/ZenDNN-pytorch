@@ -27,7 +27,7 @@ def wrap_bound_arg(tx, val, options, source=None):
     if isinstance(val, dict):
         return variables.ConstDictVariable(
             {
-                k: wrap_bound_arg(tx, v, options, source=getattr(v, "source", None))
+                k: wrap_bound_arg(tx, v, options, source=getattr(v, "source", GetItemSource(source, k) if source else None))
                 for k, v in val.items()
             },
             dict,
@@ -38,8 +38,8 @@ def wrap_bound_arg(tx, val, options, source=None):
         cls = variables.BaseListVariable.cls_for(type(val))
         return cls(
             [
-                wrap_bound_arg(tx, x, options, source=getattr(x, "source", None))
-                for x in val
+                wrap_bound_arg(tx, x, options, source=getattr(x, "source", GetItemSource(source, i) if source else None))
+                for i, x in enumerate(val)
             ],
             **options,
         )
@@ -62,10 +62,14 @@ def wrap_bound_arg(tx, val, options, source=None):
         from torch._dynamo.variables.builder import VariableBuilder
 
         return VariableBuilder(tx, source=source)(val)
-    elif isinstance(val, (torch.distributed.fsdp.flat_param.FlatParamHandle, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel)):
+    elif isinstance(val, torch.distributed.fsdp.flat_param.FlatParamHandle):
         from torch._dynamo.variables.builder import VariableBuilder
-
+        
         return VariableBuilder(tx, source=source)(val)
+    elif isinstance(val, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel):
+        assert hasattr(val, '_dynamo_var')
+        print("WTF", id(val._dynamo_var.value), val._dynamo_var.value.__dict__)
+        return val._dynamo_var
     else:
         assert isinstance(val, VariableTracker), typestr(val)
         return val
@@ -223,13 +227,28 @@ class UserFunctionVariable(BaseUserFunctionVariable):
             }
 
         print("BINDING?", fake_func, args, kwargs)
-        bound = inspect.signature(fake_func).bind(*args, **kwargs)
+        try:
+            bound = inspect.signature(fake_func).bind(*args, **kwargs)
+        except:
+            bound = inspect.signature(fake_func).bind(*args)
         bound.apply_defaults()
         result = dict(bound.arguments.items())
         print("BOUND ARGS RESULT", result)
         if 'self' in result and isinstance(result['self'], variables.UserDefinedObjectVariable):
             print("SELF DICT?", result['self'].value.__dict__)
         wrap_args_kwargs(tx, result, options)
+
+        result_sources = [
+            None if self.source is None else DefaultsSource(self.source, idx)
+            for idx, _ in enumerate(result)
+        ]
+        for i, key in enumerate(result.keys()):
+            value = result[key]
+            print("WRAPPING VALUE", i, value)
+            value = wrap(val=value, source=result_sources[i])
+            result[key] = value
+
+        print("POST BOUND ARGS RESULT", result)
         closure_cells = init_cellvars(parent, result, self.get_code())
         closure = self.fn.__closure__ or ()
         assert len(closure) == len(self.fn.__code__.co_freevars)
@@ -384,6 +403,7 @@ class PartialUserFunctionVariable(BaseUserFunctionVariable):
         kwargs = {**wrapped_args, **kwargs}
         print("wrapped_args?", [type(k) for k in wrapped_args.values()])
         print("kwargs?", [type(k) for k in kwargs.values()])
+        print("INNNER SR?", self.inner_fn.source)
         result, closure_cells = self.inner_fn.bind_args(parent, args, kwargs)
         if closure_cells:
             unimplemented("NYI - partials w/ closure_cells")
@@ -394,11 +414,13 @@ class PartialUserFunctionVariable(BaseUserFunctionVariable):
             for idx, _ in enumerate(wrapped_args)
         ]
 
-        print("SOURCES ARE?", defaults_sources)
+        print("SOURCES ARE?", [type(d) for d in defaults_sources], len(wrapped_args.keys()))
         for i, key in enumerate(wrapped_args.keys()):
             value = wrapped_args[key]
+            print("WRAPPING VALUE", i, value)
             value = wrap(val=value, source=defaults_sources[i])
             result[key] = value
+        print("PARTIALINVOKE", result)
         return result, closure_cells
 
     def self_args(self):
@@ -455,6 +477,8 @@ class WrappedUserFunctionVariable(UserFunctionVariable):
 
 
 def invoke_and_store_as_constant(tx, fn, name, options, args, kwargs):
+    from torch._dynamo.variables.builder import VariableBuilder
+
     def convert(x):
         if isinstance(x, variables.TensorVariable):
             return x.get_real_value()
@@ -471,12 +495,13 @@ def invoke_and_store_as_constant(tx, fn, name, options, args, kwargs):
     args = [convert(x) for x in args]
     kwargs = {k: convert(v) for k, v in kwargs.items()}
     res = fn(*args, **kwargs)
-    return tx.output.register_attr_or_module(
-        res,
-        name,
-        source=ConstantSource(name),
-        **options,
-    )
+    return VariableBuilder(tx, ConstantSource(name))(res)
+    # return tx.output.register_attr_or_module(
+    #     res,
+    #     name,
+    #     source=ConstantSource(name),
+    #     **options,
+    # )
 
 
 class NestedUserFunctionVariable(BaseUserFunctionVariable):

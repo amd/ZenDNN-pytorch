@@ -165,7 +165,7 @@ class SideEffects:
 
     def store_cell(self, cellvar, value):
         assert isinstance(cellvar, variables.NewCellVariable)
-        assert isinstance(value, variables.VariableTracker)
+        assert isinstance(value, variables.VariableTracker), f"WTF? {value}"
         self.store_attr(cellvar, "cell_contents", value)
 
     def load_cell(self, cellvar):

@@ -145,6 +145,8 @@ class Guard:
         return hash((self.name, self.source, id(self.create_fn)))
 
     def sort_key(self):
+        if not isinstance(self, Guard):
+            raise RuntimeError("WTF?")
         return (
             self.source.value if self.source else -1,
             len(self.name),

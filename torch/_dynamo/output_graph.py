@@ -513,6 +513,10 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         **options,
     ):
         if is_dynamic_nn_module(target):
+            if hasattr(target, '_is_fsdp_managed_module') and target._is_fsdp_managed_module:
+                source = options["source"]
+                return VariableBuilder(self.root_tx, source)(target)
+                
             return variables.UnspecializedNNModuleVariable(target, **options)
 
         options = dict(options)
@@ -616,6 +620,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
         name = re.sub(r"[^a-zA-Z0-9]", "_", name)
 
         if not name or not name[0].isalpha():
+            print("REWROTENAME", name, target)
             name = "sub" + name
         base = name
         for i in itertools.count():
