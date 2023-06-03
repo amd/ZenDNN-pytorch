@@ -680,6 +680,7 @@ def run_and_get_code(fn, *args, **kwargs):
     return result, source_codes
 
 
+
 def run_and_get_triton_code(fn, *args, **kwargs):
     _, source_codes = run_and_get_code(fn, *args, **kwargs)
     assert (

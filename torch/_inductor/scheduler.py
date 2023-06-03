@@ -13,7 +13,7 @@ import sympy
 import torch
 from torch._dynamo.utils import dynamo_timed
 
-from . import config, dependencies, ir, metrics
+from . import comms, config, dependencies, ir, metrics
 from .dependencies import StarDep, WeakDep
 from .sizevars import SimplifyIndexing
 from .utils import cache_on_self, cmp, free_symbol_has, has_triton
@@ -724,9 +724,14 @@ class Scheduler:
 
         metrics.ir_nodes_pre_fusion += len(self.nodes)
         V.debug.ir_pre_fusion(self.nodes)
+
+        comms.decide_global_ordering_comms(self.nodes)
+
+        self.compute_predecessors()
         self.num_orig_nodes = len(self.nodes)
         self.name_to_fused_node = {n.get_name(): n for n in self.nodes}
         self.create_foreach_nodes()
+
         self.fuse_nodes()
         self.compute_last_usage()
         V.debug.ir_post_fusion(self.nodes)
