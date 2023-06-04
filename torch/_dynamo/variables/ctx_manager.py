@@ -8,7 +8,7 @@ from .. import variables
 from ..bytecode_transformation import create_call_function, create_instruction
 from ..exc import unimplemented
 from ..guards import GuardBuilder
-from ..source import AttrSource
+from ..source import AttrSource, ConstantSource
 from .base import VariableTracker
 from .functions import (
     NestedUserFunctionVariable,
@@ -368,6 +368,11 @@ class CUDAStreamVariable(VariableTracker):
 
     def as_proxy(self):
         return self.proxy
+
+    def reconstruct(self, codegen):
+        unimplemented("Reconstruct of Cuda")
+        # return ConstantSource("cudastreamvariable").reconstruct(codegen)
+
 
 
 class WithExitFunctionVariable(VariableTracker):

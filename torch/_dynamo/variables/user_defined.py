@@ -183,6 +183,8 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         self.value = value
         self.value_type = value_type or type(value)
         assert type(value) is self.value_type
+        # if isinstance(value, dict):
+            # raise RuntimeError("How?")
         # print(f"UserDefinedObjectVariableMADE A {type(self.value)} with {self.value.__dict__}")
 
     def __str__(self):

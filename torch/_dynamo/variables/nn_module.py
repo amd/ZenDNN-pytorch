@@ -847,24 +847,29 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        import operator
         print("FSDPManagedNNModuleVariableMETHOD", name)
         options = VariableTracker.propagate([self])
 
         def wrap_values(items, sub_name):
             result = []
             for submod_name, submod in items:
-                sub_proxy = getattr(getattr(self.proxy, sub_name), submod_name)
+                sub_proxy = operator.getitem(getattr(self.proxy, sub_name), submod_name)
+                sub_obj = FSDPManagedNNModuleVariable(value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
+                sub_proxy.node.meta['example_value'] = sub_obj
                 result.append(
-                    FSDPManagedNNModuleVariable(value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
+                    sub_obj
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
         def named_embed(embed_name, obj, sub_name):
-            sub_proxy = getattr(getattr(self.proxy, sub_name), embed_name)
+            sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
+            sub_obj = FSDPManagedNNModuleVariable(value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
+            sub_proxy.node.meta['example_value'] = sub_obj
             return variables.TupleVariable(
                 [
                     variables.ConstantVariable(name, **options),
-                    FSDPManagedNNModuleVariable(value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
+                    sub_obj
                 ]
             )
 
@@ -880,23 +885,23 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             return {k: bound_args[k] for k in names if k in bound_args}
 
         if name == "children":
-            return wrap_values(self.value.named_children(), "children")
+            return wrap_values(self.value.named_children(), "_modules")
         if name == "buffers":
-            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")), "buffers")
+            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")), "_buffers")
         if name == "named_children":
             result = []
             for childname, submod in self.value.named_children():
-                result.append(named_embed(childname, submod, "named_children"))
+                result.append(named_embed(childname, submod, "_modules"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "named_parameters":
             result = []
             for paramname, param in self.value.named_parameters(
                 **get_kwargs("prefix", "recurse")
             ):
-                result.append(named_embed(paramname, param, "named_parameters"))
+                result.append(named_embed(paramname, param, "_parameters"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "_named_members":
-            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")), "_named_members")
+            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()

@@ -577,7 +577,13 @@ For now, dynamo will explicitly graph break when it encounters user code with th
 
                 if isinstance(data_arg, ListVariable) and check_any_unspec(data_arg):
                     unimplemented("torch.tensor call with list of unspec")
-            print("Making a call_function", fn_, args, kwargs)
+            if fn_ in [
+                torch.distributed.fsdp._common_utils._get_module_state
+            ]:
+                options["source"] = options.get("source", self.source)
+            print("Making a call_function", fn_, args, kwargs, self.source)
+
+            
             # if fn_ is istorch.distributed.distributed_c10d.reduce_scatter_tensor,
             tensor_variable = wrap_fx_proxy(
                 tx=tx,

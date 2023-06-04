@@ -1192,6 +1192,7 @@ class SubgraphTracer(fx.Tracer):
             ctx = self.graph.inserting_before(None)
         with ctx:
             proxy = self.create_proxy("placeholder", name, (), {}, type_expr=type_expr)
+            print("MADEPLACEHOLDER", name, type_expr)
             if self.input_name_to_proxy and before:
                 k, v = self.input_name_to_proxy.popitem()
                 self.input_name_to_proxy[name] = proxy

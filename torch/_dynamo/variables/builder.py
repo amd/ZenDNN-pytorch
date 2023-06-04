@@ -791,6 +791,7 @@ class VariableBuilder:
             #
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
+            print("WOOWOO", self.source)
             fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
                 re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
             )
@@ -1311,6 +1312,9 @@ def wrap_fx_proxy_cls(
         return ConstantVariable(example_value, **options)
     elif isinstance(example_value, dict) and proxy.node.target == operator.getitem:
         return ConstDictVariable(example_value, dict, **options)
+    elif isinstance(example_value, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel):
+        assert "source" in options
+        return VariableBuilder(tx, options["source"])(example_value)
     else:
         unimplemented(
             "torch.* op returned non-Tensor "

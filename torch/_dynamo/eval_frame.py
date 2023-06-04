@@ -1248,7 +1248,7 @@ class TorchPatcher:
         torch.distributed.fsdp.flat_param._check_sharded._dynamo_marked_constant = True
         torch.distributed.fsdp._common_utils._get_sharding_strategy._dynamo_marked_constant = True
         torch.distributed.fsdp.flat_param._check_sharded._dynamo_marked_constant = True
-        torch.distributed.fsdp._common_utils._get_module_fsdp_state._dynamo_marked_constant = True
+        # torch.distributed.fsdp._common_utils._get_module_fsdp_state._dynamo_marked_constant = True
         torch.distributed.fsdp._common_utils._get_sharding_strategy._dynamo_marked_constant = True
         # torch.distributed.fsdp._utils._same_storage_as_data_ptr._dynamo_marked_constant = True
 
