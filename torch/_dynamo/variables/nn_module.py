@@ -785,7 +785,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     compilation.
     """
 
-    def __init__(self, value, **kwargs):
+    def __init__(self, value, proxy, **kwargs):
         source = kwargs.get("source", None)
         assert (
             source is not None
@@ -799,9 +799,13 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             self.source = NotNNModuleSource(source)
 
         self.value._dynamo_var = self
+        self.proxy = proxy
 
     def as_python_constant(self):
         return self.value
+
+    def as_proxy(self):
+        return self.proxy
 
     def var_getattr(self, tx, name):
         if "." in name:
@@ -846,19 +850,21 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         print("FSDPManagedNNModuleVariableMETHOD", name)
         options = VariableTracker.propagate([self])
 
-        def wrap_values(items):
+        def wrap_values(items, sub_name):
             result = []
             for submod_name, submod in items:
+                sub_proxy = getattr(getattr(self.proxy, sub_name), submod_name)
                 result.append(
-                    FSDPManagedNNModuleVariable(value=submod, source=AttrSource(self.source, submod_name))
+                    FSDPManagedNNModuleVariable(value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
-        def named_embed(embed_name, obj):
+        def named_embed(embed_name, obj, sub_name):
+            sub_proxy = getattr(getattr(self.proxy, sub_name), embed_name)
             return variables.TupleVariable(
                 [
                     variables.ConstantVariable(name, **options),
-                    FSDPManagedNNModuleVariable(value=obj, source=AttrSource(self.source, embed_name))
+                    FSDPManagedNNModuleVariable(value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
                 ]
             )
 
@@ -874,23 +880,23 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             return {k: bound_args[k] for k in names if k in bound_args}
 
         if name == "children":
-            return wrap_values(self.value.named_children())
+            return wrap_values(self.value.named_children(), "children")
         if name == "buffers":
-            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")))
+            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")), "buffers")
         if name == "named_children":
             result = []
             for childname, submod in self.value.named_children():
-                result.append(named_embed(childname, submod))
+                result.append(named_embed(childname, submod, "named_children"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "named_parameters":
             result = []
             for paramname, param in self.value.named_parameters(
                 **get_kwargs("prefix", "recurse")
             ):
-                result.append(named_embed(paramname, param))
+                result.append(named_embed(paramname, param, "named_parameters"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "_named_members":
-            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")))
+            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")), "_named_members")
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()

@@ -892,6 +892,9 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                 placeholders.append(node)
         torch._dynamo.utils.increment_op_count(tot)
         for pl in placeholders:
+            if "grapharg" not in pl.meta:
+                pl._dynamo_source = ConstantSource("fsdp?")
+                continue
             arg = pl.meta["grapharg"]
             # TODO: Why isn't this stored in meta :think:
             pl._dynamo_source = arg.source
@@ -934,6 +937,8 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                     self.remove_node(node)
 
         def placeholder_binds_symbol(node):
+            if "grapharg" not in node.meta:
+                return None
             arg = node.meta["grapharg"]
             example = arg.example
             if isinstance(example, torch.SymInt) and isinstance(

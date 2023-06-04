@@ -790,11 +790,18 @@ class VariableBuilder:
             #
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
+            fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
+                re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
+            )
             result = FSDPManagedNNModuleVariable(
                 value,
+                fsdpmoduleproxy,
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
+            grapharg = GraphArg(self.get_source(), value, False, value)
+            fsdpmoduleproxy.node.meta["grapharg"] = grapharg
+            fsdpmoduleproxy.node.meta["example_value"] = value
             # return result
             return self.tx.output.side_effects.track_object_existing(
                 self.source, value, result
