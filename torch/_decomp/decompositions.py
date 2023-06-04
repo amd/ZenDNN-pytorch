@@ -1142,7 +1142,7 @@ def split_with_sizes(
 ) -> List[Tensor]:
     if sum(split_sizes) != self.shape[dim]:
         raise ValueError(
-            "Split sizes don't add up to the tensor's size in the given dimension"
+            f"Split sizes don't add up to the tensor's size in the given dimension {split_sizes} != {self.shape[dim]}"
         )
     num_splits = len(split_sizes)
     splits = []

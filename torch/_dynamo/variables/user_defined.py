@@ -158,6 +158,12 @@ class UserDefinedClassVariable(UserDefinedVariable):
             options["mutable_local"] = MutableLocal()
             return variables.DataClassVariable.create(self.value, args, kwargs, options)
         
+        if isinstance(self.value, functools.partial.__class__):
+            applied_func = functools.partial(args[0].fn, **kwargs)
+            return variables.functions.PartialUserFunctionVariable(
+                applied_func,
+                source=self.source,
+            )
         return super().call_function(tx, args, kwargs)
 
     def const_getattr(self, tx, name):

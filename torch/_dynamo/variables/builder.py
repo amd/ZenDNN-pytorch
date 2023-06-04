@@ -1301,10 +1301,12 @@ def wrap_fx_proxy_cls(
     ]:
         proxy.node.meta["example_value"] = example_value
         return ConstantVariable(example_value, **options)
+    elif isinstance(example_value, dict) and proxy.node.target == operator.getitem:
+        return ConstDictVariable(example_value, dict, **options)
     else:
         unimplemented(
             "torch.* op returned non-Tensor "
-            + f"{typestr(example_value)} {proxy.node.op} {proxy.node.target}"
+            + f"{typestr(example_value)} {proxy.node.op} {proxy.node.target} {proxy.node.args}"
         )
 
 

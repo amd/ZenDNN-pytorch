@@ -875,6 +875,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
         if name == "children":
             return wrap_values(self.value.named_children())
+        if name == "buffers":
+            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")))
         if name == "named_children":
             result = []
             for childname, submod in self.value.named_children():

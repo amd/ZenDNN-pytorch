@@ -1331,7 +1331,7 @@ def run_node(tracer, node, args, kwargs, nnmodule):
             assert "example_value" in node.meta
             return node.meta["example_value"]
     except Exception as e:
-        fn_str = f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n"
+        fn_str = f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n {e} \n"
         from .exc import unimplemented
         unimplemented(fn_str)
         raise RuntimeError(fn_str + str(e)).with_traceback(e.__traceback__) from e
