@@ -438,6 +438,7 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.BUILTIN_MATCH),
             )          
         elif isinstance(value, functools.partial):
+            print("MADE APPLIED FUNC", value)
             return PartialUserFunctionVariable(
                 value,
                 source=self.source,
@@ -801,7 +802,7 @@ class VariableBuilder:
             )
             grapharg = GraphArg(self.get_source(), value, False, value)
             fsdpmoduleproxy.node.meta["grapharg"] = grapharg
-            # fsdpmoduleproxy.node.meta["example_value"] = value
+            fsdpmoduleproxy.node.meta["example_value"] = value
             # return result
             return self.tx.output.side_effects.track_object_existing(
                 self.source, value, result

@@ -383,6 +383,10 @@ def _reshard_grads(
         handle.reshard_grad()
 
 
+def _invoke_unshard(fn):
+    print("who is here??", type(fn))
+    return fn()
+
 @no_type_check
 def _pre_forward(
     state: _FSDPState,
@@ -414,7 +418,7 @@ def _pre_forward(
         for handle in handles:
             handle._training_state = HandleTrainingState.FORWARD
         if unshard_fn is not None:
-            unshard_fn()
+            _invoke_unshard(unshard_fn)
         # Register post-backward hooks to reshard the parameters and reduce-scatter
         # their gradients. They must be re-registered every forward pass in case
         # the `grad_fn` is mutated.
@@ -596,7 +600,7 @@ def _root_pre_forward(
             state._streams_unshard,
             state._streams_pre_unshard,
         )
-        _clear_grads_if_needed(state._all_handles)
+        # _clear_grads_if_needed(state._all_handles)
 
         # Prepares the forward inputs by moving them to ``compute_device``
         # TODO: Do not use the side stream for tensor copies for now; investigate

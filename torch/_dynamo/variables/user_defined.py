@@ -160,6 +160,7 @@ class UserDefinedClassVariable(UserDefinedVariable):
         
         if isinstance(self.value, functools.partial.__class__):
             applied_func = functools.partial(args[0].fn, **kwargs)
+            print("MADE APPLIED FUNC", applied_func)
             return variables.functions.PartialUserFunctionVariable(
                 applied_func,
                 source=self.source,
