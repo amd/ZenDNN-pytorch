@@ -970,6 +970,8 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                 else:
                     # Register the free symbols as uses
                     arg = node.meta["grapharg"]
+                    if isinstance(node.meta["example_value"], torch.nn.Module):
+                        continue
                     fake = (
                         arg.fake_tensor if arg.fake_tensor is not None else arg.example
                     )

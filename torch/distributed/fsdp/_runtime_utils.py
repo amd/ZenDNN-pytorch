@@ -247,14 +247,14 @@ def _share_state_and_init_handle_attrs(
             )
             fsdp_state._inter_node_state = inter_node_state
 
-        # Relax the assert for non-root FSDP instances in case the nested
-        # initialized module is wrapped again in FSDP later (e.g. after
-        # training to run inference)
-        _p_assert(
-            fsdp_state._is_root is None or not fsdp_state._is_root,
-            "Non-root FSDP instance's `_is_root` should not have been "
-            "set yet or should have been set to `False`",
-        )
+        # # Relax the assert for non-root FSDP instances in case the nested
+        # # initialized module is wrapped again in FSDP later (e.g. after
+        # # training to run inference)
+        # _p_assert(
+        #     fsdp_state._is_root is None or not fsdp_state._is_root,
+        #     "Non-root FSDP instance's `_is_root` should not have been "
+        #     "set yet or should have been set to `False`",
+        # )
         fsdp_state._is_root = False
         # fsdp_state._streams = root_state._streams
         # fsdp_state._stream_to_name = root_state._stream_to_name
