@@ -585,7 +585,8 @@ For now, dynamo will explicitly graph break when it encounters user code with th
             if fn_.__name__ == 'current_stream':
                 options["source"] = options.get("source", self.source)
             print("Making a call_function", fn_, args, kwargs, self.source)
-
+            if fn_ == torch.distributed.fsdp._runtime_utils._wait_for_computation_stream:
+                return ConstantVariable(None)
             
             # if fn_ is istorch.distributed.distributed_c10d.reduce_scatter_tensor,
             tensor_variable = wrap_fx_proxy(

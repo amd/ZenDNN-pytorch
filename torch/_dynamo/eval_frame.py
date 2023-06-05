@@ -415,7 +415,7 @@ def catch_errors_wrapper(callback, hooks: Hooks):
             or skipfiles.check(frame.f_code.co_filename)
             or config.disable
         ):
-            log.debug("skipping %s %s", frame.f_code.co_name, frame.f_code.co_filename)
+            log.debug("skipping %s %s skip: %s | disable: %s", frame.f_code.co_name, frame.f_code.co_filename, skipfiles.check(frame.f_code.co_filename), config.disable)
             return None
         if frame.f_code.co_filename == "<string>" and frame.f_code.co_name == "__new__":
             # nametuple constructor
@@ -1242,6 +1242,7 @@ class TorchPatcher:
         torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored = torch._dynamo.allow_in_graph(torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored)
         # torch._dynamo.allow_in_graph(torch.distributed.fsdp.flat_param._check_sharded)
         # torch.distributed.utils._free_storage._dynamo_marked_constant = True
+        torch.distributed.fsdp._runtime_utils._wait_for_computation_stream._dynamo_marked_constant = True
         torch.distributed.fsdp._runtime_utils._populate_exec_order_data._dynamo_marked_constant = True
         torch.distributed.fsdp._exec_order_utils._num_valid_indices._dynamo_marked_constant = True
         torch.distributed.fsdp._traversal_utils._composable._dynamo_marked_constant = True

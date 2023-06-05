@@ -55,6 +55,7 @@ from ..utils import (
     np,
     odict_values,
     preserve_rng_state,
+    proxy_args_kwargs,
     requires_higher_order_op,
     tensor_always_has_static_shape,
     torch_np,
@@ -457,11 +458,21 @@ class VariableBuilder:
             )          
         elif isinstance(value, functools.partial):
             print("MADE APPLIED FUNC", value)
-            return PartialUserFunctionVariable(
+            value.__name__ = value.func.__name__
+            proxy = self.tx.output.create_proxy(
+                "call_function",
+                value,
+                *proxy_args_kwargs([], value.keywords),
+            )
+            print("MADE FN PROXY W/ARGS", value.keywords, "->", *proxy_args_kwargs([], value.keywords))
+            result = PartialUserFunctionVariable(
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
+                proxy=proxy,
             )
+            proxy.node.meta['example_value'] = value
+            return result
         elif value in [
             torch.distributed._functional_collectives.all_gather_tensor,
             torch.distributed._functional_collectives._expand_group,

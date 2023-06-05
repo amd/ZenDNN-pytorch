@@ -1333,7 +1333,7 @@ def run_node(tracer, node, args, kwargs, nnmodule):
     except Exception as e:
         fn_str = f"Failed running {op} {node.target}(*{args}, **{kwargs}):\n {e} \n"
         from .exc import unimplemented
-        unimplemented(fn_str)
+        # unimplemented(fn_str)
         raise RuntimeError(fn_str + str(e)).with_traceback(e.__traceback__) from e
 
     raise AssertionError(op)

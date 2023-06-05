@@ -25,6 +25,7 @@ from ..utils import (
     istype,
     namedtuple_fields,
     object_has_getattribute,
+    proxy_args_kwargs,
 )
 from .base import MutableLocal, VariableTracker
 from .ctx_manager import GenericContextWrappingVariable, NullContextVariable
@@ -160,11 +161,29 @@ class UserDefinedClassVariable(UserDefinedVariable):
         
         if isinstance(self.value, functools.partial.__class__):
             print("MADE APPLIED FUNC", self.value, args, kwargs)
-            applied_func = functools.partial(args[0].fn, **kwargs)
-            return variables.functions.PartialUserFunctionVariable(
+            if isinstance(args[0], variables.TorchVariable):
+                inner_fn = args[0].value
+            else:
+                inner_fn = args[0].fn
+            applied_func = functools.partial(inner_fn, **kwargs)
+
+            applied_func_kwargs = applied_func.keywords
+            applied_func.__name__ = applied_func.func.__name__
+            proxy = tx.output.create_proxy(
+                "call_function",
+                applied_func,
+                *proxy_args_kwargs([], kwargs),
+            )
+            print("MADE FN PROXY W/ARGS", applied_func_kwargs, "->", *proxy_args_kwargs([], applied_func_kwargs))
+
+            result =  variables.functions.PartialUserFunctionVariable(
                 applied_func,
                 source=self.source,
+                proxy=proxy,
             )
+            proxy.node.meta['example_value'] = applied_func
+            return result
+            
         return super().call_function(tx, args, kwargs)
 
     def const_getattr(self, tx, name):

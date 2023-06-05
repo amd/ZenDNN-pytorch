@@ -127,10 +127,10 @@ def _disallowed_function_ids():
     remove += storage
 
     # Distributed APIs don't work well with torch.compile.
-    if torch.distributed.is_available():
-        remove.extend(
-            torch.distributed.distributed_c10d.dynamo_unsupported_distributed_c10d_ops
-        )
+    # if torch.distributed.is_available():
+        # remove.extend(
+        #     torch.distributed.distributed_c10d.dynamo_unsupported_distributed_c10d_ops
+        # )
 
     return {id(x) for x in remove}
 
@@ -158,7 +158,7 @@ def _allowed_function_ids():
             "torch._inductor.",
             "torch._C.inductor.",
             "torch.fx.",
-            "torch.distributed.fsdp.",
+            # "torch.distributed.fsdp.",
         )
         allowed_modules_dot = tuple([x + "." for x in allowed_modules])
         module = inspect.getmodule(obj)

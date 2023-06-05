@@ -340,6 +340,9 @@ class ListVariable(CommonListMethodsVariable):
         else:
             return super().call_method(tx, name, args, kwargs)
 
+    def __str__(self):
+        return f"{type(self)}:,[{[type(x) for x in self.items]}]"
+
 class SetVariable(CommonListMethodsVariable):
     def python_type(self):
         return list

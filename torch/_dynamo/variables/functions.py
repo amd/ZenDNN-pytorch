@@ -381,7 +381,7 @@ class UserMethodVariable(UserFunctionVariable):
         return super().num_parameters() - 1
 
 class PartialUserFunctionVariable(BaseUserFunctionVariable):
-    def __init__(self, fn, is_constant=False, **kwargs):
+    def __init__(self, fn, proxy, is_constant=False, **kwargs):
         inner_fn = kwargs.pop("inner_fn", None)
         if not inner_fn:
             inner_fn = UserFunctionVariable(fn.func, source=AttrSource(kwargs["source"], "func"), is_constant=is_constant)
@@ -390,6 +390,7 @@ class PartialUserFunctionVariable(BaseUserFunctionVariable):
         self.fn = fn
         self.is_constant = is_constant
         self.inner_fn = inner_fn
+        self.proxy = proxy
 
     def bind_args(self, parent, args, kwargs):
         if self.fn.args:
@@ -422,6 +423,12 @@ class PartialUserFunctionVariable(BaseUserFunctionVariable):
             result[key] = value
         print("PARTIALINVOKE", result)
         return result, closure_cells
+
+    def as_proxy(self):
+        return self.proxy
+
+    def __str__(self):
+        return f"{type(self)}, {self.inner_fn}, {self.fn}"
 
     def self_args(self):
         return []

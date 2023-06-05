@@ -900,6 +900,10 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             ):
                 result.append(named_embed(paramname, param, "_parameters"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+        elif name == "_parameters":
+            return wrap_values(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
+        elif name == "parameters":
+            return wrap_values(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
         if name == "_named_members":
             return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
         if name == "__setattr__":

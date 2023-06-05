@@ -2,6 +2,7 @@ import inspect
 from typing import Dict, List
 
 import torch._C
+from torch._dynamo.variables.base import VariableTracker
 from torch._guards import Guard, GuardSource
 
 from .. import variables
@@ -355,7 +356,7 @@ class CUDAStreamVariable(VariableTracker):
         self.proxy = proxy
         self.value = value
         self.source = source
-
+        
     def call_method(
         self,
         tx,

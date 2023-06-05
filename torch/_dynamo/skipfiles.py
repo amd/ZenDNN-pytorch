@@ -186,6 +186,11 @@ FILENAME_ALLOWLIST |= {
     if inspect.isclass(obj) or inspect.isfunction(obj)
 }
 
+FILENAME_ALLOWLIST |= {
+    inspect.getfile(torch.distributed.distributed_c10d.all_gather_into_tensor)
+}
+
+
 # Do trace through match and replace patterns used in PT2E QAT
 # Note: These patterns are comprised of torch ops and for internal use only.
 # They are exported to aten graphs before being passed to the FX subgraph rewriter.
