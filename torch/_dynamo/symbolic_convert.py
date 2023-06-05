@@ -298,13 +298,13 @@ def generic_jump(truth_fn: typing.Callable[[object], bool], push: bool):
             isinstance(value, (TensorVariable)) and self.should_compile_partial_graph()
         ):
             # compile a partial subgraph prefix then jump into user code
-            if self.has_backedge():
-                msg = (
-                    "Skipping frame because there is a graph break in a for/while loop\n"
-                    f"{self.frame_summary()}"
-                )
-                log.info(msg)
-                raise exc.SkipFrame(msg)
+            # if self.has_backedge():
+            #     msg = (
+            #         "Skipping frame because there is a graph break in a for/while loop\n"
+            #         f"{self.frame_summary()}"
+            #     )
+            #     log.info(msg)
+            #     raise exc.SkipFrame(msg)
 
             self.push(value)
             log.debug("generic_jump triggered compile")
@@ -367,7 +367,7 @@ def generic_jump(truth_fn: typing.Callable[[object], bool], push: bool):
             # TODO link the torch.cond doc later
             raise exc.UserError(
                 exc.UserErrorType.DYNAMIC_CONTROL_FLOW,
-                "Dynamic control flow is not supported at the moment. Please use "
+                f"Dynamic control flow on {value}, {value.as_proxy()} is not supported at the moment. Please use "
                 "functorch.experimental.control_flow.cond to explicitly capture the control flow",
             )
 
@@ -2226,6 +2226,10 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
                 produce_trampoline_autograd_bwd,
             ]:
                 # Known sound
+                return
+            if func.get_name() in [
+                "all_gather_into_tensor"
+            ]:
                 return
             unimplemented(
                 f"inline in skipfiles: {func.fn.__qualname__}  | {func.get_name()} {func.get_filename()}"

@@ -1045,7 +1045,11 @@ class BuiltinVariable(VariableTracker):
                         return VariableBuilder(tx, source)(example_value).add_options(
                             options
                         )
-                unimplemented("tensor grad")
+                # unimplemented(f"tensor grad {obj} {source}")
+                print("YOLO grad")
+                return VariableBuilder(tx, AttrSource(source, "grad"))(obj.as_proxy().node.meta['example_value'].grad).add_options(
+                    options
+                )
             else:
                 return variables.ConstantVariable(obj.as_proxy().node.meta['example_value'].grad)
         elif isinstance(
@@ -1119,7 +1123,7 @@ class BuiltinVariable(VariableTracker):
             #     return obj.call_method(tx, "__setattr__", [name_var, val], {})
             return val.add_options(self, obj, name_var)
         elif isinstance(obj, variables.UserDefinedObjectVariable):
-            if isinstance(obj, variables.nn_module.FSDPManagedNNModuleVariable):
+            if isinstance(obj, (variables.nn_module.FSDPManagedNNModuleVariable, variables.user_defined.FlatParamHandleVariable)):
                 return obj.call_method(tx, "__setattr__", [name_var, val], {})
 
             unimplemented(
@@ -1310,7 +1314,12 @@ class BuiltinVariable(VariableTracker):
             from .builder import wrap_fx_proxy
 
             if op not in supported_tensor_comparison_ops.values():
-                _unimplemented()
+                return wrap_fx_proxy(
+                    tx,
+                    tx.output.create_proxy(
+                        "call_function", op, *proxy_args_kwargs([left, right], {})
+                    ),
+                )
             return wrap_fx_proxy(
                 tx,
                 op(left.as_proxy(), right.as_proxy()),

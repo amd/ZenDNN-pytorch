@@ -561,6 +561,7 @@ class GetAttrVariable(VariableTracker):
             obj = self.obj.call_function(tx, args, kwargs)
             return GetAttrVariable(obj, self.name).call_function(tx, args, kwargs)
 
+        print("GETATTR FALL THROUGH", self, self.name, self.obj, args)
         return self.obj.call_method(tx, self.name, args, kwargs).add_options(self)
 
     def call_method(

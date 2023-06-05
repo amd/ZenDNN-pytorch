@@ -167,21 +167,21 @@ class UserDefinedClassVariable(UserDefinedVariable):
                 inner_fn = args[0].fn
             applied_func = functools.partial(inner_fn, **kwargs)
 
-            applied_func_kwargs = applied_func.keywords
-            applied_func.__name__ = applied_func.func.__name__
-            proxy = tx.output.create_proxy(
-                "call_function",
-                applied_func,
-                *proxy_args_kwargs([], kwargs),
-            )
-            print("MADE FN PROXY W/ARGS", applied_func_kwargs, "->", *proxy_args_kwargs([], applied_func_kwargs))
+            # applied_func_kwargs = applied_func.keywords
+            # applied_func.__name__ = applied_func.func.__name__
+            # proxy = tx.output.create_proxy(
+            #     "call_function",
+            #     applied_func,
+            #     *proxy_args_kwargs([], kwargs),
+            # )
+            # print("MADE FN PROXY W/ARGS", applied_func_kwargs, "->", *proxy_args_kwargs([], applied_func_kwargs))
 
             result =  variables.functions.PartialUserFunctionVariable(
                 applied_func,
                 source=self.source,
-                proxy=proxy,
+                # proxy=proxy,
             )
-            proxy.node.meta['example_value'] = applied_func
+            # proxy.node.meta['example_value'] = applied_func
             return result
             
         return super().call_function(tx, args, kwargs)
@@ -203,7 +203,7 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         self.value_type = value_type or type(value)
         assert type(value) is self.value_type
         if isinstance(value, dict):
-            raise RuntimeError("How?")
+            raise RuntimeError(f"How? {value.items}")
         # print(f"UserDefinedObjectVariableMADE A {type(self.value)} with {self.value.__dict__}")
 
     def __str__(self):
@@ -621,6 +621,7 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
 
 class FlatParamHandleVariable(UserDefinedObjectVariable):
     def __init__(self, value, **kwargs):
+        self.flat_param_variable = kwargs.pop("flat_param_variable", None)
         super().__init__(value, **kwargs)
 
     def as_python_constant(self):
@@ -628,11 +629,46 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
 
     def _getattr_static(self, name):
         # Note - here for easier printing as needed, will delete
+        print("FlatParamHandleVariableGETSTAT", name)
         return super()._getattr_static(name)
            
+
+    def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("FLATPARAMMETHOD, ", name, args)
+        if name == "__setattr__":
+            assert len(args) == 2
+            key = args[0].as_python_constant()
+            value_obj = args[1]
+
+            def _convert(item):
+                if isinstance(item, variables.NNModuleVariable):
+                    value = tx.output.get_submodule(item.module_key)
+                elif isinstance(item, variables.TensorVariable):
+                    value = item.as_proxy().node.meta['example_value']
+                elif item.has_unpack_var_sequence(tx):
+                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
+                else:
+                    value = item.as_python_constant()
+                return value
+
+            value = _convert(value_obj)
+            
+            setattr(self.value, key, value)
+            return variables.ConstantVariable(None)
+            
+        return super().call_method(tx, name, args, kwargs)
            
     def var_getattr(self, tx, name):
         # Note - here for easier printing as needed, will delete
+        print("FlatParamHandleVariableGETTING", name)
+        if name == "flat_param":
+            return self.flat_param_variable
+            # proxy = tx.output.create_proxy(
+            #     "call_function",
+            #     applied_func,
+            #     *proxy_args_kwargs([], kwargs),
+            # )
+            
         return super().var_getattr(tx, name)
 
 class FSDPStateVariable(UserDefinedObjectVariable):
@@ -649,7 +685,7 @@ class FSDPStateVariable(UserDefinedObjectVariable):
                 elif isinstance(item, variables.TensorVariable):
                     value = item.as_proxy().node.meta['example_value']
                 elif item.has_unpack_var_sequence(tx):
-                    value = [_convert(x) for x in item]
+                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
                 else:
                     value = item.as_python_constant()
                 return value

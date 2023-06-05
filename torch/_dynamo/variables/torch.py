@@ -304,6 +304,7 @@ class TorchVariable(VariableTracker):
                 "torch.cuda.stream() not fully supported, streams may be ignored"
             )
             assert len(args) == 1
+            options["source"] = options.get("source", self.source)
             return CUDAStreamContextVariable.create(tx, args[0], **options)
         elif self.value is torch.cuda.streams.Stream:
             options["source"] = options.get("source", self.source)

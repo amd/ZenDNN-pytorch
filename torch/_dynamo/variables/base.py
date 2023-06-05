@@ -221,7 +221,7 @@ class VariableTracker(metaclass=HasPostInit):
         unimplemented(f"num_parameters: {self}")
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
-        unimplemented(f"hasattr: {repr(self)}")
+        unimplemented(f"hasattr: {repr(self)} {name}")
 
     def call_function(
         self, tx, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"

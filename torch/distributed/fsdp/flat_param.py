@@ -527,6 +527,7 @@ class FlatParamHandle:
         self._init_flat_param_and_metadata(
             params, fully_sharded_module, self._aligned_numel, use_orig_params  # type: ignore[arg-type]
         )
+        # print("FP", self.flat_param)
         self._use_unsharded_views(as_params=False)
 
     # def _init_setattr_fns(self):
@@ -856,21 +857,20 @@ class FlatParamHandle:
                 flat_param.storage_offset() == 0,
                 "The `FlatParameter` is not the sole occupant of its storage",
             )
-            # TODO(voz): can we move it down?
-            if not is_torchdynamo_compiling():
-                orig_storage = flat_param._typed_storage()
+            orig_storage = flat_param._typed_storage()
 
             sharded_flat_param, numel_padded = FlatParamHandle._get_shard(
                 flat_param, self.rank, self.world_size
             )
+            # print("Changing size", flat_param.size(), sharded_flat_param.size())
             flat_param.set_(sharded_flat_param)  # type: ignore[call-overload]
             start_idx = sharded_flat_param.numel() * self.rank
             end_idx = sharded_flat_param.numel() * (self.rank + 1) - 1  # inclusive
             self._init_shard_metadata(numel_padded, start_idx, end_idx)
 
-            if not is_torchdynamo_compiling():
-                if orig_storage._size() > 0:
-                    orig_storage._resize_(0)
+            # if not is_torchdynamo_compiling():
+            if orig_storage._size() > 0:
+                orig_storage._resize_(0)
 
         if self._use_orig_params:
             self._use_sharded_views()
@@ -1673,7 +1673,9 @@ class FlatParamHandle:
                 device == torch.device("cpu"),
                 f"Expects the local shard to be on CPU but got {device}",
             )
+        # print("SIZE PRE?", flat_param.size())
         flat_param.data = flat_param._local_shard  # type: ignore[attr-defined]
+        # print("SIZE POST?", flat_param.size())
         if self._use_orig_params:
             in_forward = self._training_state == HandleTrainingState.FORWARD
             if (
@@ -1713,7 +1715,7 @@ class FlatParamHandle:
     @no_type_check
     def _get_unflat_views_unaligned(
         self,
-        tensor: Optional[torch.Tensor] = None,
+        tensor: Tensor,
     ) -> Iterator[Tensor]:
         """
         Returns unflattened ``Tensor`` views into ``tensor`` if it is not
@@ -1724,8 +1726,7 @@ class FlatParamHandle:
         tensor optimizer state.
         """
         flat_param = self.flat_param
-        if tensor is None:
-            tensor = flat_param
+        assert tensor is not None
         views = (
             _ext_post_unflatten_transform(subtensor.view(shape), param_extension)
             for (subtensor, shape, param_extension) in zip(
@@ -1735,6 +1736,38 @@ class FlatParamHandle:
             )
         )
         return views
+
+
+    @no_type_check
+    def _get_unflat_views_unaligned_no_tensor(
+        self,
+    ) -> Iterator[Tensor]:
+        """
+        Returns unflattened ``Tensor`` views into ``tensor`` if it is not
+        ``None`` or ``flat_param`` otherwise, where the unflattening is based
+        on ``flat_param`` 's metadata.
+
+        Examples for ``tensor`` include ``flat_param.grad`` or unsharded
+        tensor optimizer state.
+        """
+        flat_param = self.flat_param
+        tensor = flat_param
+        views = (
+            _ext_post_unflatten_transform(subtensor.view(shape), param_extension)
+            for (subtensor, shape, param_extension) in zip(
+                torch.split(tensor, flat_param._numels, dim=0),
+                flat_param._shapes,
+                flat_param._param_extensions,
+            )
+        )
+        return views
+
+
+    def _get_unflat_views_no_tensor(self):
+        align_addresses = self._use_orig_params
+        if align_addresses:
+            return self._get_unflat_views_aligned_no_tensor()
+        return self._get_unflat_views_unaligned_no_tensor()
 
     def _get_unflat_views(self, tensor: Optional[Tensor] = None):
         align_addresses = self._use_orig_params
@@ -1746,7 +1779,7 @@ class FlatParamHandle:
     @no_type_check
     def _get_unflat_views_aligned(
         self,
-        tensor: Optional[Tensor] = None,
+        tensor: Tensor,
     ) -> List[Tensor]:
         """
         This has the same contract as :meth:`_get_unflat_views_unaligned`
@@ -1754,8 +1787,37 @@ class FlatParamHandle:
         alignment, which may incur slightly more CPU overhead.
         """
         flat_param = self.flat_param
-        if tensor is None:
-            tensor = flat_param
+        assert tensor is not None
+        # print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
+        splits: List[Tensor] = torch.split(
+            tensor, flat_param._numels_with_padding, dim=0
+        )
+        idx = 0
+        views: List[Tensor] = []
+        for split, is_padding in zip(splits, flat_param._is_padding_mask):
+            if is_padding:
+                continue
+            views.append(
+                _ext_post_unflatten_transform(
+                    split.view(flat_param._shapes[idx]),
+                    flat_param._param_extensions[idx],
+                )
+            )
+            idx += 1
+        return views
+
+    @no_type_check
+    def _get_unflat_views_aligned_no_tensor(
+        self,
+    ) -> List[Tensor]:
+        """
+        This has the same contract as :meth:`_get_unflat_views_unaligned`
+        except it checks for ``None`` placeholders representing padding for
+        alignment, which may incur slightly more CPU overhead.
+        """
+        flat_param = self.flat_param
+        tensor = flat_param
+        # print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
         splits: List[Tensor] = torch.split(
             tensor, flat_param._numels_with_padding, dim=0
         )
@@ -1786,9 +1848,12 @@ class FlatParamHandle:
                 be used during forward/backward computation and when hiding the
                 original parameters from :meth:`nn.Module.named_parameters`.
         """
+        import traceback
+
+        # traceback.print_stack()
         flat_param = self.flat_param
         self._check_unsharded(flat_param)
-        views = self._get_unflat_views()
+        views = self._get_unflat_views(flat_param)
         for i, (view, (param_name, module, _)) in enumerate(
             zip(views, flat_param._param_infos)
         ):

@@ -5,6 +5,7 @@ import types
 from typing import Dict, List
 
 import sympy
+from torch._dynamo.variables.base import VariableTracker
 
 import torch.fx
 import torch.random
@@ -877,6 +878,28 @@ class TypedStorageVariable(VariableTracker):
             return ConstantVariable(self.value.device)
         print("TypedStorageVariable Call method", name, self.value, args)
         unimplemented(f"typed_storage method calls WIP {name}")
+
+class UnTypedStorageVariable(VariableTracker):
+    def __init__(self, value, **kwargs):
+        self.value = value
+        super().__init__(**kwargs)
+
+    def call_method(
+        self, tx, name, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
+    ) -> "VariableTracker":
+        if name == "_data_ptr":
+            return ConstantVariable(self.value._data_ptr())
+            # return variables.LambdaVariable(
+            #     lambda *args, **kwargs: ConstantVariable(self.value._data_ptr())
+            # ).add_options(self)
+        if name == '_size':
+            return ConstantVariable(self.value._size())
+        if name == 'device':
+            return ConstantVariable(self.value.device)
+        if name == 'data_ptr':
+            return ConstantVariable(self.value.data_ptr())
+        print("UnTypedStorageVariable Call method", name, self.value, args)
+        unimplemented(f"untyped_storage method calls WIP {name}")
         
 class FlatParamVariable(TensorVariable):
     def call_method(
@@ -886,17 +909,25 @@ class FlatParamVariable(TensorVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        self.handle = kwargs.pop("handle", None)
         print("FLAT PARAM INVOKE", name)
         if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
             from .builder import wrap_fx_proxy
             return wrap_fx_proxy(
                 tx=tx,
                 proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
+                source=AttrSource(self.source, name)
             )
         if name == "device" and self.device is not None:
             return ConstantVariable(self.device)
         if name == "dtype" and self.dtype is not None:
             return ConstantVariable(self.dtype)
+        if name == "untyped_storage":
+            value = self.as_proxy().node.meta['example_value']
+            return UnTypedStorageVariable(value)
+        if name == "size":
+            print("SIZE?", self.size, "HANDLE?", self.handle)
+            return ConstantVariable(self.size)
     
         
         # variables.LambdaVariable(
@@ -943,3 +974,9 @@ class FlatParamVariable(TensorVariable):
             print(f"FPP no {name}")
         return super().call_method(tx, name, args, kwargs)
 
+    def call_hasattr(self, tx, name: str) -> VariableTracker:
+        value = self.as_proxy().node.meta['example_value']
+        has = hasattr(value, name)
+        if not has:
+            print("MISSING", name)
+        return ConstantVariable(has)

@@ -300,6 +300,7 @@ class CUDAStreamContextVariable(ContextWrappingVariable):
                 (None,),
                 {},
             ),
+            **kwargs,
         )
         return CUDAStreamContextVariable(
             target_values=[target_value],
@@ -370,6 +371,9 @@ class CUDAStreamVariable(VariableTracker):
 
     def as_proxy(self):
         return self.proxy
+
+    def as_python_constant(self):
+        return self.value
 
     def reconstruct(self, codegen):
         # unimplemented("Reconstruct of Cuda")

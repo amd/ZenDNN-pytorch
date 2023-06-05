@@ -402,7 +402,7 @@ class VariableBuilder:
 
             return self.tx.output.side_effects.track_dict(self.source, value, result)
         elif istype(
-            value, (dict)
+            value, (dict, collections.defaultdict)
         ):
             keys = value.keys()
             def index_source(key):
@@ -418,7 +418,15 @@ class VariableBuilder:
                 )(value[k])
                 for k in keys
             }
-            return ConstDictVariable(result, type(value), mutable_local=MutableLocal())
+            if istype(value, collections.defaultdict):
+                result = DefaultDictVariable(
+                    result,
+                    type(value),
+                    self._wrap(value.default_factory)
+                )
+            else:
+                result = ConstDictVariable(result, type(value), mutable_local=MutableLocal())
+            return self.tx.output.side_effects.track_dict(self.source, value, result)
         elif isinstance(value, torch.nn.Module):
             return self.wrap_module(value)
         # elif istype(value, set):
@@ -458,20 +466,20 @@ class VariableBuilder:
             )          
         elif isinstance(value, functools.partial):
             print("MADE APPLIED FUNC", value)
-            value.__name__ = value.func.__name__
-            proxy = self.tx.output.create_proxy(
-                "call_function",
-                value,
-                *proxy_args_kwargs([], value.keywords),
-            )
-            print("MADE FN PROXY W/ARGS", value.keywords, "->", *proxy_args_kwargs([], value.keywords))
+            # value.__name__ = value.func.__name__
+            # proxy = self.tx.output.create_proxy(
+            #     "call_function",
+            #     value,
+            #     *proxy_args_kwargs([], value.keywords),
+            # )
+            # print("MADE FN PROXY W/ARGS", value.keywords, "->", *proxy_args_kwargs([], value.keywords))
             result = PartialUserFunctionVariable(
                 value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
-                proxy=proxy,
+                # proxy=proxy,
             )
-            proxy.node.meta['example_value'] = value
+            # proxy.node.meta['example_value'] = value
             return result
         elif value in [
             torch.distributed._functional_collectives.all_gather_tensor,
@@ -491,6 +499,9 @@ class VariableBuilder:
                 source=self.source,
                 guards=self.make_guards(GuardBuilder.ID_MATCH),
             )
+            result.flat_param_variable = VariableBuilder(self.tx, AttrSource(self.source, "flat_param"))(value.flat_param)
+            result.flat_param_variable.handle = result
+            print("ASSOCIATING FLAT PARAM", id(result.flat_param_variable.as_proxy().node.meta['example_value']))
             return self.tx.output.side_effects.track_object_existing(
                 self.source, value, result
             )
@@ -1153,6 +1164,7 @@ def wrap_fx_proxy(tx, proxy, example_value=None, **options):
         **options,
     )
     if hasattr(example_value, '_is_flat_param'):
+        print("MAKING FLAT PARAM", id(example_value))
         return tx.output.side_effects.track_object_existing(
             options['source'], example_value, result
         )
@@ -1345,6 +1357,13 @@ def wrap_fx_proxy_cls(
     elif isinstance(example_value, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel):
         assert "source" in options
         return VariableBuilder(tx, options["source"])(example_value)
+    elif isinstance(example_value, str):
+        return ConstantVariable(example_value)
+    elif isinstance(example_value, torch.nn.Module):
+        assert "source" in options
+        return VariableBuilder(tx, options["source"])(example_value)
+    elif isinstance(example_value, bool):
+        return ConstantVariable(example_value)
     else:
         unimplemented(
             "torch.* op returned non-Tensor "
@@ -1540,6 +1559,7 @@ def wrap_to_fake_tensor_and_record(
             if hasattr(e, name):
                 print("SETTINGONFAKE", name, getattr(e, name))
                 setattr(fake_e, name, getattr(e, name))
+        print("PARAM SIZE?", e.size(), fake_e.size())
                 
         return fake_e
     else:
