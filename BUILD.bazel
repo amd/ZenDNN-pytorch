@@ -1607,6 +1607,7 @@ TORCH_COPTS = COMMON_COPTS + [
     "-fvisibility-inlines-hidden",
     "-fno-math-errno ",
     "-fno-trapping-math",
+    "-Wno-error=unused-function",
 ]
 
 torch_sources = {
