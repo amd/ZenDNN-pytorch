@@ -9,7 +9,14 @@ from typing import Callable, Dict, List, Optional, Set, Tuple, Union
 import sympy
 
 from .codegen.common import index_prevent_reordering
-from .utils import get_dtype_size, sympy_str, sympy_subs, sympy_symbol, VarRanges
+from .utils import (
+    get_dtype_size,
+    sympy_product,
+    sympy_str,
+    sympy_subs,
+    sympy_symbol,
+    VarRanges,
+)
 from .virtualized import V
 
 log = logging.getLogger(__name__)
@@ -38,7 +45,7 @@ class MemoryDep(typing.NamedTuple):
             )
         return self
 
-    def numbytes_hint(self):
+    def numel_hint(self):
         if self.is_indirect():
             numel = V.graph.get_numel(self.name)
         else:
@@ -47,9 +54,10 @@ class MemoryDep(typing.NamedTuple):
             for var, size in zip(self.var_names, self.size):
                 if var in vars:
                     numel = numel * size
-        return V.graph.sizevars.size_hint(numel) * get_dtype_size(
-            V.graph.get_dtype(self.name)
-        )
+        return V.graph.sizevars.size_hint(numel)
+
+    def numbytes_hint(self):
+        return self.numel_hint() * get_dtype_size(V.graph.get_dtype(self.name))
 
     def is_contiguous(self) -> bool:
         return isinstance(self.index, sympy.Symbol) and self.index in self.var_names
@@ -62,6 +70,48 @@ class MemoryDep(typing.NamedTuple):
     def is_indirect(self) -> bool:
         return any(is_indirect(v.name) for v in self.index.free_symbols)
 
+    def generalize_for_scheduling(self):
+        """
+        Replace this exact memory dep, with a generic placeholder that
+        only checks name, numel, and type.  Since we allow loop reordering
+        (which changes memory deps) during scheduling, we want to be
+        more permissive about dependency matches in the initial pass.
+        """
+        if self.is_indirect():
+            return StarDep(
+                self.name,
+            )
+        elif len(self.index.free_symbols) == 0:
+            return MemoryDep(
+                self.name,
+                self.index,
+                (),
+                (),
+            )
+        else:
+            vars = set(self.index.free_symbols)
+            a = sympy.Symbol("a")
+            return MemoryDep(
+                self.name,
+                a,
+                (a,),
+                (
+                    sympy_product(
+                        s for v, s in zip(self.var_names, self.size) if v in vars
+                    ),
+                ),
+            )
+
+    def can_read_from(self, other: Dep):
+        """Check if self can read from other in a single fused kernel"""
+        if (
+            not isinstance(other, MemoryDep)
+            or other.is_indirect()
+            or self.is_indirect()
+        ):
+            return False
+        return self == other
+
 
 class StarDep(typing.NamedTuple):
     # depends on the entire buffer
@@ -72,10 +122,11 @@ class StarDep(typing.NamedTuple):
             return StarDep(renames[self.name])
         return self
 
+    def numel_hint(self):
+        return V.graph.sizevars.size_hint(V.graph.get_numel(self.name))
+
     def numbytes_hint(self):
-        return V.graph.sizevars.size_hint(
-            V.graph.get_numel(self.name)
-        ) * get_dtype_size(V.graph.get_dtype(self.name))
+        return self.numel_hint() * get_dtype_size(V.graph.get_dtype(self.name))
 
     def is_contiguous(self) -> bool:
         return False
@@ -84,6 +135,12 @@ class StarDep(typing.NamedTuple):
         return False
 
     def is_indirect(self) -> bool:
+        return False
+
+    def generalize_for_scheduling(self):
+        return self
+
+    def can_read_from(self, other: Dep):
         return False
 
 
@@ -98,17 +155,29 @@ class WeakDep(typing.NamedTuple):
             return WeakDep(renames[self.name])
         return self
 
+    def numel_hint(self):
+        return 1  # Purely inserted for ordering, not an actual dep
+
     def numbytes_hint(self):
         return 1  # Purely inserted for ordering, not an actual dep
 
     def is_contiguous(self) -> bool:
         return False
 
+    def can_read_from(self, other: Dep):
+        return True
+
 
 class IndexExprDep(typing.NamedTuple):
     index: sympy.Expr  # type: ignore[assignment]
     var_names: Tuple[sympy.Symbol, ...]
     size: Tuple[sympy.Expr, ...]
+
+    def is_indirect(self):
+        return False
+
+    def is_scalar(self):
+        return False
 
 
 @dataclasses.dataclass
@@ -164,6 +233,22 @@ class ReadWrites:
 
     def reads_and_writes(self):
         return itertools.chain(self.reads, self.writes)
+
+    def generalize_for_scheduling(self):
+        return ReadWrites(
+            {dep.generalize_for_scheduling() for dep in self.reads},
+            {dep.generalize_for_scheduling() for dep in self.writes},
+            self.index_exprs,
+            self.range_vars,
+            self.var_ranges,
+            op_counts=self.op_counts,
+        )
+
+    def has_indirect(self):
+        for dep in self.reads_and_writes():
+            if isinstance(dep, StarDep) or dep.is_indirect():
+                return True
+        return False
 
 
 class _RecordLoadStoreInner(V.MockHandler):
