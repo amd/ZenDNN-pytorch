@@ -400,6 +400,24 @@ class VariableBuilder:
                 result = ConstDictVariable(result, type(value), mutable_local=MutableLocal(), guards=guards)
 
             return self.tx.output.side_effects.track_dict(self.source, value, result)
+        elif istype(
+            value, (dict)
+        ):
+            keys = value.keys()
+            def index_source(key):
+                if self.tensor_can_be_dict_key(key):
+                    return GlobalWeakRefSource(global_key_name(key))
+                else:
+                    return key
+            
+            # unimplemented(f"WEIRD DICT?  {[k for k in value.keys()]}")
+            result = {
+                k: VariableBuilder(
+                    self.tx, GetItemSource(self.get_source(), index_source(k))
+                )(value[k])
+                for k in keys
+            }
+            return ConstDictVariable(result, type(value), mutable_local=MutableLocal())
         elif isinstance(value, torch.nn.Module):
             return self.wrap_module(value)
         # elif istype(value, set):
@@ -1300,7 +1318,8 @@ def wrap_fx_proxy_cls(
     elif proxy.node.target in [torch.cuda.streams.Stream, torch.cuda.current_stream]:
         proxy.node.meta["example_value"] = example_value
         # unimplemented("CUDAStreamVariable does not currently work soundly.")
-        return CUDAStreamVariable(proxy, example_value, **options)
+        source = options.pop("source")
+        return CUDAStreamVariable(proxy, example_value, source=source, **options)
     elif config.numpy_ndarray_as_tensor and isinstance(example_value, torch_np.ndarray):
         proxy.node.meta["example_value"] = example_value
         return target_cls(proxy, **options)

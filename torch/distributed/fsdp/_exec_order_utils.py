@@ -13,6 +13,13 @@ from torch.distributed.fsdp.flat_param import FlatParamHandle
 _HandlesKey = Tuple[FlatParamHandle, ...]
 
 
+def _num_valid_indices(optional_local_indices):
+    tot = 0
+    for index in optional_local_indices:
+        if index is not None:
+            tot = tot + index
+    return tot
+
 class _ExecOrderWarnStatus(Enum):
     """Used internally for execution order validation."""
 
@@ -219,9 +226,8 @@ class _ExecOrderData:
                 Optional[int], ...
             ] = self._get_handle_indices(handles_key)
             device = handles_key[0].device  # guaranteed to be non-CPU
-            num_valid_indices = sum(
-                (index is not None) for index in optional_local_indices
-            )
+            num_valid_indices = _num_valid_indices(optional_local_indices)
+
             tensor_kwargs: Dict[str, Union[torch.dtype, torch.device]] = {
                 "dtype": torch.int32,
                 "device": device,
@@ -240,18 +246,17 @@ class _ExecOrderData:
             # TODO (awgu): Since every module has at most one handle in the
             # current implementation, this should never raise the error.
             assert self.world_size is not None  # mypy
-            for (r1, n1), (r2, n2) in itertools.combinations(
-                (
-                    (rank, world_num_valid_indices[rank])
-                    for rank in range(self.world_size)
-                ),
-                2,
-            ):
-                if n1 != n2:
-                    raise RuntimeError(
-                        f"{msg_prefix} rank {r1} is all-gathering {n1} parameters "
-                        f"while rank {r2} is all-gathering {n2} parameters"
-                    )
+            for rank1 in range(self.world_size):
+                for rank2 in range(rank1 + 1, self.world_size):
+                    r1, n1 = rank1, world_num_valid_indices[rank1]
+                    r2, n2 = rank2, world_num_valid_indices[rank2]
+
+                    if n1 != n2:
+                        raise RuntimeError(
+                            f"{msg_prefix} rank {r1} is all-gathering {n1} parameters "
+                            f"while rank {r2} is all-gathering {n2} parameters"
+                        )
+                                
             world_indices = torch.zeros(  # type: ignore[call-overload]
                 self.world_size * num_valid_indices, **tensor_kwargs
             )
@@ -262,26 +267,19 @@ class _ExecOrderData:
             # Copy entire tensor from D2H once to avoid per element D2H copies
             world_indices = world_indices.cpu()
             # Check that all ranks plan to all-gather the same index parameters
-            for (r1, i1), (r2, i2) in itertools.combinations(
-                (
-                    (
-                        rank,
-                        world_indices[
-                            rank * num_valid_indices : (rank + 1) * num_valid_indices
-                        ],
-                    )
-                    for rank in range(self.world_size)
-                ),
-                2,
-            ):
-                if i1 != i2:
-                    r1_param_names = self._get_names_from_handle_indices(i1)
-                    r2_param_names = self._get_names_from_handle_indices(i2)
-                    raise RuntimeError(
-                        f"{msg_prefix} rank {r1} is all-gathering parameters "
-                        f"for {r1_param_names} while rank {r2} is all-gathering "
-                        f"parameters for {r2_param_names}"
-                    )
+            for rank1 in range(self.world_size):
+                for rank2 in range(rank1 + 1, self.world_size):
+                    r1, i1 = rank1, world_indices[rank1 * num_valid_indices: (rank1 + 1) * num_valid_indices]
+                    r2, i2 = rank2, world_indices[rank2 * num_valid_indices: (rank2 + 1) * num_valid_indices]
+
+                    if i1 != i2:
+                        r1_param_names = self._get_names_from_handle_indices(i1)
+                        r2_param_names = self._get_names_from_handle_indices(i2)
+                        raise RuntimeError(
+                            f"{msg_prefix} rank {r1} is all-gathering parameters "
+                            f"for {r1_param_names} while rank {r2} is all-gathering "
+                            f"parameters for {r2_param_names}"
+                        )
         elif self._checking_order:
             # Only issue warnings on the first deviating iteration and stop
             # checking thereafter to avoid flooding the console

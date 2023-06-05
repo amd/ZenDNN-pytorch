@@ -767,6 +767,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         print("LOAD_FAST", self.symbolic_locals[name])
         self.push(self.symbolic_locals[name])
         if name.startswith("___stack"):
+            print("POPPING", name)
             self.symbolic_locals.pop(name)
 
     def LOAD_DEREF(self, inst):

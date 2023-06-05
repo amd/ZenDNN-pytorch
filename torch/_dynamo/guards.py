@@ -201,6 +201,7 @@ class GuardBuilder(GuardBuilderBase):
             return eval(name, self.scope, CLOSURE_VARS)
         except:
             print("Lmao just yolod a guard I guess?", name)
+            return None
 
     # Registers the usage of the source name referenced by the
     # string (or stored in the Guard) as being guarded upon.  It's important
@@ -253,8 +254,12 @@ class GuardBuilder(GuardBuilderBase):
             return self.TYPE_MATCH(
                 Guard(m.group(1), guard.source, GuardBuilder.TYPE_MATCH)
             )
-
-        code = f"___check_obj_id({self.arg_ref(guard)}, {self.id_ref(self.get(guard.name))})"
+        
+        inner = self.get(guard.name)
+        if inner is None:
+            # Huge garbage hack for non string-able keys in a dict, gl everyone
+            return
+        code = f"___check_obj_id({self.arg_ref(guard)}, {self.id_ref(inner)})"
         self._produce_guard_code(guard, [code])
 
     def NAME_MATCH(self, guard: Guard):
@@ -789,6 +794,7 @@ class PyExprCSEPass:
     def count(self, exprs: List[str]) -> None:
         counter = self.ExprCounter(self._config)
         for e in exprs:
+            print("PARSING", e)
             counter.visit(ast.parse(e))
 
     def replace(self, expr: str) -> Tuple[List[str], str]:

@@ -384,7 +384,7 @@ def _reshard_grads(
 
 
 def _invoke_unshard(fn):
-    print("who is here??", type(fn))
+    # print("who is here??", type(fn))
     return fn()
 
 @no_type_check
@@ -418,7 +418,7 @@ def _pre_forward(
         for handle in handles:
             handle._training_state = HandleTrainingState.FORWARD
         if unshard_fn is not None:
-            _invoke_unshard(unshard_fn)
+            unshard_fn()
         # Register post-backward hooks to reshard the parameters and reduce-scatter
         # their gradients. They must be re-registered every forward pass in case
         # the `grad_fn` is mutated.

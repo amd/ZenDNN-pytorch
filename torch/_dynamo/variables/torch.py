@@ -306,6 +306,7 @@ class TorchVariable(VariableTracker):
             assert len(args) == 1
             return CUDAStreamContextVariable.create(tx, args[0], **options)
         elif self.value is torch.cuda.streams.Stream:
+            options["source"] = options.get("source", self.source)
             return wrap_fx_proxy_cls(
                 CUDAStreamVariable,
                 tx,
@@ -578,8 +579,10 @@ For now, dynamo will explicitly graph break when it encounters user code with th
                 if isinstance(data_arg, ListVariable) and check_any_unspec(data_arg):
                     unimplemented("torch.tensor call with list of unspec")
             if fn_ in [
-                torch.distributed.fsdp._common_utils._get_module_state
+                torch.distributed.fsdp._common_utils._get_module_state,
             ]:
+                options["source"] = options.get("source", self.source)
+            if fn_.__name__ == 'current_stream':
                 options["source"] = options.get("source", self.source)
             print("Making a call_function", fn_, args, kwargs, self.source)
 

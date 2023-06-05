@@ -159,8 +159,8 @@ class UserDefinedClassVariable(UserDefinedVariable):
             return variables.DataClassVariable.create(self.value, args, kwargs, options)
         
         if isinstance(self.value, functools.partial.__class__):
+            print("MADE APPLIED FUNC", self.value, args, kwargs)
             applied_func = functools.partial(args[0].fn, **kwargs)
-            print("MADE APPLIED FUNC", applied_func)
             return variables.functions.PartialUserFunctionVariable(
                 applied_func,
                 source=self.source,
@@ -183,8 +183,8 @@ class UserDefinedObjectVariable(UserDefinedVariable):
         self.value = value
         self.value_type = value_type or type(value)
         assert type(value) is self.value_type
-        # if isinstance(value, dict):
-            # raise RuntimeError("How?")
+        if isinstance(value, dict):
+            raise RuntimeError("How?")
         # print(f"UserDefinedObjectVariableMADE A {type(self.value)} with {self.value.__dict__}")
 
     def __str__(self):
