@@ -628,19 +628,17 @@ struct ReductionMulOp {
 } // namespace
 
 Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool keepdim, c10::optional<ScalarType> dtype) {
-  ScalarType dtype_ = dtype.value_or(input.scalar_type());
+  ScalarType dtype_ = dtype.value_or(
+      at::isIntegralType(input.scalar_type(), /*includeBool=*/true)
+          ? ScalarType::Long
+          : input.scalar_type());
   Tensor input_ = input.to(dtype_);
   Tensor result;
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
-    kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cuda",
-    [&] {
-      result = reduce_sparse_csr_cuda_template<scalar_t>(input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
-    });
-  auto is_integral =
-      !dtype.has_value() && at::isIntegralType(dtype_, /*includeBool=*/false);
-  if (is_integral) {
-    result = result.to(ScalarType::Long);
-  }
+      kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cuda", [&] {
+        result = reduce_sparse_csr_cuda_template<scalar_t>(
+            input_, dims_to_sum, keepdim, ReductionAddOp<scalar_t>());
+      });
   return result;
 }
 
