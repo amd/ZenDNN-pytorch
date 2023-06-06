@@ -3,12 +3,15 @@ import unittest
 
 import torch
 import torch._dynamo as torchdynamo
-from torch._export import export
+from torch._export import dynamic_dim, export
+from torch._export.exported_program import ExportedProgram
 from torch._export.serde.serialize import (
     ExportedProgramSerializer,
     deserialize,
     serialize,
 )
+from torch._subclasses.fake_tensor import FakeTensor
+from torch.fx.experimental.symbolic_shapes import is_concrete_int
 import torch.utils._pytree as pytree
 from torch.testing._internal.common_utils import run_tests, TestCase
 
@@ -39,7 +42,7 @@ class TestSerialize(TestCase):
         )
 
         serialized, _ = ExportedProgramSerializer().serialize(exported_module)
-        node = serialized.graph_module.graph.nodes[0]
+        node = serialized.graph_module.graph.nodes[-7]
         self.assertEqual(node.target, "aten.var_mean.correction")
         # aten::native_layer_norm returns 3 tensnors
         self.assertEqual(len(node.outputs), 2)
@@ -64,7 +67,7 @@ class TestSerialize(TestCase):
         exported_module = export(MyModule(), (input,))
 
         serialized, _ = ExportedProgramSerializer().serialize(exported_module)
-        node = serialized.graph_module.graph.nodes[0]
+        node = serialized.graph_module.graph.nodes[-1]
         self.assertEqual(node.target, "aten.split.Tensor")
         self.assertEqual(len(node.outputs), 1)
         # Input looks like:
@@ -107,7 +110,7 @@ class TestSerialize(TestCase):
         )
 
         serialized, _ = ExportedProgramSerializer().serialize(exported_module)
-        node = serialized.graph_module.graph.nodes[0]
+        node = serialized.graph_module.graph.nodes[-1]
         self.assertEqual(node.target, "aten.var_mean.correction")
         self.assertEqual(len(node.outputs), 2)
 
@@ -132,7 +135,7 @@ class TestSerialize(TestCase):
         exported_module = export(f, (x,))
         serialized, _ = ExportedProgramSerializer().serialize(exported_module)
 
-        node = serialized.graph_module.graph.nodes[1]
+        node = serialized.graph_module.graph.nodes[-1]
         self.assertEqual(node.target, "aten.searchsorted.Tensor")
         self.assertEqual(len(node.inputs), 6)
         self.assertEqual(node.inputs[2].arg.as_bool, False)
@@ -143,9 +146,11 @@ class TestSerialize(TestCase):
 
 @unittest.skipIf(not torchdynamo.is_dynamo_supported(), "dynamo doesn't support")
 class TestDeserialize(TestCase):
-    def check_graph(self, fn, inputs) -> None:
+    def check_graph(self, fn, inputs, constraints=None) -> ExportedProgram:
         """Export a graph, serialize it, deserialize it, and compare the results."""
-        exported_module = export(fn, inputs, {})
+        constraints = {} if constraints is None else constraints
+        exported_module = export(fn, inputs, constraints)
+        print(exported_module)
         serialized_struct, state_dict = serialize(exported_module)
         deserialized_ep = deserialize(serialized_struct, state_dict)
 
@@ -156,7 +161,38 @@ class TestDeserialize(TestCase):
         flat_loaded_outputs, _ = pytree.tree_flatten(loaded_outputs)
 
         for orig, loaded in zip(flat_orig_outputs, flat_loaded_outputs):
-            self.assertTrue(torch.allclose(orig, loaded))
+            if isinstance(orig, torch.Tensor) and isinstance(loaded, torch.Tensor):
+                self.assertTrue(torch.allclose(orig, loaded))
+            else:
+                self.assertEqual(orig, loaded)
+
+        for node1, node2 in zip(exported_module.graph.nodes, deserialized_ep.graph.nodes):
+            val1 = node1.meta.get("val", None)
+            val2 = node2.meta.get("val", None)
+
+            if val1 is None or val2 is None:
+                # Either both are None
+                self.assertEqual(val1, val2)
+            elif isinstance(val1, FakeTensor) and isinstance(val2, FakeTensor):
+                # Or both are fake tensors with the same shape/dtype
+                self.assertEqual(len(val1.shape), len(val2.shape))
+                for s1, s2 in zip(val1.shape, val2.shape):
+                    if is_concrete_int(s1) and is_concrete_int(s2):
+                        self.assertEqual(s1, s2)
+                    else:
+                        self.assertEqual(str(s1), str(s2))
+                self.assertEqual(val1.dtype, val2.dtype)
+            elif isinstance(val1, list) and isinstance(val2, list):
+                # Or both are fake tensors lists with one element and with the
+                # same shape/dtype
+                self.assertTrue(len(val1) == len(val2) and len(val1) == 1)
+                self.assertEqual(val1[0].shape, val2[0].shape)
+                self.assertEqual(val1[0].dtype, val2[0].dtype)
+            else:
+                # For expressions like 's0 < 10' can only compare through string
+                self.assertEqual(str(val1), str(val2))
+
+        return deserialized_ep
 
     def test_multi_return(self) -> None:
         """
@@ -195,6 +231,46 @@ class TestDeserialize(TestCase):
 
         inputs = (torch.ones([512], requires_grad=True),)
         self.check_graph(MyModule(), inputs)
+
+    def test_dynamic(self) -> None:
+        class DynamicShapeSimpleModel(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+
+            def forward(self, a, b, c) -> torch.Tensor:
+                d = (torch.matmul(a, b) + c) / 2
+                d_s0 = d.shape[0]
+                d_s1 = d.shape[1]
+                d_s3 = d_s0 * d_s1
+                e = d.view(d_s3)
+                return torch.cat([e, e])
+
+
+        inputs = (torch.randn(2, 4), torch.randn(4, 7), torch.randn(2, 7))
+        constraints = [
+            dynamic_dim(inputs[0], 0),
+            dynamic_dim(inputs[2], 0),
+            dynamic_dim(inputs[2], 0) == dynamic_dim(inputs[0], 0),
+        ]
+        self.check_graph(DynamicShapeSimpleModel(), inputs, constraints)
+    
+    def test_sym_bool(self):
+        def f(x, y):
+            return x.size(0) in y
+
+        self.check_graph(f, (torch.ones(2), torch.ones(3)))
+    
+    def test_shape(self):
+        def f(x):
+            z, y = x.size()
+            return z + y + x[0], z
+
+        inputs = (torch.ones(2, 3),)
+        constraints = [
+            dynamic_dim(inputs[0], 0),
+            dynamic_dim(inputs[0], 1),
+        ]
+        self.check_graph(f, inputs, constraints)
 
 
 if __name__ == '__main__':

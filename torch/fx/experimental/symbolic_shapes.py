@@ -163,6 +163,24 @@ def is_concrete_int(a: Union[int, SymInt]):
 
     return False
 
+def is_concrete_bool(a: Union[bool, SymBool]):
+    r""" Utility to check if underlying object
+    in SymBool is concrete value. Also returns
+    true if integer is passed in.
+
+    Args:
+        a (SymBool or bool): Object to test if it bool
+    """
+    assert isinstance(a, (SymBool, bool))
+
+    if isinstance(a, bool):
+        return True
+
+    if isinstance(a.node.expr, (sympy.logic.boolalg.BooleanTrue, sympy.logic.boolalg.BooleanFalse)):
+        return True
+
+    return False
+
 # Returns True if every size dim on the tensor has a hint
 # TODO: Should this include strides too?  For now it doesn't matter,
 # that's quite an obscure case

@@ -82,6 +82,12 @@ class SymInt(_Union):
 
 
 @dataclass
+class SymBool(_Union):
+    as_symbol: str
+    as_bool: bool
+
+
+@dataclass
 class TensorMeta:
     dtype: ScalarType
     sizes: List[SymInt]
@@ -96,6 +102,12 @@ class TensorMeta:
 class SymIntArgument(_Union):
     as_name: str
     as_int: int
+
+
+@dataclass
+class SymBoolArgument(_Union):
+    as_name: str
+    as_bool: bool
 
 
 @dataclass
@@ -122,6 +134,8 @@ class Argument(_Union):
     as_device: Device
     as_bool: bool
     as_bools: List[bool]
+    as_sym_bool: SymBoolArgument
+    as_sym_bools: List[SymBoolArgument]
 
 
 @dataclass
@@ -150,6 +164,7 @@ class Graph:
     nodes: List[Node]
     tensor_values: Dict[str, TensorValue]
     sym_int_values: Dict[str, SymInt]
+    sym_bool_values: Dict[str, SymBool]
 
 
 @dataclass
@@ -176,6 +191,12 @@ class CallSpec:
 
 
 @dataclass
+class RangeConstraint:
+    min_val: int
+    max_val: int
+
+
+@dataclass
 class GraphModule:
     graph: Graph
     signature: GraphSignature
@@ -186,3 +207,5 @@ class GraphModule:
 class ExportedProgram:
     graph_module: GraphModule
     opset_version: Dict[str, int]
+    range_constraints: Dict[str, RangeConstraint]
+    equality_constraints: List[Tuple[Tuple[str, int], Tuple[str, int]]]
