@@ -808,10 +808,13 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         return self.proxy
 
     def var_getattr(self, tx, name):
-        if "." in name:
-            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
-            raise RuntimeError(f"What the hell is {name}")
         print("FSDPManagedNNModuleVariableATTR", name)
+        if name in ["_streams_unshard", "_streams_pre_unshard"]:
+            stream = getattr(self.value, name)
+            proxy = getattr(self.as_proxy(), name)
+            source = AttrSource(self.source, name)
+            # print("STREAM DEVICE TYPE?", stream._device_type())
+            return variables.ctx_manager.CUDAStreamVariable(proxy, stream, source)
         return super().var_getattr(tx, name)
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":

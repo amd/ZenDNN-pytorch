@@ -314,34 +314,35 @@ class CUDAStreamContextVariable(ContextWrappingVariable):
         )
 
     def enter(self, tx):
-        pass
+        print("TRYING TO SET UP", self.target_values[0])
         # CUDA stream generated inside of traced function
-        # if self.target_values[0].as_proxy() is not None:
-        #     tx.output.create_proxy(
-        #         "call_function",
-        #         torch.cuda.set_stream,
-        #         (self.target_values[0].as_proxy(),),
-        #         {},
-        #     )
-        # CUDA stream passed from outside of traced function
-        # else:
-        # stream = self.target_values[0].value
-        # tx.output.create_proxy(
-        #     "call_function",
-        #     torch._C._cuda_setStream,
-        #     (stream.stream_id, stream.device_index, stream.device_type),
-        #     {},
-        # )
+        if self.target_values[0].as_proxy() is not None:
+            print("WITH PROXY", self.target_values[0].as_proxy())
+            tx.output.create_proxy(
+                "call_function",
+                torch.cuda.set_stream,
+                (self.target_values[0].as_proxy(),),
+                {},
+            )
+        # # CUDA stream passed from outside of traced function
+        else:
+            stream = self.target_values[0].value
+            tx.output.create_proxy(
+                "call_function",
+                torch._C._cuda_setStream,
+                (stream.stream_id, stream.device_index, stream.device_type),
+                {},
+            )
+        # print("DT", self.target_values[0].value.device_type)
         # torch.cuda.set_stream(self.target_values[0].value)
 
     def exit(self, tx, *args):
-        pass
-        # tx.output.create_proxy(
-        #     "call_function",
-        #     torch.cuda.set_stream,
-        #     (self.initial_values[0].as_proxy(),),
-        #     {},
-        # )
+        tx.output.create_proxy(
+            "call_function",
+            torch.cuda.set_stream,
+            (self.initial_values[0].as_proxy(),),
+            {},
+        )
         # torch.cuda.set_stream(self.initial_values[0].value)
 
     def module_name(self):

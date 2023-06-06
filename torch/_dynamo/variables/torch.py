@@ -305,6 +305,9 @@ class TorchVariable(VariableTracker):
             )
             assert len(args) == 1
             options["source"] = options.get("source", self.source)
+            print("MAKING IT WITH?", args[0])
+            if isinstance(args[0], TorchVariable):
+                print("Inner is", args[0].value)
             return CUDAStreamContextVariable.create(tx, args[0], **options)
         elif self.value is torch.cuda.streams.Stream:
             options["source"] = options.get("source", self.source)
