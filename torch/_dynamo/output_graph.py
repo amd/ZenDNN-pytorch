@@ -859,6 +859,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
 
         counters["stats"]["unique_graphs"] += 1
         self.install_global(name, compiled_fn)
+        print("COMPILEDFUNC", name)
 
         graph_code_log.debug("%s", lazy_format_graph_code(name, gm))
         graph_tabular_log.debug("%s", lazy_format_graph_tabular(name, gm))
@@ -971,6 +972,8 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                     # Register the free symbols as uses
                     arg = node.meta["grapharg"]
                     if isinstance(node.meta["example_value"], torch.nn.Module):
+                        continue
+                    if isinstance(node.meta["example_value"], <torch.distributed.fsdp.flat_param.FlatParamHandle):
                         continue
                     fake = (
                         arg.fake_tensor if arg.fake_tensor is not None else arg.example

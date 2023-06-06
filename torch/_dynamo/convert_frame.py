@@ -525,6 +525,7 @@ def convert_frame(compiler_fn: CompilerFn, hooks: Hooks):
     def _convert_frame(
         frame: types.FrameType, cache_size: int, hooks: Hooks, frame_state
     ):
+        print("CONVERTING FRAME", frame)
         counters["frames"]["total"] += 1
         try:
             result = inner_convert(frame, cache_size, hooks, frame_state)

@@ -494,14 +494,21 @@ class VariableBuilder:
                 guards=make_guards(GuardBuilder.FUNCTION_MATCH),
             )
         elif istype(value, torch.distributed.fsdp.flat_param.FlatParamHandle):
+            flat_param_proxy = self.tx.output.root_tracer.create_graph_input(
+                re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
+            )
             result = FlatParamHandleVariable(
                 value,
+                proxy=flat_param_proxy,
                 source=self.source,
                 guards=self.make_guards(GuardBuilder.ID_MATCH),
             )
-            result.flat_param_variable = VariableBuilder(self.tx, AttrSource(self.source, "flat_param"))(value.flat_param)
             # result.flat_param_variable.handle = result
-            print("ASSOCIATING FLAT PARAM", id(result.flat_param_variable.as_proxy().node.meta['example_value']))
+            # print("ASSOCIATING FLAT PARAM", id(result.flat_param_variable.as_proxy().node.meta['example_value']))
+            grapharg = GraphArg(self.get_source(), value, False, value)
+            flat_param_proxy.node.meta["grapharg"] = grapharg
+            flat_param_proxy.node.meta["example_value"] = value
+
             return self.tx.output.side_effects.track_object_existing(
                 self.source, value, result
             )

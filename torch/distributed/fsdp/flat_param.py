@@ -1285,8 +1285,7 @@ class FlatParamHandle:
         self._check_sharded_strategy()
         flat_param = self.flat_param
         unsharded_flat_param = self._get_padded_unsharded_flat_param()
-        if not is_torchdynamo_compiling():
-            self._check_storage_freed(unsharded_flat_param)
+        self._check_storage_freed(unsharded_flat_param)
         _alloc_storage(unsharded_flat_param, flat_param._padded_unsharded_size)  # type: ignore[attr-defined]
         return unsharded_flat_param
 
@@ -1795,7 +1794,8 @@ class FlatParamHandle:
         """
         flat_param = self.flat_param
         assert tensor is not None
-        print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
+        # print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
+
         splits: List[Tensor] = torch.split(
             tensor, flat_param._numels_with_padding, dim=0
         )
@@ -2530,8 +2530,6 @@ class FlatParamHandle:
         )
 
     def _check_unsharded(self, tensor: Tensor):
-        if is_torchdynamo_compiling():
-            return
         msg_prefix = "Expects tensor to be unsharded "
         _p_assert(tensor is not None, msg_prefix + "but got `None`")
         unsharded_size = self.flat_param._unpadded_unsharded_size

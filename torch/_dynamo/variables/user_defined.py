@@ -620,8 +620,8 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
 
 
 class FlatParamHandleVariable(UserDefinedObjectVariable):
-    def __init__(self, value, **kwargs):
-        self.flat_param_variable = kwargs.pop("flat_param_variable", None)
+    def __init__(self, value, proxy, **kwargs):
+        self.proxy = proxy
         super().__init__(value, **kwargs)
 
     def as_python_constant(self):
@@ -662,12 +662,9 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         # Note - here for easier printing as needed, will delete
         print("FlatParamHandleVariableGETTING", name)
         if name == "flat_param":
-            return self.flat_param_variable
-            # proxy = tx.output.create_proxy(
-            #     "call_function",
-            #     applied_func,
-            #     *proxy_args_kwargs([], kwargs),
-            # )
+            from .builder import wrap_fx_proxy
+            flat_param_attr_proxy = getattr(self.proxy, "flat_param")
+            return wrap_fx_proxy(tx, flat_param_attr_proxy)
             
         return super().var_getattr(tx, name)
 

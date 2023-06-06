@@ -865,6 +865,9 @@ class TypedStorageVariable(VariableTracker):
         self.value = value
         super().__init__(**kwargs)
 
+    def reconstruct(self, codegen):
+        return super().reconstruct(codegen)
+
     def call_method(
         self, tx, name, args: "List[VariableTracker]", kwargs: "Dict[str, VariableTracker]"
     ) -> "VariableTracker":
