@@ -597,7 +597,9 @@ def _init_param_handle_from_params(
         state._use_orig_params,
     )
     # TODO: Can simplify call `shard()` in the `FlatParamHandle` ctor
+    print("PRE INNIT", handle.flat_param)
     handle.shard()
+    print("POST INNIT", handle.flat_param)
     assert handle not in state._handles
     state.params.append(handle.flat_param)
     state._handles.append(handle)

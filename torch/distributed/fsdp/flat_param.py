@@ -1248,6 +1248,7 @@ class FlatParamHandle:
         mixed precision, then the parameter is forced to full precision.
         """
         if not self.needs_unshard():
+            # print("NOT NEEDS UNSHARD")
             # Even when not needing an unshard, we should switch to using
             # the unsharded flat parameter
             if self.uses_sharded_strategy:
@@ -1257,6 +1258,7 @@ class FlatParamHandle:
             
             self._use_unsharded_flat_param(unsharded_flat_param)
             return
+        # print("NEEDS UNSHARD")
         unsharded_flat_param = self._alloc_padded_unsharded_flat_param()
         padded_unsharded_flat_param = self._all_gather_flat_param(unsharded_flat_param)
         self._use_unsharded_flat_param(padded_unsharded_flat_param)
@@ -1357,6 +1359,8 @@ class FlatParamHandle:
                 # `_use_unsharded_views()` to the skipped pre-forward
                 # `_use_sharded_views()`, so we should skip this one too.
                 return
+            # print("_skipped_use_sharded_views?", self._skipped_use_sharded_views)
+            # print("in_pre_backward?", in_pre_backward)
             # We use `Tensor` views in the forward so that they are tracked by
             # autograd. We use them in the pre-backward as well to support
             # reentrant activation checkpointing, which needs the views to be
@@ -1770,9 +1774,12 @@ class FlatParamHandle:
         return self._get_unflat_views_unaligned_no_tensor()
 
     def _get_unflat_views(self, tensor: Optional[Tensor] = None):
+        # print("Getting unflat views")
         align_addresses = self._use_orig_params
         if align_addresses:
+            # print("Aligned")
             return self._get_unflat_views_aligned(tensor)
+        # print("not Aligned")
         return self._get_unflat_views_unaligned(tensor)
 
 
@@ -1848,12 +1855,13 @@ class FlatParamHandle:
                 be used during forward/backward computation and when hiding the
                 original parameters from :meth:`nn.Module.named_parameters`.
         """
-        import traceback
+        # import traceback
 
         # traceback.print_stack()
         flat_param = self.flat_param
         self._check_unsharded(flat_param)
         views = self._get_unflat_views(flat_param)
+        
         for i, (view, (param_name, module, _)) in enumerate(
             zip(views, flat_param._param_infos)
         ):
@@ -2013,6 +2021,7 @@ class FlatParamHandle:
         printability. Parameters whose data is present must preserve their
         variables to be passable to an optimizer.
         """
+        # print("Strat?", self.uses_sharded_strategy)
         self._skipped_use_sharded_views = False
         if not self.uses_sharded_strategy:
             # For `NO_SHARD`, use the *unflattened* unsharded views since we

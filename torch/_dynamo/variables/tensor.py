@@ -90,6 +90,7 @@ class TensorVariable(VariableTracker):
         _typed_storage=None,
         **kwargs,
     ):
+        self.handle = kwargs.pop("handle", None)
         super().__init__(**kwargs)
         self.proxy = proxy
         self.dtype = dtype
@@ -909,7 +910,6 @@ class FlatParamVariable(TensorVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
-        self.handle = kwargs.pop("handle", None)
         print("FLAT PARAM INVOKE", name)
         if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
             from .builder import wrap_fx_proxy
@@ -926,7 +926,7 @@ class FlatParamVariable(TensorVariable):
             value = self.as_proxy().node.meta['example_value']
             return UnTypedStorageVariable(value)
         if name == "size":
-            print("SIZE?", self.size, "HANDLE?", self.handle)
+            print("SIZE?", self.size, "HANDLE?", self.handle, "h size?", self.handle.value.flat_param.size(), "ex size?", self.as_proxy().node.meta['example_value'].size())
             return ConstantVariable(self.size)
     
         

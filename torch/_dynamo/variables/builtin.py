@@ -1045,8 +1045,8 @@ class BuiltinVariable(VariableTracker):
                         return VariableBuilder(tx, source)(example_value).add_options(
                             options
                         )
-                # unimplemented(f"tensor grad {obj} {source}")
-                print("YOLO grad")
+                unimplemented(f"tensor grad {obj} {source}")
+                # print("YOLO grad")
                 return VariableBuilder(tx, AttrSource(source, "grad"))(obj.as_proxy().node.meta['example_value'].grad).add_options(
                     options
                 )
