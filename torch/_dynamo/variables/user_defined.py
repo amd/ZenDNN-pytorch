@@ -603,15 +603,15 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
-        print("ProcessGroupVariable", name)
+        print("ProcessGroupVariable METHOD", name)
         if name == "rank":
-            return variables.ConstantVariable(self.value.rank)
+            return variables.ConstantVariable(self.value.rank())
         if name == "size":
-            return variables.ConstantVariable(self.value.rank)
+            return variables.ConstantVariable(self.value.size())
         return super().call_method(tx, name, args, kwargs)
         
     def var_getattr(self, tx, name):
-        print("ProcessGroupVariable", name)
+        print("ProcessGroupVariable GETATTR", name)
         if name in ["rank", "size"]:
             return variables.LambdaVariable(
                 lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)

@@ -298,13 +298,13 @@ def generic_jump(truth_fn: typing.Callable[[object], bool], push: bool):
             isinstance(value, (TensorVariable)) and self.should_compile_partial_graph()
         ):
             # compile a partial subgraph prefix then jump into user code
-            # if self.has_backedge():
-            #     msg = (
-            #         "Skipping frame because there is a graph break in a for/while loop\n"
-            #         f"{self.frame_summary()}"
-            #     )
-            #     log.info(msg)
-            #     raise exc.SkipFrame(msg)
+            if self.has_backedge():
+                msg = (
+                    "Skipping frame because there is a graph break in a for/while loop\n"
+                    f"{self.frame_summary()}"
+                )
+                log.info(msg)
+                raise exc.SkipFrame(msg)
 
             self.push(value)
             log.debug("generic_jump triggered compile")

@@ -184,7 +184,7 @@ class _ExecOrderData:
         if not handles:
             return
         handles_key = tuple(handles)
-        self._check_order(self.world_size, handles_key, is_training)
+        self._check_order(handles_key, is_training)
         # Fix the order after the first iteration and only record the first
         # usage of a handles key
         if (
@@ -196,7 +196,7 @@ class _ExecOrderData:
         self.handles_to_pre_forward_order_index[handles_key] = index
         self.handles_pre_forward_order.append(handles_key)
 
-    def _check_order(self, world_size, handles_key: _HandlesKey, is_training: bool) -> None:
+    def _check_order(self, handles_key: _HandlesKey, is_training: bool) -> None:
         """
         Checks the forward execution order as long as ``is_training`` is
         ``True`` since checking in eval mode is not supported.
@@ -212,6 +212,7 @@ class _ExecOrderData:
         """
         # Do not check order in eval mode since the post-backward callback does
         # not run so it cannot be used to mark the end of an iteration
+        world_size = self.world_size
         if not is_training:
             return
         if self.is_first_iter:

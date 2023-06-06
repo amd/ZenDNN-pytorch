@@ -90,7 +90,7 @@ class TensorVariable(VariableTracker):
         _typed_storage=None,
         **kwargs,
     ):
-        self.handle = kwargs.pop("handle", None)
+        # self.handle = kwargs.pop("handle", None)
         super().__init__(**kwargs)
         self.proxy = proxy
         self.dtype = dtype
@@ -926,7 +926,7 @@ class FlatParamVariable(TensorVariable):
             value = self.as_proxy().node.meta['example_value']
             return UnTypedStorageVariable(value)
         if name == "size":
-            print("SIZE?", self.size, "HANDLE?", self.handle, "h size?", self.handle.value.flat_param.size(), "ex size?", self.as_proxy().node.meta['example_value'].size())
+            # print("SIZE?", self.size, "HANDLE?", self.handle, "h size?", self.handle.value.flat_param.size(), "ex size?", self.as_proxy().node.meta['example_value'].size())
             return ConstantVariable(self.size)
     
         

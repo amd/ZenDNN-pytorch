@@ -268,7 +268,7 @@ class TracerBase:
 
         elif isinstance(a, base_types) or a is None or a is ...:
             return a
-        raise NotImplementedError(f"argument of type: {type(a)}")
+        raise NotImplementedError(f"argument of type: {type(a)} {a}")
 
     @compatibility(is_backward_compatible=True)
     def to_bool(self, obj: 'Proxy') -> bool:

@@ -500,7 +500,7 @@ class VariableBuilder:
                 guards=self.make_guards(GuardBuilder.ID_MATCH),
             )
             result.flat_param_variable = VariableBuilder(self.tx, AttrSource(self.source, "flat_param"))(value.flat_param)
-            result.flat_param_variable.handle = result
+            # result.flat_param_variable.handle = result
             print("ASSOCIATING FLAT PARAM", id(result.flat_param_variable.as_proxy().node.meta['example_value']))
             return self.tx.output.side_effects.track_object_existing(
                 self.source, value, result

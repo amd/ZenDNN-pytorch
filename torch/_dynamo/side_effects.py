@@ -301,6 +301,7 @@ class SideEffects:
                 return is_live(var.mutable_local)
             return True
 
+        print("GONNA APPLY", tx.stack, tx.symbolic_locals)
         VariableTracker.apply(visit, (tx.stack, tx.symbolic_locals))
         for var in self.id_to_variable.values():
             if not isinstance(var.mutable_local, AttributeMutationNew):
