@@ -307,21 +307,58 @@ class TorchVariable(VariableTracker):
             options["source"] = options.get("source", self.source)
             print("MAKING IT WITH?", args[0])
             if isinstance(args[0], TorchVariable):
+                unimplemented("Weird case")
                 print("Inner is", args[0].value)
-            return CUDAStreamContextVariable.create(tx, args[0], **options)
-        elif self.value is torch.cuda.streams.Stream:
-            options["source"] = options.get("source", self.source)
-            return wrap_fx_proxy_cls(
-                CUDAStreamVariable,
-                tx,
-                tx.output.create_proxy(
+                print("TYPE", args[0].value is torch.cuda.streams.Stream)
+                value = torch.cuda.streams.Stream()
+                source = options.get("source", self.source)
+                def create_stream():
+                    return torch.cuda.streams.Stream()
+                proxy = tx.output.create_proxy(
                     "call_function",
-                    torch.cuda.streams.Stream,
+                    create_stream,
                     (),
                     {},
-                ),
-                **options,
+                )
+                return CUDAStreamVariable(proxy, value, source)
+            
+            return CUDAStreamContextVariable.create(tx, args[0], **options)
+        elif self.value is torch.cuda.streams.Stream:
+            source = options.get("source", self.source)
+            def create_stream():
+                return torch.cuda.streams.Stream()
+            proxy = tx.output.create_proxy(
+                "call_function",
+                create_stream,
+                (),
+                {},
             )
+            # proxy = None
+            value = torch.cuda.streams.Stream()
+            return CUDAStreamVariable(proxy, value, source)
+            # return wrap_fx_proxy_cls(
+            #     CUDAStreamVariable,
+            #     tx,
+            #     tx.output.create_proxy(
+            #         "call_function",
+            #         torch.cuda.streams.Stream.__call__,
+            #         (),
+            #         {},
+            #     ),
+            #     **options,
+            # )
+        elif isinstance(self.value, torch.cuda.streams.Stream):
+            # unimplemented("Instantiated stream")
+            source = options.get("source", self.source)
+            def create_stream():
+                return torch.cuda.streams.Stream()
+            proxy = tx.output.create_proxy(
+                "call_function",
+                create_stream,
+                (),
+                {},
+            )
+            return CUDAStreamVariable(proxy, self.value, source)
         elif self.value is torch.from_numpy:
             if not config.numpy_ndarray_as_tensor:
                 unimplemented(

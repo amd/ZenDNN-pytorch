@@ -1795,7 +1795,7 @@ class FlatParamHandle:
         """
         flat_param = self.flat_param
         assert tensor is not None
-        # print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
+        print("DOING A SPLIT WITH", tensor.size(), flat_param._numels_with_padding)
         splits: List[Tensor] = torch.split(
             tensor, flat_param._numels_with_padding, dim=0
         )

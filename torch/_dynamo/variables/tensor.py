@@ -16,7 +16,7 @@ from ..bytecode_transformation import create_call_function, Instruction
 
 from ..exc import unimplemented
 from ..guards import GuardBuilder
-from ..source import AttrSource
+from ..source import AttrSource, GetItemSource
 from ..utils import (
     fqn,
     get_fake_value,
@@ -911,13 +911,30 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_params', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
-            from .builder import wrap_fx_proxy
+        from .builder import wrap_fx_proxy
+        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
             return wrap_fx_proxy(
                 tx=tx,
                 proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
                 source=AttrSource(self.source, name)
             )
+        if name in ['_params', '_tensors']:
+            items = []
+            proxy = variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name)
+            source = AttrSource(self.source, name)
+            _params = getattr(self.as_proxy().node.meta['example_value'], name)
+            print("PARAMS ARE", _params)
+            for i, item in enumerate(_params):
+                sub_proxy = operator.getitem(proxy, i)
+                sub_source = GetItemSource(source, i)
+                var = wrap_fx_proxy(
+                    tx=tx,
+                    proxy=sub_proxy,
+                    source=sub_source
+                )
+                items.append(var)
+            return variables.ListVariable(items)
+                
         if name == "device" and self.device is not None:
             return ConstantVariable(self.device)
         if name == "dtype" and self.dtype is not None:

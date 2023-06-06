@@ -1045,9 +1045,9 @@ class BuiltinVariable(VariableTracker):
                         return VariableBuilder(tx, source)(example_value).add_options(
                             options
                         )
-                unimplemented(f"tensor grad {obj} {source}")
-                # print("YOLO grad")
-                return VariableBuilder(tx, AttrSource(source, "grad"))(obj.as_proxy().node.meta['example_value'].grad).add_options(
+                # unimplemented(f"tensor grad {obj} {source}")
+                print("YOLO grad", obj)
+                return VariableBuilder(tx, source)(obj.as_proxy().node.meta['example_value'].grad).add_options(
                     options
                 )
             else:
@@ -1080,6 +1080,8 @@ class BuiltinVariable(VariableTracker):
                     get_higher_order_op(member), **options
                 )
             elif is_allowed(member):
+                if member is torch.cuda.streams.Stream:
+                    return variables.ctx_manager.CUDAStreamClassVariable(None, member, source)
                 return TorchVariable(member, **options)
             elif ConstantVariable.is_literal(member):
                 return ConstantVariable(member, **options)

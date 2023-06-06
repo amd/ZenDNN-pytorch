@@ -1544,15 +1544,15 @@ def wrap_to_fake_tensor_and_record(
         for _p_name in ['_params', '_tensors']:
             if hasattr(e, _p_name):
                 f_params = []
-                r_params = []
+                # r_params = []
                 f_params_source = AttrSource(source, _p_name)
                 for i, param in enumerate(getattr(e , _p_name)):
-                    r_params.append(param)
+                    # r_params.append(param)
                     f_param_source = GetItemSource(f_params_source, i)
                     f_param = wrap_to_fake_tensor_and_record(param, tx, ignore_subclass=ignore_subclass, source=f_param_source, is_tensor=is_tensor)
                     f_params.append(f_param)
                 setattr(fake_e, _p_name, f_params)
-                setattr(fake_e, "_r" + _p_name, r_params)
+                # setattr(fake_e, "_r" + _p_name, r_params)
         param_names = ['_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_shared_param_infos']
 
         for name in param_names:
