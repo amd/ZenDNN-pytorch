@@ -77,7 +77,6 @@ if HAS_PYDOT:
             for node in graph_module.graph.nodes:
                 if node.op != "call_module":
                     continue
-
                 leaf_node = self._get_leaf_node(graph_module, node)
 
                 if not isinstance(leaf_node, torch.fx.GraphModule):
@@ -297,6 +296,9 @@ if HAS_PYDOT:
 
             for node in graph_module.graph.nodes:
                 if ignore_getattr and node.op == "get_attr":
+                    continue
+
+                if node.op == 'placeholder':
                     continue
 
                 style = self._get_node_style(node)

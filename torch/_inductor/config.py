@@ -354,7 +354,7 @@ class trace:
     output_code = True
 
     # SVG figure showing post-fusion graph
-    graph_diagram = False
+    graph_diagram = True
 
     # Store cProfile (see snakeviz to view)
     compile_profile = False

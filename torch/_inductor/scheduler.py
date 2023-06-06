@@ -1346,6 +1346,8 @@ class Scheduler:
 
     @dynamo_timed
     def codegen(self):
+        from .stream_scheduler import stream_scheduler
+        node_stream_mapping, chains, group_num = stream_scheduler(self.nodes)
         for node in self.nodes:
             self.enter_context(node)
             self.buffer_names_no_longer_needed.update(node.last_usage)
