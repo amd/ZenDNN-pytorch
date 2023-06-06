@@ -313,6 +313,7 @@ class GuardBuilder(GuardBuilderBase):
             *np_types,
         )
         if istype(val, dict):
+            print(val.keys(), val.values())
             assert all(
                 istype(x, ok_types) for x in itertools.chain(val.keys(), val.values())
             )

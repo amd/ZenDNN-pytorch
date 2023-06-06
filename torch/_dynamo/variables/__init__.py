@@ -24,6 +24,9 @@ from .lists import (
     SliceVariable,
     TupleVariable,
 )
+
+from .optimizer import OptimizerStepVariable, OptimizerVariable
+
 from .misc import (
     AutogradFunctionContextVariable,
     AutogradFunctionVariable,
@@ -76,6 +79,8 @@ __all__ = [
     "NewGlobalVariable",
     "NNModuleVariable",
     "NumpyVariable",
+    "OptimizerStepVariable",
+    "OptimizerVariable",
     "PythonModuleVariable",
     "RangeVariable",
     "SliceVariable",

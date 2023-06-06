@@ -402,6 +402,17 @@ class SideEffects:
                         create_instruction("POP_TOP"),
                     ]
                 )
+            elif isinstance(var, variables.OptimizerStepVariable):
+                # NB: we could make this more general
+                # by having the var implement its own mutation logic
+                cg(var, allow_cache=False)
+                cg.extend_output([cg._create_load_const("step")])
+                cg.extend_output([create_instruction("BINARY_SUBSCR")])
+                cg.extend_output([cg._create_load_const(1), create_instruction("INPLACE_ADD")])
+                cg(var, allow_cache=False)
+                cg.extend_output([cg._create_load_const("step")])
+                cg.extend_output([create_instruction("STORE_SUBSCR")])
+                pass
             elif self.is_attribute_mutation(var):
                 for name, value in self.store_attr_mutations.get(
                     var.mutable_local, {}
