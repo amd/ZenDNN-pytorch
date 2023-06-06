@@ -232,7 +232,6 @@ CI_SKIP[CI("inductor", training=True)] = [
     "Background_Matting",  # fp64_OOM
     "dlrm",  # Fails on CI - unable to repro locally
     "hf_T5_base",  # accuracy
-    "mobilenet_v3_large",  # accuracy
     "resnet50_quantized_qat",  # Eager model failed to run
     "AlbertForQuestionAnswering",  # accuracy
     "crossvit_9_240",  # fails to run on timm 0.8.22 with cudagraphs, mempools
