@@ -1,9 +1,10 @@
+from copy import copy
 from typing import Dict, List
 
 import torch
+from ..guards import GuardBuilder
 from ..source import AttrSource, GetItemSource, GlobalWeakRefSource
 from ..utils import global_key_name
-from ..guards import GuardBuilder
 
 from .base import MutableLocal, VariableTracker
 from .constant import ConstantVariable
@@ -11,15 +12,16 @@ from .dicts import ConstDictVariable
 from .lists import ListVariable
 from .misc import GetAttrVariable
 from .user_defined import UserDefinedObjectVariable
-from copy import copy
 
 
 class ArgMappingException(Exception):
     pass
 
+
 class OptimizerStepVariable(VariableTracker):
     def reconstruct(self, cg):
         return self.source.base.reconstruct(cg)
+
 
 class OptimizerVariable(UserDefinedObjectVariable):
     def call_method(
@@ -63,12 +65,16 @@ class OptimizerVariable(UserDefinedObjectVariable):
                     yield p, GetItemSource(GetItemSource(group_source, "params"), p_ind)
 
     def update_step(self, tx, group):
-        for p_ind, param in enumerate(self.value.param_groups[group.source.index]["params"]):
+        for p_ind, param in enumerate(
+            self.value.param_groups[group.source.index]["params"]
+        ):
             group_source = self.param_group_source(group.source.index)
             p_source = GetItemSource(GetItemSource(group_source, "params"), p_ind)
-            source = GetItemSource(self.param_state_source(p_source), 'step')
+            source = GetItemSource(self.param_state_source(p_source), "step")
             var = OptimizerStepVariable(source=source)
-            tracked_var = tx.output.side_effects._track_obj(source, self.value.state[param]['step'], var)
+            tracked_var = tx.output.side_effects._track_obj(
+                source, self.value.state[param]["step"], var
+            )
             # register the mutation
             newvar = OptimizerStepVariable(source=source)
             tx.replace_all(tracked_var, newvar)

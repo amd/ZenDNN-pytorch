@@ -25,8 +25,6 @@ from .lists import (
     TupleVariable,
 )
 
-from .optimizer import OptimizerStepVariable, OptimizerVariable
-
 from .misc import (
     AutogradFunctionContextVariable,
     AutogradFunctionVariable,
@@ -43,6 +41,8 @@ from .misc import (
     UnknownVariable,
 )
 from .nn_module import NNModuleVariable, UnspecializedNNModuleVariable
+
+from .optimizer import OptimizerStepVariable, OptimizerVariable
 from .tensor import (
     FakeItemVariable,
     SymNodeVariable,
