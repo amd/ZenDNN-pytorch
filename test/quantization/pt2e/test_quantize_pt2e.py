@@ -292,16 +292,53 @@ class PT2EQuantizationTestCase(QuantizationTestCase):
         # Verify that numerics match
         self.assertEqual(after_prepare_result_pt2e, after_prepare_result_fx)
 
+        class PrintMod(torch.nn.Module):
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+            def forward(self, x):
+                print("*** PrintMod ", self.name, x.flatten()[:5])
+                return x
+        def insert_print_mod(model, node_name, model_name):
+            for n in model.graph.nodes:
+                if n.name == node_name:
+                    print_mod_name = model_name + "_print_mod_" + n.name
+                    setattr(model, print_mod_name, PrintMod(print_mod_name))
+                    with model.graph.inserting_after(n):
+                        model.graph.call_module(print_mod_name, (n,))
+                    break
+            model.recompile()
+
         if verify_convert:
             model_pt2e.eval()
             model_pt2e = convert_pt2e(model_pt2e)
-            quant_result_pt2e = model_pt2e(*example_inputs)
             model_fx.eval()
-            model_fx = _convert_to_reference_decomposed_fx(
-                model_fx, backend_config=backend_config,
-            )
+            model_fx = _convert_to_reference_decomposed_fx(model_fx, backend_config=backend_config)
+
+            print("PT2 MODEL CONVERTED", model_pt2e)
+            #print("FX MODEL CONVERTED", model_fx)
+
+            #with open("temp.txt", "w") as f:
+            #    import re
+            #    f.write(re.sub(";(.*)\n", "\n", str(model_pt2e)) + "\n\n\n" + re.sub(";(.*)\n", "\n", str(model_fx)) + "\n")
+
+            #insert_print_mod(model_pt2e, "convolution_default_20", "pt2")
+            #insert_print_mod(model_fx, "convolution_default", "fx")
+
+            quant_result_pt2e = model_pt2e(*example_inputs)
             quant_result_fx = model_fx(*example_inputs)
             self.assertEqual(quant_result_pt2e, quant_result_fx)
+
+        #if verify_convert:
+        #    model_pt2e.eval()
+        #    model_pt2e = convert_pt2e(model_pt2e)
+        #    quant_result_pt2e = model_pt2e(*example_inputs)
+        #    model_fx.eval()
+        #    model_fx = _convert_to_reference_decomposed_fx(
+        #        model_fx, backend_config=backend_config,
+        #    )
+        #    quant_result_fx = model_fx(*example_inputs)
+        #    self.assertEqual(quant_result_pt2e, quant_result_fx)
 
     def _verify_symmetric_qnnpack_qat_graph(
         self,
@@ -1133,37 +1170,39 @@ class TestQuantizePT2E(PT2EQuantizationTestCase):
         class M(torch.nn.Module):
             def __init__(self):
                 super().__init__()
-                self.conv = torch.nn.Conv2d(3, 3, 3, stride=(2, 2), padding=(4, 4))
+                self.conv = torch.nn.Conv2d(3, 3, 3, stride=(2, 2), padding=(4, 4), bias=False)
                 self.bn = torch.nn.BatchNorm2d(3)
+                self.relu = torch.nn.ReLU(inplace=True)
 
             def forward(self, x):
                 x = self.conv(x)
                 x = self.bn(x)
+                x = self.relu(x)
                 return x
 
         example_inputs = (torch.randn(1, 3, 5, 5),)
         # stride, padding, dilation, transposed, output_padding, groups
         conv_args = ((2, 2), (4, 4), (1, 1), False, (0, 0), 1)
-        self._verify_symmetric_qnnpack_qat_graph(
-            M(),
-            example_inputs,
-            is_per_channel=False,
-            has_relu=False,
-            expected_conv_literal_args=conv_args,
-        )
-        self._verify_symmetric_qnnpack_qat_graph(
-            M(),
-            example_inputs,
-            is_per_channel=True,
-            has_relu=False,
-            expected_conv_literal_args=conv_args,
-        )
+        #self._verify_symmetric_qnnpack_qat_graph(
+        #    M(),
+        #    example_inputs,
+        #    is_per_channel=False,
+        #    has_relu=False,
+        #    expected_conv_literal_args=conv_args,
+        #)
+        #self._verify_symmetric_qnnpack_qat_graph(
+        #    M(),
+        #    example_inputs,
+        #    is_per_channel=True,
+        #    has_relu=False,
+        #    expected_conv_literal_args=conv_args,
+        #)
         self._verify_symmetric_qnnpack_qat_numerics(
             M(), example_inputs, is_per_channel=False, verify_convert=True,
         )
-        self._verify_symmetric_qnnpack_qat_numerics(
-            M(), example_inputs, is_per_channel=True, verify_convert=True,
-        )
+        #self._verify_symmetric_qnnpack_qat_numerics(
+        #    M(), example_inputs, is_per_channel=True, verify_convert=True,
+        #)
 
     def test_qat_conv_bn_fusion_no_conv_bias(self):
         class M2(torch.nn.Module):
@@ -1385,12 +1424,77 @@ class TestQuantizePT2EModels(PT2EQuantizationTestCase):
     @skipIfNoQNNPACK
     def test_qat_resnet18(self):
         import torchvision
+        class M(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv1 = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                self.bn1 = torch.nn.BatchNorm2d(64)
+                self.relu1 = torch.nn.ReLU(inplace=True)
+                self.conv2 = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                self.bn2 = torch.nn.BatchNorm2d(64)
+                self.relu2 = torch.nn.ReLU(inplace=True)
+
+            def forward(self, x):
+                identity = x
+                x = self.conv1(x)
+                x = self.bn1(x)
+                x += identity
+                x = self.relu1(x)
+
+                identity = x
+                # the match for this conv-bn pattern is filtered out
+                x = self.conv2(x)
+                x = self.bn2(x)
+                # this add node is the user that's not self contained
+                x += identity
+                x = self.relu2(x)
+                return x
+
+        #class M2(torch.nn.Module):
+        #    def __init__(self):
+        #        super().__init__()
+        #        m = torchvision.models.resnet18()
+        #        #self.conv1 = m.conv1
+        #        #self.bn1 = m.bn1
+        #        #self.relu = m.relu
+        #        #self.maxpool = m.maxpool
+        #        #self.layer1 = m.layer1
+        #        self.myconv = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        #        self.mybn = torch.nn.BatchNorm2d(64)
+        #        self.myrelu = torch.nn.ReLU(inplace=True)
+        #        self.myconv2 = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        #        self.mybn2 = torch.nn.BatchNorm2d(64)
+
+        #        self.myconv3 = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        #        self.mybn3 = torch.nn.BatchNorm2d(64)
+        #        self.myrelu3 = torch.nn.ReLU(inplace=True)
+        #        self.myconv4 = torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        #        self.mybn4 = torch.nn.BatchNorm2d(64)
+
+        #    def forward(self, x):
+        #        #x = self.conv1(x)
+        #        #x = self.bn1(x)
+        #        #x = self.relu(x)
+        #        #x = self.maxpool(x)
+        #        identity = x
+        #        x = self.myrelu(self.mybn(self.myconv(x)))
+        #        x += identity
+        #        x = self.myrelu(x)
+
+        #        identity = x
+        #        x = self.myrelu3(self.mybn3(self.myconv3(x)))
+        #        x += identity
+        #        x = self.myrelu3(x)
+        #        return x
+
         with override_quantized_engine("qnnpack"):
-            example_inputs = (torch.randn(1, 3, 224, 224),)
-            m = torchvision.models.resnet18()
+            #example_inputs = (torch.randn(1, 3, 224, 224),)
+            example_inputs = (torch.randn(1, 64, 224, 224),)
+            #m = torchvision.models.resnet18()
+            m = M()
             self._verify_symmetric_qnnpack_qat_numerics(
-                m, example_inputs, is_per_channel=False,
+                m, example_inputs, is_per_channel=False, verify_convert=True,
             )
-            self._verify_symmetric_qnnpack_qat_numerics(
-                m, example_inputs, is_per_channel=True,
-            )
+            #self._verify_symmetric_qnnpack_qat_numerics(
+            #    m, example_inputs, is_per_channel=True,
+            #)

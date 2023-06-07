@@ -131,6 +131,9 @@ class SubgraphMatcher:
 
         # Placeholders can be used by other nodes in the graphs
         lookup: Dict[Node, Node] = {gn : pn for pn, gn in nodes_map.items() if pn.op != "placeholder"}
+        print("    ... _is_contained, lookup:")
+        for x, y in lookup.items():
+            print("      %s -> %s" % (x, y))
 
         for gn, pn in lookup.items():
             # nodes returned by output are allowed to be used in other areas of the graph
@@ -141,6 +144,7 @@ class SubgraphMatcher:
                 # If this node has users that were not in `lookup`, then it must leak out of the
                 # pattern subgraph
                 if user not in lookup:
+                    print("    ... _is_contained, this is the bad node", user)
                     return False
         return True
 
@@ -182,6 +186,8 @@ class SubgraphMatcher:
             return type(gn) == type(pn) and gn == pn
 
     def _match_nodes(self, pn: Node, gn: Node, match: InternalMatch) -> bool:
+        if gn.target == torch.ops.aten.add.Tensor or gn.target == torch.ops.aten.convolution.default:
+            print("    .......... found conv or add node ", gn)
         logger.info("  matching %s to %s", pn, gn)
 
         assert isinstance(pn, Node) and isinstance(gn, Node), str(f"pn and gn must be Node, pn: {pn}, gn: {gn}")
@@ -218,6 +224,7 @@ class SubgraphMatcher:
             for a1, a2 in zip(args1, args2):
                 if isinstance(a1, Node) and isinstance(a2, Node):
                     matched = self._match_nodes(a1, a2, match)
+                    print("    ... match_nodes %s vs %s: %s" % (a1, a2, "matched" if matched else "FAILED!!"))
                 elif isinstance(a1, (list, tuple)) and isinstance(a2, (list, tuple)):
                     matched = _match_args(a1, a2)
                 else:
@@ -340,9 +347,11 @@ class SubgraphMatcher:
 
                 match_found = self._match_nodes(pattern_anchor, node, match)
                 if match_found:
+                    print("* MATCHED %s vs %s" % (pattern_anchor, node))
                     # match next anchor
                     backtracking(anchor_index + 1, match)
                 else:
+                    print("* Failed to match %s vs %s" % (pattern_anchor, node))
                     logger.info("Failed to match anchor %s to %s\n", pattern_anchor, node)
 
                 # revert to saved_match before matching with current anchor
@@ -352,12 +361,19 @@ class SubgraphMatcher:
         if match_candidates_list:
             backtracking(0, match)
 
+        print("* After backtracking, matches: ", len(matches))
+
         # filter out the matches where the subgraph is not fully_contained
         before = len(matches)
         matches = [match for match in matches if self._is_contained(match.nodes_map)]
         after = len(matches)
         if before != after:
-            logger.info("Filtered out %s matches because they are not fully contained", before - after)
+            print("Filtered out %s matches because they are not fully contained", before - after)
+            for m in matches:
+                if not self._is_contained(m.nodes_map):
+                    print("THIS NODE MAP IS NOT SELF CONTAINED!!!!! ")
+                    for x, y in m.nodes_map:
+                        print("  %s -> %s" % (x, y))
 
         # filter out the matches that that forms a cycle if the subgraph is fused
         valid_matches = []
@@ -367,7 +383,7 @@ class SubgraphMatcher:
             if validate_partition(matched_compute_nodes):
                 valid_matches.append(match)
         if len(valid_matches) != len(matches):
-            logger.info("Filtered out %s matches because \
+            print("Filtered out %s matches because \
                           matched subgraph would form a cycle if fused", len(matches) - len(valid_matches))
 
         if self.remove_overlapping_matches:
@@ -375,8 +391,8 @@ class SubgraphMatcher:
             matches = self._remove_overlapping_matches(valid_matches)
             after = len(matches)
             if before != after:
-                logger.info("Filtered out %s matches because matched subgraphs are overlapping", before - after)
+                print("Filtered out %s matches because matched subgraphs are overlapping", before - after)
 
-        logger.info("Matches returned: %s", matches)
+        print("Matches returned: %s", matches)
 
         return matches

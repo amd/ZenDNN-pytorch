@@ -177,7 +177,7 @@ def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, h
             x = x + conv_bias.reshape(bias_shape)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
-            x = F.relu(x)
+            x = F.relu_(x)
         x = torch.ops.quantized_decomposed.quantize_per_tensor(
             x, output_scale, output_zero_point, output_quant_min, output_quant_max, torch.int8)
         return x
@@ -236,7 +236,7 @@ def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: 
             x = F.conv2d(x, conv_weight, None)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
-            x = F.relu(x)
+            x = F.relu_(x)
         x = torch.ops.quantized_decomposed.quantize_per_tensor(
             x, output_scale, output_zero_point, output_quant_min, output_quant_max, torch.int8)
         return x
@@ -485,6 +485,11 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
         [True, False],  # has_relu
         [True, False],  # has_bias
     )
+
+    replacement_options = [
+        (False, True, False),
+        (False, False, False),
+    ]
     for is_per_channel, has_relu, has_bias in replacement_options:
         example_inputs = _quantized_conv2d_bn_pattern_example_inputs
         match_pattern = _get_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu, has_bias)
@@ -511,9 +516,13 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
                 n.target = torch.ops.quantized_decomposed.quantize_per_channel
             if n.target == torch.ops.quantized_decomposed.dequantize_per_channel.default:
                 n.target = torch.ops.quantized_decomposed.dequantize_per_channel
-        replacements.extend(replace_pattern_with_filters(
+
+        print("MATCH PATTERN is_per_channel=%s, has_relu=%s, has_bias=%s" % (is_per_channel, has_relu, has_bias), match_pattern)
+        r = replace_pattern_with_filters(
             m, match_pattern, replacement_pattern, match_filters=[], ignore_literals=True,
-        ))
+        )
+        print("***** matched this many ", len(r))
+        replacements.extend(r)
     m.recompile()
 
     # Step (2): Fold BN weights into conv
