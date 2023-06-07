@@ -813,15 +813,15 @@ class VariableBuilder:
             and not config.allow_rnn
         ):
             unimplemented("TorchDynamo purposely graph breaks on RNN, GRU, LSTMs")
-        if getattr(value, "_is_fsdp_managed_module", False):
-            # See note [Dynamo treats FSDP wrapped modules as UnspecializedNNModule]
-            # in fully_sharded_data_parallel.py for more information
+        # if getattr(value, "_is_fsdp_managed_module", False):
+        #     # See note [Dynamo treats FSDP wrapped modules as UnspecializedNNModule]
+        #     # in fully_sharded_data_parallel.py for more information
 
-            # we can't do this assert inside FSDP constructor,
-            # since we don't know yet whether dynamo will be used
-            assert getattr(
-                value, "_fsdp_use_orig_params", False
-            ), "Dynamo only supports FSDP with use_orig_params=True"
+        #     # we can't do this assert inside FSDP constructor,
+        #     # since we don't know yet whether dynamo will be used
+        #     assert getattr(
+        #         value, "_fsdp_use_orig_params", False
+        #     ), "Dynamo only supports FSDP with use_orig_params=True"
 
             # Note on FSDP guarding
             # 1. We expect FSDP wrapping mutates an nn module irreversably (no way to de-wrap).
@@ -839,28 +839,27 @@ class VariableBuilder:
             #
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
-            print("WOOWOO", self.source)
-            fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
-                re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
-            )
-            result = FSDPManagedNNModuleVariable.create(
-                self.tx,
-                value,
-                fsdpmoduleproxy,
-                guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
-                source=self.get_source(),
-            )
-            grapharg = GraphArg(self.get_source(), value, False, value)
-            fsdpmoduleproxy.node.meta["grapharg"] = grapharg
-            fsdpmoduleproxy.node.meta["example_value"] = value
+            # print("WOOWOO", self.source)
+            # fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
+            #     re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
+            # )
+            # result = FSDPManagedNNModuleVariable.create(
+            #     self.tx,
+            #     value,
+            #     fsdpmoduleproxy,
+            #     guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
+            #     source=self.get_source(),
+            # )
+            # grapharg = GraphArg(self.get_source(), value, False, value)
+            # fsdpmoduleproxy.node.meta["grapharg"] = grapharg
+            # fsdpmoduleproxy.node.meta["example_value"] = value
+
             # return result
-            return self.tx.output.side_effects.track_object_existing(
-                self.source, value, result
-            )
-        elif mutation_guard.is_dynamic_nn_module(value):
+            # return self.tx.output.side_effects.track_object_existing(
+            #     self.source, value, result
+            # )
+        elif mutation_guard.is_dynamic_nn_module(value) and not hasattr(value, '_is_fsdp_managed'):
             # created dynamically, don't specialize on it
-            if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:
-                raise RuntimeError("NOO")
             result = UnspecializedNNModuleVariable(
                 value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
             )
@@ -872,9 +871,9 @@ class VariableBuilder:
             )
         elif issubclass(
             value.__class__, torch.nn.parallel.distributed.DistributedDataParallel
-        ):
-            if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:
-                raise RuntimeError("NOO")
+        ) and not hasattr(value, '_is_fsdp_managed_module') and not value._is_fsdp_managed_module:
+            # if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:
+            #     raise RuntimeError("NOO")
             return UnspecializedNNModuleVariable(
                 value, guards=self.make_guards(GuardBuilder.TYPE_MATCH)
             )
@@ -925,7 +924,6 @@ class VariableBuilder:
 
         if (
             source.guard_source().is_nn_module()
-            and not source.guard_source().is_fsdp_module()
         ):
             return self.tx.output.register_attr_or_module(
                 value,

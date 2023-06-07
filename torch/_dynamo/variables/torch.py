@@ -629,27 +629,27 @@ For now, dynamo will explicitly graph break when it encounters user code with th
             if fn_ == torch.distributed.fsdp._runtime_utils._wait_for_computation_stream:
                 return ConstantVariable(None)
         
-            if fn_ == torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored:
-                tensor_variable = wrap_fx_proxy(
-                    tx=tx,
-                    proxy=tx.output.create_proxy(
-                        "call_function",
-                        args[0].value.forward,
-                        *proxy_args_kwargs(args[1:], kwargs),
-                    )
-                )
-            else:
+            # if fn_ == torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored:
+            #     tensor_variable = wrap_fx_proxy(
+            #         tx=tx,
+            #         proxy=tx.output.create_proxy(
+            #             "call_function",
+            #             args[0].value.forward,
+            #             *proxy_args_kwargs(args[1:], kwargs),
+            #         )
+            #     )
+            # else:
             
-                # if fn_ is istorch.distributed.distributed_c10d.reduce_scatter_tensor,
-                tensor_variable = wrap_fx_proxy(
-                    tx=tx,
-                    proxy=tx.output.create_proxy(
-                        "call_function",
-                        fn_,
-                        *proxy_args_kwargs(args, kwargs),
-                    ),
-                    **options,
-                )
+            # if fn_ is istorch.distributed.distributed_c10d.reduce_scatter_tensor,
+            tensor_variable = wrap_fx_proxy(
+                tx=tx,
+                proxy=tx.output.create_proxy(
+                    "call_function",
+                    fn_,
+                    *proxy_args_kwargs(args, kwargs),
+                ),
+                **options,
+            )
 
             if "out" in kwargs and not (
                 isinstance(kwargs["out"], variables.ConstantVariable)

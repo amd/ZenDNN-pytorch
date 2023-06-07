@@ -773,7 +773,7 @@ class UnspecializedNNModuleVariable(UserDefinedObjectVariable):
         return super().call_method(tx, name, args, kwargs)
 
 
-class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
+class FSDPManagedNNModuleVariable(NNModuleVariable):
     """
     Tracing behavior: trace into submodules and treat them as Unspecialized, do not
     register parameters to the top-level, treat them as function inputs.
@@ -784,30 +784,31 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     requirement to not modify internal model state, which would already break FSDP without
     compilation.
     """
+    pass
 
-    def create(tx, value, proxy, **kwargs):
-        # from .builder import wrap_to_fake_tensor_and_record
-        module = FSDPManagedNNModuleVariable(value, proxy, **kwargs)
-        # for param_name, parameter in module.value._parameters.items():
-            # fake = wrap_to_fake_tensor_and_record(parameter, tx=tx, source=AttrSource(kwargs["source"], param_name), is_tensor=True)
-            # setattr(module.value, param_name, fake)
-            # module.value._parameters[param_name] = fake
-        return module
+    # def create(tx, value, proxy, **kwargs):
+    #     # from .builder import wrap_to_fake_tensor_and_record
+    #     module = FSDPManagedNNModuleVariable(value, proxy, **kwargs)
+    #     # for param_name, parameter in module.value._parameters.items():
+    #         # fake = wrap_to_fake_tensor_and_record(parameter, tx=tx, source=AttrSource(kwargs["source"], param_name), is_tensor=True)
+    #         # setattr(module.value, param_name, fake)
+    #         # module.value._parameters[param_name] = fake
+    #     return module
 
 
 
-    def __init__(self, value, proxy, **kwargs):
-        source = kwargs.get("source", None)
-        assert (
-            source is not None
-        ), "FSDPManagedNNModule depends on having an accurate source to control guarding."
+    # def __init__(self, value, **kwargs):
+    #     source = kwargs.get("source", None)
+    #     assert (
+    #         source is not None
+    #     ), "FSDPManagedNNModule depends on having an accurate source to control guarding."
 
-        super().__init__(value=value, **kwargs)
-        if torch._dynamo.config.skip_fsdp_guards:
-            self.source = FSDPNNModuleSource(source)
-        else:
-            # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
-            self.source = NotNNModuleSource(source)
+    #     super().__init__(value=value, **kwargs)
+    #     if torch._dynamo.config.skip_fsdp_guards:
+    #         self.source = FSDPNNModuleSource(source)
+    #     else:
+    #         # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
+    #         self.source = NotNNModuleSource(source)
 
         # self.value._dynamo_var = self
         # for param_name, parameter in self.value._parameters.items():
@@ -815,208 +816,208 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         #     param.data = new_tensor
 
 
-        self.proxy = proxy
+        # self.proxy = proxy
 
-    def as_python_constant(self):
-        return self.value
+    # def as_python_constant(self):
+    #     return self.value
 
-    def as_proxy(self):
-        return self.proxy
+    # def as_proxy(self):
+    #     return self.proxy
 
-    def var_getattr(self, tx, name):
-        print("FSDPManagedNNModuleVariableATTR", name)
-        if name in ["_streams_unshard", "_streams_pre_unshard"]:
-            stream = getattr(self.value, name)
-            proxy = getattr(self.as_proxy(), name)
-            source = AttrSource(self.source, name)
-            # print("STREAM DEVICE TYPE?", stream._device_type())
-            return variables.ctx_manager.CUDAStreamVariable(proxy, stream, source)
-        return super().var_getattr(tx, name)
+    # def var_getattr(self, tx, name):
+    #     print("FSDPManagedNNModuleVariableATTR", name)
+    #     if name in ["_streams_unshard", "_streams_pre_unshard"]:
+    #         stream = getattr(self.value, name)
+    #         proxy = getattr(self.as_proxy(), name)
+    #         source = AttrSource(self.source, name)
+    #         # print("STREAM DEVICE TYPE?", stream._device_type())
+    #         return variables.ctx_manager.CUDAStreamVariable(proxy, stream, source)
+    #     return super().var_getattr(tx, name)
 
-    def call_hasattr(self, tx, name: str) -> "VariableTracker":
-        print("HASATTR?", self, name)
-        if "." in name:
-            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
-            raise RuntimeError(f"What the hell is {name}")
+    # def call_hasattr(self, tx, name: str) -> "VariableTracker":
+    #     print("HASATTR?", self, name)
+    #     if "." in name:
+    #         # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
+    #         raise RuntimeError(f"What the hell is {name}")
         
-        if tx.output.side_effects.is_attribute_mutation(self):
-            try:
-                result = tx.output.side_effects.load_attr(self, name, deleted_ok=True)
-                return variables.ConstantVariable(
-                    not isinstance(result, variables.DeletedVariable)
-                ).add_options(self, result)
-            except KeyError:
-                pass
-        if not self.source:
-            unimplemented("hasattr no source")
-        options = VariableTracker.propagate(self)
-        # options["guards"].add(
-        #     AttrSource(self.source, name)
-        # )
-        try:
-            getattr(self.value, name)
-            return variables.ConstantVariable(True, **options)
-        except AttributeError:
-            return variables.ConstantVariable(False, **options)
+    #     if tx.output.side_effects.is_attribute_mutation(self):
+    #         try:
+    #             result = tx.output.side_effects.load_attr(self, name, deleted_ok=True)
+    #             return variables.ConstantVariable(
+    #                 not isinstance(result, variables.DeletedVariable)
+    #             ).add_options(self, result)
+    #         except KeyError:
+    #             pass
+    #     if not self.source:
+    #         unimplemented("hasattr no source")
+    #     options = VariableTracker.propagate(self)
+    #     # options["guards"].add(
+    #     #     AttrSource(self.source, name)
+    #     # )
+    #     try:
+    #         getattr(self.value, name)
+    #         return variables.ConstantVariable(True, **options)
+    #     except AttributeError:
+    #         return variables.ConstantVariable(False, **options)
 
-    def call_method(
-        self,
-        tx,
-        name,
-        args: "List[VariableTracker]",
-        kwargs: "Dict[str, VariableTracker]",
-    ) -> "VariableTracker":
-        import operator
-        print("FSDPManagedNNModuleVariableMETHOD", name)
-        options = VariableTracker.propagate([self])
+    # def call_method(
+    #     self,
+    #     tx,
+    #     name,
+    #     args: "List[VariableTracker]",
+    #     kwargs: "Dict[str, VariableTracker]",
+    # ) -> "VariableTracker":
+    #     import operator
+    #     print("FSDPManagedNNModuleVariableMETHOD", name)
+    #     options = VariableTracker.propagate([self])
 
-        def wrap_modules(items, sub_name):
-            result = []
-            for submod_name, submod in items:
-                sub_proxy = operator.getitem(getattr(self.proxy, sub_name), submod_name)
-                sub_obj = FSDPManagedNNModuleVariable.create(tx, value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
-                sub_proxy.node.meta['example_value'] = sub_obj
-                result.append(
-                    sub_obj
-                )
-            return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+    #     def wrap_modules(items, sub_name):
+    #         result = []
+    #         for submod_name, submod in items:
+    #             sub_proxy = operator.getitem(getattr(self.proxy, sub_name), submod_name)
+    #             sub_obj = FSDPManagedNNModuleVariable.create(tx, value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
+    #             sub_proxy.node.meta['example_value'] = sub_obj
+    #             result.append(
+    #                 sub_obj
+    #             )
+    #         return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
-        def wrap_tensors(items, sub_name):
-            from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
+    #     def wrap_tensors(items, sub_name):
+    #         from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
 
-            result = []
-            for sub_item_name, sub_t in items:
-                sub_proxy = operator.getitem(getattr(self.proxy, sub_name), sub_item_name)
-                print("TENSOR SUBOBJ", sub_proxy)
-                sub_t = wrap_to_fake_tensor_and_record(
-                    sub_t, tx=tx, is_tensor=True, source=AttrSource(self.source, submod_name)
-                )
-                sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=sub_t, source=AttrSource(self.source, submod_name))
-                sub_proxy.node.meta['example_value'] = sub_obj
-                result.append(
-                    sub_obj
-                )
-            return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+    #         result = []
+    #         for sub_item_name, sub_t in items:
+    #             sub_proxy = operator.getitem(getattr(self.proxy, sub_name), sub_item_name)
+    #             print("TENSOR SUBOBJ", sub_proxy)
+    #             sub_t = wrap_to_fake_tensor_and_record(
+    #                 sub_t, tx=tx, is_tensor=True, source=AttrSource(self.source, submod_name)
+    #             )
+    #             sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=sub_t, source=AttrSource(self.source, submod_name))
+    #             sub_proxy.node.meta['example_value'] = sub_obj
+    #             result.append(
+    #                 sub_obj
+    #             )
+    #         return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
-        def named_modules(embed_name, obj, sub_name):
-            sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
-            sub_obj = FSDPManagedNNModuleVariable.create(tx, value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
-            sub_proxy.node.meta['example_value'] = sub_obj
-            return variables.TupleVariable(
-                [
-                    variables.ConstantVariable(name, **options),
-                    sub_obj
-                ]
-            )
+    #     def named_modules(embed_name, obj, sub_name):
+    #         sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
+    #         sub_obj = FSDPManagedNNModuleVariable.create(tx, value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
+    #         sub_proxy.node.meta['example_value'] = sub_obj
+    #         return variables.TupleVariable(
+    #             [
+    #                 variables.ConstantVariable(name, **options),
+    #                 sub_obj
+    #             ]
+    #         )
 
-        def named_tensors(embed_name, obj, sub_name):
-            from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
+    #     def named_tensors(embed_name, obj, sub_name):
+    #         from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
 
-            sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
-            print("sub proxy?", self.proxy, sub_name, embed_name, sub_proxy)
-            obj = wrap_to_fake_tensor_and_record(
-                obj, tx=tx, source=AttrSource(self.source, embed_name), is_tensor=True
-            )
-            sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=obj, source=AttrSource(self.source, embed_name))
-            print("NAMED TENSOR SUBOBJ", sub_obj)
-            sub_proxy.node.meta['example_value'] = sub_obj
-            return variables.TupleVariable(
-                [
-                    variables.ConstantVariable(name, **options),
-                    sub_obj
-                ]
-            )
+    #         sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
+    #         print("sub proxy?", self.proxy, sub_name, embed_name, sub_proxy)
+    #         obj = wrap_to_fake_tensor_and_record(
+    #             obj, tx=tx, source=AttrSource(self.source, embed_name), is_tensor=True
+    #         )
+    #         sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=obj, source=AttrSource(self.source, embed_name))
+    #         print("NAMED TENSOR SUBOBJ", sub_obj)
+    #         sub_proxy.node.meta['example_value'] = sub_obj
+    #         return variables.TupleVariable(
+    #             [
+    #                 variables.ConstantVariable(name, **options),
+    #                 sub_obj
+    #             ]
+    #         )
 
 
-        def get_kwargs(*names):
-            fn = getattr(self.value, name)
-            bound_args = inspect.signature(fn).bind(
-                *([x.as_python_constant() for x in args]),
-                **{k: v.as_python_constant() for k, v in kwargs.items()},
-            )
-            bound_args.apply_defaults()
-            bound_args = bound_args.arguments
-            return {k: bound_args[k] for k in names if k in bound_args}
+    #     def get_kwargs(*names):
+    #         fn = getattr(self.value, name)
+    #         bound_args = inspect.signature(fn).bind(
+    #             *([x.as_python_constant() for x in args]),
+    #             **{k: v.as_python_constant() for k, v in kwargs.items()},
+    #         )
+    #         bound_args.apply_defaults()
+    #         bound_args = bound_args.arguments
+    #         return {k: bound_args[k] for k in names if k in bound_args}
 
-        if name == "children":
-            return wrap_modules(self.value.named_children(), "_modules")
-        if name == "buffers":
-            return wrap_tensors(self.value.named_buffers(**get_kwargs("recurse")), "_buffers")
-        if name == "named_children":
-            result = []
-            for childname, submod in self.value.named_children():
-                result.append(named_modules(childname, submod, "_modules"))
-            return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        if name == "named_parameters":
-            result = []
-            for paramname, param in self.value.named_parameters(
-                **get_kwargs("prefix", "recurse")
-            ):
-                result.append(named_tensors(paramname, param, "_parameters"))
-            return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
-        elif name == "_parameters":
-            return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
-        elif name == "parameters":
-            return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
-        if name == "_named_members":
-            return wrap_tensors(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
-        if name == "__setattr__":
-            assert len(args) == 2
-            key = args[0].as_python_constant()
-            value_obj = args[1]
+    #     if name == "children":
+    #         return wrap_modules(self.value.named_children(), "_modules")
+    #     if name == "buffers":
+    #         return wrap_tensors(self.value.named_buffers(**get_kwargs("recurse")), "_buffers")
+    #     if name == "named_children":
+    #         result = []
+    #         for childname, submod in self.value.named_children():
+    #             result.append(named_modules(childname, submod, "_modules"))
+    #         return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     if name == "named_parameters":
+    #         result = []
+    #         for paramname, param in self.value.named_parameters(
+    #             **get_kwargs("prefix", "recurse")
+    #         ):
+    #             result.append(named_tensors(paramname, param, "_parameters"))
+    #         return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
+    #     elif name == "_parameters":
+    #         return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
+    #     elif name == "parameters":
+    #         return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
+    #     if name == "_named_members":
+    #         return wrap_tensors(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
+    #     if name == "__setattr__":
+    #         assert len(args) == 2
+    #         key = args[0].as_python_constant()
+    #         value_obj = args[1]
 
-            print("SETTING UP", name, key, value_obj)
-            def _convert(item):
-                if isinstance(item, variables.NNModuleVariable):
-                    value = tx.output.get_submodule(item.module_key)
-                    # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item.module_key}")
-                elif isinstance(item, variables.TensorVariable):
-                    # value = item.as_proxy().node.meta['example_value']
-                    # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{type(item)}")
-                    fake = item.as_proxy().node.meta['example_value']
-                    param = torch.zeros(fake.size(), dtype=fake.dtype, device=fake.device)
-                    value = torch.nn.Parameter(param)
-                    from .builder import wrap_fx_proxy
+    #         print("SETTING UP", name, key, value_obj)
+    #         def _convert(item):
+    #             if isinstance(item, variables.NNModuleVariable):
+    #                 value = tx.output.get_submodule(item.module_key)
+    #                 # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item.module_key}")
+    #             elif isinstance(item, variables.TensorVariable):
+    #                 # value = item.as_proxy().node.meta['example_value']
+    #                 # unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{type(item)}")
+    #                 fake = item.as_proxy().node.meta['example_value']
+    #                 param = torch.zeros(fake.size(), dtype=fake.dtype, device=fake.device)
+    #                 value = torch.nn.Parameter(param)
+    #                 from .builder import wrap_fx_proxy
 
-                    # return wrap_fx_proxy(
-                    #     tx=tx,
-                    #     proxy=tx.output.create_proxy(
-                    #         "call_function",
-                    #         object.__setattr__,
-                    #         [self.value, key, value],
-                    #         {},
-                    #     )
-                    # )
-                elif isinstance(item, variables.ListVariable):
-                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
-                elif isinstance(item, variables.ConstDictVariable):
-                    value = {key.value: _convert(value) for key, value in item.items.items()}
-                elif isinstance(item, variables.DeletedVariable):
-                    value = None
-                elif isinstance(item, variables.EnumVariable):
-                    value = item.as_python_constant()
-                elif isinstance(item, variables.ConstantVariable):
-                    value = item.as_python_constant()
-                elif isinstance(item, variables.CUDAStreamVariable):
-                    print("SET STREAM", name)
-                    value = item.value
-                elif isinstance(item, variables.UserDefinedObjectVariable):
-                    value = item.value
-                else:
-                    unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
-                # else:
-                #     value = item.as_python_constant()
-                print(f"SETATTRFSDP {key} {type(item)} -> {type(value)}")
-                return value
+    #                 # return wrap_fx_proxy(
+    #                 #     tx=tx,
+    #                 #     proxy=tx.output.create_proxy(
+    #                 #         "call_function",
+    #                 #         object.__setattr__,
+    #                 #         [self.value, key, value],
+    #                 #         {},
+    #                 #     )
+    #                 # )
+    #             elif isinstance(item, variables.ListVariable):
+    #                 value = [_convert(x) for x in item.unpack_var_sequence(tx)]
+    #             elif isinstance(item, variables.ConstDictVariable):
+    #                 value = {key.value: _convert(value) for key, value in item.items.items()}
+    #             elif isinstance(item, variables.DeletedVariable):
+    #                 value = None
+    #             elif isinstance(item, variables.EnumVariable):
+    #                 value = item.as_python_constant()
+    #             elif isinstance(item, variables.ConstantVariable):
+    #                 value = item.as_python_constant()
+    #             elif isinstance(item, variables.CUDAStreamVariable):
+    #                 print("SET STREAM", name)
+    #                 value = item.value
+    #             elif isinstance(item, variables.UserDefinedObjectVariable):
+    #                 value = item.value
+    #             else:
+    #                 unimplemented(f"Setattr on FSDPManagedNNModuleVariable w/ {key}{item}")
+    #             # else:
+    #             #     value = item.as_python_constant()
+    #             print(f"SETATTRFSDP {key} {type(item)} -> {type(value)}")
+    #             return value
 
-            value = _convert(value_obj)
-            if value is None:
-                delattr(self.value, key)
-            else:
-                setattr(self.value, key, value)
-            return variables.ConstantVariable(None)
-        if name == "forward":
-            unimplemented("Forward broken AF")
+    #         value = _convert(value_obj)
+    #         if value is None:
+    #             delattr(self.value, key)
+    #         else:
+    #             setattr(self.value, key, value)
+    #         return variables.ConstantVariable(None)
+    #     if name == "forward":
+    #         unimplemented("Forward broken AF")
             
-        print("FALLTHROIGH", name, ("." in name), args, kwargs)
-        return super().call_method(tx, name, args, kwargs)
+    #     print("FALLTHROIGH", name, ("." in name), args, kwargs)
+    #     return super().call_method(tx, name, args, kwargs)
