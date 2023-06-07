@@ -652,7 +652,14 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
            
 
 
-    # def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+    def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("FlatParamHandleVariable Invoking", name)
+        try: 
+            return self.inner_dict.call_method(tx, name, args, kwargs)
+        except:
+            return super().call_method(tx, name, args, kwargs)
+
+            
     #     print("FLATPARAMMETHOD, ", name, args)
     #     return super().call_method(tx, name, args, kwargs)
            
