@@ -842,7 +842,8 @@ class VariableBuilder:
             fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
                 re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
             )
-            result = FSDPManagedNNModuleVariable(
+            result = FSDPManagedNNModuleVariable.create(
+                self.tx,
                 value,
                 fsdpmoduleproxy,
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
@@ -1562,7 +1563,7 @@ def wrap_to_fake_tensor_and_record(
                     f_params.append(f_param)
                 setattr(fake_e, _p_name, f_params)
                 # setattr(fake_e, "_r" + _p_name, r_params)
-        param_names = ['_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_shared_param_infos']
+        param_names = ['_padded_unsharded_size', '_numels_with_padding', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_shared_param_infos']
 
         for name in param_names:
             if hasattr(e, name):

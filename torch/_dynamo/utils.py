@@ -1227,7 +1227,7 @@ def get_fake_value(node, tx):
 
     def fake_wrapper(e):
         if isinstance(e, torch.Tensor):
-            assert isinstance(e, FakeTensor)
+            assert isinstance(e, FakeTensor), f"Expected fake, got {type(e)}, while running {node}"
         return e
 
     def visit(n: torch.fx.Node):
@@ -1243,8 +1243,8 @@ def get_fake_value(node, tx):
         return n.meta["example_value"]
 
     args, kwargs = torch.fx.node.map_arg((node.args, node.kwargs), visit)
-    args = tree_map(fake_wrapper, args)
-    kwargs = tree_map(fake_wrapper, kwargs)
+    # args = tree_map(fake_wrapper, args)
+    # kwargs = tree_map(fake_wrapper, kwargs)
 
     nnmodule = None
     if op == "call_method" and len(args) > 0 and isinstance(args[0], torch.nn.Module):

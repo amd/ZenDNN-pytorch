@@ -785,6 +785,17 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     compilation.
     """
 
+    def create(tx, value, proxy, **kwargs):
+        # from .builder import wrap_to_fake_tensor_and_record
+        module = FSDPManagedNNModuleVariable(value, proxy, **kwargs)
+        # for param_name, parameter in module.value._parameters.items():
+            # fake = wrap_to_fake_tensor_and_record(parameter, tx=tx, source=AttrSource(kwargs["source"], param_name), is_tensor=True)
+            # setattr(module.value, param_name, fake)
+            # module.value._parameters[param_name] = fake
+        return module
+
+
+
     def __init__(self, value, proxy, **kwargs):
         source = kwargs.get("source", None)
         assert (
@@ -798,7 +809,12 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
             self.source = NotNNModuleSource(source)
 
-        self.value._dynamo_var = self
+        # self.value._dynamo_var = self
+        # for param_name, parameter in self.value._parameters.items():
+        #     new_tensor = wrap_to_fake_tensor_and_record(param)
+        #     param.data = new_tensor
+
+
         self.proxy = proxy
 
     def as_python_constant(self):
@@ -858,7 +874,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             result = []
             for submod_name, submod in items:
                 sub_proxy = operator.getitem(getattr(self.proxy, sub_name), submod_name)
-                sub_obj = FSDPManagedNNModuleVariable(value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
+                sub_obj = FSDPManagedNNModuleVariable.create(tx, value=submod, proxy=sub_proxy, source=AttrSource(self.source, submod_name))
                 sub_proxy.node.meta['example_value'] = sub_obj
                 result.append(
                     sub_obj
@@ -884,7 +900,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
         def named_modules(embed_name, obj, sub_name):
             sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
-            sub_obj = FSDPManagedNNModuleVariable(value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
+            sub_obj = FSDPManagedNNModuleVariable.create(tx, value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
             sub_proxy.node.meta['example_value'] = sub_obj
             return variables.TupleVariable(
                 [

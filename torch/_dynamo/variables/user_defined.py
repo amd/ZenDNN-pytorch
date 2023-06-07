@@ -661,10 +661,10 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
     def var_getattr(self, tx, name):
         # Note - here for easier printing as needed, will delete
         print("FlatParamHandleVariableGETTING", name)
-        if name == "flat_param":
-            from .builder import wrap_fx_proxy
-            flat_param_attr_proxy = getattr(self.proxy, "flat_param")
-            return wrap_fx_proxy(tx, flat_param_attr_proxy)
+        # if name == "flat_param":
+        #     from .builder import wrap_fx_proxy_cls
+        #     flat_param_attr_proxy = getattr(self.proxy, "flat_param")
+        #     return wrap_fx_proxy_cls(variables.tensor.FlatParamVariable, tx, flat_param_attr_proxy)
             
         return super().var_getattr(tx, name)
 

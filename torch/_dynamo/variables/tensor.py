@@ -877,7 +877,7 @@ class TypedStorageVariable(VariableTracker):
             #     lambda *args, **kwargs: ConstantVariable(self.value._data_ptr())
             # ).add_options(self)
         if name == '_size':
-            return ConstantVariable(self.value._size())
+            return SizeVariable(self.value._size())
         if name == 'device':
             return ConstantVariable(self.value.device)
         print("TypedStorageVariable Call method", name, self.value, args)
@@ -897,7 +897,7 @@ class UnTypedStorageVariable(VariableTracker):
             #     lambda *args, **kwargs: ConstantVariable(self.value._data_ptr())
             # ).add_options(self)
         if name == '_size':
-            return ConstantVariable(self.value._size())
+            return SizeVariable(self.value._size())
         if name == 'device':
             return ConstantVariable(self.value.device)
         if name == 'data_ptr':
@@ -915,7 +915,7 @@ class FlatParamVariable(TensorVariable):
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
         from .builder import wrap_fx_proxy
-        if name in ['_numels_with_padding', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
+        if name in ['_numels_with_padding', '_padded_unsharded_size', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
             return wrap_fx_proxy(
                 tx=tx,
                 proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
@@ -946,8 +946,7 @@ class FlatParamVariable(TensorVariable):
             value = self.as_proxy().node.meta['example_value']
             return UnTypedStorageVariable(value)
         if name == "size":
-            # print("SIZE?", self.size, "HANDLE?", self.handle, "h size?", self.handle.value.flat_param.size(), "ex size?", self.as_proxy().node.meta['example_value'].size())
-            return ConstantVariable(self.size)
+            return SizeVariable(list(*self.size))
     
         
         # variables.LambdaVariable(
