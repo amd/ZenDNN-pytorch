@@ -611,6 +611,11 @@ class SkipFilesVariable(VariableTracker):
         options = VariableTracker.propagate(self, args, kwargs.values())
 
         if inspect.getattr_static(self.value, "_torchdynamo_disable", False):
+            import traceback
+            print(f"\n\n\n=== report an unimplemented: call torch._dynamo.disable() wrapped function {self.value}, {len(traceback.extract_stack())} stack items\n\n\n")
+            traceback.print_stack()
+            # breakpoint() #TODO
+
             unimplemented(f"call torch._dynamo.disable() wrapped function {self.value}")
         # Allowlist a few popular classes(e.g, collections.OrderedDict) calls in skip files.
         elif self.value is collections.OrderedDict and (
