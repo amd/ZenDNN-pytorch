@@ -161,7 +161,7 @@ class GraphArg:
                 self.fake_tensor, torch._subclasses.fake_tensor.FakeTensor
             )
         if isinstance(self.example, torch._subclasses.fake_tensor.FakeTensor):
-            raise AssertionError("Fake Tensor observed in TorchDynamo Fx graph inputs")
+            raise AssertionError(f"Fake Tensor observed in TorchDynamo Fx graph inputs: {self.source}")
 
     def load(self, tx):
         return self.source.reconstruct(tx)
@@ -497,7 +497,8 @@ class VariableBuilder:
             flat_param_proxy = self.tx.output.root_tracer.create_graph_input(
                 re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
             )
-            result = FlatParamHandleVariable(
+            result = FlatParamHandleVariable.create(
+                self.tx,
                 value,
                 proxy=flat_param_proxy,
                 source=self.source,

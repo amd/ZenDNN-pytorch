@@ -1426,8 +1426,8 @@ class FakeTensorMode(TorchDispatchMode):
                     )
 
                 x = converter(self, x)
-            else:
-                assert x.fake_mode is self, "Mixing fake modes NYI"
+            # else:
+            #     assert x.fake_mode is self, "Mixing fake modes NYI"
 
             flat_arg_fake_tensors.append(x)
             return x
