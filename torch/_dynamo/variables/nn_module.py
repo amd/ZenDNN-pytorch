@@ -854,7 +854,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         print("FSDPManagedNNModuleVariableMETHOD", name)
         options = VariableTracker.propagate([self])
 
-        def wrap_values(items, sub_name):
+        def wrap_modules(items, sub_name):
             result = []
             for submod_name, submod in items:
                 sub_proxy = operator.getitem(getattr(self.proxy, sub_name), submod_name)
@@ -865,9 +865,44 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                 )
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
 
-        def named_embed(embed_name, obj, sub_name):
+        def wrap_tensors(items, sub_name):
+            from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
+
+            result = []
+            for sub_item_name, sub_t in items:
+                sub_proxy = operator.getitem(getattr(self.proxy, sub_name), sub_item_name)
+                print("TENSOR SUBOBJ", sub_proxy)
+                sub_t = wrap_to_fake_tensor_and_record(
+                    sub_t, tx=tx, is_tensor=True, source=AttrSource(self.source, submod_name)
+                )
+                sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=sub_t, source=AttrSource(self.source, submod_name))
+                sub_proxy.node.meta['example_value'] = sub_obj
+                result.append(
+                    sub_obj
+                )
+            return variables.ListIteratorVariable(result, mutable_local=MutableLocal())
+
+        def named_modules(embed_name, obj, sub_name):
             sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
             sub_obj = FSDPManagedNNModuleVariable(value=obj, proxy=sub_proxy, source=AttrSource(self.source, embed_name))
+            sub_proxy.node.meta['example_value'] = sub_obj
+            return variables.TupleVariable(
+                [
+                    variables.ConstantVariable(name, **options),
+                    sub_obj
+                ]
+            )
+
+        def named_tensors(embed_name, obj, sub_name):
+            from .builder import wrap_fx_proxy, wrap_to_fake_tensor_and_record
+
+            sub_proxy = operator.getitem(getattr(self.proxy, sub_name), embed_name)
+            print("sub proxy?", self.proxy, sub_name, embed_name, sub_proxy)
+            obj = wrap_to_fake_tensor_and_record(
+                obj, tx=tx, source=AttrSource(self.source, embed_name), is_tensor=True
+            )
+            sub_obj = wrap_fx_proxy(tx, sub_proxy, example_value=obj, source=AttrSource(self.source, embed_name))
+            print("NAMED TENSOR SUBOBJ", sub_obj)
             sub_proxy.node.meta['example_value'] = sub_obj
             return variables.TupleVariable(
                 [
@@ -888,27 +923,27 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             return {k: bound_args[k] for k in names if k in bound_args}
 
         if name == "children":
-            return wrap_values(self.value.named_children(), "_modules")
+            return wrap_modules(self.value.named_children(), "_modules")
         if name == "buffers":
-            return wrap_values(self.value.named_buffers(**get_kwargs("recurse")), "_buffers")
+            return wrap_tensors(self.value.named_buffers(**get_kwargs("recurse")), "_buffers")
         if name == "named_children":
             result = []
             for childname, submod in self.value.named_children():
-                result.append(named_embed(childname, submod, "_modules"))
+                result.append(named_modules(childname, submod, "_modules"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         if name == "named_parameters":
             result = []
             for paramname, param in self.value.named_parameters(
                 **get_kwargs("prefix", "recurse")
             ):
-                result.append(named_embed(paramname, param, "_parameters"))
+                result.append(named_tensors(paramname, param, "_parameters"))
             return variables.ListIteratorVariable(result, mutable_local=MutableLocal(), **options)
         elif name == "_parameters":
-            return wrap_values(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
+            return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
         elif name == "parameters":
-            return wrap_values(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
+            return wrap_tensors(self.value.named_parameters(**get_kwargs("recurse")), "_parameters")
         if name == "_named_members":
-            return wrap_values(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
+            return wrap_tensors(self.value._named_members(**get_kwargs("get_members_fn")), "_parameters")
         if name == "__setattr__":
             assert len(args) == 2
             key = args[0].as_python_constant()

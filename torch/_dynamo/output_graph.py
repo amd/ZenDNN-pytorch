@@ -973,7 +973,7 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                     arg = node.meta["grapharg"]
                     if isinstance(node.meta["example_value"], torch.nn.Module):
                         continue
-                    if isinstance(node.meta["example_value"], <torch.distributed.fsdp.flat_param.FlatParamHandle):
+                    if isinstance(node.meta["example_value"], torch.distributed.fsdp.flat_param.FlatParamHandle):
                         continue
                     fake = (
                         arg.fake_tensor if arg.fake_tensor is not None else arg.example

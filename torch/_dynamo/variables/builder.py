@@ -1363,7 +1363,9 @@ def wrap_fx_proxy_cls(
         return ConstDictVariable(example_value, dict, **options)
     elif isinstance(example_value, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel):
         assert "source" in options
-        return VariableBuilder(tx, options["source"])(example_value)
+        fsdpvar = VariableBuilder(tx, options["source"])(example_value)
+        print("FSDPVAR", fsdpvar)
+        return fsdpvar
     elif isinstance(example_value, str):
         return ConstantVariable(example_value)
     elif isinstance(example_value, torch.nn.Module):
