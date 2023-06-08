@@ -603,6 +603,7 @@ def _init_param_handle_from_params(
     assert handle not in state._handles
     state.params.append(handle.flat_param)
     state._handles.append(handle)
+    print("APPEND HANDLE")
     state._fully_sharded_module_to_handles[handle._fully_sharded_module].append(handle)
     num_fully_sharded_module_handles = len(
         state._fully_sharded_module_to_handles[handle._fully_sharded_module]

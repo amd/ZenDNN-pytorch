@@ -470,7 +470,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         # implemented using post-save and pre-load hooks
         _init_state_dict_state(self)
         _register_all_state_dict_hooks(self)
-        # print("INITIALIZED FSDP", self.__dict__)
+        print("INITIALIZED FSDP", self.__dict__)
         # print()
 
     @property
@@ -796,7 +796,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
                     "Expected `FlatParameter` to be on the compute device "
                     f"{self.compute_device} but got {handle.flat_param.device}",
                 )
-            print("Pre forward args", args)
+            # print("Pre forward args", args)
             # output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
             output = self._stored_fsdp_wrapped_module(*pf2_args, **pf2_kwargs)
             return _post_forward(self, self._handles, _post_forward_reshard, self, unused, output)

@@ -66,10 +66,6 @@ def wrap_bound_arg(tx, val, options, source=None):
         from torch._dynamo.variables.builder import VariableBuilder
         
         return VariableBuilder(tx, source=source)(val)
-    # elif isinstance(val, torch.distributed.fsdp.fully_sharded_data_parallel.FullyShardedDataParallel):
-        # assert hasattr(val, '_dynamo_var')
-        # print("WTF", id(val._dynamo_var.value), val._dynamo_var.value.__dict__)
-        # return val._dynamo_var
     else:
         assert isinstance(val, VariableTracker), typestr(val)
         return val

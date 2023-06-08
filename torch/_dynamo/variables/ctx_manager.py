@@ -367,17 +367,24 @@ class CUDAStreamContextVariable(ContextWrappingVariable):
 
 class CUDAStreamClassVariable(VariableTracker):
     def __init__(self, proxy, value, source, **kwargs):
+        if "current_device" in kwargs:
+            device = kwargs.pop("current_device")
+        else:
+            device = torch.cuda.current_device()
         if proxy is not None and "example_value" in proxy.node.meta:
             assert proxy.node.meta["example_value"] == value
         super().__init__(**kwargs)
         self.proxy = proxy
         self.value = value
         self.source = source
+        self.current_device = device
 
 
     def call_function(self, tx, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
         # unimplemented(f"Instantiating a stream")
         val = self.value()
+        print("CURR", torch.cuda.current_device())
+        print("STORE", self.current_device)
         return CUDAStreamVariable(self.proxy, val, self.source)
 
 class CUDAStreamVariable(VariableTracker):

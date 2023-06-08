@@ -525,7 +525,8 @@ class UserDefinedObjectVariable(UserDefinedVariable):
                     return key
         
             print("DICT SUBOBJ W/", name, self)
-            # if name == "__dict__" and isinstance(self, variables.FSDPManagedNNModuleVariable):
+            if name == "__dict__" and isinstance(self, variables.nn_module.FSDPManagedNNModuleVariable):
+                print("CONTENTS", subobj)
             keys = subobj.keys()
             result = {
                 k: VariableBuilder(

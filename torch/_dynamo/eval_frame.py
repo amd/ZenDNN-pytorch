@@ -1242,7 +1242,7 @@ class TorchPatcher:
         torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored = torch._dynamo.allow_in_graph(torch.distributed.fsdp.fully_sharded_data_parallel._invoke_stored)
         # torch._dynamo.allow_in_graph(torch.distributed.fsdp.flat_param._check_sharded)
         # torch.distributed.utils._free_storage._dynamo_marked_constant = True
-        torch.distributed.fsdp._runtime_utils._init_streams._dynamo_marked_constant = True
+        # torch.distributed.fsdp._runtime_utils._init_streams._dynamo_marked_constant = True
         # torch.distributed.fsdp._runtime_utils._populate_exec_order_data._dynamo_marked_constant = True
         # torch.distributed.fsdp._exec_order_utils._num_valid_indices._dynamo_marked_constant = True
         torch.distributed.fsdp._traversal_utils._composable._dynamo_marked_constant = True

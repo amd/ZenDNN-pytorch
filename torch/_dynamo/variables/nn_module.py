@@ -810,13 +810,6 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
             self.source = NotNNModuleSource(source)
 
-        # self.name = name
-        # self.value._dynamo_var = self
-        # for param_name, parameter in self.value._parameters.items():
-        #     new_tensor = wrap_to_fake_tensor_and_record(param)
-        #     param.data = new_tensor
-
-
         self.proxy = proxy
         self.name = name
 

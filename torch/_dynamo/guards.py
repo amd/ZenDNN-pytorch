@@ -405,6 +405,8 @@ class GuardBuilder(GuardBuilderBase):
     def LIST_LENGTH(self, guard):
         ref = self.arg_ref(guard)
         value = self.get(guard.name)
+        if value is None:
+            return
         t = type(value)
 
         code = list()
