@@ -1127,10 +1127,11 @@ class SubgraphTracer(fx.Tracer):
             if self.parent is not None:
                 unimplemented("Invoking an nn.Module inside HigherOrderOperator")
             # For modules we store the class
-            rv.node.meta["source_fn"] = (
-                rv.node.name,
-                rv.node.meta["nn_module_stack"][target][1],
-            )
+            if nn_module_stack:
+                rv.node.meta["source_fn"] = (
+                    rv.node.name,
+                    rv.node.meta["nn_module_stack"][target][1],
+                )
 
         frame_summaries: List[traceback.FrameSummary] = []
         while tx:

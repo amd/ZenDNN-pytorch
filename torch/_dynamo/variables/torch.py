@@ -310,7 +310,7 @@ class TorchVariable(VariableTracker):
                 unimplemented("Weird case")
                 print("Inner is", args[0].value)
                 print("TYPE", args[0].value is torch.cuda.streams.Stream)
-                value = torch.cuda.streams.Stream()
+                value = torch.cuda.streams.Stream(args[0].value)
                 source = options.get("source", self.source)
                 def create_stream():
                     return torch.cuda.streams.Stream()
@@ -324,6 +324,7 @@ class TorchVariable(VariableTracker):
             
             return CUDAStreamContextVariable.create(tx, args[0], **options)
         elif self.value is torch.cuda.streams.Stream:
+            unimplemented("Weird case #2")
             source = options.get("source", self.source)
             def create_stream():
                 return torch.cuda.streams.Stream()
@@ -348,10 +349,10 @@ class TorchVariable(VariableTracker):
             #     **options,
             # )
         elif isinstance(self.value, torch.cuda.streams.Stream):
-            # unimplemented("Instantiated stream")
+            unimplemented("Weird case #3")
             source = options.get("source", self.source)
             def create_stream():
-                return torch.cuda.streams.Stream()
+                return torch.cuda.streams.Stream(self.value)
             proxy = tx.output.create_proxy(
                 "call_function",
                 create_stream,

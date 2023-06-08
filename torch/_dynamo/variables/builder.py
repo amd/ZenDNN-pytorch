@@ -840,25 +840,26 @@ class VariableBuilder:
             # ID_MATCH is required to disambiguate cases as simple as a unit test that constructs 2 models and wraps
             # them differently with different FSDP configs.  (test_dynamo_distributed.py -k test_fsdp_aot_eager)
             print("WOOWOO", self.source)
+            new_name = re.sub(r"[^a-zA-Z0-9]+", "_", self.name)
             fsdpmoduleproxy = self.tx.output.root_tracer.create_graph_input(
-                re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
+                new_name, type(value)
             )
             result = FSDPManagedNNModuleVariable.create(
                 self.tx,
                 value,
                 fsdpmoduleproxy,
-                name="",
+                name=new_name,
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
-            # self.tx.output.nn_modules[self.name] = value
+            self.tx.output.nn_modules[new_name] = value
             grapharg = GraphArg(self.get_source(), value, False, value)
             fsdpmoduleproxy.node.meta["grapharg"] = grapharg
             fsdpmoduleproxy.node.meta["example_value"] = value
-            # return result
-            return self.tx.output.side_effects.track_object_existing(
-                self.source, value, result
-            )
+            return result
+            # return self.tx.output.side_effects.track_object_existing(
+            #     self.source, value, result
+            # )
         elif mutation_guard.is_dynamic_nn_module(value):
             # created dynamically, don't specialize on it
             if hasattr(value, '_is_fsdp_managed_module') and value._is_fsdp_managed_module:

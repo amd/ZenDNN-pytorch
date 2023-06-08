@@ -1030,6 +1030,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
                     self.name,
                     *proxy_args_kwargs(args, kwargs),
                 ),
+                # TODO Real value??
+                example_value=torch.randn([2, 2]),
+                source=self.source,
                 **options,
             )
             
