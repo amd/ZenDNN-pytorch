@@ -804,11 +804,11 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         ), "FSDPManagedNNModule depends on having an accurate source to control guarding."
 
         super().__init__(value=value, **kwargs)
-        if torch._dynamo.config.skip_fsdp_guards:
-            self.source = FSDPNNModuleSource(source)
-        else:
+        # if torch._dynamo.config.skip_fsdp_guards:
+            # self.source = FSDPNNModuleSource(source)
+        # else:
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
-            self.source = NotNNModuleSource(source)
+            # self.source = NotNNModuleSource(source)
 
         self.proxy = proxy
         self.name = name
@@ -820,15 +820,14 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
         return self.proxy
 
     def var_getattr(self, tx, name):
-        print("FSDPManagedNNModuleVariableATTR", name)
+        print("FSDPManagedNNModuleVariableATTR", self.source, name)
         # if name is "forward":
         #     raise RuntimeError("Where?")
         if name in ["_streams_unshard", "_streams_pre_unshard"]:
-            stream = getattr(self.value, name)
-            proxy = getattr(self.as_proxy(), name)
-            source = AttrSource(self.source, name)
-            # print("STREAM DEVICE TYPE?", stream._device_type())
-            return variables.ctx_manager.CUDAStreamVariable(proxy, stream, source)
+           print("IS IT HERE?", hasattr(self.value, name))
+           print("VALUE DICT?", self.value.__dict__.keys())
+           if name in self.value.__dict__:
+               print("WHATS IN THE DICT?", self.value.__dict__[name])
         return super().var_getattr(tx, name)
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":

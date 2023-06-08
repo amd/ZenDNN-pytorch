@@ -1355,6 +1355,30 @@ class BuiltinVariable(VariableTracker):
 
         _unimplemented()
 
+    def call_any(self, tx, *args):
+        if args and len(args) == 1:
+            arg = args[0]
+            if isinstance(
+                arg,
+                (
+                    ListVariable,
+                    TupleVariable,
+                    ListIteratorVariable,
+                ),
+            ):
+                elements = arg.unpack_var_sequence(tx)
+                if not elements:
+                    return ConstantVariable(False)
+                for arg in elements:
+                    out = BuiltinVariable(operator.is_).call_function(tx, [arg, ConstantVariable(None)], {})
+                    assert isinstance(out, ConstantVariable)
+                    if out.value is True:
+                        return ConstantVariable(True)
+                return ConstantVariable(False)
+        return None
+                    
+
+
     # and_ is a constant fold function, so we only get here if constant fold is not valid
     def call_and_(self, tx, a, b):
         if isinstance(a, (SymNodeVariable, ConstantVariable)) and isinstance(

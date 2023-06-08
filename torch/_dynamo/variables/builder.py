@@ -112,7 +112,7 @@ from .torch import (
     TorchHigherOrderOperatorVariable,
     TorchVariable,
 )
-from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable, FSDPStateVariable, FSDPStateVariable
+from .user_defined import UserDefinedClassVariable, UserDefinedObjectVariable, ProcessGroupVariable, FlatParamHandleVariable
 
 
 log = logging.getLogger(__name__)
@@ -442,15 +442,6 @@ class VariableBuilder:
                 value=value,
                 source=self.source,
                 guards=make_guards(GuardBuilder.ID_MATCH),
-            )
-        elif istype(value, torch.distributed.fsdp._common_utils._FSDPState):
-            result = FSDPStateVariable(
-                value,
-                source=self.source,
-                guards=make_guards(GuardBuilder.FUNCTION_MATCH),
-            )
-            return self.tx.output.side_effects.track_object_existing(
-                self.source, value, result
             )
         elif isinstance(value, enum.Enum):
             return EnumVariable(

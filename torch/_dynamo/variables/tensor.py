@@ -920,13 +920,18 @@ class FlatParamVariable(TensorVariable):
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
         print("FLAT PARAM INVOKE", name)
-        from .builder import wrap_fx_proxy
+        from .builder import wrap_fx_proxy, VariableBuilder
         if name in ['_numels_with_padding', '_padded_unsharded_size', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
-            result = wrap_fx_proxy(
-                tx=tx,
-                proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-                source=AttrSource(self.source, name)
-            )
+            real_value = getattr(self.value, name, None)
+            if not real_value or isinstance(real_value, torch.tensor):
+                result = wrap_fx_proxy(
+                    tx=tx,
+                    proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
+                    source=AttrSource(self.source, name)
+                )
+            else:
+                result = VariableBuilder(tx, AttrSource(self.source, name))(real_value)
+
             print(f"FLATTT {name} -> {result}")
             return result
         if name in ['_params', '_tensors']:

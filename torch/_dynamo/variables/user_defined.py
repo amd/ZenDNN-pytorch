@@ -646,63 +646,14 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
     def as_proxy(self):
         return self.proxy
 
-    # def _getattr_static(self, name):
-    #     # Note - here for easier printing as needed, will delete
-    #     print("FlatParamHandleVariableGETSTAT", name)
-    #     return super()._getattr_static(name)
-           
-
-
-    # def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
-    #     print("FLATPARAMMETHOD, ", name, args)
-    #     return super().call_method(tx, name, args, kwargs)
+    def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("FlatParamHandleVariable", name)
+        # We don't handle properties well?
+        if name == "_force_full_precision":
+            return variables.ConstantVariable(self.value._force_full_precision)
+        if name in self.inner_dict.items:
+            return self.inner_dict.getitem_const(variables.ConstantVariable(name))
+        return super().call_method(tx, name, args, kwargs)
            
     def var_getattr(self, tx, name):
         return self.inner_dict.var_getattr(tx, name)
-    #     # Note - here for easier printing as needed, will delete
-    #     from .builder import wrap_fx_proxy, wrap_fx_proxy_cls
-    #     print("FlatParamHandleVariableGETTING", name)
-    #     if name == "flat_param":
-    #         result = wrap_fx_proxy_cls(variables.tensor.FlatParamVariable, 
-    #                                  tx, 
-    #                                  variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-    #                                  source=AttrSource(self.source, name)
-    #         )
-    #         return tx.output.side_effects.track_object_existing(
-    #             AttrSource(self.source, name), self.value.flat_param, result
-    #         )
-    #         print(f"FLATTT {name} -> {result}")
-    #         return result
-    #     else:
-    #         return super().var_getattr(tx, name)
-    #         # result = wrap_fx_proxy(
-    #         #     tx=tx,
-    #         #     proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-    #         #     source=AttrSource(self.source, name)
-    #         # )
-    #     return super().var_getattr(tx, name)
-
-class FSDPStateVariable(UserDefinedObjectVariable):
-    def call_method(self, tx, name, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
-        print("METHOD ON STATE", name)
-        if name == "__setattr__":
-            assert len(args) == 2
-            key = args[0].as_python_constant()
-            value_obj = args[1]
-
-            def _convert(item):
-                if isinstance(item, variables.NNModuleVariable):
-                    value = tx.output.get_submodule(item.module_key)
-                elif isinstance(item, variables.TensorVariable):
-                    value = item.as_proxy().node.meta['example_value']
-                elif item.has_unpack_var_sequence(tx):
-                    value = [_convert(x) for x in item.unpack_var_sequence(tx)]
-                else:
-                    value = item.as_python_constant()
-                return value
-
-            value = _convert(value_obj)
-            
-            setattr(self.value, key, value)
-            return variables.ConstantVariable(None)
-        return super().call_method(tx, name, args, kwargs)
