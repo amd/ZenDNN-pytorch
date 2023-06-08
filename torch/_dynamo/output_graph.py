@@ -964,7 +964,10 @@ class OutputGraph(Checkpointable[OutputGraphState]):
                     fake = (
                         arg.fake_tensor if arg.fake_tensor is not None else arg.example
                     )
-                    used_symbols |= free_symbols(fake)
+                    # TODO: Fix this; we don't want NT sizes ending up as inputs to the graph
+                    # BUT how do we ensure the correct size() code is generated?
+                    if not fake.is_nested:
+                        used_symbols |= free_symbols(fake)
 
         # After removing unused graphargs, prune unused binds_symbol
         for node in recheck_placeholders:

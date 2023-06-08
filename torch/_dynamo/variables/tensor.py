@@ -131,6 +131,7 @@ class TensorVariable(VariableTracker):
             "is_quantized": value.is_quantized,
             "is_sparse": value.is_sparse,
             "class_type": type(value),
+            # TODO: do we need to do something here for NestedTensor like is_nested?
         }
         if not free_symbols(value):
             # this is a fully static shape, and the keys on props here inform specialization.

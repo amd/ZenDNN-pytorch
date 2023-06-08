@@ -926,10 +926,13 @@ class CheckFunctionManager:
 
             dynamic_dims_strides = [
                 convert(
+                    # NB: NT doesn't support stride() queries at all
                     self.output_graph.tensor_weakref_to_sizes_strides[WeakIdRef(t)][
                         "stride"
                     ]
                 )
+                if not t.is_nested
+                else [None] * t.dim()
                 for t in tensor_check_examples
             ]
 

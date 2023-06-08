@@ -662,7 +662,8 @@ class InputWriter:
         )
         args = []
         # NB: this is positional, must come first
-        if _stride_or_default(None, shape=t.shape) != t.stride():
+        # TODO: Address this for NTs properly
+        if t.is_nested or _stride_or_default(None, shape=t.shape) != t.stride():
             args.append(str(tuple(t.stride())))
         if _dtype_or_default(None) != t.dtype:
             args.append(f"dtype={t.dtype!r}")

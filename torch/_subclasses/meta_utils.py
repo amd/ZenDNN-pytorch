@@ -1,4 +1,5 @@
 import contextlib
+import sys
 import warnings
 import weakref
 from typing import ContextManager, List, Optional
@@ -53,9 +54,11 @@ def assert_metadata_eq(assert_eq, m1, m2, *, skip_symbolic=False):
             if not skip_symbolic:
                 assert_eq(m1.stride(), m2.stride())
                 assert_eq(m1.storage_offset(), m2.storage_offset())
-            assert_eq(m1._is_view(), m2._is_view())
-            if m1._is_view():
-                go(m1._base, m2._base)
+            # TODO: Fix this once we figure out how to deal with NT views of T
+            if not m1.is_nested:
+                assert_eq(m1._is_view(), m2._is_view())
+                if m1._is_view():
+                    go(m1._base, m2._base)
         # TODO: test if is resizable (no direct query for this atm)
         # TODO: audit AutogradMeta to see if it matches
         # TODO: test forward AD
@@ -267,6 +270,129 @@ class MetaConverter:
                         with torch.enable_grad():
                             r = r.clone()
                             r._coalesced_(t.is_coalesced())
+                elif t.is_nested:
+                    assert (
+                        shape_env is not None
+                    ), "Dynamic shapes must be enabled for nested tensors"
+                    is_leaf = safe_is_leaf(t)
+
+                    def _is_contiguous_enough(t):
+                        for size, stride in zip(
+                            t._nested_tensor_size(), t._nested_tensor_strides()
+                        ):
+                            # Only support (B, *, D) here for now -> 2D size / stride data
+                            assert len(size) == len(stride) == 2
+                            # For (B, *, D) format, make sure constituent strides for inner dim
+                            # are all 1 and constituent strides for other dim is >= size
+                            # TODO: Check that all constituent strides are consistent with each other
+                            if stride[-1] != 1:
+                                return False
+                            if stride[0] < size[-1]:
+                                return False
+                        return True
+
+                    # Only support contiguous (B, *, D) format for now.
+                    try:
+                        supported_format = (
+                            t.dim() == 3 and _is_contiguous_enough(t) and t.size(2) > 0
+                        )
+                    except Exception:
+                        supported_format = False
+
+                    if not supported_format:
+                        from torch._dynamo.exc import unimplemented
+
+                        unimplemented("Only supports (B, *, D) jagged format for now")
+
+                    from torch._dynamo.source import (
+                        TensorProperty,
+                        TensorPropertySource,
+                    )
+                    from torch.fx.experimental.symbolic_shapes import constrain_range
+                    from torch.nested._nested_tensor import NestedTensor
+
+                    # Construct jagged symbolic sizes: (sum(*), D) as (s0, s1) for (B, *, D)
+                    sizes = NestedTensor._sizes_from_shape_list(t._nested_tensor_size())
+                    collapsed_size = sum(sizes[1])
+                    sym_jagged_sizes = [
+                        shape_env.create_symintnode(
+                            shape_env.create_symbol(
+                                collapsed_size,
+                                # TODO: Fix the number if it matters
+                                TensorPropertySource(source, TensorProperty.SIZE, 42),
+                            ),
+                            hint=collapsed_size,
+                        ),
+                        shape_env.create_symintnode(
+                            shape_env.create_symbol(
+                                sizes[-1],
+                                # TODO: Fix the number if it matters
+                                TensorPropertySource(source, TensorProperty.SIZE, 223),
+                            ),
+                            hint=sizes[-1],
+                        ),
+                    ]
+
+                    # Use the first storage offset and assume the data can be indexed via
+                    # consistent size / stride. This isn't symbolic because it's data-dependent.
+                    first_storage_offset = t._nested_tensor_storage_offsets()[0].item()
+                    sym_jagged_storage_offset = first_storage_offset
+
+                    # At this point, we assume each constituent has a consistent stride of [s3, 1]
+                    dim0_stride = t._nested_tensor_strides()[0][0].item()
+                    sym_jagged_strides = [
+                        shape_env.create_symintnode(
+                            # TODO: Fix the number if it matters
+                            shape_env.create_symbol(
+                                dim0_stride,
+                                TensorPropertySource(source, TensorProperty.STRIDE, 43),
+                            ),
+                            hint=dim0_stride,
+                        ),
+                        1,
+                    ]
+
+                    # TODO: Anything to do here to handle strides / storage offset?
+                    buffer_size = sym_jagged_sizes[0] * sym_jagged_sizes[1]
+                    buffer = callback(
+                        lambda: torch.empty(buffer_size, device="meta", dtype=t.dtype)
+                    )
+
+                    # Construct symbolic sizes: (s0, s1, s2) for (B, *, D)
+                    sym_sizes = []
+                    for i, size in enumerate(sizes):
+                        if isinstance(size, list):
+                            # Convert to tuple to be hashable
+                            size = tuple(size)
+                        # TODO: Make sure source is okay!
+                        sym_sizes.append(
+                            shape_env.create_symintnode(
+                                shape_env.create_symbol(
+                                    size,
+                                    TensorPropertySource(
+                                        source, TensorProperty.SIZE, 222
+                                    ),
+                                ),
+                                hint=size,
+                            )
+                        )
+
+                    # NB: callback isn't called here to avoid fake-ifying the NT itself.
+                    # Rather, we return a NestedTensor with a fake buffer and symbolic sizes.
+                    r = NestedTensor(
+                        buffer,
+                        sym_sizes,
+                        jagged_sizes=sym_jagged_sizes,
+                        jagged_strides=sym_jagged_strides,
+                        jagged_storage_offset=sym_jagged_storage_offset,
+                    )
+
+                    assert safe_is_leaf(r), "the callback you passed in doesn't detach"
+                    if t.requires_grad:
+                        r.requires_grad = True
+                    if t.requires_grad and not is_leaf:
+                        with torch.enable_grad():
+                            r = r.clone()
                 elif t.is_mkldnn:
                     is_leaf = safe_is_leaf(t)
                     sizes, strides, _storage_offset = sym_sizes_strides_storage_offset(
@@ -499,7 +625,6 @@ class MetaConverter:
                     t.is_sparse_csr,
                     t.layout in [torch.sparse_csc, torch.sparse_bsr, torch.sparse_bsc],
                     t.is_quantized,
-                    t.is_nested,
                     t._is_view() and t._base is not None and t._base.is_sparse,
                     torch._is_functional_tensor(t),
                     t.device.type in ("lazy"),

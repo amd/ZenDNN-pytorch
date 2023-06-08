@@ -5,6 +5,7 @@ import functools
 import itertools
 import logging
 import re
+import sys
 import textwrap
 import traceback
 from contextlib import nullcontext
@@ -188,6 +189,35 @@ def ir_node_to_tensor(x, guard_shape=True):
         shape_fn = V.graph.sizevars.size_hint
     else:
         shape_fn = identity
+    if is_storage_and_layout(x) and x.get_layout().full_nested_size is not None:
+        # NB: This is only used for fallbacks; no need to touch this for pointwise fusion.
+
+        # TODO: Update this for non-contiguous NestedTensors!!
+
+        from torch.fx.experimental.symbolic_shapes import constrain_range
+
+        # Handle nested tensors
+        dtype = x.get_dtype()
+        device = x.get_device()
+        buffer_size = V.graph.sizevars.shape_env.create_unbacked_symint()
+        constrain_range(buffer_size, min=2, max=sys.maxsize - 1)
+        buffer = torch.empty(buffer_size, device=device, dtype=dtype)
+
+        size = [shape_fn(s) for s in x.get_size()]
+        full_nested_size = x.get_layout().full_nested_size
+
+        sym_sizes = convert_shape_to_symint(full_nested_size)
+        sym_jagged_sizes = convert_shape_to_symint(size)
+
+        from torch.nested._nested_tensor import NestedTensor
+        from torch.utils._mode_utils import no_dispatch
+
+        # Need no_dispatch() to avoid trying to fake-ify the NestedTensor
+        with no_dispatch():
+            nt = NestedTensor(buffer, sym_sizes, sym_jagged_sizes)
+
+        return nt
+
     size = [shape_fn(s) for s in x.get_size()]
     if is_storage_and_layout(x):
         stride = [shape_fn(s) for s in x.get_layout().stride]
@@ -433,7 +463,13 @@ class Loops(IRNode):
     @staticmethod
     def _index(ranges, prefix="i"):
         return [
-            sympy.Integer(0) if s == 1 else sympy_symbol(f"{prefix}{n}")
+            # Carry forward "is_integer" status from the symbol. For nested tensor sizes,
+            # the relevant symbol has is_integer=False to indicate a ragged dim.
+            sympy.Integer(0)
+            if s == 1
+            else sympy_symbol(
+                f"{prefix}{n}", integer=(isinstance(s, int) or s.is_integer)
+            )
             for n, s in enumerate(ranges)
         ]
 
@@ -462,6 +498,25 @@ class Loops(IRNode):
 
 
 class Pointwise(Loops):
+    def __init__(
+        self,
+        device: torch.device,
+        dtype: torch.dtype,
+        inner_fn: List[Expr],
+        ranges: List[Expr],
+        # Indicates whether we're operating on a NT
+        full_nested_size: List[Expr] = None,
+        jagged_offsets_src: Optional[str] = None,
+    ):
+        self.full_nested_size = full_nested_size
+        self.jagged_offsets_src = jagged_offsets_src
+        super().__init__(device, dtype, inner_fn, ranges)
+
+    def __str__(self):
+        return super().__str__() + ("" if self.full_nested_size is None else "[nested]")
+
+    __repr__ = __str__
+
     def make_loader(self):
         return self.inner_fn
 
@@ -1623,10 +1678,20 @@ class ReinterpretView(BaseView):
         offset = V.graph.wrapper_code.codegen_sizevar(self.layout.offset)
         namespace = V.graph.wrapper_code.namespace
         if offset != "0":
-            return (
+            ref = (
                 f"{namespace}as_strided({self.get_name()}, {size}, {stride}, {offset})"
             )
-        return f"{namespace}as_strided({self.get_name()}, {size}, {stride})"
+        else:
+            ref = f"{namespace}as_strided({self.get_name()}, {size}, {stride})"
+
+        # TODO: De-dupe this with Buffer.codegen_reference()
+        if self.layout.jagged_offsets_src is not None:
+            src = self.layout.jagged_offsets_src
+            if ref != src:
+                offset_name = f"torch.ops.aten._nested_get_jagged_offsets({src})"
+                ref = f"torch.ops.aten._nested_view_from_jagged({ref}, {offset_name})"
+
+        return ref
 
 
 class SliceView(View):
@@ -1742,6 +1807,8 @@ class Layout(IRNode):
         size: List[Expr],
         stride: List[Expr],
         offset: Expr = Integer(0),
+        full_nested_size=None,
+        jagged_offsets_src=None,
     ):
         assert stride is None or len(size) == len(
             stride
@@ -1752,10 +1819,18 @@ class Layout(IRNode):
         self.size = size
         self._stride = stride
         self.offset = offset
+        self.full_nested_size = full_nested_size
+        self.jagged_offsets_src = jagged_offsets_src
 
     @property
     def stride(self):
         return self._stride
+
+    @property
+    def has_std_size(self):
+        return all(
+            [sz.is_integer if isinstance(sz, sympy.Expr) else True for sz in self.size]
+        )
 
     def __str__(self):
         offset = ""
@@ -1853,6 +1928,8 @@ class FixedLayout(Layout):
         size: List[Expr],
         stride: List[Expr] = None,
         offset: Expr = Integer(0),
+        full_nested_size: List[Expr] = None,
+        jagged_offsets_src: Optional[str] = None,
     ):
         if stride is None:
             stride = FlexibleLayout.contiguous_strides(size)
@@ -1862,6 +1939,8 @@ class FixedLayout(Layout):
             size,
             stride,
             offset,
+            full_nested_size,
+            jagged_offsets_src,
         )
 
     def make_indexer(self):
@@ -1870,10 +1949,27 @@ class FixedLayout(Layout):
         def indexer(index):
             assert len(index) == len(self.stride) == len(self.size)
             result = self.offset
-            for idx, stride, sz in zip(index, self.stride, self.size):
-                if sz != 1:
-                    result = result + idx * stride
-            return result
+            if self.has_std_size:
+                for idx, stride, sz in zip(index, self.stride, self.size):
+                    if sz != 1:
+                        result = result + idx * stride
+                return result
+            else:
+                # Handle ragged dims. Is this even possible??
+                # Closed form doesn't seem possible. However, maybe we can do
+                # a recursive, memoized approach (i.e. dynamic programming).
+
+                # For naive codegen, we need an extra layer of indirection:
+                # func(base_ptr, offsets_ptr, sizes_ptr, strides_ptr, index):
+                #    storage_offset = base_ptr[offsets_ptr[index]]
+                #    size = sizes_ptr[index]
+                #    stride = strides_ptr[index]
+                #    subfunc(storage_offset, size, stride)
+                #
+                # This is equivalent to naively iterating over a set of rectangular tensors.
+                #
+                # Flatten it for pointwise-only case, only need a single index over the buffer
+                pass
 
         return indexer
 
@@ -1962,6 +2058,7 @@ class FlexibleLayout(Layout):
         )
 
     def __init__(self, device, dtype, size, stride_order=None):
+        # TODO: Add something for NTs here
         if stride_order:
             strides = FlexibleLayout.fill_ordered(size, stride_order)
         else:
@@ -2135,7 +2232,13 @@ class Buffer(IRNode):
         return False
 
     def codegen_reference(self):
-        return self.get_name()
+        ref = self.get_name()
+        if self.layout.jagged_offsets_src is not None:
+            src = self.layout.jagged_offsets_src
+            if ref != src:
+                offset_name = f"torch.ops.aten._nested_get_jagged_offsets({src})"
+                ref = f"torch.ops.aten._nested_view_from_jagged({ref}, {offset_name})"
+        return ref
 
     def decide_layout(self):
         pass
@@ -2210,6 +2313,10 @@ class ShapeAsConstantBuffer(IRNode):
 class ComputedBuffer(Buffer):
     data: Loops
 
+    def __init__(self, data, *args, **kwargs):
+        self.data = data
+        super().__init__(*args, **kwargs)
+
     @cache_on_self
     def get_read_writes(self):
         with patch.object(FlexibleLayout, "allow_indexing", True):
@@ -2251,7 +2358,7 @@ class ComputedBuffer(Buffer):
                       value and try to do global graph-level layout optimization.
                       This is also something just begging to be autotuned.
         """
-        if isinstance(self.layout, FlexibleLayout):
+        if isinstance(self.layout, FlexibleLayout) and self.layout.has_std_size:
             (index_vars, reduction_vars), _ = dependencies.index_vars_squeeze(
                 self.data.get_size(), self.data.get_reduction_size()
             )
@@ -2282,6 +2389,11 @@ class ComputedBuffer(Buffer):
 
     def decide_layout(self):
         if isinstance(self.layout, FlexibleLayout):
+            # TODO: Hackery here
+            if not self.layout.has_std_size:
+                self.freeze_layout()
+                return
+
             order = self.get_fill_order()
             if order:
                 self.freeze_layout_with_fill_order(order)
@@ -3340,16 +3452,35 @@ class FallbackKernel(ExternKernelAlloc):
                     for i in range(len(output))
                 )
             elif isinstance(output, torch.Tensor):
-                return MultiOutput(
-                    FixedLayout(
-                        output.device,
-                        output.dtype,
-                        convert_shape_to_inductor(output.size()),
-                        convert_shape_to_inductor(output.stride()),
-                    ),
-                    packed,
-                    indices,
-                )
+                if output.is_nested:
+                    # TODO: Handle jagged_offsets_src here!
+                    full_nested_size = output.size()
+                    output = torch.ops.aten._nested_view_as_jagged(output)
+                    return MultiOutput(
+                        FixedLayout(
+                            output.device,
+                            output.dtype,
+                            convert_shape_to_inductor(output.size()),
+                            convert_shape_to_inductor(output.stride()),
+                            offset=convert_shape_to_inductor(output.storage_offset()),
+                            full_nested_size=convert_shape_to_inductor(
+                                full_nested_size
+                            ),
+                        ),
+                        packed,
+                        indices,
+                    )
+                else:
+                    return MultiOutput(
+                        FixedLayout(
+                            output.device,
+                            output.dtype,
+                            convert_shape_to_inductor(output.size()),
+                            convert_shape_to_inductor(output.stride()),
+                        ),
+                        packed,
+                        indices,
+                    )
             elif isinstance(output, int):
                 return output
             else:
@@ -4217,6 +4348,16 @@ class TensorBox(MutableBox):
         return TensorBox(StorageBox(data))
 
 
+class JaggedTensorBox(TensorBox):
+    jagged_offsets = None
+
+    @staticmethod
+    def create(data, jagged_offsets):
+        jt = JaggedTensorBox(StorageBox(data))
+        jt.jagged_offsets = jagged_offsets
+        return jt
+
+
 class StorageBox(MutableBox):
     def is_input_buffer(self):
         if isinstance(self.data, (InputBuffer, ReinterpretView)):
@@ -4238,13 +4379,29 @@ class StorageBox(MutableBox):
         assert isinstance(self.data, (Pointwise, Reduction)), type(self.data)
         origin_node = self.data.get_origin_node()
         traceback = self.data.get_traceback()
-        self.data = ComputedBuffer(
-            name=None,
-            layout=FlexibleLayout(
+
+        # Pull these from the Pointwise, for example
+        full_nested_size = getattr(self.data, "full_nested_size", None)
+        jagged_offsets_src = getattr(self.data, "jagged_offsets_src", None)
+        if full_nested_size is not None:
+            # TODO: Figure out why there's no stride / storage offset set here?
+            layout = FixedLayout(
                 device=self.data.get_device(),
                 dtype=self.data.get_dtype(),
                 size=self.data.get_size(),
-            ),
+                full_nested_size=full_nested_size,
+                jagged_offsets_src=jagged_offsets_src,
+            )
+        else:
+            layout = FlexibleLayout(
+                device=self.data.get_device(),
+                dtype=self.data.get_dtype(),
+                size=self.data.get_size(),
+            )
+
+        self.data = ComputedBuffer(
+            name=None,
+            layout=layout,
             data=self.data,
         )
         self.data.name = V.graph.register_buffer(self.data)

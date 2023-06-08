@@ -3,6 +3,7 @@ import functools
 import itertools
 import logging
 import os
+import sys
 import weakref
 from dataclasses import dataclass
 from functools import partial
@@ -391,6 +392,29 @@ def constructors(fake_mode, func, *args, **kwargs):
     with in_kernel_invocation_manager(fake_mode):
         r = func(*args, **new_kwargs)
     return FakeTensor(fake_mode, r, out_device)
+
+
+# Force graph breaks for all these NT creation ops.
+# TODO: Revisit this.
+_nested_constructors = (
+    aten._nested_tensor_from_tensor_list.default,
+    aten._nested_tensor_from_tensor_list.out,
+)
+
+
+@register_op_impl(lambda fn: fn in _nested_constructors)
+def nested_constructor(fake_mode, func, *args, **kwargs):
+    raise DataDependentOutputException(func)
+
+
+@register_op_impl(aten._nested_view_from_buffer.default)
+def nested_view_from_buffer(fake_mode, func, *args, **kwargs):
+    raise DataDependentOutputException(func)
+
+
+@register_op_impl(aten._nested_view_from_buffer.cont)
+def nested_view_from_buffer(fake_mode, func, *args, **kwargs):
+    raise DataDependentOutputException(func)
 
 
 @register_op_impl(lambda func: func in (aten.to.prim_Device, aten.to.device))
@@ -866,7 +890,19 @@ class FakeTensorConfig:
     debug = os.environ.get("TORCH_FAKE_TENSOR_DEBUG", False)
 
 
-class FakeTensor(torch.Tensor):
+# Hack to make isinstance(x, FakeTensor) return True when x is a fake-ified NestedTensor.
+# A NestedTensor that has been fake-ified simply has a fake buffer.
+class FakeTensorMeta(torch._C._TensorMeta):
+    def __instancecheck__(self, instance):
+        from torch.nested._nested_tensor import NestedTensor
+
+        if isinstance(instance, NestedTensor):
+            return isinstance(instance.buffer, self)
+
+        return super().__instancecheck__(instance)
+
+
+class FakeTensor(torch.Tensor, metaclass=FakeTensorMeta):
     """
     Meta tensors give you the ability to run PyTorch code without having to
     actually do computation through tensors allocated on a `meta` device.
@@ -1209,8 +1245,12 @@ class FakeTensorMode(TorchDispatchMode):
             any(i._has_symbolic_sizes_strides for i in flat_arg_fake_tensors)
             or len(flat_symints) > 0
         )
+        has_nested = any([i.is_nested for i in flat_arg_fake_tensors])
 
         converter = self.fake_tensor_converter
+
+        if has_nested:
+            return func(*args, **kwargs)
 
         # To constant propagate through these functions:
         # 1, If this is a lift, the input tensor is guaranteed to be a
@@ -1316,8 +1356,8 @@ class FakeTensorMode(TorchDispatchMode):
         # is written to must be invalidated
         self.invalidate_written_to_constants(func, flat_arg_fake_tensors, args, kwargs)
 
-        # Try for fastpath
-        if has_symbolic_sizes:
+        # Try for fastpath (not support for nested tensors right now)
+        if has_symbolic_sizes and not has_nested:
             fast_impl = get_fast_op_impls().get(func)
             if fast_impl is not None:
                 return fast_impl(self, *args, **kwargs)

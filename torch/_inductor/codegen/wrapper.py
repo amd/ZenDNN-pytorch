@@ -356,7 +356,10 @@ class WrapperCodeGen(CodeGen):
                 continue
             size = self.codegen_shape_tuple(buf.get_size())
             stride = self.codegen_shape_tuple(buf.get_stride())
-            self.prefix.writeline(f"assert_size_stride({name}, {size}, {stride})")
+            full_nested_size = getattr(buf.layout, "full_nested_size", None)
+            # TODO: Fix this for nested tensors
+            if full_nested_size is None:
+                self.prefix.writeline(f"assert_size_stride({name}, {size}, {stride})")
 
     def write_prefix(self):
         self.prefix.splice(
@@ -400,6 +403,7 @@ class WrapperCodeGen(CodeGen):
         self.writeline(ExitCudaDeviceContextManagerLine())
 
     def generate_return(self, output_refs):
+        # TODO: Fix this hack. For now, assume same nested structure as the input.
         if output_refs:
             self.wrapper_call.writeline("return (" + ", ".join(output_refs) + ", )")
         else:
@@ -493,6 +497,7 @@ class WrapperCodeGen(CodeGen):
                 self.wrapper_call.writeline("end_graph()")
 
             self.generate_return(output_refs)
+            self._ensure_jagged_offset_sources_are_alive()
 
         self.append_precomputed_sizes_to_prefix()
         result.splice(self.prefix)
@@ -506,20 +511,57 @@ class WrapperCodeGen(CodeGen):
 
         return result.getvaluewithlinemap()
 
+    def _ensure_jagged_offset_sources_are_alive(self):
+        jagged_sources = []
+        for out in V.graph.graph_outputs:
+            try:
+                # TODO: Make this hack more robust; need to pull out all jagged_offsets_src
+                if out.data.data.jagged_offsets_src is not None:
+                    jagged_sources.append(out.data.data.jagged_offsets_src)
+            except Exception:
+                pass
+
+        # Remove any del calls on sources we need for jagged offsets
+        for jagged_source in jagged_sources:
+            new_lines = [
+                line
+                for line in self.wrapper_call._lines
+                if not (
+                    isinstance(line, str) and line.strip() == f"del {jagged_source}"
+                )
+            ]
+            self.wrapper_call._lines = new_lines
+
     def codegen_inputs(self, code: IndentedBuffer, graph_inputs: Dict[str, ir.Buffer]):
         """Assign all symbolic shapes to locals"""
 
         @functools.lru_cache(None)
-        def sizeof(name):
+        def sizeof(name, is_nested=False):
+            # Need to view as jagged format for this to work correctly
+            rhs_name = name
+            if is_nested:
+                rhs_name = f"torch.ops.aten._nested_view_as_jagged({name})"
             code.writeline(
-                f"{self.declare}{name}_size = {name}.{self.size}{self.ending}"
+                f"{self.declare}{name}_size = {rhs_name}.{self.size}{self.ending}"
             )
             return f"{name}_size"
 
         @functools.lru_cache(None)
-        def strideof(name):
+        def jagged_offsets_of(name):
+            offsets_name = f"{name}_jagged_offsets"
             code.writeline(
-                f"{self.declare}{name}_stride = {name}.{self.stride}{self.ending}"
+                f"{self.declare}{offsets_name} = torch.ops.aten._nested_get_jagged_offsets({name})"
+            )
+            return offsets_name
+
+        @functools.lru_cache(None)
+        def strideof(name, is_nested=False):
+            # Need to view as jagged format for this to work correctly
+            rhs_name = name
+            if is_nested:
+                rhs_name = f"torch.ops.aten._nested_view_as_jagged({name})"
+            code.writeline(
+                f"{self.declare}{name}_stride = {rhs_name}.{self.stride}{self.ending}"
             )
             return f"{name}_stride"
 
@@ -543,23 +585,33 @@ class WrapperCodeGen(CodeGen):
                 code.writeline(f"{self.declare}{shape} = {name}{self.ending}")
 
         for name, value in graph_inputs_tensors:
+            try:
+                is_nested = value.data.data.layout.full_nested_size is not None
+            except Exception:
+                is_nested = False
+
             shapes = value.get_size()
             for dim, shape in enumerate(shapes):
                 shape = V.graph.sizevars.simplify(shape)
                 if shape in needed:
                     needed.remove(shape)
                     code.writeline(
-                        f"{self.declare}{shape} = {sizeof(name)}[{dim}]{self.ending}"
+                        f"{self.declare}{shape} = {sizeof(name, is_nested)}[{dim}]{self.ending}"
                     )
 
         for name, value in graph_inputs_tensors:
+            try:
+                is_nested = value.data.data.layout.full_nested_size is not None
+            except Exception:
+                is_nested = False
+
             shapes = value.get_stride()
             for dim, shape in enumerate(shapes):
                 shape = V.graph.sizevars.simplify(shape)
                 if shape in needed:
                     needed.remove(shape)
                     code.writeline(
-                        f"{self.declare}{shape} = {strideof(name)}[{dim}]{self.ending}"
+                        f"{self.declare}{shape} = {strideof(name, is_nested)}[{dim}]{self.ending}"
                     )
 
     def append_precomputed_sizes_to_prefix(self):
