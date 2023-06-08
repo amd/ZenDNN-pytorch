@@ -3034,6 +3034,25 @@ def forward(self, x):
     return pytree.tree_unflatten([slice_tensor, slice_tensor_3, slice_tensor_6, slice_tensor_9], self._out_spec)""",
         )
 
+    @config.patch(suppress_errors=True)
+    @config.patch(verbose=True)
+    def test_export_with_map_zero_sized_tensor_suppress_errors(self):
+        from functorch.experimental.control_flow import map
+
+        class Module(torch.nn.Module):
+            def forward(self, xs):
+                def body(x):
+                    return x + 1
+
+                return map(body, xs)
+
+        mod = Module()
+        xs = torch.randn(0, 2)
+        with self.assertRaises(
+            torch._dynamo.exc.Unsupported,
+        ):
+            out_graph, _ = torch._dynamo.export(mod, xs)
+
 
 common_utils.instantiate_parametrized_tests(ExportTests)
 
