@@ -845,13 +845,13 @@ class VariableBuilder:
             )
             result = FSDPManagedNNModuleVariable.create(
                 self.tx,
-                self.name,
                 value,
                 fsdpmoduleproxy,
+                name="",
                 guards=self.make_guards(GuardBuilder.TYPE_MATCH, GuardBuilder.ID_MATCH),
                 source=self.get_source(),
             )
-            self.tx.output.nn_modules[self.name] = value
+            # self.tx.output.nn_modules[self.name] = value
             grapharg = GraphArg(self.get_source(), value, False, value)
             fsdpmoduleproxy.node.meta["grapharg"] = grapharg
             fsdpmoduleproxy.node.meta["example_value"] = value
