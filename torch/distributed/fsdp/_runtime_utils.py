@@ -256,8 +256,17 @@ def _share_state_and_init_handle_attrs(
         #     "set yet or should have been set to `False`",
         # )
         fsdp_state._is_root = False
-        # fsdp_state._streams = root_state._streams
-        # fsdp_state._stream_to_name = root_state._stream_to_name
+        # Stream for unshard logic, including allocating the all-gather destination
+        # tensors and the all-gathers themselves.
+        fsdp_state._streams_unshard = root_state._streams_unshard
+        # Stream for overlapping gradient reduction with the backward pass gradient
+        # computation.
+        fsdp_state._streams_post_backward = root_state._streams_post_backward
+        # Stream for pre-unshard logic, namely allocations and writes for CPU
+        # offloading (H2D copy) and mixed precision (low precision cast).
+        fsdp_state._streams_pre_unshard = root_state._streams_pre_unshard
+        # Default stream for computation
+        fsdp_state._streams_default = root_state._streams_default
         fsdp_state._exec_order_data = root_state._exec_order_data
         fsdp_state._free_event_queue = root_state._free_event_queue
         fsdp_state._handles_prefetched = root_state._handles_prefetched
