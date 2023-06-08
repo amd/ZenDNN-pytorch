@@ -120,7 +120,7 @@ class _FSDPState(_State):
         # Save these static lists to avoid the repeated tree traversals
         self._all_fsdp_states: List[_FSDPState] = []
         self._all_handles: List[flat_param_file.FlatParamHandle] = []
-        print("Made FSDP State")
+        # print("Made FSDP State")
 
 
 def _get_module_fsdp_state(module: nn.Module) -> Optional[_FSDPState]:
@@ -407,9 +407,9 @@ def _assert_in_training_states(
         )
         # Print the error on rank 0 in case this is called in the backward pass
         if state.rank == 0:
-            if isinstance(state, nn.Module):
-                print(f"Asserting FSDP instance is: {state}")
-            print(f"ERROR: {msg}")
+            # if isinstance(state, nn.Module):
+                # print(f"Asserting FSDP instance is: {state}")
+            # print(f"ERROR: {msg}")
             traceback.print_stack()
         raise ValueError(msg)
 

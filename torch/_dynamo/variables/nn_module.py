@@ -785,9 +785,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
     compilation.
     """
 
-    def create(tx, value, proxy, **kwargs):
+    def create(tx, value, name, proxy, **kwargs):
         # from .builder import wrap_to_fake_tensor_and_record
-        module = FSDPManagedNNModuleVariable(value, proxy, **kwargs)
+        module = FSDPManagedNNModuleVariable(value, name, proxy, **kwargs)
         # for param_name, parameter in module.value._parameters.items():
             # fake = wrap_to_fake_tensor_and_record(parameter, tx=tx, source=AttrSource(kwargs["source"], param_name), is_tensor=True)
             # setattr(module.value, param_name, fake)
@@ -796,7 +796,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
 
 
-    def __init__(self, value, proxy, **kwargs):
+    def __init__(self, value, name, proxy, **kwargs):
         source = kwargs.get("source", None)
         assert (
             source is not None
@@ -809,6 +809,7 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             # this makes us behave like a usual UnspecializedNNModuleVariable for guarding purposes
             self.source = NotNNModuleSource(source)
 
+        self.name = name
         # self.value._dynamo_var = self
         # for param_name, parameter in self.value._parameters.items():
         #     new_tensor = wrap_to_fake_tensor_and_record(param)
@@ -825,6 +826,8 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
     def var_getattr(self, tx, name):
         print("FSDPManagedNNModuleVariableATTR", name)
+        # if name is "forward":
+        #     raise RuntimeError("Where?")
         if name in ["_streams_unshard", "_streams_pre_unshard"]:
             stream = getattr(self.value, name)
             proxy = getattr(self.as_proxy(), name)
@@ -835,9 +838,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
         print("HASATTR?", self, name)
-        if "." in name:
-            # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
-            raise RuntimeError(f"What the hell is {name}")
+        # if "." in name:
+        #     # Some sort of disgusting param access or something. Why is this here? We have strayed far from God's light.
+        #     raise RuntimeError(f"What the hell is {name}")
         
         if tx.output.side_effects.is_attribute_mutation(self):
             try:
@@ -1015,8 +1018,17 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             else:
                 setattr(self.value, key, value)
             return variables.ConstantVariable(None)
+
         if name == "forward":
-            unimplemented("Forward broken AF")
+            return wrap_fx_proxy(
+                tx=tx,
+                proxy=tx.output.create_proxy(
+                    "call_module",
+                    self.name,
+                    *proxy_args_kwargs(args, kwargs),
+                ),
+                **options,
+            )
             
         print("FALLTHROIGH", name, ("." in name), args, kwargs)
         return super().call_method(tx, name, args, kwargs)

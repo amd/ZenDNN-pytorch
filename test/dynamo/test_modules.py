@@ -21,7 +21,7 @@ from torch.nn.modules.lazy import LazyModuleMixin
 from torch.nn.parameter import Parameter, UninitializedParameter
 
 try:
-    from . import test_functions
+     . import test_functions
 except ImportError:
     import test_functions
 

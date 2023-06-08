@@ -583,6 +583,7 @@ class BuiltinVariable(VariableTracker):
 
         if handler:
             try:
+                print("HANDLER", args, kwargs)
                 result = handler(tx, *args, **kwargs)
                 if result is not None:
                     return result.add_options(options)

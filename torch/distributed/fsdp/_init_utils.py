@@ -212,7 +212,7 @@ def _init_inter_node_process_group(
         # every rank always needs to call dist.new_group
         grp = dist.new_group(ranks=ranks_for_inter_group, backend=sharding_backend)
         if local_rank == my_local_rank:
-            print(f"{local_rank} created process group for {ranks_for_inter_group}")
+            # print(f"{local_rank} created process group for {ranks_for_inter_group}")
             inter_node_pg = grp
 
     assert (
@@ -597,9 +597,9 @@ def _init_param_handle_from_params(
         state._use_orig_params,
     )
     # TODO: Can simplify call `shard()` in the `FlatParamHandle` ctor
-    print("PRE INNIT", handle.flat_param)
+    # print("PRE INNIT", handle.flat_param)
     handle.shard()
-    print("POST INNIT", handle.flat_param)
+    # print("POST INNIT", handle.flat_param)
     assert handle not in state._handles
     state.params.append(handle.flat_param)
     state._handles.append(handle)

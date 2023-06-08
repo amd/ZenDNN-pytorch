@@ -227,10 +227,7 @@ class UserFunctionVariable(BaseUserFunctionVariable):
             }
 
         print("BINDING?", fake_func, args, kwargs)
-        try:
-            bound = inspect.signature(fake_func).bind(*args, **kwargs)
-        except:
-            bound = inspect.signature(fake_func).bind(*args)
+        bound = inspect.signature(fake_func).bind(*args, **kwargs)
         bound.apply_defaults()
         result = dict(bound.arguments.items())
         print("BOUND ARGS RESULT", result)
@@ -248,7 +245,7 @@ class UserFunctionVariable(BaseUserFunctionVariable):
             value = wrap(val=value, source=result_sources[i])
             result[key] = value
 
-        print("POST BOUND ARGS RESULT", result)
+        print("POST BOUND ARGS RESULT", self.fn, result)
         closure_cells = init_cellvars(parent, result, self.get_code())
         closure = self.fn.__closure__ or ()
         assert len(closure) == len(self.fn.__code__.co_freevars)

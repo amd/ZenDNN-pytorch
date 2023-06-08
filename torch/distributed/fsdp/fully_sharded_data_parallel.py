@@ -470,7 +470,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         # implemented using post-save and pre-load hooks
         _init_state_dict_state(self)
         _register_all_state_dict_hooks(self)
-        print("INITIALIZED FSDP", self.__dict__)
+        # print("INITIALIZED FSDP", self.__dict__)
         # print()
 
     @property
@@ -783,12 +783,12 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         with torch.autograd.profiler.record_function(
             "FullyShardedDataParallel.forward"
         ):
-            args, kwargs = _root_pre_forward(self, self, args, kwargs)
+            pf_args, pf_kwargs = _root_pre_forward(self, self, args, kwargs)
             unused = None
             # unshard_fn = functools.partial(_pre_forward_unshard, state=self, handles=self._handles)
             # reshard_fn = functools.partial(_post_forward_reshard, state=self, handles=self._handles)
-            args, kwargs = _pre_forward(
-                self, self._handles, _pre_forward_unshard, self._fsdp_wrapped_module, args, kwargs
+            pf2_args, pf2_kwargs = _pre_forward(
+                self, self._handles, _pre_forward_unshard, self._fsdp_wrapped_module, pf_args, pf_kwargs
             )
             for handle in self._handles:
                 _p_assert(
@@ -796,7 +796,9 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
                     "Expected `FlatParameter` to be on the compute device "
                     f"{self.compute_device} but got {handle.flat_param.device}",
                 )
-            output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
+            print("Pre forward args", args)
+            # output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
+            output = self._stored_fsdp_wrapped_module(*pf2_args, **pf2_kwargs)
             return _post_forward(self, self._handles, _post_forward_reshard, self, unused, output)
 
     @staticmethod
@@ -964,10 +966,10 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
             )
             # In case we are failing in the context of autograd hook, asserting
             # may not generate useful msg. So, let's print it to be sure.
-            if self.rank == 0:
-                print(f"Asserting FSDP instance is: {self}")
-                print(f"ERROR: {msg}")
-                traceback.print_stack()
+            # if self.rank == 0:
+                # print(f"Asserting FSDP instance is: {self}")
+                # print(f"ERROR: {msg}")
+                # traceback.print_stack()
             raise ValueError(msg)
 
     @contextmanager

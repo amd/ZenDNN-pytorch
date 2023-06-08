@@ -2265,7 +2265,6 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
                     kwargs=kwargs,
                 ),
             )
-
         for v in itertools.chain(sub_locals.values(), closure_cells.values()):
             if not isinstance(v, VariableTracker):
                 unimplemented(f"unconverted arg {v}")
@@ -2274,12 +2273,18 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
         if code.co_name in ("__setitem__", "__setattr__"):
             unimplemented(f"inline {code.co_name}")
 
+        print("INLININGWITHSUBLOCALS", sub_locals)
+        if 'args' in sub_locals:
+            print("ITEMS", sub_locals['args'].items)
+        if 'kwargs' in sub_locals:
+            print("ITEMS", sub_locals['kwargs'].items)
+
         suffix = ""
         # TODO: mlazos, add support for enabling multiple artifact logs
         # with a single alias
         if torch._logging._internal.log_state.is_artifact_enabled("output_code"):
             suffix = f"\n{dis.Bytecode(code).dis()}"
-        log.debug("INLINING %s%s", code, suffix)
+        print("INLINING %s%s", code, suffix)
 
         tracer: InliningInstructionTranslator
         if is_generator(code):

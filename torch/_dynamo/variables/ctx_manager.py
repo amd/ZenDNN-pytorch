@@ -376,9 +376,9 @@ class CUDAStreamClassVariable(VariableTracker):
 
 
     def call_function(self, tx, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
-        unimplemented(f"Instantiating a stream")
+        # unimplemented(f"Instantiating a stream")
         val = self.value()
-        # return CUDAStreamVariable(self.proxy, val, self.source)
+        return CUDAStreamVariable(self.proxy, val, self.source)
 
 class CUDAStreamVariable(VariableTracker):
     def __init__(self, proxy, value, source, **kwargs):
