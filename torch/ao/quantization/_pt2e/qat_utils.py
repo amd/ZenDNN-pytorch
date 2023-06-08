@@ -121,7 +121,12 @@ def _qat_conv2d_bn_pattern_no_conv_bias(
     x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
     return x
 
-def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, has_bias: bool):
+def _get_quantized_qat_conv2d_bn_pattern(
+    is_per_channel: bool,
+    has_relu: bool,
+    has_bias: bool,
+    relu_is_inplace: bool,
+) -> Callable:
     """
     Return the quantized version of QAT conv + BN pattern.
     This is based on `nniqat.ConvBn2d._forward_approximate`,
@@ -189,13 +194,21 @@ def _get_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, h
             x = x + kwargs["conv_bias"].reshape(bias_shape)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
-            x = F.relu(x)
+            if relu_is_inplace:
+                x = F.relu_(x)
+            else:
+                x = F.relu(x)
         x = torch.ops.quantized_decomposed.quantize_per_tensor(
             x, output_scale, output_zero_point, output_quant_min, output_quant_max, torch.int8)
         return x
     return _quantized_qat_conv2d_bn_pattern
 
-def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: bool, has_bias: bool):
+def _get_folded_quantized_qat_conv2d_bn_pattern(
+    is_per_channel: bool,
+    has_relu: bool,
+    has_bias: bool,
+    relu_is_inplace: bool,
+) -> Callable:
     """
     Quantized QAT conv - bn pattern with bn weights being folded into conv.
     """
@@ -248,7 +261,10 @@ def _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel: bool, has_relu: 
             x = F.conv2d(x, conv_weight, None)
         x = F.batch_norm(x, bn_running_mean, bn_running_var, bn_weight, bn_bias, training=True, eps=bn_eps)
         if has_relu:
-            x = F.relu(x)
+            if relu_is_inplace:
+                x = F.relu_(x)
+            else:
+                x = F.relu(x)
         x = torch.ops.quantized_decomposed.quantize_per_tensor(
             x, output_scale, output_zero_point, output_quant_min, output_quant_max, torch.int8)
         return x
@@ -460,12 +476,62 @@ def _fuse_conv_bn_qat(m: GraphModule) -> GraphModule:
                 replacement_getitem_node.meta = original_node.meta
     return m
 
+def _duplicate_dequantize_node(m: GraphModule):
+    """
+    Helper function to duplicate all dequantize nodes in the graph if the
+    node has more than one user. For example:
+
+    Before:
+      quantize -> dequantize -> a
+                          \\--> b
+                          \\--> c
+
+    After:
+      quantize -> dequantize_1 -> a
+            \\--> dequantize_2 -> b
+            \\--> dequantize_3 -> c
+
+    This is useful for subgraph rewriting. E.g. if we wish to match the
+    pattern [dequantize - a] above, subgraph matching would fail because
+    the dequantize node has users outside the matched portion of the graph.
+    Instead, we match [dequantize_1 - a], which is safe.
+    """
+    dq_op = torch.ops.quantized_decomposed.dequantize_per_tensor
+    for n in m.graph.nodes:
+        if n.op != "call_function" or n.target != dq_op or len(n.users) == 1:
+            continue
+        for user in list(n.users):
+            with m.graph.inserting_before(n):
+                new_node = m.graph.create_node("call_function", dq_op, n.args, n.kwargs)
+            user.replace_input_with(n, new_node)
+        m.graph.erase_node(n)
+    m.recompile()
+
+def _remove_extra_dequantize(m: GraphModule):
+    """
+    Removes duplicate dequant nodes in the graph, for an operator that has
+    multiple dequant nodes as a user, replace them with a single dequant node
+    that can be shared across all the uses. This should be seen as the "reverse"
+    of `_duplicate_dequantize_node`.
+    """
+    dq_op = torch.ops.quantized_decomposed.dequantize_per_tensor
+    for n in m.graph.nodes:
+        dq_users = [user for user in n.users if user.op == "call_function" and user.target == dq_op]
+        if len(dq_users) > 1:
+            with m.graph.inserting_after(n):
+                new_node = m.graph.create_node("call_function", dq_op, users[0].args, {})
+            for dq_user in dq_users:
+                dq_user.replace_all_uses_with(new_node)
+                m.graph.erase_node(dq_user)
+    m.recompile()
+
 def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
     """
     Replace the quantized (conv + bn) pattern with conv with bn weights folded into the weights of conv.
     """
     m.graph.eliminate_dead_code()
     m.recompile()
+    _duplicate_dequantize_node(m)
 
     # Step (1): Replace QAT pattern with simple [conv - bn] pattern
     replacements = []
@@ -473,13 +539,22 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
         [True, False],  # is_per_channel
         [True, False],  # has_relu
         [True, False],  # has_bias
+        [True, False],  # relu_is_inplace
     )
-    for is_per_channel, has_relu, has_bias in replacement_options:
+    for is_per_channel, has_relu, has_bias, relu_is_inplace in replacement_options:
+        # For the cases without relu, `relu_is_inplace` is irrelevant, so here we arbitrarily
+        # filter out one of the values for this flag to avoid having duplicate patterns
+        if not has_relu and relu_is_inplace:
+            continue
         example_inputs = _quantized_conv2d_bn_pattern_example_inputs
         kwargs = _get_quantized_conv2d_bn_pattern_example_inputs_kwargs(is_per_channel, has_bias)
-        match_pattern = _get_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu, has_bias)
+        match_pattern = _get_quantized_qat_conv2d_bn_pattern(
+            is_per_channel, has_relu, has_bias, relu_is_inplace,
+        )
         match_pattern = _get_aten_graph_module(match_pattern, example_inputs, **kwargs)
-        replacement_pattern = _get_folded_quantized_qat_conv2d_bn_pattern(is_per_channel, has_relu, has_bias)
+        replacement_pattern = _get_folded_quantized_qat_conv2d_bn_pattern(
+            is_per_channel, has_relu, has_bias, relu_is_inplace,
+        )
         replacement_pattern = _get_aten_graph_module(replacement_pattern, example_inputs, **kwargs)
 
         # Workaround: current convert does not produce q/dq ops with a specific overload
@@ -499,6 +574,7 @@ def _fold_conv_bn_qat(m: GraphModule) -> GraphModule:
             m, match_pattern, replacement_pattern, match_filters=[], ignore_literals=True,
         ))
     m.recompile()
+    _remove_extra_dequantize(m)
 
     # Step (2): Fold BN weights into conv
     for r in replacements:
