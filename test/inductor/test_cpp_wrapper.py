@@ -121,6 +121,7 @@ if RUN_CPU:
         func_inputs: list = None
 
     for item in [
+        BaseTest("test_view_as_complex"),
         BaseTest("test_as_strided"),  # buffer reuse
         BaseTest("test_bitwise"),  # int32
         BaseTest("test_bmm1"),
