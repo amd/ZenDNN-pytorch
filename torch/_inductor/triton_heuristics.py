@@ -75,6 +75,7 @@ class CachingAutotuner(KernelInterface):
         meta,
         configs,
         save_cache_hook,
+        save_whole_cache_hook,
         mutated_arg_names,
         heuristic_type,
         size_hints=None,
@@ -83,6 +84,7 @@ class CachingAutotuner(KernelInterface):
         self.fn = fn
         self.meta = meta
         self.save_cache_hook = save_cache_hook
+        self.save_whole_cache_hook = save_whole_cache_hook
         self.mutated_arg_names = mutated_arg_names
         self.configs = configs
         self.heuristic_type = heuristic_type
@@ -238,6 +240,10 @@ class CachingAutotuner(KernelInterface):
             for launcher in self.launchers
         }
 
+        if self.save_whole_cache_hook:
+            for k, v in timings.items():
+                self.save_whole_cache_hook(k, v)
+
         for k, v in timings.items():
             self.coordesc_tuner.cache_benchmark_result(k.config, v)
 
@@ -304,6 +310,7 @@ class CachingAutotuner(KernelInterface):
             config2launcher[config] = launcher
 
             out = self.bench(launcher, *cloned_args, **kwargs)
+            self.save_whole_cache_hook(launcher, out)
             log.debug(
                 "COORDESC: %s: %f, nreg %d, nspill %d, #shared-mem %d",
                 launcher.config,
@@ -492,6 +499,7 @@ def cached_autotune(
     # on disk caching logic
     if filename is not None and (len(configs) > 1 or config.coordinate_descent_tuning):
         cache_filename = os.path.splitext(filename)[0] + ".best_config"
+        whole_cache_filename = os.path.splitext(filename)[0] + ".all_config"
         configs_hash = hash_configs(configs)
         best_config = load_cached_autotuning(cache_filename, configs_hash, configs)
         if best_config:
@@ -513,6 +521,25 @@ def cached_autotune(
             if log.isEnabledFor(logging.DEBUG):
                 type_str = "coordesc" if found_by_coordesc else "heuristic"
                 log.debug("Save %s tuning result to %s", type_str, cache_filename)
+
+        def save_whole_cache_hook(launcher, timing):
+            record = {
+                **launcher.config.kwargs,
+                "num_warps": launcher.config.num_warps,
+                "num_stages": launcher.config.num_stages,
+                "n_regs": launcher.n_regs,
+                "n_spills": launcher.n_spills,
+                "shared": launcher.shared,
+                "timing": timing,
+            }
+            if os.path.exists(whole_cache_filename):
+                with open(whole_cache_filename, "r") as fd:
+                    records = json.loads(fd.read())
+                records.append(record)
+            else:
+                records = [record]
+            with open(whole_cache_filename, "w") as fd:
+                fd.write(json.dumps(records))
 
     else:
         save_cache_hook = None
@@ -536,6 +563,7 @@ def cached_autotune(
             meta=meta,
             configs=configs,
             save_cache_hook=save_cache_hook,
+            save_whole_cache_hook=save_whole_cache_hook,
             mutated_arg_names=mutated_arg_names,
             heuristic_type=heuristic_type,
             size_hints=size_hints,

@@ -2002,7 +2002,7 @@ class TritonScheduling:
         if schedule_log.isEnabledFor(logging.DEBUG):
             schedule_log.debug("Schedule:\n %s", node_schedule)
 
-        return self.codegen_node_schedule(node_schedule, numel, rnumel)
+        return self.codegen_node_schedule(nodes, node_schedule, numel, rnumel)
 
     @staticmethod
     def reduction_hint(node):
@@ -2098,7 +2098,7 @@ class TritonScheduling:
 
         return tiled_groups, reduction_hint_val, mutations, index_dtype
 
-    def codegen_node_schedule(self, node_schedule, numel, reduction_numel):
+    def codegen_node_schedule(self, nodes, node_schedule, numel, reduction_numel):
         tiled_groups, reduction_hint_val, mutations, index_dtype = self.get_kernel_args(
             node_schedule, numel, reduction_numel
         )
@@ -2114,6 +2114,79 @@ class TritonScheduling:
 
         src_code = kernel.codegen_kernel()
         kernel_name = self.define_kernel(src_code, node_schedule)
+
+        ### auto tuning training data dump
+        log.warning("Kernel path : " + self.kernel_path_)
+        tuning_metadata_path = self.kernel_path_ + ".pkl"
+        import pickle, os
+        from ..utils import get_dtype_size
+
+        if not os.path.exists(os.path.dirname(tuning_metadata_path)):
+            os.makedirs(os.path.dirname(tuning_metadata_path))
+        with open(tuning_metadata_path, "wb") as f:
+            log.warning("Metadata path : " + tuning_metadata_path)
+            if len(nodes) == 1:
+                node = nodes[0]
+            else:
+                node = scheduler.FusedSchedulerNode(self.scheduler, nodes)
+
+            def get_read_write_removed(node):
+                if isinstance(node, scheduler.NopKernelSchedulerNode):
+                    return 0
+                reads = {dep.name for dep in node.read_writes.reads}
+                writes = {dep.name for dep in node.read_writes.writes}
+
+                def is_materialized(buf):
+                    buf_uses = {
+                        user.node for user in self.scheduler.name_to_node[buf].users
+                    }
+                    return len(buf_uses - set(node.snodes)) > 0
+
+                if isinstance(node, scheduler.FusedSchedulerNode):
+                    removed_buffers = {
+                        dep for dep in writes if not is_materialized(dep)
+                    }
+                    writes = writes - removed_buffers
+                    reads = reads - removed_buffers
+
+                dep_removed = list()
+                node_bytes = list()
+                
+                def f(rw):
+                    for buf in rw:
+                        for dep in node.read_writes.reads | node.read_writes.writes:
+                            if dep.name == buf:
+                                dep_removed.append(dep)
+
+                        if buf in V.graph.name_to_buffer:
+                            buf = V.graph.name_to_buffer[buf]
+                        elif buf in V.graph.graph_inputs:
+                            buf = V.graph.graph_inputs[buf]
+                        else:
+                            continue
+
+                        node_bytes.append(
+                            V.graph.sizevars.size_hint(sympy_product(buf.get_size()))
+                            * get_dtype_size(buf.get_dtype())
+                        )
+
+                f(reads)
+                f(writes)
+                return (
+                    dep_removed[: len(reads)],
+                    dep_removed[len(reads) :],
+                    node_bytes,
+                )
+
+            read_writes = get_read_write_removed(node)
+            log.warning(read_writes)
+            log.warning([n.node.__str__() for n in nodes])
+            log.warning(node.read_writes)
+            log.warning(src_code)
+            pickle.dump(
+                [read_writes, [n.node.__str__() for n in nodes], node.read_writes, src_code], f
+            )
+        ###
 
         kernel.call_kernel(kernel_name)
 
@@ -2188,6 +2261,7 @@ class TritonScheduling:
             src_code = src_code.replace("#pragma CMT", "#")
 
             basename, _, kernel_path = get_code_path(src_code, "py", extra="")
+            self.kernel_path_ = kernel_path
 
             compile_wrapper = IndentedBuffer()
             compile_wrapper.writeline(f"async_compile.triton({subs_name!r}, '''")
