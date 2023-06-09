@@ -857,6 +857,7 @@ class VariableBuilder:
         tensor_proxy = self.tx.output.root_tracer.create_graph_input(
             re.sub(r"[^a-zA-Z0-9]+", "_", self.name), type(value)
         )
+
         tensor_variable = wrap_fx_proxy(
             tx=self.tx,
             proxy=tensor_proxy,
@@ -1132,6 +1133,16 @@ def wrap_fx_proxy_cls(
             }
             assert "source" in options and options["source"] is not None
             kwargs["source"] = options["source"]
+
+            if not isinstance(example_value, torch._subclasses.fake_tensor.FakeTensor):
+                # Non fake tensors get their properties stored in a dict, but we
+                # delegate this to VariableBuilder to ensure that all underlying structures
+                # are correctly produced
+                tensor_dict = VariableBuilder(
+                    tx, AttrSource(options["source"], "__dict__")
+                )(example_value.__dict__)
+                assert isinstance(tensor_dict, ConstDictVariable)
+                options["tensor_dict"] = tensor_dict
             example_value = wrap_to_fake_tensor_and_record(
                 example_value, tx=tx, **kwargs
             )
