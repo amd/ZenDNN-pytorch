@@ -3113,6 +3113,53 @@ def forward(self, x):
     return pytree.tree_unflatten([slice_tensor, slice_tensor_3, slice_tensor_6, slice_tensor_9], self._out_spec)""",
         )
 
+    def test_mixed_dtype_op(self):
+        from functorch.experimental.mixed_dtype import mixed_dtype
+        from torch.testing import FileCheck
+
+        class M(torch.nn.Module):
+            def __init__(self, weight):
+                super().__init__()
+                self.weight = weight
+
+            def forward(self, x):
+                return mixed_dtype(
+                    torch.ops.aten.mm.default, torch.int32, x, self.weight
+                )
+
+        weight = torch.randn(5, 5).char()
+        m = M(weight)
+        x = torch.randn(3, 5).char()
+
+        gm, _ = torch._dynamo.export(
+            m,
+            x,
+            aten_graph=True,
+        )
+        FileCheck().check("torch.ops.mixed_dtype").check("aten.mm.default").run(gm.code)
+        self.assertTrue(torch.allclose(m(x), gm(x)))
+        for node in gm.graph.nodes:
+            if node.op == "call_function" and node.target is mixed_dtype:
+                # Result of this node should be int32
+                self.assertTrue(node.meta["val"].dtype, torch.int32)
+                # Argument of this node should be int8
+                self.assertTrue(node.args[2].meta["val"].dtype, torch.int8)
+
+        gm, _ = torch._dynamo.export(
+            m,
+            x,
+            aten_graph=True,
+            functionalize=True,
+        )
+        FileCheck().check("torch.ops.mixed_dtype").check("aten.mm.default").run(gm.code)
+        self.assertTrue(torch.allclose(m(x), gm(x)))
+        for node in gm.graph.nodes:
+            if node.op == "call_function" and node.target is mixed_dtype:
+                # Result of this node should be int32
+                self.assertTrue(node.meta["val"].dtype, torch.int32)
+                # Argument of this node should be int8
+                self.assertTrue(node.args[2].meta["val"].dtype, torch.int8)
+
 
 common_utils.instantiate_parametrized_tests(ExportTests)
 

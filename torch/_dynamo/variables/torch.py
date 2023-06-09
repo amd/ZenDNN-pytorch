@@ -1340,6 +1340,19 @@ class TorchHigherOrderOperatorVariable(VariableTracker):
             )
             r = body_r.as_proxy().node.meta["example_value"]
             example_value = r
+
+        elif self.value.__name__ == "mixed_dtype":
+            p_args = tuple(arg.as_proxy() for arg in args)
+            op = p_args[0]
+            dtype = p_args[1]
+            real_sub_args = pytree.tree_map_only(
+                torch.fx.Proxy, lambda a: get_real_value(a.node, tx.output), p_args[2:]
+            )
+            casted_args = pytree.tree_map_only(
+                torch.Tensor, lambda arg: arg.to(dtype=dtype), real_sub_args
+            )
+            example_res = op(*casted_args)
+            example_value = deepcopy_to_fake_tensor(example_res, tx.fake_mode)
         else:
             unimplemented(f"HigherOrderOperator {self.value.__name__}")
 
