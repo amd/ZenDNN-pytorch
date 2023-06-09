@@ -931,6 +931,17 @@ class FlatParamVariable(TensorVariable):
         args: "List[VariableTracker]",
         kwargs: "Dict[str, VariableTracker]",
     ) -> "VariableTracker":
+        if name == "__setattr__":
+            assert len(args) == 2
+            name = args[0].value
+            val = args[1]
+            value = self.as_proxy().node.meta['example_value']
+            if isinstance(val, TensorVariable):
+                setvalue = val.as_proxy().node.meta['example_value']
+            else:
+                setvalue = val.value
+            setattr(value, name, setvalue)
+            return variables.ConstantVariable(None)
         print("FLAT PARAM INVOKE", name)
         from .builder import wrap_fx_proxy, VariableBuilder
         if name in ['_numels_with_padding', '_padded_unsharded_size', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
