@@ -652,14 +652,22 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         # We don't handle properties well?
         if name == "_force_full_precision":
             return variables.ConstantVariable(self.value._force_full_precision)
-        if name in ["init_flat_param_attributes", "_check_on_compute_device"]:
+        if name == "_check_storage_freed":
+            assert len(args) == 1
+            arg_tensor = args[0].as_proxy().node.meta['example_value']
+            return variables.ConstantVariable(self.value._check_storage_freed(arg_tensor))
+        if name not in self.inner_dict.items:
             return super().call_method(tx, name, args, kwargs)
-        if name in self.inner_dict.items:
-            return self.inner_dict.getitem_const(variables.ConstantVariable(name))
-        return super().call_method(tx, name, args, kwargs)
+        return self.inner_dict.getitem_const(variables.ConstantVariable(name))
            
     def var_getattr(self, tx, name):
-        if name in ["init_flat_param_attributes", "_check_on_compute_device"]:
+        if name is "_uses_param_mixed_precision":
+            return variables.ConstantVariable(self.value._uses_param_mixed_precision)
+        if name is "uses_sharded_strategy":
+            return variables.ConstantVariable(self.value.uses_sharded_strategy)
+        if name is "_force_full_precision":
+            return variables.ConstantVariable(self.value._force_full_precision)
+        if name not in self.inner_dict.items:
             return variables.LambdaVariable(
                 lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)
             ).add_options(self)

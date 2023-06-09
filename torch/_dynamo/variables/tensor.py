@@ -887,6 +887,10 @@ class TypedStorageVariable(VariableTracker):
             return SizeVariable(sizes)
         if name == 'device':
             return ConstantVariable(self.value.device)
+        if name == '_resize_':
+            assert len(args) == 1
+            self.value._resize_(args[0].value)
+            return ConstantVariable(None)
         print("TypedStorageVariable Call method", name, self.value, args)
         unimplemented(f"typed_storage method calls WIP {name}")
 
@@ -916,6 +920,10 @@ class UnTypedStorageVariable(VariableTracker):
         unimplemented(f"untyped_storage method calls WIP {name}")
         
 class FlatParamVariable(TensorVariable):
+    def call_function(self, tx, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        print("FPCF")
+        return super().call_function(tx, args, kwargs)
+    
     def call_method(
         self,
         tx,
@@ -926,8 +934,9 @@ class FlatParamVariable(TensorVariable):
         print("FLAT PARAM INVOKE", name)
         from .builder import wrap_fx_proxy, VariableBuilder
         if name in ['_numels_with_padding', '_padded_unsharded_size', '_full_param_padded', '_local_shard', '_sharded_size', '_unpadded_unsharded_size', '_is_padding_mask', '_shard_param_infos', '_param_infos', '_shapes', '_param_extensions', '_tensors', '_shared_param_infos']:
-            real_value = getattr(self.value, name, None)
-            if not real_value or isinstance(real_value, torch.tensor):
+            value = self.as_proxy().node.meta['example_value']
+            real_value = getattr(value, name, None)
+            if real_value is None or isinstance(real_value, torch.Tensor):
                 result = wrap_fx_proxy(
                     tx=tx,
                     proxy=variables.GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
