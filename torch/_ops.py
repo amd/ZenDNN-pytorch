@@ -242,14 +242,20 @@ class HigherOrderOperator(OperatorBase):
         return kernel(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        flat_args = _to_flat_tuple(args, kwargs)
-        if torch.overrides.has_torch_function(flat_args):
-            return torch.overrides.handle_torch_function(
-                self, flat_args, *args, **kwargs
-            )
+        import torch._dynamo
 
-        dispatch_key_set = _compute_keyset(args, kwargs, self.non_fallthrough_keys)
-        return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+        @torch._dynamo.disable
+        def f():
+            flat_args = _to_flat_tuple(args, kwargs)
+            if torch.overrides.has_torch_function(flat_args):
+                return torch.overrides.handle_torch_function(
+                    self, flat_args, *args, **kwargs
+                )
+
+            dispatch_key_set = _compute_keyset(args, kwargs, self.non_fallthrough_keys)
+            return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+
+        f()
 
     def name(self):
         return self.name

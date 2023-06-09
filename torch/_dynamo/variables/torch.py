@@ -1013,9 +1013,11 @@ class TorchHigherOrderOperatorVariable(VariableTracker):
                     )
                 # Reraise because we want to suggest workarounds
                 except Unsupported as e:
-                    raise UserError(UserErrorType.DYNAMIC_CONTROL_FLOW, str(e)) from e
+                    unimplemented("foo")
+                    # raise UserError(UserErrorType.DYNAMIC_CONTROL_FLOW, str(e)) from e
 
                 if not isinstance(ret_val, TensorVariable):
+                    unimplemented("bar")
                     raise UserError(
                         UserErrorType.DYNAMIC_CONTROL_FLOW,
                         "Expected branch out type to be a single tensor",

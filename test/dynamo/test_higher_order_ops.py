@@ -311,12 +311,22 @@ class HigherOrderOpTests(torch._dynamo.test_case.TestCase):
         mod_for_compile = torch.compile(Foo(), backend=cnt, dynamic=True)
         mod_for_eager = Foo()
 
+        # dynamo graph breaks on cond
+        # cond runs in eager mode
+        # dynamo traces true_fn(x) using root tracer
+        #    dyanamo should install guards for true_fn
+        # 
+        # cond("thing that activates the false branch")
+
+        # True branch
         actual = mod_for_compile(torch.ones(6, 4))
         ref = mod_for_eager(torch.ones(6, 4))
         self.assertEqual(actual, ref)
 
-        # this fails?
-        # actual = mod_for_compile(torch.ones(6, 4))
+        # False branch
+        actual = mod_for_compile(torch.ones(2, 4))
+        ref = mod_for_eager(torch.ones(2, 4))
+        self.assertEqual(actual, ref)
 
     def test_cond_free_variable_in_both_branches(self):
         backend = EagerAndRecordGraphs()
