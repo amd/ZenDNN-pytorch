@@ -608,6 +608,7 @@ class ProcessGroupVariable(UserDefinedObjectVariable):
         if name == "rank":
             return variables.ConstantVariable(self.value.rank())
         if name == "size":
+            print("PG SIZE", self.value.size())
             return variables.ConstantVariable(self.value.size())
         return super().call_method(tx, name, args, kwargs)
         
@@ -651,15 +652,14 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         # We don't handle properties well?
         if name == "_force_full_precision":
             return variables.ConstantVariable(self.value._force_full_precision)
-        if name == "init_flat_param_attributes":
-            self.value.init_flat_param_attributes()
-            return variables.ConstantVariable(None)
+        if name in ["init_flat_param_attributes", "_check_on_compute_device"]:
+            return super().call_method(tx, name, args, kwargs)
         if name in self.inner_dict.items:
             return self.inner_dict.getitem_const(variables.ConstantVariable(name))
         return super().call_method(tx, name, args, kwargs)
            
     def var_getattr(self, tx, name):
-        if name == "init_flat_param_attributes":
+        if name in ["init_flat_param_attributes", "_check_on_compute_device"]:
             return variables.LambdaVariable(
                 lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)
             ).add_options(self)

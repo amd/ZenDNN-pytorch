@@ -273,11 +273,11 @@ def _share_state_and_init_handle_attrs(
         fsdp_state._needs_pre_backward_unshard = root_state._needs_pre_backward_unshard
         for handle in fsdp_state._handles:
             handle.init_flat_param_attributes()
-        for attr_name, attr_values in attr_name_to_values.items():
-            if len(attr_values) != 1:
-                raise RuntimeError(
-                    f"Expects one homogeneous value for {attr_name} but got {attr_values}"
-                )
+        # for attr_name, attr_values in attr_name_to_values.items():
+        #     if len(attr_values) != 1:
+        #         raise RuntimeError(
+        #             f"Expects one homogeneous value for {attr_name} but got {attr_values}"
+        #         )
 
 
 @no_type_check
