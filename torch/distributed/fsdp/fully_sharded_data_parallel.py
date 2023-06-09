@@ -780,26 +780,31 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
         Runs the forward pass for the wrapped module, inserting FSDP-specific
         pre- and post-forward sharding logic.
         """
-        with torch.autograd.profiler.record_function(
-            "FullyShardedDataParallel.forward"
-        ):
-            pf_args, pf_kwargs = _root_pre_forward(self, self, args, kwargs)
-            unused = None
-            # unshard_fn = functools.partial(_pre_forward_unshard, state=self, handles=self._handles)
-            # reshard_fn = functools.partial(_post_forward_reshard, state=self, handles=self._handles)
-            pf2_args, pf2_kwargs = _pre_forward(
-                self, self._handles, _pre_forward_unshard, self._fsdp_wrapped_module, pf_args, pf_kwargs
-            )
-            for handle in self._handles:
-                _p_assert(
-                    handle.flat_param.device == self.compute_device,
-                    "Expected `FlatParameter` to be on the compute device "
-                    f"{self.compute_device} but got {handle.flat_param.device}",
-                )
-            # print("Pre forward args", args)
-            # output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
-            output = self._stored_fsdp_wrapped_module(*pf2_args, **pf2_kwargs)
-            return _post_forward(self, self._handles, _post_forward_reshard, self, unused, output)
+        # with torch.autograd.profiler.record_function(
+        #     "FullyShardedDataParallel.forward"
+        # ):
+        args, kwargs = _root_pre_forward(self, self, args, kwargs)
+        unused = None
+        # unshard_fn = functools.partial(_pre_forward_unshard, state=self, handles=self._handles)
+        # reshard_fn = functools.partial(_post_forward_reshard, state=self, handles=self._handles)
+        args, kwargs = _pre_forward(
+            self, self._handles, _pre_forward_unshard, self._fsdp_wrapped_module, args, kwargs
+        )
+        # for handle in self._handles:
+        #     _p_assert(
+        #         handle.flat_param.device == self.compute_device,
+        #         "Expected `FlatParameter` to be on the compute device "
+        #         f"{self.compute_device} but got {handle.flat_param.device}",
+        #     )
+        # print("LENH?", len(self._handles))
+        # print("Pre forward args", pf2_args)
+        # assert pf2_args is not None
+        # assert len(pf2_args) > 0
+        # print("ARGS ARE?", pf2_args)
+        # output = _invoke_stored(self._fsdp_wrapped_module, *args, **kwargs)
+        mod = self._stored_fsdp_wrapped_module
+        output = mod(*args, **kwargs)
+        return _post_forward(self, self._handles, _post_forward_reshard, self, unused, output)
 
     @staticmethod
     @contextlib.contextmanager

@@ -529,6 +529,40 @@ class FlatParamHandle:
         )
         # print("FP", self.flat_param)
         self._use_unsharded_views(as_params=False)
+        self.params = params
+        self.mp_param_dtype = mp_param_dtype
+        self.mp_reduce_dtype = mp_reduce_dtype
+
+
+    def __deepcopy__(self, memo):
+        import copy
+        new_instance = FlatParamHandle(
+            self.params,
+            self._fully_sharded_module,
+            self.device,
+            self._sharding_strategy,
+            self._offload_params,
+            self.mp_param_dtype,
+            self.mp_reduce_dtype,
+            self._keep_low_precision_grads,
+            self.process_group,
+            self._use_orig_params,
+        )
+
+        # Shallow copy the _device_handle attribute
+        new_instance._device_handle = self._device_handle
+        new_instance.process_group = self.process_group
+
+        # Copy any mutable attributes and add them to the memo dictionary
+        memo[id(self)] = new_instance
+
+        # Copy all other attributes using the default deepcopy implementation
+        for attr, value in self.__dict__.items():
+            if attr not in ['_device_handle', 'process_group']:
+                # print("COPYING - HANDLE", attr)
+                setattr(new_instance, attr, copy.deepcopy(value, memo))
+
+        return new_instance
 
     # def _init_setattr_fns(self):
     #     use_unsafe_setattr = os.environ.get(_FSDP_USE_UNSAFE_SETATTR, "") == "1"

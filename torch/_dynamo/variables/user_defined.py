@@ -651,9 +651,16 @@ class FlatParamHandleVariable(UserDefinedObjectVariable):
         # We don't handle properties well?
         if name == "_force_full_precision":
             return variables.ConstantVariable(self.value._force_full_precision)
+        if name == "init_flat_param_attributes":
+            self.value.init_flat_param_attributes()
+            return variables.ConstantVariable(None)
         if name in self.inner_dict.items:
             return self.inner_dict.getitem_const(variables.ConstantVariable(name))
         return super().call_method(tx, name, args, kwargs)
            
     def var_getattr(self, tx, name):
-        return self.inner_dict.var_getattr(tx, name)
+        if name == "init_flat_param_attributes":
+            return variables.LambdaVariable(
+                lambda *args, **kwargs: self.call_method(tx, name, args, kwargs)
+            ).add_options(self)
+        return self.inner_dict.getitem_const(variables.ConstantVariable(name))

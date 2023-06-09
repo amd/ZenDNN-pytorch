@@ -828,6 +828,9 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
            print("VALUE DICT?", self.value.__dict__.keys())
            if name in self.value.__dict__:
                print("WHATS IN THE DICT?", self.value.__dict__[name])
+        if name == "forward":
+            from .builder import VariableBuilder
+            return VariableBuilder(tx, AttrSource(self.source, "forward"))(self.value.forward)
         return super().var_getattr(tx, name)
 
     def call_hasattr(self, tx, name: str) -> "VariableTracker":
@@ -1014,19 +1017,36 @@ class FSDPManagedNNModuleVariable(UnspecializedNNModuleVariable):
             return variables.ConstantVariable(None)
 
         if name == "forward":
+
             from .builder import wrap_fx_proxy
+            print("CALLING FORWARD", args, kwargs)
+            if not args:
+                raise RuntimeError("WTF?")
             return wrap_fx_proxy(
                 tx=tx,
                 proxy=tx.output.create_proxy(
                     "call_module",
                     self.name,
-                    *proxy_args_kwargs(args, kwargs),
+                    *proxy_args_kwargs(args, kwargs)
                 ),
                 # TODO Real value??
-                example_value=torch.randn([2, 2]),
+                # example_value=self.value._stored_fsdp_wrapped_module()
                 source=self.source,
                 **options,
             )
+            # return wrap_fx_proxy(
+            #     tx=tx,
+            #     proxy=tx.output.create_proxy(
+            #         "call_method",
+            #         "forward",
+            #         args=(self.as_proxy(), *proxy_args),
+            #         kwargs=proxy_kwargs,
+            #     ),
+            #     # TODO Real value??
+            #     # example_value=self.value._stored_fsdp_wrapped_module()
+            #     source=self.source,
+            #     **options,
+            # )
             
         print("FALLTHROIGH", name, ("." in name), args, kwargs)
         return super().call_method(tx, name, args, kwargs)

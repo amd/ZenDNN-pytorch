@@ -258,26 +258,26 @@ def _share_state_and_init_handle_attrs(
         fsdp_state._is_root = False
         # Stream for unshard logic, including allocating the all-gather destination
         # tensors and the all-gathers themselves.
-        fsdp_state._streams_unshard = root_state._streams_unshard
+        fsdp_state._streams_unshard = getattr(root_state, '_streams_unshard', None)
         # Stream for overlapping gradient reduction with the backward pass gradient
         # computation.
-        fsdp_state._streams_post_backward = root_state._streams_post_backward
+        fsdp_state._streams_post_backward = getattr(root_state, '_streams_post_backward', None)
         # Stream for pre-unshard logic, namely allocations and writes for CPU
         # offloading (H2D copy) and mixed precision (low precision cast).
-        fsdp_state._streams_pre_unshard = root_state._streams_pre_unshard
+        fsdp_state._streams_pre_unshard = getattr(root_state, '_streams_pre_unshard', None)
         # Default stream for computation
-        fsdp_state._streams_default = root_state._streams_default
+        fsdp_state._streams_default = getattr(root_state, '_streams_default', None)
         fsdp_state._exec_order_data = root_state._exec_order_data
         fsdp_state._free_event_queue = root_state._free_event_queue
         fsdp_state._handles_prefetched = root_state._handles_prefetched
         fsdp_state._needs_pre_backward_unshard = root_state._needs_pre_backward_unshard
         for handle in fsdp_state._handles:
             handle.init_flat_param_attributes()
-    # for attr_name, attr_values in attr_name_to_values.items():
-    #     if len(attr_values) != 1:
-    #         raise RuntimeError(
-    #             f"Expects one homogeneous value for {attr_name} but got {attr_values}"
-    #         )
+        for attr_name, attr_values in attr_name_to_values.items():
+            if len(attr_values) != 1:
+                raise RuntimeError(
+                    f"Expects one homogeneous value for {attr_name} but got {attr_values}"
+                )
 
 
 @no_type_check
@@ -307,7 +307,6 @@ def _init_streams(
     #     state._streams["pre_unshard"]: "pre_unshard",
     #     state._streams["post_backward"]: "post_backward",
     # }
-
 
 @no_type_check
 def _unshard(

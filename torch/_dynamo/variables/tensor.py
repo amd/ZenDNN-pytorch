@@ -159,6 +159,10 @@ class TensorVariable(VariableTracker):
             )
         return props
 
+    def call_function(self, tx, args: List[VariableTracker], kwargs: Dict[str, VariableTracker]) -> VariableTracker:
+        raise RuntimeError("WTF is this?", self.as_proxy().node.meta['example_value'], self, args, kwargs)
+        return super().call_function(tx, args, kwargs)
+
     def var_getattr(self, tx, name):
         from . import ConstantVariable, TorchVariable
 

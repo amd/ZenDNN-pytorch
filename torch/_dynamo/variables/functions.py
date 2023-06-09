@@ -304,6 +304,7 @@ class UserFunctionVariable(BaseUserFunctionVariable):
                 else:
                     unimplemented("inline with __closure__")
 
+        print("POST GIB ARGS RESULT", self.fn, result)
         return result, closure_cells
 
     def export_freevars(self, parent, child):

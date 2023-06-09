@@ -1069,6 +1069,7 @@ class BuiltinVariable(VariableTracker):
                 if result is None:
                     result = ConstantVariable(None)
                 print(f"RESULT {obj}.{name} is {result}")
+
                 return (
                     result.clone(source=source).add_options(options)
                 )

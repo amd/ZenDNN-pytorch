@@ -122,9 +122,31 @@ class _FSDPState(_State):
         self._all_handles: List[flat_param_file.FlatParamHandle] = []
         # print("Made FSDP State")
 
+    def __deepcopy__(self, memo):
+        import copy
+        new_instance = _FSDPState()
+
+        # Shallow copy the _device_handle attribute
+        new_instance._device_handle = self._device_handle
+        new_instance.process_group = self.process_group
+        new_instance._communication_hook_state = self._communication_hook_state
+
+        # Copy any mutable attributes and add them to the memo dictionary
+        memo[id(self)] = new_instance
+
+        # Copy all other attributes using the default deepcopy implementation
+        for attr, value in self.__dict__.items():
+            if attr not in ['_device_handle', 'process_group', '_communication_hook_state']:
+                setattr(new_instance, attr, copy.deepcopy(value, memo))
+
+        return new_instance
+
 
 def _get_module_fsdp_state(module: nn.Module) -> Optional[_FSDPState]:
-    state = _get_module_state(module)
+    if isinstance(module, _State):
+        state = cast(_State, module)
+    else:
+        state = module
     if state is None or not isinstance(state, _FSDPState):
         return None
     return state
@@ -406,11 +428,11 @@ def _assert_in_training_states(
             f"{state.training_state}"
         )
         # Print the error on rank 0 in case this is called in the backward pass
-        if state.rank == 0:
+        # if state.rank == 0:
             # if isinstance(state, nn.Module):
                 # print(f"Asserting FSDP instance is: {state}")
             # print(f"ERROR: {msg}")
-            traceback.print_stack()
+            # traceback.print_stack()
         raise ValueError(msg)
 
 

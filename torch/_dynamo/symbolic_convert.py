@@ -1947,6 +1947,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         self.f_locals: Dict[
             str, Any
         ] = f_locals  # needed for recording accessed locals for replay
+        print("GOT NEW FLOCALS", f_locals)
         self.f_globals: Dict[str, Any] = f_globals
         self.f_builtins: Dict[str, Any] = f_builtins
         self.code_options: Dict[str, Any] = code_options
@@ -2252,6 +2253,8 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
         )
         InliningInstructionTranslator.check_inlineable(func)
         try:
+            if isinstance(func, (UserFunctionVariable, PartialUserFunctionVariable)):
+                print("TRYING TO BIND", func, func.fn, args, kwargs)
             sub_locals, closure_cells = func.bind_args(parent, args, kwargs)
         except TypeError as e:
             raise
@@ -2292,6 +2295,7 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
                 parent, code, sub_locals, parent.symbolic_globals, closure_cells, func
             )
         else:
+            print("New f locals?", sub_locals)
             tracer = InliningInstructionTranslator(
                 parent, code, sub_locals, parent.symbolic_globals, closure_cells, func
             )
@@ -2356,6 +2360,7 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
             f_code=code,
             export=parent.export,
         )
+        print("SYMBOLIC LOCALS?", symbolic_locals)
         self.parent = parent
         self.symbolic_result = None
         self.closure_cells = closure_cells
