@@ -1341,7 +1341,7 @@ class TorchHigherOrderOperatorVariable(VariableTracker):
             r = body_r.as_proxy().node.meta["example_value"]
             example_value = r
 
-        elif self.value.__name__ == "mixed_dtype":
+        elif self.value.__name__ == "output_dtype":
             p_args = tuple(arg.as_proxy() for arg in args)
             op = p_args[0]
             dtype = p_args[1]
