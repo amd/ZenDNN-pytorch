@@ -2161,7 +2161,7 @@ tensor(..., device='meta', size=(1,), requires_grad=True)""")
 
         input = torch.rand(N, L, D)
         # Mask is not bool
-        mask = torch.zeros(N, L, dtype=torch.float)
+        mask = torch.zeros(N, L, dtype=torch.int)
         self.assertRaises(RuntimeError, lambda: torch._nested_tensor_from_mask(input, mask))
 
         # Mask size is not 2
