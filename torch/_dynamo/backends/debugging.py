@@ -56,14 +56,50 @@ register_backend(name="aot_eager", compiler_fn=aot_eager)
 # inductor problems.
 # aot_eager_decomp_partition just replaces the inductor compiler with nop to help
 # isolate inductor vs aot_eager errors
+decomp_table = lambda: import_module("torch._inductor.compile_fx").select_decomp_table()
+decomp_table = decomp_table()
+
+aten = torch.ops.aten
+
+# These are all decomps triggered in AlbertForQuestionAnswering. So, I copied
+# the decomps here and deleted every decomp but one. The goal is to find the one
+# decomp that causes accuracy error. _softmax, native_layer_norm seems to be culprit.
+deleted = [
+    # aten._softmax.default,
+    aten.native_layer_norm.default,
+
+    # Following dont seem to be relevant
+    aten._log_softmax.default,
+    aten._log_softmax_backward_data.default,
+    aten._softmax_backward_data.default,
+    aten._to_copy.default,
+    aten._unsafe_view.default,
+    aten.cat.default,
+    aten.clamp.default,
+    aten.conj_physical.default,
+    aten.embedding_dense_backward.default,
+    aten.full_like.default,
+    aten.masked_fill.Scalar,
+    aten.native_layer_norm_backward.default,
+    aten.new_zeros.default,
+    aten.nll_loss_backward.default,
+    aten.nll_loss_forward.default,
+    aten.ones.default,
+    aten.rsub.Scalar,
+    aten.t.default,
+    aten.tanh_backward.default,
+    aten.transpose.int,
+    aten.zeros_like.default,
+]
+for k in deleted:
+    decomp_table.pop(k)
+
 aot_eager_decomp_partition = aot_autograd(
     # these are taken from memory_efficient_fusion()
     fw_compiler=boxed_nop,
     bw_compiler=boxed_nop,
     # NB: lambda here is to delay import of inductor
-    decompositions=lambda: import_module(
-        "torch._inductor.compile_fx"
-    ).select_decomp_table(),
+    decompositions=decomp_table,
     partition_fn=functools.partial(
         min_cut_rematerialization_partition, compiler="inductor"
     ),

@@ -246,6 +246,7 @@ def fetch_tensor_proxy(tracer):
 
 HANDLED_TYPES = (torch.Tensor, torch.nn.Parameter)
 
+counter = 0
 def proxy_call(proxy_mode, func, pre_dispatch, args, kwargs):
     unrecognized_types = []
 
@@ -262,10 +263,14 @@ def proxy_call(proxy_mode, func, pre_dispatch, args, kwargs):
         return NotImplemented
 
     if func in CURRENT_DECOMPOSITION_TABLE:
-        with proxy_mode:
-            r = CURRENT_DECOMPOSITION_TABLE[func](*args, **kwargs)
-            if r is not NotImplemented:
-                return r
+        global counter
+        if counter == 0:
+            counter += 1
+            print("Decomp fired", func)
+            with proxy_mode:
+                r = CURRENT_DECOMPOSITION_TABLE[func](*args, **kwargs)
+                if r is not NotImplemented:
+                    return r
 
     # For pre-autograd tracing, we do not want to run CompositeImplicit decomps.
     if not pre_dispatch:
