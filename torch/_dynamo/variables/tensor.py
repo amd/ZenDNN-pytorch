@@ -390,7 +390,6 @@ class TensorVariable(VariableTracker):
                     torch.detach,
                     *proxy_args_kwargs([self], {}),
                 ),
-                example_value=None,
                 **options,
             )
         elif name in ("tolist", "backward", "data_ptr"):
@@ -718,7 +717,6 @@ class NumpyNdarrayVariable(TensorVariable):
                     (self.as_proxy(), name),
                     {},
                 ),
-                example_value=None,
                 **options,
             )
         elif name in ["ndim", "itemsize", "shape"]:
@@ -726,7 +724,6 @@ class NumpyNdarrayVariable(TensorVariable):
                 target_cls=ConstantVariable,
                 tx=tx,
                 proxy=GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-                example_value=None,
                 **options,
             )
         elif name == "shape":
@@ -736,7 +733,6 @@ class NumpyNdarrayVariable(TensorVariable):
                 target_cls=TupleVariable,
                 tx=tx,
                 proxy=GetAttrVariable.create_getattr_proxy(self.as_proxy(), name),
-                example_value=None,
                 **options,
             )
         elif name == "size":
@@ -748,7 +744,6 @@ class NumpyNdarrayVariable(TensorVariable):
                     (self.as_proxy(),),
                     {},
                 ),
-                example_value=None,
                 **options,
             )
         elif name == "strides":
@@ -765,7 +760,6 @@ class NumpyNdarrayVariable(TensorVariable):
                     (self.as_proxy(), torch_np_func_name),
                     {},
                 ),
-                example_value=None,
                 **options,
             )
         elif name in ["base", "flags", "dtype"]:

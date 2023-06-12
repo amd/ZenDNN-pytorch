@@ -1059,7 +1059,10 @@ def _dataclasses_fields_lambda(obj):
     return TupleVariable(items).add_options(obj)
 
 
-def wrap_fx_proxy(tx, proxy, example_value=None, **options):
+no_example = object()
+
+
+def wrap_fx_proxy(tx, proxy, example_value=no_example, **options):
     return wrap_fx_proxy_cls(
         target_cls=TensorVariable,
         tx=tx,
@@ -1072,7 +1075,16 @@ def wrap_fx_proxy(tx, proxy, example_value=None, **options):
 # Note: Unfortunate split due to some gross classes existing that subclass TensorVariable
 # Should be compositional instead
 def wrap_fx_proxy_cls(
-    target_cls, tx, proxy, example_value=None, ignore_subclass=False, **options
+    # NB: target_cls does NOT necessarily match the output Variable type
+    # passed here; in particular, if the function in question returned
+    # a tuple, you'll get a TupleVariable (but target_cls would likely
+    # have been something like TensorVariable)
+    target_cls,
+    tx,
+    proxy,
+    example_value=no_example,
+    ignore_subclass=False,
+    **options,
 ):
     from ..symbolic_convert import InstructionTranslatorBase
 
@@ -1094,7 +1106,7 @@ def wrap_fx_proxy_cls(
         return value
 
     with preserve_rng_state():
-        if example_value is None:
+        if example_value is no_example:
             example_value = get_fake_value(proxy.node, tx)
 
         # Handle recursive calls here
@@ -1164,55 +1176,41 @@ def wrap_fx_proxy_cls(
         from . import UserDefinedObjectVariable
 
         return UserDefinedObjectVariable(example_value)
-    elif istype(example_value, (int, bool, float)) and config.dynamic_shapes:
+    elif istype(example_value, (int, bool, float)):
         proxy.node.meta["example_value"] = example_value
-        return SymNodeVariable.create(tx, proxy, example_value, **options)
-    elif istype(example_value, torch.Size) and config.dynamic_shapes:
-        proxy.node.meta["example_value"] = example_value
-        sizes = []
-        for i, v in enumerate(example_value):
-            proxy_i = proxy[i]
-            sizes.append(SymNodeVariable.create(tx, proxy_i, v, **options))
-        return SizeVariable(sizes, proxy, **options)
-    elif istype(example_value, int) and proxy.node.target in (
-        torch.seed,
-        operator.mod,
-        # some mac builds are missing torch.distributed.get_rank()
-        getattr(torch.distributed, "get_rank", _missing),
-        getattr(torch.distributed, "get_world_size", _missing),
-    ):
-        if config.dynamic_shapes:
-            proxy.node.meta["example_value"] = example_value
-            return SymNodeVariable.create(tx, proxy, example_value, **options)
-        else:
-            return ConstantVariable(example_value, **options)
-    elif istype(example_value, torch.Size) and all(
-        isinstance(x, int) for x in example_value
-    ):
-        sizes = [ConstantVariable(x) for x in example_value]
-        return SizeVariable(sizes, **options)
+        return ConstantVariable(example_value, **options)
+    # NB: handles torch.Size
     elif isinstance(example_value, (tuple, list)):
+        # TODO: This is a grievous hack for numpy support, figure
+        # out a better way
+        if (
+            istype(example_value, torch.Size)
+            and all(isinstance(x, int) for x in example_value)
+            and target_cls is TupleVariable
+        ):
+            return TupleVariable(
+                [ConstantVariable(x, **options) for x in example_value], **options
+            )
         proxy.node.meta["example_value"] = example_value
         unpacked = []
         for i, val in enumerate(example_value):
-            if val is None:
-                # nn.MultiheadAttention() can return None, see issue #175
-                unpacked.append(
-                    ConstantVariable(None, **options),
+            # Recursive call!
+            unpacked.append(
+                wrap_fx_proxy_cls(
+                    target_cls,
+                    tx,
+                    proxy.tracer.create_proxy(
+                        "call_function", operator.getitem, (proxy, i), {}
+                    ),
+                    example_value=val,
+                    **options,
                 )
-            else:
-                unpacked.append(
-                    wrap_fx_proxy_cls(
-                        target_cls,
-                        tx,
-                        proxy.tracer.create_proxy(
-                            "call_function", operator.getitem, (proxy, i), {}
-                        ),
-                        example_value=val,
-                        **options,
-                    )
-                )
-        if istype(example_value, tuple):
+            )
+        if isinstance(example_value, torch.Size):
+            # NB: Keep the old proxy around.  See SizeVariable for an
+            # explanation why
+            return SizeVariable(unpacked, proxy, **options)
+        elif istype(example_value, tuple):
             return TupleVariable(unpacked, **options)
         elif istype(example_value, (list, immutable_list)):
             return ListVariable(unpacked, mutable_local=MutableLocal(), **options)
@@ -1223,39 +1221,12 @@ def wrap_fx_proxy_cls(
             return NamedTupleVariable(unpacked, example_value.__class__, **options)
     elif example_value is None or proxy.node.target is torch.manual_seed:
         return ConstantVariable(None, **options)
-    elif (
-        isinstance(example_value, int)
-        and proxy.node.target is torch._utils._element_size
-    ):
-        proxy.node.meta["example_value"] = example_value
-        return ConstantVariable(example_value, **options)
     elif isinstance(example_value, (torch.SymInt, torch.SymFloat, torch.SymBool)):
         proxy.node.meta["example_value"] = example_value
         return SymNodeVariable(proxy, example_value, **options)
     elif proxy.node.target in [torch.cuda.streams.Stream, torch.cuda.current_stream]:
         proxy.node.meta["example_value"] = example_value
         return CUDAStreamVariable(proxy, example_value, **options)
-    elif (
-        isinstance(example_value, int)
-        and config.numpy_ndarray_as_tensor
-        and not config.dynamic_shapes
-    ):
-        proxy.node.meta["example_value"] = example_value
-        return ConstantVariable(example_value, **options)
-    elif (
-        istype(example_value, torch.Size)
-        and all(isinstance(x, int) for x in example_value)
-        and target_cls is TupleVariable
-    ):  # convert torch.Size to tuple
-        return TupleVariable(
-            [ConstantVariable(x, **options) for x in example_value], **options
-        )
-    elif isinstance(example_value, int) and proxy.node.target in [
-        getattr,
-        operator.getitem,
-    ]:
-        proxy.node.meta["example_value"] = example_value
-        return ConstantVariable(example_value, **options)
     else:
         unimplemented(
             "torch.* op returned non-Tensor "
