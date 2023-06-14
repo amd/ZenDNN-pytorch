@@ -10,8 +10,7 @@ import torch.nn as nn
 from torch._inductor.utils import has_triton
 from torch.distributed._spmd.api import compile
 from torch.distributed._spmd.gm_transformation import GraphModuleTransformation
-from torch.distributed._spmd.graph_optimization import (
-    _optimized_func,
+from torch.distributed._spmd.graph_transformations import (
     comm_fusion_with_concat,
     find_all_descendants,
     get_all_fused_optimizer_blocks,
@@ -21,6 +20,7 @@ from torch.distributed._spmd.graph_optimization import (
     schedule_comm_wait,
     split_fused_optimizer,
 )
+from torch.distributed._spmd.graph_transformations.common import _optimized_func
 from torch.distributed._spmd.graph_utils import find_node
 from torch.distributed._spmd.iter_graph_module import IterGraphModule
 from torch.nn.parallel import DistributedDataParallel as DDP
