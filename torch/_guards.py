@@ -537,10 +537,35 @@ def tracing(context: TracingContext):
         _CURRENT_TRACING_CONTEXT = old_context
 
 
+
+_CURRENT_SCOPE = None
+
+@contextmanager
+def scope(scope_context):
+    breakpoint()
+    global _CURRENT_SCOPE
+    old_scope = _CURRENT_SCOPE
+    _CURRENT_SCOPE = scope_context
+    try:
+        breakpoint()
+        yield _CURRENT_SCOPE
+    finally:
+        breakpoint()
+        _CURRENT_SCOPE = old_scope
+
 # Subclasses can be found in torch/_dynamo/source.py
 # TODO(voz): Consider a toplevel torch/_source.py
 @dataclasses.dataclass(frozen=True)
 class Source:
+    def __post_init__(self):
+        name = self.name()
+        if name:
+            try:
+                eval(self.name(), _CURRENT_SCOPE)
+            except:
+                breakpoint()
+                raise RuntimeError(f"Malformed source, a critical bug! name: {self.name()}")
+
     def reconstruct(self, codegen):
         raise NotImplementedError()
 
