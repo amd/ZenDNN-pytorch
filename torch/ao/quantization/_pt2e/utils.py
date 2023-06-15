@@ -3,13 +3,16 @@ from torch.fx import (
     GraphModule,
     Node,
 )
+from torch.fx.subgraph_rewriter import replace_pattern_with_filters
+import torch.nn.functional as F
 from torch.nn.utils.fusion import fuse_conv_bn_weights
 # TODO[jerryzh168]: move this to a more general util function
 from torch.ao.quantization.fx.prepare import (
     _is_activation_post_process_node,
 )
+import copy
 import operator
-from typing import Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 
 def _get_tensor_constant_from_node(node, m):
@@ -172,3 +175,48 @@ def _get_node_name_to_scope(model: GraphModule) -> Dict[str, Tuple[str, type]]:
             current_scope = (bt[0].split(".")[-1], bt[1])
         node_name_to_scope[n.name] = current_scope
     return node_name_to_scope
+
+def _get_aten_graph_module(
+    pattern: Callable,
+    example_inputs: Tuple[Any, ...],
+    **kwargs,
+) -> GraphModule:
+    """
+    Convert the pattern to an FX graph with decomposed aten ops.
+    """
+    # Avoid circular imports
+    import torch._dynamo
+    aten_pattern, _ = torch._dynamo.export(
+        pattern,
+        *copy.deepcopy(example_inputs),
+        aten_graph=True,
+        tracing_mode="real",
+        **kwargs,
+    )
+    aten_pattern.graph.eliminate_dead_code()
+    aten_pattern.recompile()
+    return aten_pattern
+
+def _replace_dropout_for_eval(m: GraphModule):
+    """
+    Replace the aten training dropout pattern with a noop, intended for eval.
+
+    For models with dropout torch ops (nn.Dropout, F.dropout), calling model.eval()
+    effectively turns these dropout ops into noops. For exported models, however,
+    this is not done automatically, since the aten dropout patterns previously generated
+    for training remain in the graph. Here we rewrite these dropout patterns with noops
+    to avoid incorrectly applying further dropout during eval.
+
+    See https://github.com/pytorch/pytorch/issues/103681.
+    """
+    def dropout_train(x):
+        return F.dropout(x, p=0.5, training=True)
+    def dropout_eval(x):
+        return F.dropout(x, p=0.5, training=False)
+    example_inputs = (torch.randn(1),)
+    match_pattern = _get_aten_graph_module(dropout_train, example_inputs)
+    replacement_pattern = _get_aten_graph_module(dropout_eval, example_inputs)
+    replace_pattern_with_filters(
+        m, match_pattern, replacement_pattern, match_filters=[], ignore_literals=True,
+    )
+    m.recompile()
