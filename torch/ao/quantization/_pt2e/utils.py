@@ -3,14 +3,16 @@ from torch.fx import (
     GraphModule,
     Node,
 )
+from torch.fx.subgraph_rewriter import replace_pattern_with_filters
+import torch.nn.functional as F
 from torch.nn.utils.fusion import fuse_conv_bn_weights
 # TODO[jerryzh168]: move this to a more general util function
 from torch.ao.quantization.fx.prepare import (
     _is_activation_post_process_node,
 )
-import operator
-from typing import Dict, Optional, Tuple, Callable, Any
 import copy
+import operator
+from typing import Any, Callable, Dict, Optional, Tuple
 
 
 def _get_tensor_constant_from_node(node, m):
@@ -212,3 +214,27 @@ def _remove_tensor_overload_for_qdq_ops(match_pattern: GraphModule) -> None:
             continue
         if n.target in _MAP:
             n.target = _MAP[n.target]
+
+def _replace_dropout_for_eval(m: GraphModule):
+    """
+    Replace the aten training dropout pattern with a noop, intended for eval.
+
+    For models with dropout torch ops (nn.Dropout, F.dropout), calling model.eval()
+    effectively turns these dropout ops into noops. For exported models, however,
+    this is not done automatically, since the aten dropout patterns previously generated
+    for training remain in the graph. Here we rewrite these dropout patterns with noops
+    to avoid incorrectly applying further dropout during eval.
+
+    See https://github.com/pytorch/pytorch/issues/103681.
+    """
+    def dropout_train(x):
+        return F.dropout(x, p=0.5, training=True)
+    def dropout_eval(x):
+        return F.dropout(x, p=0.5, training=False)
+    example_inputs = (torch.randn(1),)
+    match_pattern = _get_aten_graph_module(dropout_train, example_inputs)
+    replacement_pattern = _get_aten_graph_module(dropout_eval, example_inputs)
+    replace_pattern_with_filters(
+        m, match_pattern, replacement_pattern, match_filters=[], ignore_literals=True,
+    )
+    m.recompile()
