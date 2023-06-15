@@ -2116,7 +2116,7 @@ class TritonScheduling:
         kernel_name = self.define_kernel(src_code, node_schedule)
 
         kernel.call_kernel(kernel_name)
-
+        print(f"findhao-> kernel_name: {kernel_name}")
         if config.warn_mix_layout:
             kernel.warn_mix_layout(kernel_name)
 
