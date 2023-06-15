@@ -317,21 +317,9 @@ def constrain_range(a, *, min: Optional[int], max: Optional[int] = None):
     if max is None:
         max = sympy.oo
     if not isinstance(a, SymInt):
-        if not (min <= a <= max):
-            raise ValueRangeError(f"Invalid value {a} for range [{min}:{max}]")
-
-        if (
-            (fake_mode := detect_fake_mode()) is not None and
-            getattr(fake_mode, "shape_env", None) is not None
-        ):
-            # If we are tracing with a fake mode then add this integer to the
-            # shape_env's var_to_range
-            sym_integer = sympy.Integer(a)
-            shape_env = fake_mode.shape_env
-            shape_env.var_to_range[sym_integer] = ValueRanges(min, max)
-            shape_env.var_to_stack[sym_integer] = TracingContext(fake_mode).extract_stack()
-
+        constrain_range_int(a, min=min, max=max)
         return
+
 
     if isinstance(a.node.expr, sympy.Integer):
         if not (min <= int(a.node.expr) <= max):
@@ -347,6 +335,30 @@ def constrain_range(a, *, min: Optional[int], max: Optional[int] = None):
     a.node.shape_env.var_to_range[a.node.expr] = ValueRanges(
         builtins.max(r.lower, min), builtins.min(r.upper, max)
     )
+
+def constrain_range_int(a, *, min, max):
+    """
+    Constrain range on concrete int value.
+    This can happens for the following scenarios:
+    - Eager mode execution and real int value is provided.
+    - During tracing the traced symbol is resolved as a static integer (see
+      PR #101655 for more details).
+    """
+
+    assert not isinstance(a, SymInt)
+    if not (min <= a <= max):
+        raise ValueRangeError(f"Invalid value {a} for range [{min}:{max}]")
+
+    if (
+        (fake_mode := detect_fake_mode()) is not None and
+        getattr(fake_mode, "shape_env", None) is not None
+    ):
+        # If we are tracing with a fake mode then add this integer to the
+        # shape_env's var_to_range
+        sym_integer = sympy.Integer(a)
+        shape_env = fake_mode.shape_env
+        shape_env.var_to_range[sym_integer] = ValueRanges(min, max)
+        shape_env.var_to_stack[sym_integer] = TracingContext(fake_mode).extract_stack()
 
 
 def constrain_unify(a, b):

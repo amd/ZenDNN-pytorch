@@ -439,6 +439,14 @@ def resize_as_(fake_mode, func, *args, **kwargs):
         return func(*args, **kwargs)
 
 
+# Don't default to default device handling since range check is only applied to
+# scalar and doing the check as side effect and the op returns None.
+@register_op_impl(aten.sym_constrain_range.default)
+def sym_constrain_range(fake_mode, func, *args, **kwargs):
+    with in_kernel_invocation_manager(fake_mode):
+        return func(*args, **kwargs)
+
+
 @register_op_impl(aten._sparse_coo_tensor_with_dims_and_tensors.default)
 def _sparse_coo_tensor_with_dims_and_tensors(fake_mode, func, *args, **kwargs):
     # TODO: remove me
