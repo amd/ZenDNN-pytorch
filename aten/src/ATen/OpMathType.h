@@ -28,6 +28,53 @@ struct OpMathType<c10::complex<Half>> {
 template <typename T>
 using opmath_type = typename OpMathType<T>::type;
 
+template <typename scalar_t>
+struct OpMathTypeWithIntegral {
+  using type = scalar_t;
+};
+template <>
+struct OpMathTypeWithIntegral<at::Half> {
+  using type = float;
+};
+template <>
+struct OpMathTypeWithIntegral<at::BFloat16> {
+  using type = float;
+};
+template <>
+struct OpMathTypeWithIntegral<c10::complex<Half>> {
+  using type = c10::complex<float>;
+};
+template <>
+struct OpMathTypeWithIntegral<int8_t> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<uint8_t> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<char> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<int16_t> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<int32_t> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<int64_t> {
+  using type = int64_t;
+};
+template <>
+struct OpMathTypeWithIntegral<bool> {
+  using type = bool;
+};
+template <typename T>
+using opmath_integral_type = typename OpMathTypeWithIntegral<T>::type;
+
 namespace {
 
 inline c10::ScalarType toOpMathType(const c10::ScalarType type) {
