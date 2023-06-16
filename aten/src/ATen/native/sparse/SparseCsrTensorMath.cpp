@@ -1026,21 +1026,16 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   new_crow_indices[0] = 0;
   new_crow_indices[1] = nnz;
 
-  Tensor new_values = at::empty({nnz}, values.options());
+  Tensor new_values, new_values_acc;
   using opmath_integral_t = at::opmath_integral_type<scalar_t>;
   constexpr bool need_acc = !std::is_same<scalar_t, opmath_integral_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
-  Tensor new_values_acc;
   if constexpr (need_acc) {
-    auto acc_dtype = values.scalar_type() == kComplexHalf
-        ? ScalarType::ComplexFloat
-        : ScalarType::Float;
-    if (is_integral) {
-      acc_dtype = ScalarType::Long;
-    }
+    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
     new_values_acc = at::empty({nnz}, values.options().dtype(acc_dtype));
+    new_values = is_integral ? new_values_acc : at::empty({nnz}, values.options());
   } else {
-    new_values_acc = new_values;
+    new_values_acc = new_values = at::empty({nnz}, values.options());
   }
   new_values_acc.fill_(rop.identity());
 
@@ -1057,23 +1052,15 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
     scalar_t val = values_ptr[i];
     new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_integral_t>(val));
   }
-  if (need_acc && !is_integral) {
+  if (!new_values_acc.is_same(new_values)) {
     new_values.copy_(new_values_acc);
   }
 
-  if (is_integral) {
-    return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values_acc,
-                                                {1, sparse.size(1)},
-                                                new_values_acc.scalar_type(),
-                                                sparse.layout(),
-                                                new_values_acc.device());
-  } else {
-    return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
-                                                {1, sparse.size(1)},
-                                                new_values.scalar_type(),
-                                                sparse.layout(),
-                                                new_values.device());
-  }
+  return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
+                                              {1, sparse.size(1)},
+                                              new_values.scalar_type(),
+                                              sparse.layout(),
+                                              new_values.device());
 }
 
 template <typename scalar_t, typename ReductionOp>
@@ -1138,15 +1125,11 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
   Tensor new_values_acc;
   if constexpr (need_acc) {
-    auto acc_dtype = values.scalar_type() == kComplexHalf
-        ? ScalarType::ComplexFloat
-        : ScalarType::Float;
-    if (is_integral) {
-      acc_dtype = ScalarType::Long;
-    }
+    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
     new_values_acc = at::empty({}, values.options().dtype(acc_dtype));
+    new_values = is_integral ? new_values_acc : at::empty({}, values.options());
   } else {
-    new_values_acc = new_values;
+    new_values_acc = new_values = at::empty({}, values.options());;
   }
   AT_DISPATCH_INDEX_TYPES(crow_indices.scalar_type(), "reduce_sparse_csr_dim1_cpu_indices",
                           [&]() {
@@ -1165,7 +1148,9 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
     new_col_indices.resize_(nnz);
     new_col_indices.fill_(index_t(0));
     new_values.resize_(nnz);
-    new_values_acc.resize_(nnz);
+    if (!new_values_acc.is_same(new_values)) {
+      new_values_acc.resize_(nnz);
+    }
 
     scalar_t* values_ptr = values.data_ptr<scalar_t>();
     opmath_integral_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_integral_t>();
@@ -1194,19 +1179,11 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
     new_values.copy_(new_values_acc);
   }
 
-  if (is_integral) {
-    return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values_acc,
-                                                {sparse.size(0), 1},
-                                                new_values_acc.scalar_type(),
-                                                sparse.layout(),
-                                                new_values_acc.device());
-  } else {
-    return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
+  return at::native::_sparse_csr_tensor_unsafe(new_crow_indices, new_col_indices, new_values,
                                                 {sparse.size(0), 1},
                                                 new_values.scalar_type(),
                                                 sparse.layout(),
                                                 new_values.device());
-  }
 }
 
 template <typename scalar_t, typename ReductionOp>
@@ -1247,10 +1224,7 @@ In [4]: %timeit torch.sum(t.values())
   Tensor new_col_indices = at::zeros({nnz}, ioptions);
   Tensor new_crow_indices = at::tensor(ArrayRef<int64_t>{0, nnz}, ioptions);
   Tensor new_values;
-  auto result_dtype = values.scalar_type();
-  if (at::isIntegralType(values.scalar_type(), /*includeBool=*/true)) {
-    result_dtype = ScalarType::Long;
-  }
+  auto result_dtype = at::isIntegralType(values.scalar_type(), /*includeBool=*/true) ? ScalarType::Long : values.scalar_type();
   if (numel > 0) {
     new_values = at::empty({1}, values.options().dtype(result_dtype));
     new_values.fill_(value);
