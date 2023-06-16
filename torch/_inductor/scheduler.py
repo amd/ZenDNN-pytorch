@@ -13,11 +13,12 @@ import sympy
 import torch
 from torch._dynamo.utils import dynamo_timed
 
-from . import config, dependencies, ir, metrics
+from . import config, dependencies, ir, metrics, stream_scheduler
 from .dependencies import StarDep, WeakDep
 from .sizevars import SimplifyIndexing
 from .utils import cache_on_self, cmp, free_symbol_has, has_triton
 from .virtualized import V
+
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ class BaseSchedulerNode:
         self.max_order: Optional[int] = None
         self.last_usage: Set[str] = None  # buffers that won't be used after this kernel
         self.written = False
+        self.stream_id = 0
 
     def __repr__(self):
         return f"{type(self).__name__}(name={self.get_name()!r})"
@@ -759,6 +761,9 @@ class Scheduler:
         self.create_foreach_nodes()
         self.fuse_nodes()
         self.compute_last_usage()
+        # import pdb
+        # breakpoint()
+        stream_scheduler.stream_schedule(self.nodes)
         V.debug.ir_post_fusion(self.nodes)
         V.debug.graph_diagram(self.nodes)
         self.debug_draw_graph()
@@ -1233,7 +1238,7 @@ class Scheduler:
 
     def free_buffers(self):
         """Free any buffers that are no longer needed"""
-        for name in sorted(self.buffer_names_to_free - V.graph.removed_buffers):
+        for name in sorted(self.buffer_names_to_free - V.graph.removed_buffers - V.graph.wrapper_code.freed):
             if name in self.name_to_node:
                 node = self.name_to_node[name]
                 if node.can_free():
