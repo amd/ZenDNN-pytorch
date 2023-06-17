@@ -583,11 +583,13 @@ Tensor reduce_sparse_csr_dim01_cuda_template(const Tensor& sparse, ReductionOp r
   auto nnz = std::min<int64_t>(1, numel);
 
   auto result_dtype = at::isIntegralType(values.scalar_type(), /*includeBool=*/true) ? ScalarType::Long : values.scalar_type();
-  Tensor new_values;
+  Tensor new_values, new_values_acc;
   if (numel > 0) {
     new_values = at::empty({1}, values.options().dtype(result_dtype));
-    auto iter = TensorIterator::reduce_op(new_values, values);
+    new_values_acc = at::empty({1}, values.options());
+    auto iter = TensorIterator::reduce_op(new_values_acc, values);
     gpu_reduce_kernel<scalar_t, scalar_t>(iter, func_wrapper<scalar_t>(rop), rop.identity_cpu());
+    new_values.copy_(new_values_acc);
   } else {
     new_values = at::empty({}, values.options().dtype(result_dtype));
   }
