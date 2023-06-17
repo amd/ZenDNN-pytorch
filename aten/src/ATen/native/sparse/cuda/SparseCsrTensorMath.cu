@@ -660,7 +660,7 @@ struct ReductionMulOp {
 
 Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool keepdim, c10::optional<ScalarType> dtype) {
   ScalarType dtype_ = dtype.value_or(input.scalar_type());
-  Tensor input_ = input.to(dtype_);
+  Tensor input_ = at::sparse_csr::to_type(input, dtype_);
   Tensor result;
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
       kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cuda", [&] {
