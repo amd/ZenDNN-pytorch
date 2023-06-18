@@ -9,8 +9,8 @@
 #include <ATen/NativeFunctions.h>
 #include <ATen/Operators.h>
 #else
-#include <ATen/ops/resize_as_sparse_native.h>
 #include <ATen/ops/_sparse_compressed_tensor_unsafe.h>
+#include <ATen/ops/resize_as_sparse_native.h>
 #endif
 
 #define AT_DISPATCH_ALL_SPARSE_COMPRESSED_LAYOUTS(LAYOUT, NAME, ...) \
@@ -369,16 +369,17 @@ inline bool only_sparse_compressed_add_trivial_cases(
 
 inline Tensor to_type(Tensor input, ScalarType dtype) {
   Tensor compressed_indices, plain_indices;
-  std::tie(compressed_indices, plain_indices) = at::sparse_csr::getCompressedPlainIndices(input);
+  std::tie(compressed_indices, plain_indices) =
+      at::sparse_csr::getCompressedPlainIndices(input);
   Tensor input_ = at::_sparse_compressed_tensor_unsafe(
-        compressed_indices,
-        plain_indices,
-        input.values().to(dtype),
-        input.sizes(),
-        dtype,
-        input.layout(),
-        input.device(),
-        input.options().pinned_memory_opt());
+      compressed_indices,
+      plain_indices,
+      input.values().to(dtype),
+      input.sizes(),
+      dtype,
+      input.layout(),
+      input.device(),
+      input.options().pinned_memory_opt());
   return input_;
 }
 
