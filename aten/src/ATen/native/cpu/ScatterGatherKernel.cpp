@@ -12,9 +12,14 @@
 #include <ATen/cpu/vec/functional.h>
 #include <ATen/cpu/vec/vec.h>
 #include <c10/util/irange.h>
-#include <ATen/ops/zeros.h>
 #include <ATen/OpMathType.h>
 
+#ifndef AT_PER_OPERATOR_HEADERS
+#include <ATen/Functions.h>
+#include <ATen/NativeFunctions.h>
+#else
+#include <ATen/ops/zeros.h>
+#endif
 namespace at::native {
 
 namespace {
