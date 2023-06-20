@@ -372,14 +372,14 @@ inline Tensor to_type(Tensor input, ScalarType dtype) {
   std::tie(compressed_indices, plain_indices) =
       at::sparse_csr::getCompressedPlainIndices(input);
   Tensor input_ = at::_sparse_compressed_tensor_unsafe(
-      compressed_indices,
-      plain_indices,
-      input.values().to(dtype),
-      input.sizes(),
+      std::move(compressed_indices),
+      std::move(plain_indices),
+      std::move(input.values()).to(dtype),
+      std::move(input.sizes()),
       dtype,
-      input.layout(),
-      input.device(),
-      input.options().pinned_memory_opt());
+      std::move(input.layout()),
+      std::move(input.device()),
+      std::move(input.options().pinned_memory_opt()));
   return input_;
 }
 

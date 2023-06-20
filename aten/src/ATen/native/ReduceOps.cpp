@@ -2179,14 +2179,9 @@ Tensor sum_sparse_compressed(
   TORCH_CHECK(
       dim.has_value(), "dim has no value, cannot be used in sum.dim_IntList");
   auto layout = self.layout();
-  if (layout == kSparseCsr) {
-    return at::_sparse_csr_sum(self, *dim, keepdim, dtype);
-  } else {
-    TORCH_CHECK(
-        false,
-        "sum expected input with strided, sparse_csr layouts, got layout ",
-        layout);
-  }
+  TORCH_CHECK(layout == kSparseCsr,
+              "sum expected input with strided, sparse_csr layouts, got layout ", layout)
+  return at::_sparse_csr_sum(self, *dim, keepdim, dtype);
 }
 
 } // namespace native

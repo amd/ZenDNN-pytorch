@@ -14,7 +14,7 @@
 #include <ATen/native/sparse/SparseBlasImpl.h>
 #include <ATen/native/sparse/SparseCsrTensorMath.h>
 #include <c10/util/irange.h>
-#include <ATen/OpMathType.h>
+#include <ATen/AccumulateType.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/Functions.h>
@@ -1027,11 +1027,11 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   new_crow_indices[1] = nnz;
 
   Tensor new_values, new_values_acc;
-  using opmath_integral_t = at::opmath_integral_type<scalar_t>;
-  constexpr bool need_acc = !std::is_same<scalar_t, opmath_integral_t>::value;
+  using acc_t = at::acc_type<scalar_t, true>;
+  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
   if constexpr (need_acc) {
-    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
+    auto acc_dtype = CppTypeToScalarType<acc_t>::value;
     new_values_acc = at::empty({nnz}, values.options().dtype(acc_dtype));
     new_values = is_integral ? new_values_acc : at::empty({nnz}, values.options());
   } else {
@@ -1041,16 +1041,16 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
 
   int64_t* columns_map_ptr = columns_map.data_ptr<int64_t>();
   scalar_t* values_ptr = values.data_ptr<scalar_t>();
-  opmath_integral_t* new_values_acc_ptr =
-      new_values_acc.data_ptr<opmath_integral_t>();
+  acc_t* new_values_acc_ptr =
+      new_values_acc.data_ptr<acc_t>();
 
   // There is no point in parallelizing the following for-loop
   // because about 99.3% of the computation time is spent in the
   // at::_unique call above.
-  for (int64_t i=0; i<numel; i++) {
+  for (const auto i : c10::irange(numel)) {
     int64_t col = columns_map_ptr[i];
     scalar_t val = values_ptr[i];
-    new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<opmath_integral_t>(val));
+    new_values_acc_ptr[col] = rop(new_values_acc_ptr[col], static_cast<acc_t>(val));
   }
   if (!new_values_acc.is_same(new_values)) {
     new_values.copy_(new_values_acc);
@@ -1120,12 +1120,12 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
   Tensor new_values = at::empty({}, values.options());
   Tensor row_map = at::empty({nrows}, ioptions);
 
-  using opmath_integral_t = at::opmath_integral_type<scalar_t>;
-  constexpr bool need_acc = !std::is_same<scalar_t, opmath_integral_t>::value;
+  using acc_t = at::acc_type<scalar_t, true>;
+  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
   Tensor new_values_acc;
   if constexpr (need_acc) {
-    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
+    auto acc_dtype = CppTypeToScalarType<acc_t>::value;
     new_values_acc = at::empty({}, values.options().dtype(acc_dtype));
     new_values = is_integral ? new_values_acc : at::empty({}, values.options());
   } else {
@@ -1153,7 +1153,7 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
     }
 
     scalar_t* values_ptr = values.data_ptr<scalar_t>();
-    opmath_integral_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_integral_t>();
+    acc_t* new_values_acc_ptr = new_values_acc.data_ptr<acc_t>();
 
     at::parallel_for(
         0,
@@ -1165,9 +1165,9 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
               index_t i_start = i_end;
               i_end = crow_indices_ptr[h+1];
               if (i_start != i_end) {
-                opmath_integral_t res = static_cast<opmath_integral_t>(values_ptr[i_start]);
+                acc_t res = static_cast<acc_t>(values_ptr[i_start]);
                 for (index_t i = i_start + 1; i < i_end; i++) {
-                  res = rop(res, static_cast<opmath_integral_t>(values_ptr[i]));
+                  res = rop(res, static_cast<acc_t>(values_ptr[i]));
                 }
                 new_values_acc_ptr[row_map_ptr[h]] = res;
               }
@@ -1204,17 +1204,17 @@ In [3]: %timeit torch._sparse_csr_sum(t, dim=(0, 1), keepdim=True)
 In [4]: %timeit torch.sum(t.values())
 1.07 ms ± 291 ns per loop (mean ± std. dev. of 7 runs, 1000 loops each)
   */
- using opmath_integral_t = at::opmath_integral_type<scalar_t>;
+ using acc_t = at::acc_type<scalar_t, true>;
   scalar_t* values_ptr = values.data_ptr<scalar_t>();
-  opmath_integral_t value = at::parallel_reduce(
+  acc_t value = at::parallel_reduce(
                                        0,
                                        numel,
                                        internal::GRAIN_SIZE,
                                        rop.identity(),
                                        [&](int64_t i_start, int64_t i_end, scalar_t identity) {
-                                         opmath_integral_t res = opmath_integral_t(identity);
+                                         acc_t res = acc_t(identity);
                                          for (int64_t i=i_start; i<i_end; i++) {
-                                           opmath_integral_t val = opmath_integral_t(values_ptr[i]);
+                                           acc_t val = acc_t(values_ptr[i]);
                                            res = rop(res, val);
                                          }
                                          return res;
@@ -1298,9 +1298,12 @@ Tensor _sparse_csr_sum_cpu(const Tensor& input, IntArrayRef dims_to_sum, bool ke
   Tensor result;
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
       kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cpu", [&] {
-        using opmath_integral_t = at::opmath_integral_type<scalar_t>;
+        // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+        // of float should be float in current scenario. In CUDA, float is the accumulate type
+        // of float, while in CPU, double is the accumulate type of float.
+        using acc_t = at::acc_type<scalar_t, true>;
         result = reduce_sparse_csr_cpu_template<scalar_t>(
-            input_, dims_to_sum, keepdim, ReductionAddOp<opmath_integral_t>());
+            input_, dims_to_sum, keepdim, ReductionAddOp<acc_t>());
       });
   return result;
 }

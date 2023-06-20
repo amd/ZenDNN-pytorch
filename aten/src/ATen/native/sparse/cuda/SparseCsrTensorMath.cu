@@ -347,8 +347,20 @@ Tensor _sparse_csr_..._cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
 
 namespace {
 
-template <typename scalar_t, typename index_t, typename ReductionOp, typename opmath_integral_t>
-__global__ void reduce_sparse_csr_dim0_cuda_kernel(opmath_integral_t* new_values,
+template <typename scalar_t, typename acc_t>
+inline void create_acc_buffer(Tensor& new_values, Tensor& new_values_acc, TensorOptions option, bool is_integral) {
+  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
+  if constexpr (need_acc) {
+    auto acc_dtype = CppTypeToScalarType<acc_t>::value;
+    new_values_acc = at::empty({}, option.dtype(acc_dtype));
+    new_values = is_integral ? new_values_acc : at::empty({}, option);
+  } else {
+    new_values_acc = new_values = at::empty({}, option);
+  }
+}
+
+template <typename scalar_t, typename index_t, typename ReductionOp, typename acc_t>
+__global__ void reduce_sparse_csr_dim0_cuda_kernel(acc_t* new_values,
                                                    const index_t* new_col_indices,
                                                    const int64_t new_nnz,
                                                    const scalar_t* values,
@@ -359,10 +371,10 @@ __global__ void reduce_sparse_csr_dim0_cuda_kernel(opmath_integral_t* new_values
   int64_t tid = blockDim.x * blockIdx.x + threadIdx.x;
   if (tid < new_nnz) {
     index_t col = new_col_indices[tid];
-    opmath_integral_t v = rop.identity();
+    acc_t v = rop.identity();
     for (int64_t j=0; j < nnz; j++) {
       if (col == col_indices[j]) {
-        v = rop(v, opmath_integral_t(values[j]));
+        v = rop(v, acc_t(values[j]));
       }
     }
     new_values[tid] = v;
@@ -425,19 +437,13 @@ Tensor reduce_sparse_csr_dim0_cuda_template(const Tensor& sparse, ReductionOp ro
   auto new_nnz = new_col_indices.numel();
   Tensor new_crow_indices = at::tensor(ArrayRef<int64_t>{0, new_nnz}, col_indices.options());
   Tensor new_values, new_values_acc;
-  using opmath_integral_t = at::opmath_integral_type<scalar_t>;
-  constexpr bool need_acc = !std::is_same<scalar_t, opmath_integral_t>::value;
+  using acc_t = at::acc_type<scalar_t, true>;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
-  if constexpr (need_acc) {
-    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
-    new_values_acc = at::empty({new_nnz}, values.options().dtype(acc_dtype));
-    new_values = is_integral ? new_values_acc : at::empty({new_nnz}, values.options());
-  } else {
-    new_values_acc = new_values = at::empty({new_nnz}, values.options());
-  }
-
+  create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
+  new_values.resize_(new_nnz);
+  new_values_acc.resize_(new_nnz);
   scalar_t* values_ptr = values.data_ptr<scalar_t>();
-  opmath_integral_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_integral_t>();
+  acc_t* new_values_acc_ptr = new_values_acc.data_ptr<acc_t>();
   int64_t THREADS = at::cuda::getCurrentDeviceProperties()->maxThreadsPerBlock;
   int64_t BLOCKS = (new_nnz + THREADS) / THREADS;
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
@@ -482,8 +488,8 @@ __global__ void reduce_crow_indices_dim1_cuda_kernel(index_t* new_crow_indices,
   }
 }
 
-template <typename scalar_t, typename index_t, typename ReductionOp, typename opmath_integral_t>
-__global__ void reduce_sparse_csr_dim1_cuda_kernel(opmath_integral_t* new_values,
+template <typename scalar_t, typename index_t, typename ReductionOp, typename acc_t>
+__global__ void reduce_sparse_csr_dim1_cuda_kernel(acc_t* new_values,
                                                    const scalar_t* values,
                                                    const index_t* crow_indices,
                                                    const index_t* row_map,
@@ -495,9 +501,9 @@ __global__ void reduce_sparse_csr_dim1_cuda_kernel(opmath_integral_t* new_values
     index_t i_start = crow_indices[tid];
     index_t i_end = crow_indices[tid+1];
     if (i_start != i_end) {
-      opmath_integral_t acc = rop.identity();
+      acc_t acc = rop.identity();
       for (index_t i = i_start; i < i_end; i++) {
-        acc = rop(acc, opmath_integral_t(values[i]));
+        acc = rop(acc, acc_t(values[i]));
       }
       new_values[row_map[tid]] = acc;
     }
@@ -522,16 +528,8 @@ Tensor reduce_sparse_csr_dim1_cuda_template(const Tensor& sparse, ReductionOp ro
   Tensor row_map = at::empty({nrows}, ioptions);
 
   Tensor new_values, new_values_acc;
-  using opmath_integral_t = at::opmath_integral_type<scalar_t>;
-  constexpr bool need_acc = !std::is_same<scalar_t, opmath_integral_t>::value;
-  bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
-  if constexpr (need_acc) {
-    auto acc_dtype = CppTypeToScalarType<opmath_integral_t>::value;
-    new_values_acc = at::empty({}, values.options().dtype(acc_dtype));
-    new_values = is_integral ? new_values_acc : at::empty({}, values.options());
-  } else {
-    new_values_acc = new_values = at::empty({}, values.options());
-  }
+  using acc_t = at::acc_type<scalar_t, true>;
+  create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
 
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
   int64_t THREADS = at::cuda::getCurrentDeviceProperties()->maxThreadsPerBlock;
@@ -554,7 +552,7 @@ Tensor reduce_sparse_csr_dim1_cuda_template(const Tensor& sparse, ReductionOp ro
                             new_values_acc.resize_(new_nnz);
 
                             scalar_t* values_ptr = values.data_ptr<scalar_t>();
-                            opmath_integral_t* new_values_acc_ptr = new_values_acc.data_ptr<opmath_integral_t>();
+                            acc_t* new_values_acc_ptr = new_values_acc.data_ptr<acc_t>();
                             reduce_sparse_csr_dim1_cuda_kernel<<<BLOCKS, THREADS, 0, stream>>>(new_values_acc_ptr,
                                                                                                values_ptr,
                                                                                                crow_indices_ptr,
@@ -664,9 +662,9 @@ Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
   Tensor result;
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
       kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cuda", [&] {
-      using opmath_integral_t = at::opmath_integral_type<scalar_t>;
+      using acc_t = at::acc_type<scalar_t, true>;
         result = reduce_sparse_csr_cuda_template<scalar_t>(
-            input_, dims_to_sum, keepdim, ReductionAddOp<opmath_integral_t>());
+            input_, dims_to_sum, keepdim, ReductionAddOp<acc_t>());
       });
   return result;
 }
