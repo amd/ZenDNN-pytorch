@@ -598,6 +598,7 @@ void TensorImpl::throw_storage_access_error() const {
 
 void TensorImpl::throw_data_ptr_access_error() const {
   if (extra_meta_ && extra_meta_->custom_data_ptr_error_msg_) {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     TORCH_CHECK(false, *extra_meta_->custom_data_ptr_error_msg_);
   }
   TORCH_CHECK(
