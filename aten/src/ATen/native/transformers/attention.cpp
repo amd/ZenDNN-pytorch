@@ -9,7 +9,8 @@
 #include <ATen/TensorIndexing.h>
 #include <ATen/cpu/vec/vec256/vec256.h>
 #include <ATen/native/transformers/attention.h>
-#include <ATen/native/transformers/sdp_utils_cpp.h>
+#include <ATen/native/transformers/cpu/attention.h>
+#include <ATen/native/transformers/sdp_utils.h>
 #include <type_traits>
 #include <utility>
 #include <c10/core/SymIntArrayRef.h>
@@ -483,8 +484,21 @@ std::tuple<Tensor, Tensor> native_multi_head_attention_cpu(
   return std::make_tuple(std::move(proj), std::move(qkt));
 }
 
-int64_t _fused_sdp_choice_cpp(const Tensor& query_, const Tensor& key, const Tensor& value,
-        const c10::optional<Tensor>& attn_mask_, double dropout_p, bool is_causal, c10::optional<double> scale){
+int64_t _fused_sdp_choice_cpp(
+    const Tensor& query_,
+    const Tensor& key,
+    const Tensor& value,
+    const c10::optional<Tensor>& attn_mask_,
+    double dropout_p,
+    bool is_causal,
+    c10::optional<double> scale) {
+  if (at::hasMKL() &&
+      (query_.scalar_type() == at::kFloat ||
+       query_.scalar_type() == at::kBFloat16) &&
+      query_.dim() == 4 &&
+      dropout_p == 0.0 && !attn_mask_.has_value() && !is_causal) {
+    return static_cast<int64_t>(sdp::SDPBackend::flash_attention);
+  }
   return static_cast<int64_t>(sdp::SDPBackend::math);
 }
 
@@ -599,7 +613,10 @@ Tensor scaled_dot_product_attention(
     c10::optional<double> scale) {
   validate_sdpa_input(query_, key, value, attn_mask_, dropout_p, is_causal, scale);
   int64_t choice_int = static_cast<int64_t>(sdp::SDPBackend::math);
-  if (query_.device().type() == DeviceType::CUDA){
+  if (query_.device().type() == DeviceType::CPU) {
+    choice_int = _fused_sdp_choice_cpp(
+        query_, key, value, attn_mask_, dropout_p, is_causal, scale);
+  } else if (query_.device().type() == DeviceType::CUDA){
     choice_int = _fused_sdp_choice_stub(query_.device().type(),
       query_, key, value, attn_mask_, dropout_p, is_causal, scale);
   }
