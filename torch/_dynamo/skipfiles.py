@@ -32,6 +32,7 @@ import weakref
 
 import torch
 import torch._inductor.test_operators
+import torch.distributed.algorithms._checkpoint.checkpoint_wrapper
 import torch.utils._content_store
 
 from . import comptime, config, external_utils
@@ -110,6 +111,8 @@ FILENAME_ALLOWLIST = {
     torch.set_rng_state.__code__.co_filename,
     torch._inductor.test_operators.__file__,
     torch.utils._content_store.__file__,
+    # Inline the checkpoint code from distributed
+    torch.distributed.algorithms._checkpoint.checkpoint_wrapper.__file__,
     # These are dynamo files!
     external_utils.__file__,
     comptime.__file__,  # Want to inline these helpers
