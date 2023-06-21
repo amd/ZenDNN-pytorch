@@ -1954,3 +1954,114 @@ class TestQuantizePT2EModels(PT2EQuantizationTestCase):
             self._verify_symmetric_qnnpack_qat_numerics(
                 m, example_inputs, is_per_channel=True, verify_convert=True,
             )
+
+    # TEMP DO NOT MERGE
+    def test_od(self):
+        import torchvision
+        import torch.nn as nn
+        import torch.nn.functional as F
+
+        class OcclusionModel(nn.Module):
+            def __init__(
+                self,
+                backbone: nn.Module,
+                input_shape: Tuple[int, int] = (224, 224),
+            ):
+                super(OcclusionModel, self).__init__()
+                self.input_shape = input_shape
+                self.backbone = backbone
+                self.softmax = nn.Softmax(dim=1)
+
+            def forward(self, x):
+                x = self.backbone(x)
+                x = self.softmax(x)
+                return x
+
+        #model = SimpleModel()
+        model = torchvision.models.mobilenet_v2(num_classes=2)
+        model = OcclusionModel(model)
+        example_inputs = (torch.randn(1, 3, 224, 224),)
+        self._verify_executorch_qat_numerics(model, example_inputs)
+
+    def _verify_executorch_qat_numerics(self, model, example_inputs):
+        """
+        TEMP: DELETE
+        """
+        from torch.ao.quantization.qconfig_mapping import (
+            get_default_qat_qconfig_mapping,
+            _get_symmetric_qnnpack_qat_qconfig_mapping,
+        )
+        from torch.ao.quantization.backend_config.executorch import get_executorch_backend_config
+        MANUAL_SEED = 100
+
+        # PT2 export
+
+        model_pt2e = copy.deepcopy(model)
+        quantizer = QNNPackQuantizer()
+        quantizer.set_global(get_symmetric_quantization_config(is_per_channel=False, is_qat=True))
+        model_pt2e, guards = torchdynamo.export(
+            model_pt2e,
+            *copy.deepcopy(example_inputs),
+            aten_graph=True,
+        )
+        model_pt2e = prepare_qat_pt2e_quantizer(model_pt2e, quantizer)
+
+        # FX
+        # Note: In order to match the PT2E numerics exactly, we need to feed the
+        # example inputs to the model once before calling prepare, since this is
+        # what torchdynamo.export does. Otherwise, the BN running mean and variance
+        # would diverge in the two flows and this test would fail. For more detail,
+        # see https://github.com/pytorch/pytorch/issues/95900.
+        model_fx = copy.deepcopy(model)
+        model_fx(*example_inputs)
+        qconfig_mapping = _get_symmetric_qnnpack_qat_qconfig_mapping()
+        backend_config = get_executorch_backend_config()
+        model_fx = prepare_qat_fx(
+            model_fx, qconfig_mapping, example_inputs, backend_config=backend_config,
+        )
+
+        # Some debug code
+        class PrintMod(torch.nn.Module):
+            def __init__(self, name):
+                super().__init__()
+                self.name = name
+            def forward(self, x):
+                print("*** PrintMod ", self.name, x.flatten()[:5])
+                return x
+        def insert_print_mod(model, node_name, model_name):
+            for n in model.graph.nodes:
+                if n.name == node_name:
+                    print_mod_name = model_name + "_print_mod_" + n.name
+                    setattr(model, print_mod_name, PrintMod(print_mod_name))
+                    with model.graph.inserting_after(n):
+                        model.graph.call_module(print_mod_name, (n,))
+                    break
+            model.recompile()
+        with open("temp.txt", "w") as f:
+            import re
+            f.write(re.sub(";(.*)\n", "\n", str(model_pt2e)) + "\n\n\n" + re.sub(";(.*)\n", "\n", str(model_fx)) + "\n")
+        insert_print_mod(model_pt2e, "view_default", "pt2")
+        insert_print_mod(model_pt2e, "activation_post_process_151", "pt2")
+        insert_print_mod(model_pt2e, "activation_post_process_152", "pt2")
+        insert_print_mod(model_pt2e, "activation_post_process_153", "pt2")
+        insert_print_mod(model_fx, "flatten", "fx")
+        insert_print_mod(model_fx, "activation_post_process_99", "fx")
+        insert_print_mod(model_fx, "activation_post_process_100", "fx")
+
+        # Verify that prepare numerics match
+        torch.manual_seed(MANUAL_SEED)
+        after_prepare_result_pt2e = model_pt2e(*example_inputs)
+        torch.manual_seed(MANUAL_SEED)
+        after_prepare_result_fx = model_fx(*example_inputs)
+        self.assertEqual(after_prepare_result_pt2e, after_prepare_result_fx)
+
+        # Verify that convert numerics match
+        model_pt2e.eval()
+        model_pt2e = convert_pt2e(model_pt2e)
+        quant_result_pt2e = model_pt2e(*example_inputs)
+        model_fx.eval()
+        model_fx = _convert_to_reference_decomposed_fx(
+            model_fx, backend_config=backend_config,
+        )
+        quant_result_fx = model_fx(*example_inputs)
+        self.assertEqual(quant_result_pt2e, quant_result_fx)
