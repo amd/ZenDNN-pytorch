@@ -16,6 +16,7 @@ from torch.ao.quantization._pt2e.graph_utils import find_sequential_partitions
 from torch.ao.quantization._pt2e.quantizer.utils import (
     _annotate_input_qspec_map,
     _annotate_output_qspec,
+    _get_fixed_qparams_0to1_qspec,
     get_bias_qspec,
     get_input_act_qspec,
     get_output_act_qspec,
@@ -288,6 +289,7 @@ class QNNPackQuantizer(Quantizer):
         self._annotate_mean(model, config)
         self._annotate_adaptive_avg_pool2d(model, config)
         self._annotate_gru(model, config)
+        self._annotate_softmax(model, config)
         return model
 
     def _annotate_for_dynamic_quantization_config(
@@ -769,6 +771,35 @@ class QNNPackQuantizer(Quantizer):
             add_node.meta["quantization_annotation"] = QuantizationAnnotation(
                 input_qspec_map=input_qspec_map,
                 output_qspec=output_act_qspec,
+                _annotated=True,
+            )
+
+    def _annotate_softmax(
+        self, gm: torch.fx.GraphModule, quantization_config: QuantizationConfig,
+    ) -> None:
+        softmax_partitions = get_source_partitions(gm.graph, [torch.nn.Softmax, F.softmax])
+        softmax_partitions = list(itertools.chain(*softmax_partitions.values()))
+        for softmax_partition in softmax_partitions:
+            if len(softmax_partition.output_nodes) > 1:
+                raise ValueError("softmax partition has more than one output node")
+            softmax_node = softmax_partition.output_nodes[0]
+            if (
+                softmax_node.op != "call_function"
+                or softmax_node.target != torch.ops.aten._softmax.default
+            ):
+                raise ValueError(f"{softmax_node} is not an aten softmax operator")
+            # skip annotation if it is already annotated
+            if _is_annotated([softmax_node]):
+                continue
+            qscheme = quantization_config.output_activation.qscheme
+            input_qspec = _get_fixed_qparams_0to1_qspec(qscheme)
+            input_qspec_map = {
+                softmax_node.args[0]: input_qspec,
+            }
+            output_qspec = _get_fixed_qparams_0to1_qspec(qscheme)
+            softmax_node.meta["quantization_annotation"] = QuantizationAnnotation(
+                input_qspec_map=input_qspec_map,
+                output_qspec=output_qspec,
                 _annotated=True,
             )
 

@@ -43,7 +43,6 @@ from torch.ao.quantization.backend_config import (
     get_executorch_backend_config,
     get_qnnpack_backend_config,
 )
-
 from torch.ao.quantization.qconfig import (
     default_per_channel_symmetric_qnnpack_qat_qconfig,
     default_per_channel_symmetric_qnnpack_qconfig,
@@ -53,6 +52,9 @@ from torch.ao.quantization.qconfig import (
     per_channel_weight_observer_range_neg_127_to_127,
     QConfig,
     weight_observer_range_neg_127_to_127,
+)
+from torch.ao.quantization.qconfig_mapping import (
+    _get_default_qconfig_mapping_with_default_qconfig,
 )
 from torch.ao.quantization.quantize_fx import (
     convert_to_reference_fx,
@@ -315,13 +317,18 @@ class PT2EQuantizationTestCase(QuantizationTestCase):
             default_qconfig = default_per_channel_symmetric_qnnpack_qat_qconfig
         else:
             default_qconfig = default_symmetric_qnnpack_qat_qconfig
-        qconfig_mapping = QConfigMapping().set_global(default_qconfig)
+        qconfig_mapping = _get_default_qconfig_mapping_with_default_qconfig(
+            is_qat=True, backend="qnnpack", default_qconfig=default_qconfig,
+        )
         backend_config = get_qnnpack_backend_config()
         model_fx = prepare_qat_fx(
             model_fx, qconfig_mapping, example_inputs, backend_config=backend_config
         )
         torch.manual_seed(MANUAL_SEED)
         after_prepare_result_fx = model_fx(*example_inputs)
+
+        print("MODEL PT2E ", model_pt2e)
+        print("MODEL FX ", model_fx)
 
         # Verify that numerics match
         self.assertEqual(after_prepare_result_pt2e, after_prepare_result_fx)
@@ -1817,3 +1824,32 @@ class TestQuantizePT2EModels(PT2EQuantizationTestCase):
             self._verify_symmetric_qnnpack_qat_numerics(
                 m, example_inputs, is_per_channel=True, verify_convert=True,
             )
+
+    # TEMP DO NOT MERGE
+    def test_od(self):
+        import torchvision
+        import torch.nn as nn
+        import torch.nn.functional as F
+        class OcclusionModel(nn.Module):
+            def __init__(
+                self,
+                backbone: nn.Module,
+                input_shape: Tuple[int, int] = (224, 224),
+            ):
+                super(OcclusionModel, self).__init__()
+                self.input_shape = input_shape
+                self.backbone = backbone
+                self.softmax = nn.Softmax(dim=1)
+
+            def forward(self, x):
+                #x = F.interpolate(x, size=self.input_shape, mode="bilinear", align_corners=False, antialias=True)
+                #x = self.backbone(x)
+                x = self.softmax(x)
+                return x
+
+        backbone = torchvision.models.mobilenet_v2(num_classes=2)
+        m = OcclusionModel(backbone)
+        example_inputs = (torch.randn(1, 3, 224, 224),)
+        self._verify_symmetric_qnnpack_qat_numerics(
+            m, example_inputs, is_per_channel=False, verify_convert=True,
+        )

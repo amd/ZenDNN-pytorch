@@ -1,5 +1,6 @@
 import torch
 from torch.ao.quantization._pt2e.quantizer.quantizer import (
+    FixedQParamsQuantizationSpec,
     QuantizationAnnotation,
     QuantizationConfig,
     QuantizationSpec,
@@ -79,3 +80,17 @@ def _annotate_output_qspec(node: Node, qspec):
     )
     quantization_annotation.output_qspec = qspec
     node.meta["quantization_annotation"] = quantization_annotation
+
+
+def _get_fixed_qparams_0to1_qspec(qscheme: torch.qscheme) -> FixedQParamsQuantizationSpec:
+    """
+    For fixed qparams ops like sigmoid, ensure values fall within [0, 1].
+    """
+    return FixedQParamsQuantizationSpec(
+        dtype=torch.uint8,
+        scale=1.0 / 256.0,
+        zero_point=0,
+        quant_min=0,
+        quant_max=255,
+        qscheme=qscheme,
+    )
