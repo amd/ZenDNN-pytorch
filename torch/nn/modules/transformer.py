@@ -85,7 +85,8 @@ class Transformer(Module):
         self.batch_first = batch_first
 
     def forward(self, src: Tensor, tgt: Tensor, src_mask: Optional[Tensor] = None, tgt_mask: Optional[Tensor] = None,
-                memory_mask: Optional[Tensor] = None, src_key_padding_mask: Optional[Tensor] = None,
+                memory_mask: Optional[Tensor] = None, src_key_padding_mask
+                : Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None, memory_key_padding_mask: Optional[Tensor] = None) -> Tensor:
         r"""Take in and process masked source/target sequences.
 
@@ -242,6 +243,10 @@ class TransformerEncoder(Module):
         Shape:
             see the docs in Transformer class.
         """
+        # masks for native encoder blob
+        src_key_padding_mask_ = src_key_padding_mask
+        mask_ = mask
+
         src_key_padding_mask = F._canonical_mask(
             mask=src_key_padding_mask,
             mask_name="src_key_padding_mask",
@@ -273,10 +278,13 @@ class TransformerEncoder(Module):
             why_not_sparsity_fast_path = f"{str_first_layer} was in training mode"
         elif not src.dim() == 3:
             why_not_sparsity_fast_path = f"input not batched; expected src.dim() of 3 but got {src.dim()}"
-        elif src_key_padding_mask is None:
+        # src_key_padding_mask_ and src_key_padding_mask are the same, minus type
+        # conversion. Chacking <var>_ version for torchscript type refinement
+        # but reporting named input in performance debug hint
+        elif src_key_padding_mask_ is None:
             why_not_sparsity_fast_path = "src_key_padding_mask was None"
         elif (((not hasattr(self, "mask_check")) or self.mask_check)
-                and not torch._nested_tensor_from_mask_left_aligned(src, src_key_padding_mask.logical_not())):
+                and not torch._nested_tensor_from_mask_left_aligned(src, src_key_padding_mask_.logical_not())):
             why_not_sparsity_fast_path = "mask_check enabled, and src and src_key_padding_mask was not left aligned"
         elif output.is_nested:
             why_not_sparsity_fast_path = "NestedTensor input is not supported"
@@ -310,10 +318,16 @@ class TransformerEncoder(Module):
                 why_not_sparsity_fast_path = ("grad is enabled and at least one of query or the "
                                               "input/output projection weights or biases requires_grad")
 
-            if (not why_not_sparsity_fast_path) and (src_key_padding_mask is not None):
+            if (not why_not_sparsity_fast_path) and (src_key_padding_mask_ is not None):
                 convert_to_nested = True
-                output = torch._nested_tensor_from_mask(output, src_key_padding_mask.logical_not(), mask_check=False)
+                output = torch._nested_tensor_from_mask(output, src_key_padding_mask_.logical_not(), mask_check=False)
                 src_key_padding_mask_for_layers = None
+            if not why_not_sparsity_fast_path:
+                # this will implicitly doom the search for causal when we enter
+                # fastpath.  But that's ok/desired because native
+                # fastpath does not understandthe is_causal flag.
+                mask = mask_
+
 
         # Prevent type refinement
         make_causal = (is_causal is True)
