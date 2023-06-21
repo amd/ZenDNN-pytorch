@@ -119,7 +119,7 @@
 #endif
 
 #if !AT_USE_MKL_SPARSE()
-#include <ATen/native/eigen/SparseBlasImpl.h>
+#include <ATen/native/sparse/eigen/SparseBlasImpl.h>
 #endif
 
 #include <algorithm>
