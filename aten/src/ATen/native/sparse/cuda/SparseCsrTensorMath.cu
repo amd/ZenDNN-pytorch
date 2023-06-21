@@ -10,6 +10,7 @@
 #include <ATen/native/Resize.h>
 #include <ATen/native/SparseTensorUtils.h>
 #include <algorithm>
+#include <ATen/AccumulateType.h>
 
 #ifndef AT_PER_OPERATOR_HEADERS
 #include <ATen/NativeFunctions.h>
@@ -437,6 +438,10 @@ Tensor reduce_sparse_csr_dim0_cuda_template(const Tensor& sparse, ReductionOp ro
   auto new_nnz = new_col_indices.numel();
   Tensor new_crow_indices = at::tensor(ArrayRef<int64_t>{0, new_nnz}, col_indices.options());
   Tensor new_values, new_values_acc;
+
+  // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+  // of float should be float in current scenario. In CUDA, float is the accumulate type
+  // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
   create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
@@ -528,7 +533,11 @@ Tensor reduce_sparse_csr_dim1_cuda_template(const Tensor& sparse, ReductionOp ro
   Tensor row_map = at::empty({nrows}, ioptions);
 
   Tensor new_values, new_values_acc;
+  // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+  // of float should be float in current scenario. In CUDA, float is the accumulate type
+  // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
+  bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
   create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
 
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
@@ -662,6 +671,9 @@ Tensor _sparse_csr_sum_cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
   Tensor result;
   AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND2(
       kHalf, kBFloat16, input_.scalar_type(), "_sparse_csr_sum_cuda", [&] {
+      // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+      // of float should be float in current scenario. In CUDA, float is the accumulate type
+      // of float, while in CPU, double is the accumulate type of float.
       using acc_t = at::acc_type<scalar_t, true>;
         result = reduce_sparse_csr_cuda_template<scalar_t>(
             input_, dims_to_sum, keepdim, ReductionAddOp<acc_t>());

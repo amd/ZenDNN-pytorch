@@ -1027,6 +1027,9 @@ Tensor reduce_sparse_csr_dim0_cpu_template(const Tensor& sparse, ReductionOp rop
   new_crow_indices[1] = nnz;
 
   Tensor new_values, new_values_acc;
+  // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+  // of float should be float in current scenario. In CUDA, float is the accumulate type
+  // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
   constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
@@ -1120,6 +1123,9 @@ Tensor reduce_sparse_csr_dim1_cpu_template(const Tensor& sparse, ReductionOp rop
   Tensor new_values = at::empty({}, values.options());
   Tensor row_map = at::empty({nrows}, ioptions);
 
+  // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+  // of float should be float in current scenario. In CUDA, float is the accumulate type
+  // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
   constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
@@ -1204,7 +1210,11 @@ In [3]: %timeit torch._sparse_csr_sum(t, dim=(0, 1), keepdim=True)
 In [4]: %timeit torch.sum(t.values())
 1.07 ms ± 291 ns per loop (mean ± std. dev. of 7 runs, 1000 loops each)
   */
- using acc_t = at::acc_type<scalar_t, true>;
+
+  // Set `is_cuda` = `true` in acc_type in CPU backend. Because the accumulate type
+  // of float should be float in current scenario. In CUDA, float is the accumulate type
+  // of float, while in CPU, double is the accumulate type of float.
+  using acc_t = at::acc_type<scalar_t, true>;
   scalar_t* values_ptr = values.data_ptr<scalar_t>();
   acc_t value = at::parallel_reduce(
                                        0,

@@ -375,11 +375,11 @@ inline Tensor to_type(Tensor input, ScalarType dtype) {
       std::move(compressed_indices),
       std::move(plain_indices),
       std::move(input.values()).to(dtype),
-      std::move(input.sizes()),
+      input.sizes(),
       dtype,
-      std::move(input.layout()),
-      std::move(input.device()),
-      std::move(input.options().pinned_memory_opt()));
+      input.layout(),
+      input.device(),
+      input.options().pinned_memory_opt());
   return input_;
 }
 
