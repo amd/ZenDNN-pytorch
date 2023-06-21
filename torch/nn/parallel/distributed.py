@@ -755,7 +755,7 @@ class DistributedDataParallel(Module, Joinable):
 
         # Check that a module does not have Uninitialized parameters
         for param in self._module_parameters:
-            if isinstance(param, torch.nn.parameter.UninitializedParameter):
+            if type(param) is torch.nn.parameter.UninitializedParameter:
                 self._log_and_throw(
                     RuntimeError,
                     "Modules with uninitialized parameters can't be used with `DistributedDataParallel`. "
@@ -1166,9 +1166,26 @@ class DistributedDataParallel(Module, Joinable):
             self.logger._set_static_graph()
 
     def _build_params_for_reducer(self):
+        from torch.distributed._tensor import DTensor
+        import functools
+        def _dtensor_ext(param_name, param):
+            def tensor_hook(param, grad):
+                param.grad._local_tensor = grad
+                print("BWD hook", grad, "\n\n")
+                return grad
+            if isinstance(param, DTensor):
+                # param._local_tensor.requires_grad_()
+                t = param.to_local().detach()
+                t.requires_grad_()
+                # print(param_name)
+                if "net1" in param_name:
+                    t.register_hook(functools.partial(tensor_hook, param))
+                param = t
+            return param
+
         # Build tuple of (module, parameter) for all parameters that require grads.
         modules_and_parameters = [
-            (module, parameter)
+            (module, _dtensor_ext(module_name, parameter))
             for module_name, module in self.module.named_modules()
             for parameter in [
                 param
@@ -1184,6 +1201,7 @@ class DistributedDataParallel(Module, Joinable):
 
         # Deduplicate any parameters that might be shared across child modules.
         memo = set()
+
         modules_and_parameters = [
             # "p not in memo" is the deduplication check.
             # "not memo.add(p)" is always True, and it's only there to cause "add(p)" if needed.
@@ -1600,6 +1618,7 @@ class DistributedDataParallel(Module, Joinable):
     # Allreduces the used parameter mapping across ranks.
     def _match_unused_params_allreduce(self):
         locally_used_param_map = self.reducer._get_local_used_map()
+        print("locally_used_param_map", locally_used_param_map, "\n\n\n")
         self.process_group.allreduce(locally_used_param_map)
 
     def join(
