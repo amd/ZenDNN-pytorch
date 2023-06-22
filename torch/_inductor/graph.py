@@ -194,6 +194,7 @@ class GraphLowering(torch.fx.Interpreter):
         )
         self._warned_fallback = {"aten.convolution_backward"}
         self.user_visible_outputs = user_visible_outputs
+        self.stream_graph = None
 
     def decide_layout_opt(self) -> bool:
         """
