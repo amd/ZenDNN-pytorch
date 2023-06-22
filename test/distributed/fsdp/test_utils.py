@@ -139,7 +139,7 @@ class TestGetSubmoduleToStates(TestCase):
                 nn.Linear(5, 5, bias=False),
                 nn.Linear(5, 5, bias=False),
             )
-            self.seq1.register_buffer("seq1_buffer", torch.randn((5,)))
+            self.seq1.seq1_buffer = nn.Buffer(torch.randn((5,)))
             self.lin = nn.Linear(5, 5, bias=False)
             self.seq2 = nn.Sequential(
                 nn.Sequential(nn.Linear(5, 5, bias=False)), nn.Linear(5, 5, bias=False)
@@ -154,7 +154,7 @@ class TestGetSubmoduleToStates(TestCase):
                 == TestGetSubmoduleToStates.SharedParameterMode.SIBLING
             ):
                 self.seq2[0][0].weight = self.seq1[0].weight
-            self.seq2[1].register_buffer("seq2_1_buffer", torch.randn((5,)))
+            self.seq2[1].seq2_1_buffer = nn.Buffer(torch.randn((5,)))
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             return self.seq2(self.lin(self.seq1(x)))  # equivalent to one matmul
