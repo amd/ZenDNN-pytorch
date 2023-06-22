@@ -1,3 +1,33 @@
+#******************************************************************************
+# Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+#******************************************************************************
+
 import torch
 from torch.types import _TensorOrTensors
 import torch.testing
@@ -102,7 +132,7 @@ def _iter_tensor(x_tensor):
                 indices = x_indices[i].tolist() + list(x_idx)
                 d_idx = sum(indices[k] * x_stride[k] for k in range(len(x_size)))
                 yield x_value, x_idx, d_idx
-    elif x_tensor.layout == torch._mkldnn:  # type: ignore[attr-defined]
+    elif x_tensor.layout == torch._mkldnn or x_tensor.layout == torch._zendnn:  # type: ignore[attr-defined]
         for d_idx, x_idx in enumerate(product(*[range(m) for m in x_tensor.size()])):
             # this is really inefficient, but without indexing implemented, there's
             # not really a better way than converting back and forth
@@ -249,6 +279,12 @@ def _prepare_input(input: torch.Tensor, maybe_perturbed_input: Optional[torch.Te
             return maybe_perturbed_input.to_mkldnn()
         else:
             return input
+    elif input.layout == torch._zendnn:  # type: ignore[attr-defined] # no attr _zendnn
+        # Convert back to zendnn
+        if maybe_perturbed_input is not None:
+            return maybe_perturbed_input.to_zendnn()
+        else:
+            return input
     elif input.layout == torch.sparse_coo:
         if fast_mode and maybe_perturbed_input is not None:
             # entry is already a "cloned" version of the original tensor
@@ -333,6 +369,8 @@ def _get_analytical_jacobian_forward_ad(fn, inputs, outputs, *, check_grad_dtype
             if is_tensor_like(inp) and inp.requires_grad:
                 if inp.layout == torch._mkldnn:  # type: ignore[attr-defined]
                     raise ValueError("MKLDNN inputs are not support for forward AD gradcheck.")
+                if inp.layout == torch._zendnn:  # type: ignore[attr-defined]
+                    raise ValueError("ZENDNN inputs are not support for forward AD gradcheck.")
 
                 inp = fwAD.make_dual(inp.detach(), torch.zeros_like(inp))
                 # If inp is a differentiable view, the dual might not be the tangent given to
@@ -384,6 +422,9 @@ def _get_input_to_perturb(input):
     # operations that require the tensor to have strides. If fast_mode=False,
     # _iter_tensor would handle the below cases:
     if input.layout == torch._mkldnn:  # type: ignore[attr-defined] # no attr _mkldnn
+        # Convert to dense so we can perform operations that require strided tensors
+        input_to_perturb = input.to_dense()
+    elif input.layout == torch._zendnn:  # type: ignore[attr-defined] # no attr _zendnn
         # Convert to dense so we can perform operations that require strided tensors
         input_to_perturb = input.to_dense()
     elif input.layout == torch.sparse_coo:
@@ -662,7 +703,7 @@ def _check_inputs(tupled_inputs, check_sparse_nnz) -> bool:
                 content = inp
             # TODO: To cover more problematic cases, replace stride = 0 check with
             # "any overlap in memory" once we have a proper function to check it.
-            if content.layout is not torch._mkldnn:  # type: ignore[attr-defined]
+            if content.layout is not torch._mkldnn and content.layout is not torch._zendnn:  # type: ignore[attr-defined]
                 if not all(st > 0 or sz <= 1 for st, sz in zip(content.stride(), content.size())):
                     raise RuntimeError(
                         f'The {idx}th input has a dimension with stride 0. gradcheck only '
@@ -686,6 +727,9 @@ def _check_outputs(outputs) -> None:
                          'Please call to_dense() on the output of fn for gradcheck.')
     if any(t.layout == torch._mkldnn for t in outputs if isinstance(t, torch.Tensor)):  # type: ignore[attr-defined]
         raise ValueError('MKLDNN output is not supported at gradcheck yet. '
+                         'Please call to_dense() on the output of fn for gradcheck.')
+    if any(t.layout == torch._zendnn for t in outputs if isinstance(t, torch.Tensor)):  # type: ignore[attr-defined]
+        raise ValueError('ZENDNN output is not supported at gradcheck yet. '
                          'Please call to_dense() on the output of fn for gradcheck.')
 
 

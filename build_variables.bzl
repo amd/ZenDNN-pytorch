@@ -1,3 +1,33 @@
+#******************************************************************************
+# Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+#******************************************************************************
+
 # WARNING: the contents of this file must BOTH be valid Starlark (for Buck and
 
 # Bazel) as well as valid Python (for our cmake build).  This means that
@@ -279,7 +309,9 @@ core_sources_full_mobile_no_backend_interface = [
     "torch/csrc/jit/passes/frozen_conv_folding.cpp",
     "torch/csrc/jit/passes/frozen_linear_transpose.cpp",
     "torch/csrc/jit/passes/frozen_ops_to_mkldnn.cpp",
+    "torch/csrc/jit/passes/frozen_ops_to_zendnn.cpp",
     "torch/csrc/jit/passes/frozen_graph_optimizations.cpp",
+    "torch/csrc/jit/passes/frozen_zendnn_graph_optimizations.cpp",
     "torch/csrc/jit/passes/remove_expands.cpp",
     "torch/csrc/jit/passes/remove_dropout.cpp",
     "torch/csrc/jit/passes/requires_grad_analysis.cpp",
@@ -1118,6 +1150,28 @@ aten_cpu_source_non_codegen_list = [
     "aten/src/ATen/native/mkldnn/UnaryOps.cpp",
     "aten/src/ATen/native/mkldnn/Utils.cpp",
     "aten/src/ATen/native/mkldnn/Matmul.cpp",
+    "aten/src/ATen/native/zendnn/ADeepRegistration.cpp",
+    "aten/src/ATen/native/zendnn/BinaryOps.cpp",
+    "aten/src/ATen/native/zendnn/Concat.cpp",
+    "aten/src/ATen/native/zendnn/Conv.cpp",
+    "aten/src/ATen/native/zendnn/ConvFusions.cpp",
+    "aten/src/ATen/native/zendnn/Copy.cpp",
+    "aten/src/ATen/native/zendnn/EmbedBag.cpp",
+    "aten/src/ATen/native/zendnn/Linear.cpp",
+    "aten/src/ATen/native/zendnn/LinearAlgebra.cpp",
+    "aten/src/ATen/native/zendnn/Normalization.cpp",
+    "aten/src/ATen/native/zendnn/Pooling.cpp",
+    "aten/src/ATen/native/zendnn/Prelu.cpp",
+    "aten/src/ATen/native/zendnn/Relu.cpp",
+    "aten/src/ATen/native/zendnn/SoftMax.cpp"
+    "aten/src/ATen/native/zendnn/TensorFactories.cpp",
+    "aten/src/ATen/native/zendnn/TensorShape.cpp",
+    "aten/src/ATen/native/zendnn/UnaryOps.cpp",
+    "aten/src/ATen/native/zendnn/Utils.cpp",
+    "aten/src/ATen/native/zendnn/ZENDNNCommon.cpp",
+    "aten/src/ATen/native/zendnn/ZENDNNConversions.cpp",
+    "aten/src/ATen/native/zendnn/ZendnnTensorMath.cpp",
+    "aten/src/ATen/native/zendnn/ZENDNNTensors.cpp",
     "aten/src/ATen/native/quantized/cpu/init_qnnpack.cpp",
     # This is moved to aten_cpu because some of the custom ops use empty_with_tail_padding
     # which was available only within aten_native_cpu. Ideally the right fix is to make

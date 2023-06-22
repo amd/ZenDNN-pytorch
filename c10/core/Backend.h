@@ -1,3 +1,33 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #pragma once
 
 #include <c10/core/DeviceType.h>
@@ -52,6 +82,7 @@ enum class Backend {
   Undefined,
   MkldnnCPU,
   MPS,
+  ZendnnCPU,
   HPU,
   Lazy,
   PrivateUse1,
@@ -97,6 +128,8 @@ static inline Backend dispatchKeyToBackend(DispatchKey t) {
     return Backend::SparseCsrCUDA;
   } else if (t == DispatchKey::MkldnnCPU) {
     return Backend::MkldnnCPU;
+  } else if (t == DispatchKey::ZendnnCPU) {
+    return Backend::ZendnnCPU;
   } else if (t == DispatchKey::QuantizedCPU) {
     return Backend::QuantizedCPU;
   } else if (t == DispatchKey::QuantizedCUDA) {
@@ -158,6 +191,8 @@ static inline DispatchKey backendToDispatchKey(Backend b) {
       return DispatchKey::SparseCsrCUDA;
     case Backend::MkldnnCPU:
       return DispatchKey::MkldnnCPU;
+    case Backend::ZendnnCPU:
+      return DispatchKey::ZendnnCPU;
     case Backend::Vulkan:
       return DispatchKey::Vulkan;
     case Backend::Metal:
@@ -218,6 +253,7 @@ static inline DeviceType backendToDeviceType(Backend b) {
     case Backend::QuantizedXPU:
       return DeviceType::XPU;
     case Backend::MkldnnCPU:
+    case Backend::ZendnnCPU:
     case Backend::QuantizedCPU:
       return DeviceType::CPU;
     case Backend::QuantizedCUDA:
@@ -282,6 +318,8 @@ static inline const char* toString(Backend b) {
       return "SparseCsrCUDA";
     case Backend::MkldnnCPU:
       return "MkldnnCPU";
+    case Backend::ZendnnCPU:
+      return "ZendnnCPU";
     case Backend::Vulkan:
       return "Vulkan";
     case Backend::Metal:

@@ -1,3 +1,33 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #include <ATen/native/CPUBlas.h>
 #include <ATen/native/mkl/LinearAlgebra.h>
 #include <ATen/native/mkldnn/Matmul.h>
@@ -40,6 +70,38 @@ extern "C" void zaxpy_(int *n, void *a, const void *x, int *incx, void *y, int *
 #ifdef USE_FBGEMM
 #include <fbgemm/FbgemmI64.h>
 #endif  // USE_FBGEMM
+
+#if AT_BUILD_WITH_BLAS()
+#if AT_ZENDNN_ENABLED()
+#include <zendnn.h>
+
+extern "C"
+{
+//Matmul kernel
+void zenMatMul_gemm_wrapper(
+        const bool Layout,
+        const bool transpose_input,
+        const bool transpose_filter,
+        const int m,
+        const int k,
+        const int n,
+        const float alpha,
+        const float *input,
+        const int lda,
+        const float *filter,
+        const int ldb,
+        const float *bias,
+        const bool relu,
+        const int gelu,
+        const float beta,
+        float *output,
+        const int ldc
+);
+
+}
+
+#endif
+#endif
 
 namespace at {
 namespace native {
@@ -183,6 +245,13 @@ void gemm(
       c, ldc_);
     #else
     char transa_ = to_blas(transa), transb_ = to_blas(transb);
+    #if AT_ZENDNN_ENABLED()
+    //Matmul using zendnn_gemm
+    const bool Layout=false;
+    zenMatMul_gemm_wrapper(Layout, (transa_=='T' || transa_=='t')?1:0, (transb_=='T'|| transb_=='t')?1:0, m_, k_,
+                           n_, alpha_, (const float*)a, lda_, (const float*)b,
+                           ldb_, NULL, 0, 0, beta_, (float *)c, ldc_);
+    #else
     sgemm_(
         &transa_, &transb_,
         &m_, &n_, &k_,
@@ -191,6 +260,7 @@ void gemm(
         b, &ldb_,
         &beta_,
         c, &ldc_);
+    #endif
     #endif
     return;
   }

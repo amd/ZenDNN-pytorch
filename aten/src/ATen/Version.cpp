@@ -1,8 +1,43 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #include <ATen/Version.h>
 #include <ATen/Config.h>
 
 #if AT_MKL_ENABLED()
 #include <mkl.h>
+#endif
+
+#if AT_ZENDNN_ENABLED()
+#include <blis/blis.h>
+#include <zendnn_version.h>
 #endif
 
 #if AT_MKLDNN_ENABLED()
@@ -51,6 +86,16 @@ std::string get_mkldnn_version() {
   #endif
   return ss.str();
 }
+
+#if AT_ZENDNN_ENABLED()
+
+    std::string get_zendnn_version() {
+    std::ostringstream ss;
+    ss << ZENDNN_VERSION_MAJOR << "." << ZENDNN_VERSION_MINOR << "." << ZENDNN_VERSION_PATCH;
+    return ss.str();
+    }
+
+#endif
 
 std::string get_openmp_version() {
   std::ostringstream ss;
@@ -165,6 +210,11 @@ std::string show_config() {
 
 #if AT_MKLDNN_ENABLED()
   ss << "  - " << get_mkldnn_version() << "\n";
+#endif
+
+#if AT_ZENDNN_ENABLED()
+  ss << "  - " <<  "AMD " << bli_info_get_version_str() << " ( Git Hash " << BLIS_VERSION_HASH << " )" << "\n";
+  ss << "  - " <<  "AMD ZENDNN v" << get_zendnn_version() << " ( Git Hash " << ZENDNN_PT_VERSION_HASH << " )" << "\n";
 #endif
 
 #ifdef _OPENMP

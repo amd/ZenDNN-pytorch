@@ -1,3 +1,33 @@
+#******************************************************************************
+# Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+#******************************************************************************
+
 # Welcome to the PyTorch setup.py.
 #
 # Environment variables you are probably interested in:
@@ -46,6 +76,9 @@
 #   USE_MKLDNN_ACL
 #     enables use of Compute Library backend for MKLDNN on Arm;
 #     USE_MKLDNN must be explicitly enabled.
+#
+#   USE_ZENDNN=0
+#     disables use of ZENDNN
 #
 #   MKLDNN_CPU_RUNTIME
 #     MKL-DNN threading mode: TBB or OMP (default)
@@ -130,9 +163,9 @@
 #     one in this file; needed to build with other frameworks that share ONNX.
 #
 #   BLAS
-#     BLAS to be used by Caffe2. Can be MKL, Eigen, ATLAS, FlexiBLAS, or OpenBLAS. If set
-#     then the build will fail if the requested BLAS is not found, otherwise
-#     the BLAS will be chosen based on what is found on your system.
+#     BLAS to be used by Caffe2. Can be MKL, Eigen, ATLAS, FlexiBLAS, or OpenBLAS.
+#     If set then the build will fail if the requested BLAS is not found,
+#     otherwisethe BLAS will be chosen based on what is found on your system.
 #
 #   MKL_THREADING
 #     MKL threading mode: SEQ, TBB or OMP (default)
@@ -515,6 +548,10 @@ class build_ext(setuptools.command.build_ext.build_ext):
                 report('-- Not using CBLAS in MKLDNN')
         else:
             report('-- Not using MKLDNN')
+        if cmake_cache_vars['USE_ZENDNN']:
+            report('-- Using ZENDNN')
+        else:
+            report('-- Not using ZENDNN')
         if cmake_cache_vars['USE_NCCL'] and cmake_cache_vars['USE_SYSTEM_NCCL']:
             report('-- Using system provided NCCL library at {}, {}'.format(cmake_cache_vars['NCCL_LIBRARIES'],
                                                                             cmake_cache_vars['NCCL_INCLUDE_DIRS']))

@@ -1,3 +1,33 @@
+#******************************************************************************
+# Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+#******************************************************************************
+
 """
 Python implementation of ``__torch_function__``
 
@@ -116,6 +146,7 @@ def get_ignored_functions() -> Set[Callable]:
         torch.has_mkl,
         torch.has_mps,
         torch.has_mkldnn,
+        torch.has_zendnn,
         torch.has_openmp,
         torch.iinfo,
         torch.memory_format,
@@ -160,6 +191,11 @@ def get_ignored_functions() -> Set[Callable]:
         torch.mkldnn_max_pool2d,
         torch.mkldnn_max_pool3d,
         torch.mkldnn_linear_backward_weights,
+        torch.zendnn_adaptive_avg_pool2d,
+        torch.zendnn_convolution,
+        torch.zendnn_max_pool2d,
+        torch.zendnn_max_pool3d,
+        torch.zendnn_linear_backward_weights,
         torch.normal,
         torch.ones,
         torch.promote_types,
@@ -1194,6 +1230,7 @@ def get_testing_overrides() -> Dict[Callable, Callable]:
         Tensor.is_nested.__get__: lambda self: -1,
         Tensor.is_ort.__get__: lambda self: -1,
         Tensor.is_mkldnn.__get__: lambda self: -1,
+        Tensor.is_zendnn.__get__: lambda self: -1,
         Tensor.is_quantized.__get__: lambda self: -1,
         Tensor.is_sparse.__get__: lambda self: -1,
         Tensor.is_sparse_csr.__get__: lambda self: -1,
@@ -1322,6 +1359,7 @@ def get_testing_overrides() -> Dict[Callable, Callable]:
         Tensor.to_sparse: lambda self: -1,
         Tensor.tolist: lambda self: -1,
         Tensor.to_mkldnn: lambda self: -1,
+        Tensor.to_zendnn: lambda self: -1,
         Tensor.type_as: lambda self, other: -1,
         Tensor.unfold: lambda self, dimension, size, step: -1,
         Tensor.uniform_: lambda self, from_=0, to=1: -1,

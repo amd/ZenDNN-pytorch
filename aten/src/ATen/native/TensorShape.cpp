@@ -1,3 +1,33 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/AccumulateType.h>
 #include <ATen/ExpandUtils.h>
@@ -1340,6 +1370,9 @@ Tensor reshape_symint(const Tensor& self, c10::SymIntArrayRef proposed_shape) {
   if (self.is_mkldnn()) {
     return at::_mkldnn_reshape(self, c10::asIntArrayRefSlow(shape));
   }
+  if (self.is_zendnn()) {
+    return at::_zendnn_reshape(self, c10::asIntArrayRefSlow(shape));
+  }
 
   // `computeStride` returns the proper strides to use if this
   // `reshape` can be just a view.
@@ -1382,6 +1415,9 @@ Tensor reshape(const Tensor& self, IntArrayRef proposed_shape) {
     return at::_mkldnn_reshape(self, shape);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_reshape(self, shape);
+  }
   // `computeStride` returns the proper strides to use if this
   // `reshape` can be just a view.
   auto stride = at::detail::computeStride(self.sizes(), self.strides(), shape);
@@ -2613,6 +2649,9 @@ Tensor & transpose_(Tensor & self, int64_t dim0, int64_t dim1) {
     return at::_mkldnn_transpose_(self, dim0, dim1);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_transpose_(self, dim0, dim1);
+  }
   DimVector sizes(self.sizes().begin(), self.sizes().end());
   DimVector strides(self.strides().begin(), self.strides().end());
   std::swap(strides[dim0], strides[dim1]);
@@ -2768,6 +2807,9 @@ Tensor transpose(const Tensor & self, int64_t dim0, int64_t dim1) {
     return at::_mkldnn_transpose(self, dim0, dim1);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_transpose(self, dim0, dim1);
+  }
   // Transpose of a tensor is a view operation.
   if (dim0 == dim1) {
     return self.alias();

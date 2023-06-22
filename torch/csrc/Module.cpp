@@ -1,3 +1,33 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #include <sys/types.h>
 #include <torch/csrc/python_headers.h>
 
@@ -540,11 +570,26 @@ PyObject* THPModule_setUserEnabledMkldnn(PyObject* _unused, PyObject* arg) {
   Py_RETURN_NONE;
 }
 
+PyObject *THPModule_setUserEnabledZendnn(PyObject *_unused, PyObject *arg)
+{
+  THPUtils_assert(PyBool_Check(arg), "set_enabled_zendnn expects a bool, "
+          "but got %s", THPUtils_typename(arg));
+  at::globalContext().setUserEnabledZendnn(arg == Py_True);
+  Py_RETURN_NONE;
+}
+
+
 PyObject* THPModule_userEnabledMkldnn(PyObject* _unused, PyObject* noargs) {
   if (at::globalContext().userEnabledMkldnn())
     Py_RETURN_TRUE;
   else
     Py_RETURN_FALSE;
+}
+
+PyObject *THPModule_userEnabledZendnn(PyObject *_unused, PyObject *noargs)
+{
+  if (at::globalContext().userEnabledZendnn()) Py_RETURN_TRUE;
+  else Py_RETURN_FALSE;
 }
 
 PyObject* THPModule_setDeterministicCuDNN(PyObject* _unused, PyObject* arg) {
@@ -902,6 +947,8 @@ static PyMethodDef TorchMethods[] = {
     {"_set_cudnn_enabled", THPModule_setUserEnabledCuDNN, METH_O, nullptr},
     {"_get_mkldnn_enabled", THPModule_userEnabledMkldnn, METH_NOARGS, nullptr},
     {"_set_mkldnn_enabled", THPModule_setUserEnabledMkldnn, METH_O, nullptr},
+    {"_get_zendnn_enabled", (PyCFunction)THPModule_userEnabledZendnn, METH_NOARGS,  nullptr},
+    {"_set_zendnn_enabled", (PyCFunction)THPModule_setUserEnabledZendnn, METH_O,  nullptr},
     {"_get_cudnn_allow_tf32", THPModule_allowTF32CuDNN, METH_NOARGS, nullptr},
     {"_set_cudnn_allow_tf32", THPModule_setAllowTF32CuDNN, METH_O, nullptr},
     {"_get_cudnn_benchmark", THPModule_benchmarkCuDNN, METH_NOARGS, nullptr},
@@ -1334,6 +1381,9 @@ Call this whenever a new thread is created in order to propagate values from
 
   ASSERT_TRUE(
       set_module_attr("has_mkldnn", at::hasMKLDNN() ? Py_True : Py_False));
+
+  ASSERT_TRUE(
+      set_module_attr("has_zendnn", at::hasZENDNN() ? Py_True : Py_False));
 
 #ifdef _GLIBCXX_USE_CXX11_ABI
   ASSERT_TRUE(set_module_attr(
