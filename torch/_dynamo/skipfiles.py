@@ -179,10 +179,12 @@ def add(import_name: str):
 
 def check(filename, allow_torch=False):
     """Should skip this file?"""
+    print(f">>>>>> should skip this file: {filename}, torch file: {torch.distributed._tensor.api.__file__}")
     if filename is None:
         return True
     if filename in FILENAME_ALLOWLIST:
         return False
+
     if allow_torch and is_torch(filename):
         return False
     if is_fbcode and bool(FBCODE_SKIP_DIRS_RE.match(filename)):

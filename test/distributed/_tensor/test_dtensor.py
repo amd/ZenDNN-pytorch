@@ -15,6 +15,7 @@ from torch.testing._internal.distributed._tensor.common_dtensor import (
     DTensorTestBase,
     with_comms,
 )
+from torch.testing._internal.distributed.fake_pg import FakeStore
 
 
 class DummyMLP(torch.nn.Module):
@@ -618,6 +619,63 @@ class TestDTensorPlacementTypes(DTensorTestBase):
                     for unpadded_tensor in unpadded_list
                 ]
                 assert_array_equal(expected_is_tensor_empty, is_tensor_empty)
+
+
+class TestDynamoDTensor(torch._dynamo.test_case.TestCase):
+    def setUp(self):
+        super().setUp()
+        fake_store = FakeStore()
+        dist.init_process_group("fake", store=fake_store, rank=0, world_size=self.world_size)
+
+    @property
+    def device_type(self) -> str:
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    @property
+    def world_size(self) -> int:
+        return 2
+
+    def test_dynamo_dtensor_from_local(self):
+        mesh = DeviceMesh(self.device_type, torch.arange(self.world_size))
+
+        def fn(x):
+            dt = DTensor.from_local(x, mesh, [Replicate()], run_check=False)
+            return dt.to_local() + 2
+
+        x = torch.ones(1)
+        ref = fn(x)
+
+        opt_fn = torch.compile(fn, backend="eager", fullgraph=True)
+        res = opt_fn(x)
+        self.assertEqual(res, ref)
+
+    def test_dynamo_dtensor(self):
+        mesh = DeviceMesh(self.device_type, torch.arange(self.world_size))
+
+        def fn(x):
+            return x.redistribute(mesh, [Shard(0)]).to_local()
+
+        x = DTensor.from_local(torch.rand(1), mesh, [Replicate()], run_check=False)
+        ref = fn(x)
+
+        opt_fn = torch.compile(fn, backend="eager", fullgraph=True)
+        res = opt_fn(x)
+        self.assertEqual(res, ref)
+
+    def test_simple(self):
+        mesh = DeviceMesh(self.device_type, torch.arange(self.world_size))
+        x = DTensor.from_local(torch.rand(1), mesh, [Replicate()], run_check=False)
+        print(torch.overrides.is_tensor_like(x))
+        print(hasattr(type(x), "__torch_function__"))
+
+    def test_tensor_constructor(self):
+        mesh = DeviceMesh(self.device_type, torch.arange(self.world_size))
+
+        def fn(x):
+            return DTensor(x, mesh, [Replicate()], run_check=False)
+        
+        opt_fn = torch.compile(fn, backend="eager", fullgraph=True)
+        opt_fn(torch.rand(1))
 
 
 if __name__ == "__main__":
