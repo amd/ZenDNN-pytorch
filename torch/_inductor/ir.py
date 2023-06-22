@@ -2956,6 +2956,7 @@ class ExternKernelOut(ExternKernel):
             self.codegen_reference(),
             args,
             self.kernel,
+            self.name
         )
 
     def __init__(
