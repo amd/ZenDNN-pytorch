@@ -310,7 +310,8 @@ class CachingAutotuner(KernelInterface):
             config2launcher[config] = launcher
 
             out = self.bench(launcher, *cloned_args, **kwargs)
-            self.save_whole_cache_hook(launcher, out)
+            if self.save_whole_cache_hook:
+                self.save_whole_cache_hook(launcher, out)
             log.debug(
                 "COORDESC: %s: %f, nreg %d, nspill %d, #shared-mem %d",
                 launcher.config,
@@ -563,6 +564,7 @@ def cached_autotune(
             meta=meta,
             configs=configs,
             save_cache_hook=save_cache_hook,
+            #######################################################
             save_whole_cache_hook=save_whole_cache_hook,
             mutated_arg_names=mutated_arg_names,
             heuristic_type=heuristic_type,

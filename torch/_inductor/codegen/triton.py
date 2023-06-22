@@ -2115,7 +2115,7 @@ class TritonScheduling:
         src_code = kernel.codegen_kernel()
         kernel_name = self.define_kernel(src_code, node_schedule)
 
-        ### auto tuning training data dump
+        ################## auto tuning training data dump
         log.warning("Kernel path : " + self.kernel_path_)
         tuning_metadata_path = self.kernel_path_ + ".pkl"
         import pickle, os
@@ -2186,7 +2186,7 @@ class TritonScheduling:
             pickle.dump(
                 [read_writes, [n.node.__str__() for n in nodes], node.read_writes, src_code], f
             )
-        ###
+        ##################
 
         kernel.call_kernel(kernel_name)
 
