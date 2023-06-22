@@ -637,13 +637,14 @@ class ForeachKernelSchedulerNode(FusedSchedulerNode):
         else:
             non_foreach_node = node1 if node2.is_foreach() else node2
             foreach_node = node2 if node2.is_foreach() else node1
-            sub_node = non_foreach_node.inverse_users[0]
             fused_nodes = []
+            fusion_completed = False
             for node in foreach_node.snodes:
-                if sub_node.get_name() in node.get_names():
-                    fused_nodes.append(
-                        FusedSchedulerNode.fuse(sub_node, non_foreach_node)
-                    )
+                if not fusion_completed and node1.scheduler.can_fuse(
+                    node, non_foreach_node
+                ):
+                    fused_nodes.append(FusedSchedulerNode.fuse(node, non_foreach_node))
+                    fusion_completed = True
                 else:
                     fused_nodes.append(node)
         return cls(node1.scheduler, fused_nodes)
@@ -683,15 +684,10 @@ class ForeachKernelSchedulerNode(FusedSchedulerNode):
                 self.scheduler.can_fuse(l, r) for l, r in zip(self.snodes, other.snodes)
             )
         else:
-            return (
-                len(other.inverse_users) == 1
-                and other.inverse_users[0] in self.node_set
-                and self.scheduler.can_fuse(
-                    self.scheduler.name_to_fused_node[
-                        other.inverse_users[0].get_first_name()
-                    ],
-                    other,
-                )
+            # the == 1 check is overly conservative, but this is meant purely for epilogue copy fusion
+            # at the moment
+            return len(other.inverse_users) == 1 and any(
+                self.scheduler.can_fuse(l, other) for l in self.snodes
             )
 
 
