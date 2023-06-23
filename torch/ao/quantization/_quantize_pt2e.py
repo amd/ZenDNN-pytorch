@@ -10,6 +10,7 @@ from ._pt2e.utils import (
     _get_node_name_to_scope,
     _fuse_conv_bn_,
     _rearrange_weight_observer_for_decomposed_linear,
+    _replace_dropout_for_eval,
 )
 from .fx.prepare import prepare as fx_prepare
 from .quantize_fx import _convert_to_reference_decomposed_fx
@@ -84,6 +85,7 @@ def prepare_qat_pt2e_quantizer(
 def convert_pt2e(
     model: GraphModule
 ) -> GraphModule:
+    _replace_dropout_for_eval(model)
     model = _convert_to_reference_decomposed_fx(model)
     model = _fold_conv_bn_qat(model)
     return model
