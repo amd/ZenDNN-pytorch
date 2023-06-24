@@ -49,9 +49,11 @@ __all__ = [
 ]
 
 
-def _gen_rank_device(global_rank: int, device_type: str ="cuda") -> str:
+def _gen_rank_device(global_rank: int, device_type: str = "cuda") -> str:
     assert device_type in ["cuda", torch._C._get_privateuse1_backend_name()]
-    device_module = getattr(torch, device_type)
+    device_module = getattr(torch, device_type, None)
+    if device_module is None:
+        raise RuntimeError(f"invalid device type {device_type}, no module named torch.{device_type}.")
     if device_module.is_available():
         return f"{device_type}:{global_rank % device_module.device_count()}"
     return "cpu"
@@ -96,7 +98,9 @@ def _is_nested_tensor(val: torch.Tensor) -> bool:
 
 
 def _alloc_tensor(props: TensorProperties, size: Sequence[int], device_type: str) -> torch.Tensor:
-    device_module = getattr(torch, device_type)
+    device_module = getattr(torch, device_type, None)
+    if device_module is None:
+        raise RuntimeError(f"invalid device type {device_type}, no module named torch.{device_type}.")
     return torch.empty(
         size=size,
         dtype=props.dtype,
@@ -261,7 +265,9 @@ def load_sharded_optimizer_state_dict(
     layout_specs, dp_pg = _get_state_dict_2d_layout(model_state_dict)
     dp_pg_device_type = dist.distributed_c10d._get_pg_default_device(dp_pg).type
     assert dp_pg_device_type in ["cuda", torch._C._get_privateuse1_backend_name()]
-    device_module = getattr(torch, dp_pg_device_type)
+    device_module = getattr(torch, dp_pg_device_type, None)
+    if device_module is None:
+        raise RuntimeError(f"invalid device type {dp_pg_device_type}, no module named torch.{dp_pg_device_type}.")
     if dp_pg is None:
         sharding_spec = ChunkShardingSpec(
             dim=0,
