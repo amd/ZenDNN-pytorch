@@ -600,11 +600,17 @@ class BuiltinVariable(VariableTracker):
         if has_constant_handler:
             args, kwargs = specialize_args_kwargs(tx, args, kwargs)
             # constant fold
-            return variables.ConstantVariable(
-                self.as_python_constant()(
+            result = self.as_python_constant()(
                     *[x.as_python_constant() for x in args],
                     **{k: v.as_python_constant() for k, v in kwargs.items()},
-                ),
+                )
+            if isinstance(result, dict):
+                vt_items = {}
+                for k, v in result.items():
+                    vt_items[k] = variables.ConstantVariable(v)
+                return ConstDictVariable(vt_items, user_cls=dict)
+            return variables.ConstantVariable(
+                result,
                 **options,
             )
 
@@ -1032,6 +1038,9 @@ class BuiltinVariable(VariableTracker):
         else:
             source = None
 
+        if isinstance(obj, variables.UserDefinedClassVariable) and obj.value is torch.distributed.distributed_c10d.GroupMember and name is "WORLD":
+            unimplemented("Fixing this breaks everything lol")
+            # return variables.user_defined.ProcessGroupVariable(obj.value.WORLD)
         if isinstance(obj, variables.NNModuleVariable):
             return obj.var_getattr(tx, name).add_options(options)
         elif isinstance(obj, variables.TensorVariable) and name == "grad":
@@ -1094,6 +1103,7 @@ class BuiltinVariable(VariableTracker):
                     obj.var_getattr(tx, name).clone(source=source).add_options(options)
                 )
             except NotImplementedError:
+                print("Fall through 2", obj, name)
                 return GetAttrVariable(obj, name, **options)
 
     def call_setattr(
@@ -1105,11 +1115,14 @@ class BuiltinVariable(VariableTracker):
             tx.output.side_effects.is_attribute_mutation(obj)
             and name_var.is_python_constant()
         ):
+            if isinstance(obj, variables.TensorVariable):
+                if name_var.value == "data":
+                    unimplemented("Setting data on a tensor is not supported.")
             tx.output.side_effects.store_attr(obj, name_var.as_python_constant(), val)
             return val.add_options(self, obj, name_var)
         elif isinstance(obj, variables.UserDefinedObjectVariable):
             unimplemented(
-                f"setattr(UserDefinedObjectVariable) {type(obj.value).__setattr__}"
+                f"setattr(UserDefinedObjectVariable) {obj.source} {type(obj.value).__setattr__}"
             )
         elif isinstance(obj, variables.NNModuleVariable):
             if not tx.output.is_root_tracer():
