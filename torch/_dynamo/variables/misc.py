@@ -837,6 +837,12 @@ class NumpyVariable(VariableTracker):
     def as_python_constant(self):
         return self.value
 
+    def as_proxy(self):
+        if isinstance(self.value, type) and config.numpy_ndarray_as_tensor:
+            # retrieve attribute str. E.g., "float32" if given np.float32
+            return self.value.__name__
+        return self.value
+
 
 # Used to keep track of NULLs pushed on the stack for Python 3.11 function calls
 class NullVariable(VariableTracker):
