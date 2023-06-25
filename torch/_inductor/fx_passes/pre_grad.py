@@ -23,6 +23,7 @@ from ..pattern_matcher import (
     stable_topological_sort,
 )
 from ..utils import is_cpu_device
+from .quantization_utils import fuse_quantization
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def pre_grad_passes(gm, example_inputs):
         gm = fuse_fx(gm, example_inputs)
         for pattern_matcher_pass in pattern_matcher_passes:
             pattern_matcher_pass.apply(gm.graph)
-        gm = overrides.fuse_quantization(gm, example_inputs)
+        gm = fuse_quantization(gm, example_inputs)
 
     stable_topological_sort(gm.graph)
     gm.graph.lint()

@@ -1791,7 +1791,7 @@ if torch._C._has_mkldnn:
     )
 
     @register_meta(torch.ops.quantized.conv_unary.tensor)
-    def meta_int8_convolution_tensor(
+    def meta_int8_convolution_tensor_unary(
         qx,
         x_scale,
         x_zp,
@@ -1807,6 +1807,54 @@ if torch._C._has_mkldnn:
         output_scale,
         output_zero_point,
         unary_post_op,
+    ):
+        if len(qx.shape) == 3 and len(qw.shape) == 4:
+            # For conv1d, x and w should both have rank 3
+            # But if weight is prepacked, it's rank is 4 by unsqueeze(2)
+            qw_squeezed = torch.squeeze(qw, 2)
+        else:
+            qw_squeezed = qw
+        shape_out = calc_conv_nd_return_shape(
+            qx,
+            qw_squeezed,
+            stride,
+            padding,
+            dilation,
+            False,
+            groups,
+            None,
+        )
+        out_format = torch.channels_last
+        if len(shape_out) == 5:
+            out_format = torch.channels_last_3d
+        out = qx.new_empty(shape_out)
+        if len(shape_out) == 3:
+            out = out.unsqueeze(2)
+        out = out.to(memory_format=out_format)
+        if len(shape_out) == 3:
+            out = out.squeeze(2)
+        return out
+
+    @register_meta(torch.ops.quantized.conv_binary.tensor)
+    def meta_int8_convolution_tensor_binary(
+        qx,
+        x_scale,
+        x_zp,
+        qaccum,
+        accum_scale,
+        accum_zp,
+        qw,
+        w_scale,
+        w_zp,
+        w_axis,
+        bias,
+        stride,
+        padding,
+        dilation,
+        groups,
+        output_scale,
+        output_zero_point,
+        binary_post_op,
     ):
         if len(qx.shape) == 3 and len(qw.shape) == 4:
             # For conv1d, x and w should both have rank 3
@@ -4587,6 +4635,8 @@ import torch._refs
 import torch._refs.nn.functional
 import torch._refs.special
 
+import torch.onnx
+import torch.func
 import torch.ao.quantization.fx._decomposed
 
 
