@@ -40,6 +40,7 @@ from torch.testing._internal.common_quantization import (
     QuantizationTestCase,
     skip_if_no_torchvision,
     skipIfNoQNNPACK,
+    skipIfNoONEDNN,
     skipIfNoX86,
 )
 from torch.testing._internal.common_quantized import override_quantized_engine

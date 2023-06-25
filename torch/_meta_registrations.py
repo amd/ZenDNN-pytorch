@@ -4538,6 +4538,8 @@ import torch._refs
 import torch._refs.nn.functional
 import torch._refs.special
 
+import torch.ao.quantization.fx._decomposed
+
 
 def activate_meta():
     activate_meta_table = {}
