@@ -348,15 +348,13 @@ Tensor _sparse_csr_..._cuda(const Tensor& input, IntArrayRef dims_to_sum, bool k
 
 namespace {
 
-template <typename scalar_t, typename acc_t>
-inline void create_acc_buffer(Tensor& new_values, Tensor& new_values_acc, TensorOptions option, bool is_integral) {
-  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
-  if constexpr (need_acc) {
+template <typename acc_t>
+inline void create_acc_buffer(Tensor& new_values_acc, TensorOptions option, bool need_acc) {
+  if (need_acc) {
     auto acc_dtype = CppTypeToScalarType<acc_t>::value;
     new_values_acc = at::empty({}, option.dtype(acc_dtype));
-    new_values = is_integral ? new_values_acc : at::empty({}, option);
   } else {
-    new_values_acc = new_values = at::empty({}, option);
+    new_values_acc = at::empty({}, option);
   }
 }
 
@@ -443,8 +441,10 @@ Tensor reduce_sparse_csr_dim0_cuda_template(const Tensor& sparse, ReductionOp ro
   // of float should be float in current scenario. In CUDA, float is the accumulate type
   // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
+  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
-  create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
+  create_acc_buffer<acc_t>(new_values_acc, values.options(), need_acc);
+  new_values = is_integral ? new_values_acc : at::empty({}, values.options());
   new_values.resize_(new_nnz);
   new_values_acc.resize_(new_nnz);
   scalar_t* values_ptr = values.data_ptr<scalar_t>();
@@ -537,8 +537,10 @@ Tensor reduce_sparse_csr_dim1_cuda_template(const Tensor& sparse, ReductionOp ro
   // of float should be float in current scenario. In CUDA, float is the accumulate type
   // of float, while in CPU, double is the accumulate type of float.
   using acc_t = at::acc_type<scalar_t, true>;
+  constexpr bool need_acc = !std::is_same<scalar_t, acc_t>::value;
   bool is_integral = at::isIntegralType(values.scalar_type(), /*includeBool=*/true);
-  create_acc_buffer<scalar_t, acc_t>(new_values, new_values_acc, values.options(), is_integral);
+  create_acc_buffer<acc_t>(new_values_acc, values.options(), need_acc);
+  new_values = is_integral ? new_values_acc : at::empty({}, values.options());
 
   at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
   int64_t THREADS = at::cuda::getCurrentDeviceProperties()->maxThreadsPerBlock;
