@@ -4381,6 +4381,68 @@ except ImportError:
         "Inductor support for distributed collectives depends on building torch.distributed"
     )
 
+try:
+    fbgemm = torch.ops.fbgemm
+
+    # force AttributeError to occur here, if op is not available
+    jagged_to_padded_dense_forward_op = fbgemm.jagged_to_padded_dense_forward
+
+    @register_lowering(jagged_to_padded_dense_forward_op)
+    def jagged_to_padded_dense_forward(
+        jagged_values: TensorBox,
+        jagged_offsets: List[TensorBox],
+        max_lengths: List[int],  # list of ints/symints
+        padding_value: float = 0.0,
+    ):
+        device = jagged_values.get_device()
+        dtype = jagged_values.get_dtype()
+
+        # only handle the common case of a single jagged dimension
+        if (
+            len(jagged_offsets) != 1
+            or device.type != "cuda"
+            or device != jagged_offsets[0].get_device()
+            or len(max_lengths) != len(jagged_offsets)
+            or len(jagged_values.get_size()) != 2
+            or not is_integer_type(jagged_offsets[0])
+        ):
+            return fallback_handler(
+                fbgemm.jagged_to_padded_dense_forward,
+                add_to_fallback_set=False,
+            )(jagged_values, jagged_offsets, max_lengths, padding_value)
+
+        jagged_offsets = jagged_offsets[0]
+
+        inner_dim = jagged_values.get_size()[1]
+        batches = jagged_offsets.get_size()[0] - 1
+        limit = jagged_values.get_size()[0]
+
+        output_dims = [batches, max_lengths[0], inner_dim]
+
+        values_loader = jagged_values.make_loader()
+        offsets_loader = jagged_offsets.make_loader()
+
+        def inner_fn(index):
+            b, x, y = index
+            begin = ops.indirect_indexing(offsets_loader([b]), limit)
+            end_idx = offsets_loader([b + 1])
+            val = ops.masked(
+                ops.lt(
+                    ops.index_expr(begin + x, jagged_offsets.get_dtype()),
+                    end_idx,
+                ),
+                lambda: values_loader([begin + x, y]),
+                padding_value,
+            )
+            return val
+
+        return Pointwise.create(
+            device=device, dtype=dtype, inner_fn=inner_fn, ranges=output_dims
+        )
+
+except AttributeError:
+    log.info("Inductor couldn't find fbgemm so these ops will not be registered")
+
 # populate lowerings defined in kernel/*
 from . import kernel
 
