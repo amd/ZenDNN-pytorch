@@ -9882,6 +9882,8 @@
   variants: method, function
   dispatch:
     CompositeExplicitAutograd: alias
+    SparseCPU, SparseCUDA: alias_sparse_coo
+    SparseCsrCPU, SparseCsrCUDA: alias_sparse_compressed
   tags: core
 
 - func: _amp_foreach_non_finite_check_and_unscale_(Tensor(a!)[] self, Tensor(b!) found_inf, Tensor inv_scale) -> ()
