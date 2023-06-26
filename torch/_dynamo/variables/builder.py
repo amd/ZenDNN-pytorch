@@ -73,6 +73,7 @@ from .dicts import (
 )
 from .functions import (
     CollectiveFunctionRewriteVariable,
+    DisabledFunctionVariable,
     UserFunctionVariable,
     UserMethodVariable,
 )
@@ -363,6 +364,8 @@ class VariableBuilder:
         return result
 
     def _wrap(self, value):
+        from ..eval_frame import disabled_torch_fns
+
         make_guards = self.make_guards
 
         # Handle exact type() match
@@ -461,6 +464,8 @@ class VariableBuilder:
                 source=self.source,
                 guards=make_guards(GuardBuilder.BUILTIN_MATCH),
             )
+        elif callable(value) and value in disabled_torch_fns:
+            return DisabledFunctionVariable(value)
         elif is_allowed(value):
             return TorchVariable(
                 value,
