@@ -586,3 +586,50 @@ class CollectiveFunctionRewriteVariable(UserFunctionVariable):
                 f"CollectiveFunctionRewriteVariable can't support async_op=True for {self.orig_fn}"
             )
         return super().call_function(tx, args, kwargs)
+
+
+class DisabledFunctionVariable(VariableTracker):
+    """
+    This causes a graph break for torch functions that are marked as disabled
+    (not decorated). Dynamo waits for CALL_FUNCTION* bytecode to cause a graph
+    break and then while reconstructing the bytecode, it disables the function.
+    """
+
+    def __init__(self, value, **kwargs):
+        super().__init__(**kwargs)
+        self.value = value
+
+    def __repr__(self):
+        return f"DisabledFunctionVariable({self.value})"
+
+    def reconstruct(self, codegen):
+        return codegen.create_and_load_disabled_fn(
+            self.value, f"__disabled_{self.value.__name__}"
+        )
+
+
+class DisabledMethodVariable(VariableTracker):
+    """
+    This causes a graph break for torch functions that are marked as disabled
+    (not decorated). Dynamo waits for CALL_FUNCTION* bytecode to cause a graph
+    break and then while reconstructing the bytecode, it disables the function.
+    """
+
+    def __init__(self, value, obj, **kwargs):
+        super().__init__(**kwargs)
+        self.value = value
+        self.obj = obj
+
+    def __repr__(self):
+        return f"DisabledMethodVariable({self.value})"
+
+    def reconstruct(self, codegen):
+        # Method descriptor automatically prepends self to the args, kwargs. So,
+        # here we have to create a wrapper that prepends self (i.e. self.obj in
+        # this case) to the call.
+        def method_wrapper(*args, **kwargs):
+            return self.value(self.obj.value, *args, **kwargs)
+
+        return codegen.create_and_load_disabled_fn(
+            method_wrapper, f"__disabled_{self.value.__name__}"
+        )
