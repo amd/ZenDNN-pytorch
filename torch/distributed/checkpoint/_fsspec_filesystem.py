@@ -38,6 +38,7 @@ from torch.distributed.checkpoint.storage import (
     StorageWriter,
     WriteResult,
 )
+from torch.distributed.utils import _get_device_module
 from torch.futures import Future
 
 __all__ = [
@@ -126,9 +127,7 @@ class _OverlappingCpuLoader(_TensorLoader):
         self.started = False
         self.device_type = (getattr(stream, "device", torch.device("cuda"))).type
         assert self.device_type in ["cuda", torch._C._get_privateuse1_backend_name()]
-        self.device_module = getattr(torch, self.device_type, None)
-        if self.device_module is None:
-            raise RuntimeError(f"invalid device type {self.device_type}, no module named torch.{self.device_type}.")
+        self.device_module = _get_device_module(self.device_type)
         self.stream = stream or self.device_module.current_stream()
         if self.stream != self.device_module.current_stream():
             self.stream.wait_stream(self.device_module.current_stream())
