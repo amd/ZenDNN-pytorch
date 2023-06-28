@@ -486,7 +486,7 @@ def proxy_args_kwargs(args, kwargs):
         from .variables.base import typestr
 
         raise unimplemented(
-            f"call_function args: {typestr(*args)} {typestr(*list(kwargs.values()))}"
+            f"Tried to get proxy to call_function with args: {typestr(*args)} kwargs: {typestr(*list(kwargs.values()))}"
         ) from e
 
 
@@ -1705,7 +1705,9 @@ def higher_order_op_converter():
 
 
 def requires_higher_order_op(obj):
-    return obj in higher_order_op_converter()
+    return (
+        isinstance(obj, collections.abc.Hashable) and obj in higher_order_op_converter()
+    )
 
 
 def get_higher_order_op(obj):
