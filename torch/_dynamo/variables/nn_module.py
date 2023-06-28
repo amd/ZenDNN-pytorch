@@ -29,6 +29,7 @@ from ..utils import (
     nnmodule_has_hooks,
     object_has_getattribute,
     proxy_args_kwargs,
+    fake_tensor_exceptions,
 )
 from .base import MutableLocal, typestr, VariableTracker
 from .functions import invoke_and_store_as_constant
@@ -287,27 +288,7 @@ class NNModuleVariable(VariableTracker):
                 # is_allowed or other variations.
                 initialize_lazy_module(tx, mod, args, kwargs)
 
-            if is_allowed(mod.__class__):
-                if nnmodule_has_hooks(
-                    mod, check_forward_hooks=True, check_backward_hooks=True
-                ):
-                    unimplemented(
-                        f"Forward/backward hooks aren't yet supported on 'allowed' modules (e.g. {mod.__class__}), "
-                        "which don't get traced through by dynamo. Graph-breaking to run hooks without compile."
-                    )
-
-                from .builder import wrap_fx_proxy
-
-                return wrap_fx_proxy(
-                    tx=tx,
-                    proxy=tx.output.create_proxy(
-                        "call_module",
-                        self.module_key,
-                        *proxy_args_kwargs(args, kwargs),
-                    ),
-                    **options,
-                )
-            else:
+            def inline(args):
                 assert self.source, (
                     "Must provide a valid source in order to inline, "
                     "since inlined function may have default args which must be guarded."
@@ -332,6 +313,43 @@ class NNModuleVariable(VariableTracker):
                     args,
                     kwargs,
                 )
+
+            def do_call_module():
+                if nnmodule_has_hooks(
+                    mod, check_forward_hooks=True, check_backward_hooks=True
+                ):
+                    unimplemented(
+                        f"Forward/backward hooks aren't yet supported on 'allowed' modules (e.g. {mod.__class__}), "
+                        "which don't get traced through by dynamo. Graph-breaking to run hooks without compile."
+                    )
+
+                from .builder import wrap_fx_proxy
+
+                return wrap_fx_proxy(
+                    tx=tx,
+                    proxy=tx.output.create_proxy(
+                        "call_module",
+                        self.module_key,
+                        *proxy_args_kwargs(args, kwargs),
+                    ),
+                    **options,
+                )
+
+            if is_allowed(mod.__class__):
+                if torch._dynamo.config.inline_nn_modules:
+                    try:
+                        return inline(args)
+                    except Unsupported as e:
+                        if torch._dynamo.config.disable_inline_nn_modules_fallback:
+                            raise
+                        if isinstance(e.__cause__, fake_tensor_exceptions):
+                            # We would've raised below anyway, but catch explicitly
+                            raise
+                        return do_call_module()
+                else:
+                    return do_call_module()
+            else:
+                return inline(args)
 
     def call_method(
         self,
