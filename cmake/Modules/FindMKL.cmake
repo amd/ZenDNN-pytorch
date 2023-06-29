@@ -264,7 +264,11 @@ MACRO(CHECK_ALL_LIBRARIES LIBRARIES OPENMP_TYPE OPENMP_LIBRARY _name _list _flag
         # Separately handling compiled TBB
         SET(_found_tbb TRUE)
       ELSE()
-        SET(lib_names ${_library})
+        IF(MSVC)
+          SET(lib_names ${_library}_dll)
+        ELSE()
+          SET(lib_names ${_library})
+        ENDIF()
         FIND_LIBRARY(${_prefix}_${_library}_LIBRARY NAMES ${lib_names})
       ENDIF()
       MARK_AS_ADVANCED(${_prefix}_${_library}_LIBRARY)

@@ -7,7 +7,7 @@
 // https://github.com/pytorch/pytorch/pull/50937#issuecomment-778732740
 // Macros source:
 // https://web.archive.org/web/20191012035921/http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
-#if !AT_MKL_ENABLED() || defined(_MSC_VER) || defined(__APPLE__) || \
+#if !AT_MKL_ENABLED() || defined(__APPLE__) || \
     defined(__MACH__)
 
 namespace at {
@@ -19,9 +19,7 @@ Tensor& _sparse_mm_mkl_(
     const Tensor& t,
     const Scalar& alpha,
     const Scalar& beta) {
-#if _MSC_VER
-  AT_ERROR("sparse_mm_mkl: MKL support is disabled on Windows");
-#elif __APPLE__ || __MACH__
+#if __APPLE__ || __MACH__
   AT_ERROR("sparse_mm_mkl: MKL support is disabled on macos/iOS.");
 #else
   AT_ERROR("sparse_mm_mkl: ATen not compiled with MKL support");
