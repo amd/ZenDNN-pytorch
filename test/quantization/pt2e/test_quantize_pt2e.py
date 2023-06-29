@@ -72,6 +72,12 @@ from torch.ao.quantization import (
 )
 from torch.testing._internal.common_quantized import override_quantized_engine
 
+from torch.ao.quantization.qconfig_mapping import (
+    _get_symmetric_qnnpack_qat_qconfig_mapping,
+)
+from torch.ao.quantization.backend_config.executorch import get_executorch_backend_config
+
+
 # TODO: Move to common utils or use existing quant utils to fetch model instances
 class TestHelperModules:
     class Conv2dPropAnnotaton(torch.nn.Module):
@@ -1977,21 +1983,74 @@ class TestQuantizePT2EModels(PT2EQuantizationTestCase):
                 x = self.softmax(x)
                 return x
 
-        #model = SimpleModel()
-        model = torchvision.models.mobilenet_v2(num_classes=2)
+        model = torchvision.models.quantization.mobilenet_v2(num_classes=2)
         model = OcclusionModel(model)
-        example_inputs = (torch.randn(1, 3, 224, 224),)
-        self._verify_executorch_qat_numerics(model, example_inputs)
+        self._verify_temp(model)
+
+        #example_inputs = (torch.randn(1, 3, 224, 224),)
+        #self._verify_executorch_qat_numerics(model, example_inputs)
+
+    def _verify_temp(self, occ_model):
+        MANUAL_SEED = 123
+        torch.manual_seed(MANUAL_SEED)
+        example_inputs = (torch.rand(16, 3, 224, 224),)
+
+        # FX
+        fx_model = copy.deepcopy(occ_model)
+        qconfig_mapping = _get_symmetric_qnnpack_qat_qconfig_mapping()
+        # Note: In order to match the PT2E numerics exactly, we need to feed the
+        # example inputs to the model once before calling prepare, since this is
+        # what torchdynamo.export does. Otherwise, the BN running mean and variance
+        # would diverge in the two flows and this test would fail. For more detail,
+        # see https://github.com/pytorch/pytorch/issues/95900.
+        torch.manual_seed(MANUAL_SEED)
+        fx_model(*example_inputs)
+        backend_config = get_executorch_backend_config()
+        fx_prepared_model = prepare_qat_fx(
+            fx_model,
+            qconfig_mapping,
+            example_inputs,
+            backend_config=backend_config,
+        )
+        torch.manual_seed(MANUAL_SEED)
+        fx_prepare_result = fx_prepared_model(*example_inputs)
+        fx_converted_model = _convert_to_reference_decomposed_fx(fx_prepared_model, backend_config=backend_config)
+        fx_converted_model.eval()
+        torch.manual_seed(MANUAL_SEED)
+        fx_convert_result = fx_converted_model(*example_inputs)
+
+        # PT2
+        pt2_model = copy.deepcopy(occ_model)
+        pt2_model, _ = torchdynamo.export(pt2_model, *copy.deepcopy(example_inputs), aten_graph=True)
+        quantizer = QNNPackQuantizer()
+        quantizer.set_global(get_symmetric_quantization_config(is_per_channel=False, is_qat=True))
+        pt2_prepared_model = prepare_qat_pt2e_quantizer(pt2_model, quantizer)
+        torch.manual_seed(MANUAL_SEED)
+        pt2_prepare_result = pt2_prepared_model(*example_inputs)
+        pt2_converted_model = convert_pt2e(pt2_prepared_model)
+        pt2_converted_model.eval()
+        torch.manual_seed(MANUAL_SEED)
+        pt2_convert_result = pt2_converted_model(*example_inputs)
+
+        # Are they the same?
+        if torch.equal(fx_prepare_result, pt2_prepare_result):
+            print("... prepare result matches!")
+        else:
+            print("PREPARE RESULTS DO NOT MATCH!!!")
+            print("  fx: ", fx_prepare_result.flatten()[:20])
+            print("  pt2: ", pt2_prepare_result.flatten()[:20])
+
+        if torch.equal(fx_convert_result, pt2_convert_result):
+            print("... convert result matches!")
+        else:
+            print("CONVERT RESULTS DO NOT MATCH!!!")
+            print("  fx: ", fx_convert_result.flatten()[:20])
+            print("  pt2: ", pt2_convert_result.flatten()[:20])
 
     def _verify_executorch_qat_numerics(self, model, example_inputs):
         """
         TEMP: DELETE
         """
-        from torch.ao.quantization.qconfig_mapping import (
-            get_default_qat_qconfig_mapping,
-            _get_symmetric_qnnpack_qat_qconfig_mapping,
-        )
-        from torch.ao.quantization.backend_config.executorch import get_executorch_backend_config
         MANUAL_SEED = 100
 
         # PT2 export
