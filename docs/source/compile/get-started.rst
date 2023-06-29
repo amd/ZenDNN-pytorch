@@ -141,6 +141,7 @@ Some of the most commonly used backends include:
   * ``torch.compile(m, backend="tensorrt")`` - Uses ONNXRT to run TensorRT for inference optimizations. `Read more <https://github.com/onnx/onnx-tensorrt>`__
   * ``torch.compile(m, backend="ipex")`` - Uses IPEX for inference on CPU. `Read more <https://github.com/intel/intel-extension-for-pytorch>`__
   * ``torch.compile(m, backend="tvm")`` - Uses Apache TVM for inference optimizations. `Read more <https://tvm.apache.org/>`__
+  * ``torch.compile(m, backend="tensorrt")`` - Uses Torch-TensorRT for inference optimizations. `Read more <https://github.com/pytorch/TensorRT>`__
 
 Why do you need another way of optimizing PyTorch code?
 -------------------------------------------------------

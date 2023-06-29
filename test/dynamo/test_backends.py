@@ -11,6 +11,7 @@ from torch._dynamo.backends.debugging import ExplainWithBackend
 from torch._dynamo.backends.ipex import has_ipex
 from torch._dynamo.backends.onnxrt import has_onnxruntime
 from torch._dynamo.backends.tvm import has_tvm
+from torch._dynamo.backends.tensorrt import has_torch_tensorrt
 from torch._dynamo.testing import same
 from torch.testing._internal.common_utils import IS_FBCODE, skipIfRocm
 from torch.testing._internal.inductor_utils import HAS_CUDA
@@ -175,6 +176,10 @@ class TestOptimizations(torch._dynamo.test_case.TestCase):
     @unittest.skipIf(not has_onnxruntime(), "requires onnxruntime")
     def test_onnxrt(self):
         self._check_backend_works("onnxrt")
+
+    @unittest.skipIf(not has_torch_tensorrt(), "requires Torch-TensorRT")
+    def test_tensorrt(self):
+        self._check_backend_works("tensorrt")
 
     @unittest.skipIf(not has_tvm(), "requires tvm")
     def test_tvm(self):
