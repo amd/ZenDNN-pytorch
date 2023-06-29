@@ -3178,11 +3178,11 @@ class DeviceCopy(ExternKernelOut):
         assert len(args) == 1
         if self.output_view:
             wrapper.writeline(
-                f"{self.output_view.codegen_reference()}.copy_({args[0]}){V.graph.wrapper_code.ending}"
+                f"{self.output_view.codegen_reference()}.copy_({args[0]}){V.graph.wrapper_code.ending}", self
             )
         else:
             wrapper.writeline(
-                f"{self.codegen_reference()}.copy_({args[0]}){V.graph.wrapper_code.ending}"
+                f"{self.codegen_reference()}.copy_({args[0]}){V.graph.wrapper_code.ending}", self
             )
 
 
