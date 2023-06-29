@@ -173,7 +173,11 @@ compile_threads = decide_compile_threads()
 
 # gemm autotuning global cache dir
 if is_fbcode():
-    global_cache_dir = "fb/cache"
+    from libfb.py import parutil
+
+    global_cache_dir = parutil.get_dir_path(
+        os.path.join(__package__.replace(".", os.sep), "fb/cache")
+    )
 else:
     global_cache_dir = None
 
