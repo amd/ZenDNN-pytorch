@@ -51,7 +51,7 @@ env:
   SHA1: ${{ github.event.pull_request.head.sha || github.sha }}
   SKIP_ALL_TESTS: 1
 !{{ common.concurrency(build_environment) }}
-
+ 
 jobs:
 {%- for config in build_configs %}
   !{{ config["build_name"] }}-build:
