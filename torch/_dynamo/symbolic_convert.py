@@ -1289,7 +1289,7 @@ class InstructionTranslatorBase(Checkpointable[InstructionTranslatorGraphState])
         for k, v in zip(items[::2], items[1::2]):
             assert isinstance(k, (ConstantVariable, EnumVariable, BuiltinVariable)) or (
                 isinstance(k, TensorVariable) and k.specialized_value is not None
-            )
+            ), f"Tried to write key {k}"
 
             result[ConstDictVariable.get_key(k)] = v
         assert len(result) == len(items) / 2
@@ -2135,6 +2135,11 @@ class InstructionTranslator(InstructionTranslatorBase):
         )
         self.output.add_output_instructions([create_instruction("RETURN_VALUE")])
 
+    def DELETE_SUBSCR(self, inst):
+        obj, key = self.popn(2)
+        self.call_function(BuiltinVariable(delattr), [obj, key], {})
+
+
 
 class InliningInstructionTranslator(InstructionTranslatorBase):
     """Trace and inline a called method"""
@@ -2377,6 +2382,18 @@ class InliningInstructionTranslator(InstructionTranslatorBase):
     def RETURN_VALUE(self, inst):
         self.symbolic_result = self.pop()
         self.instruction_pointer = None
+
+    def GET_YIELD_FROM_ITER(self, inst):
+        tos = self.stack[-1]
+        if not isinstance(tos, ListIteratorVariable):
+            return self.GET_ITER(inst)
+
+    def YIELD_FROM(self, inst):
+        tos = self.stack[-1]
+        if isinstance(tos, ConstantVariable) and tos.value is None:
+            self.pop()
+            return
+        return self.FOR_ITER(inst)
 
 
 class InliningGeneratorInstructionTranslator(InliningInstructionTranslator):
