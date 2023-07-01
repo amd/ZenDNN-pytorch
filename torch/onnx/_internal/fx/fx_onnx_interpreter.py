@@ -13,6 +13,7 @@ from onnxscript.function_libs.torch_lib import (  # type: ignore[import]
 )
 
 import torch
+import torch.fx
 from torch._subclasses import fake_tensor
 from torch.onnx import _type_utils as jit_type_utils
 from torch.onnx._internal import _beartype
@@ -189,6 +190,16 @@ def filter_incompatible_and_dtype_convert_kwargs(kwargs):
     return filtered
 
 
+_META_VALUE_TYPE = Union[
+    fake_tensor.FakeTensor, torch.SymInt, torch.SymFloat, torch.SymBool
+]
+_META_SYM_VALUE_TYPE_MAP = {
+    torch.SymInt: torch.int64,
+    torch.SymFloat: torch.float32,
+    torch.SymBool: torch.bool,
+}
+
+
 @_beartype.beartype
 def _fill_tensor_shape_type(
     onnxscript_values: Union[
@@ -197,11 +208,9 @@ def _fill_tensor_shape_type(
     ],
     name: str,
     expected_values: Union[
-        fake_tensor.FakeTensor,
-        torch.SymInt,
-        torch.SymFloat,
-        List[fake_tensor.FakeTensor],
-        Tuple[fake_tensor.FakeTensor, ...],
+        _META_VALUE_TYPE,
+        List[_META_VALUE_TYPE],
+        Tuple[_META_VALUE_TYPE, ...],
     ],
 ):
     """Fill the meta information of onnxscript_values with that from the fx FakeTensor."""
@@ -225,6 +234,8 @@ def _fill_tensor_shape_type(
             onnxscript_value.dtype = torch.int64
         elif isinstance(expected_value, torch.SymFloat):
             onnxscript_value.dtype = torch.float32
+        elif isinstance(expected_value, torch.SymBool):
+            onnxscript_value.dtype = torch.bool
         else:
             # We set node output sizes to be dynamic to continue the model conversion,
             # and inputs are also set to be dynamic in add_input().
@@ -404,19 +415,30 @@ class FxOnnxInterpreter:
         elif node.op == "call_method":
             self.call_method(node)
         elif node.op == "call_module":
-            self.call_module(node)
+            self.call_module(
+                node,
+                onnxscript_graph,
+                fx_name_to_onnxscript_value,
+                onnxscript_tracer,
+                fx_graph_module,
+                onnxfunction_dispatcher,
+                op_level_debug,
+            )
         elif node.op == "output":
             self.output(node, onnxscript_graph, fx_name_to_onnxscript_value)
         else:
             raise RuntimeError(f"Found node type not defined in torch.fx: {node.op}")
 
-    @diagnostics.diagnose_call(diagnostics.rules.atenlib_fx_to_onnx)
     @_beartype.beartype
+    @diagnostics.diagnose_call(diagnostics.rules.atenlib_fx_to_onnx)
     def run(
         self,
         fx_graph_module: torch.fx.GraphModule,
         onnxfunction_dispatcher: onnxfunction_dispatcher.OnnxFunctionDispatcher,
         op_level_debug: bool,
+        parent_onnxscript_graph: Optional[
+            onnxscript_graph_building.TorchScriptGraph
+        ] = None,
     ) -> onnxscript_graph_building.TorchScriptGraph:
         """Analyze all FX nodes and trigger their ONNX translation.
 
@@ -424,8 +446,13 @@ class FxOnnxInterpreter:
             fx_graph_module: FX graph module to be translated.
             onnxfunction_dispatcher: ONNX function dispatcher.
             op_level_debug: Whether to enable op-level debug.
+            parent_onnxscript_graph: The parent TorchScript graph. Must be provided if
+                `fx_module_with_metadata` is a submodule. If not provided,
+                `fx_module_with_metadata` is assumed to be the root module.
         """
-        onnxscript_graph = onnxscript_graph_building.TorchScriptGraph()
+        onnxscript_graph = onnxscript_graph_building.TorchScriptGraph(
+            parent_onnxscript_graph
+        )
         onnxscript_tracer = onnxscript_graph_building.TorchScriptTracingEvaluator(
             onnxscript_graph
         )
@@ -486,11 +513,26 @@ class FxOnnxInterpreter:
             output = onnxscript_graph.add_input(
                 input_name=None,
             )
-        else:
+        elif isinstance(fake_tensor, torch.Tensor):
             output = onnxscript_graph.add_input(
                 input_name=node.name,
                 shape=fake_tensor.shape,
                 dtype=fake_tensor.dtype,
+            )
+        elif isinstance(fake_tensor, (torch.SymBool, torch.SymInt, torch.SymFloat)):
+            sym_type_to_tensor_type = {
+                torch.SymBool: torch.bool,
+                torch.SymInt: torch.int64,
+                torch.SymFloat: torch.float64,
+            }
+            output = onnxscript_graph.add_input(
+                input_name=node.name,
+                shape=[],
+                dtype=sym_type_to_tensor_type[type(fake_tensor)],
+            )
+        else:
+            raise RuntimeError(
+                f"Unsupported type(node.meta['val']) for placeholder: {type(fake_tensor)}"
             )
         assert (
             output is not None
@@ -552,7 +594,6 @@ class FxOnnxInterpreter:
             onnx_kwargs=onnx_kwargs,
             diagnostic_context=self.diagnostic_context,
         )
-
         with onnxscript.evaluator.default_as(onnxscript_tracer):
             output: Union[  # type: ignore[no-redef]
                 onnxscript_graph_building.TorchScriptTensor,
@@ -639,9 +680,84 @@ class FxOnnxInterpreter:
         raise RuntimeError("call_method is not supported yet.")
 
     @_beartype.beartype
-    def call_module(self, node: torch.fx.Node):
-        # TODO(wechi): Support call_module.
-        raise RuntimeError("call_module is not supported yet.")
+    def call_module(
+        self,
+        node: torch.fx.Node,
+        parent_onnxscript_graph: onnxscript_graph_building.TorchScriptGraph,
+        fx_name_to_onnxscript_value: Dict[
+            str,
+            Union[
+                onnxscript_graph_building.TorchScriptTensor,
+                Tuple[onnxscript_graph_building.TorchScriptTensor, ...],
+            ],
+        ],
+        tracer: onnxscript_graph_building.TorchScriptTracingEvaluator,
+        root_fx_graph_module: torch.fx.GraphModule,
+        onnxfunction_dispatcher: onnxfunction_dispatcher.OnnxFunctionDispatcher,
+        op_level_debug: bool,
+    ) -> None:
+        """Export a submodule in FX graph to ONNXScript graph.
+
+        The submodule is exported as a ONNXScript graph, attached to parent_onnxscript_graph.
+        It represents the ONNX model local function graph. The call_module node in FX graph
+        will be exported as a ONNX function node in parent_onnxscript_graph, associated with
+        the ONNXScript graph of the submodule.
+
+        Args:
+            node: The call_module node in FX graph that represents the submodule call.
+            parent_onnxscript_graph: The parent ONNXScript graph that the ONNX function and
+                function node belongs to.
+            fx_name_to_onnxscript_value: The mapping from FX node name to ONNXScript value.
+            tracer: The tracer that is used to trace the ONNXScript graph.
+            root_fx_graph_module: The root FX module.
+        """
+        # NOTE: IMPORTANT. This is exporting the `call_module` nodes created by exporter
+        # pass `Modularize`. Each `call_module` node has an associated `sub_module`
+        # under the root fx.GraphModule. Each `call_module` node is exported as an ONNX
+        # function node. The associated `sub_module` is exported as ONNX model local
+        # function, represented by another `TorchScriptGraph`, with the current
+        # `onnxscript_graph` set as its parent.
+        assert isinstance(
+            node.target, str
+        ), f"node.target must be a str, not {type(node.target)} for node {node}."
+
+        sub_module = root_fx_graph_module.get_submodule(node.target)
+
+        assert isinstance(
+            sub_module, torch.fx.GraphModule
+        ), f"sub_module must be a torch.fx.GraphModule, not {type(sub_module)} for node {node}."
+
+        sub_onnxscript_graph = self.run(
+            sub_module, onnxfunction_dispatcher, op_level_debug, parent_onnxscript_graph
+        )
+
+        onnx_args, _ = _wrap_fx_args_as_onnxscript_args(
+            list(node.args), {}, fx_name_to_onnxscript_value, tracer
+        )
+
+        # TODO: We may want to consider other naming styles. The goal is to be stable and
+        # unique such that it can be easily identified in case of kernel substitution.
+        # Example for current style is `torch.nn.modules.conv.Conv2d(L__self___conv1)`.
+        unique_module_name = f"{sub_module._get_name()}({node.target})"
+        outputs: Union[  # type: ignore[no-redef]
+            onnxscript_graph_building.TorchScriptTensor,
+            Tuple[onnxscript_graph_building.TorchScriptTensor, ...],
+        ] = parent_onnxscript_graph.add_module_call(
+            unique_module_name, sub_onnxscript_graph, onnx_args
+        )
+
+        assert isinstance(
+            outputs, (onnxscript_graph_building.TorchScriptTensor, tuple)
+        ), f"Unexpected outputs type {type(outputs)} for node {node}."
+
+        # NOTE: When 'outputs' is a tuple, tensor meta for individual output will be filled
+        # when the following `getitem` nodes are processed later.
+        # if isinstance(outputs, onnxscript_graph_building.TorchScriptTensor):
+        _fill_tensor_shape_type(outputs, node.name, node.meta["val"])
+
+        fx_name_to_onnxscript_value[node.name] = outputs
+
+        # NOTE: Skip op_level_validation for call_module. Subgraph nodes are already validated.
 
     @_beartype.beartype
     def get_attr(
@@ -657,23 +773,18 @@ class FxOnnxInterpreter:
         ],
         fx_graph_module: torch.fx.GraphModule,
     ):
-        current_attr = fx_graph_module
-        sub_attr_names = node.target.split(".")  # type: ignore[union-attr]
-        # If node.targe is "conv.weight", the following loop first
-        # assigns fx_module_with_metadata.conv to current_attr, and then
-        # fx_module_with_metadata.conv.weight to current_attr.
-        while sub_attr_names:
-            sub_attr_name = sub_attr_names.pop(0)
-            if not hasattr(current_attr, sub_attr_name):
-                raise AttributeError(
-                    f"Attribute {sub_attr_name} is not found in {current_attr}."
-                )
-            current_attr = getattr(current_attr, sub_attr_name)
+        if not isinstance(node.target, str):
+            raise TypeError(
+                f"node.target must be a str, not {type(node.target)}. Found for node {node}."
+            )
+        attr_tensor = getattr(fx_graph_module, node.target)
 
-        input_ = onnxscript_graph.add_initializer(node.name, current_attr)
-
-        assert isinstance(input_, onnxscript_graph_building.TorchScriptTensor)
-        assert isinstance(input_, onnxscript.tensor.Tensor)
-        fx_name_to_onnxscript_value[node.name] = input_
-        # FIXME: Refactor logic getting 'current_attr'.
-        assert isinstance(current_attr, torch.Tensor)
+        # TODO: Make the initializer name more readable. `node.name` is something like
+        # `_param_constant9`. Options are we improve dynamo (actually, proxy_tensor) to
+        # emit more readable names. Or we pass along a named parameters and buffers
+        # mapping from original model, and do a reverse lookup. It has to be original
+        # model because the parameter names in `fx_module_with_metadata` are already in
+        # the form of `_param_constant9`.
+        fx_name_to_onnxscript_value[node.name] = onnxscript_graph.add_initializer(
+            node.name, attr_tensor
+        )

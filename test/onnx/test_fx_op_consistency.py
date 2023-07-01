@@ -109,9 +109,11 @@ TESTED_OPS: frozenset[str] = frozenset(
         "fmod",
         "full",
         "full_like",
+        "gather",
         "hstack",  # aten::cat is invoked instead
         "index_put",
         "logit",
+        "mean",
         # "new_empty",  non-deterministic
         # "new_empty_strided",  non-deterministic
         "new_full",
@@ -237,10 +239,10 @@ EXPECTED_SKIPS_OR_FAILS: Tuple[onnx_test_common.DecorateMeta, ...] = (
             "ArgMin", "uint8, int8, int16, int64"
         ),
     ),
-    xfail(
+    skip(
         "as_strided",
         variant_name="partial_views",
-        reason="ONNX doesn't have partial view for tensor",
+        reason="ONNX doesn't have partial view for tensor; ORT segfaults after inlining",
     ),
     xfail(
         "asin", dtypes=onnx_test_common.BOOL_TYPES + onnx_test_common.INT_TYPES,
@@ -669,6 +671,7 @@ class TestOnnxModelOutputConsistency(onnx_test_common._TestONNXRuntime):
                 inputs=repr(inputs),
                 kwargs=repr(cpu_sample.kwargs),
             ):
+                print("inputs: ", inputs, " kwargs: ", cpu_sample.kwargs)
                 test_behavior, reason = _should_skip_xfail_test_sample(
                     op.name, cpu_sample
                 )
