@@ -1,12 +1,10 @@
 from functools import partial
 from typing import Dict, Optional
 
-import sympy
-
 import torch
-from torch.utils._sympy.value_ranges import ValueRangeAnalysis, ValueRanges
-from .ir import FloorDiv, InterpreterShim, LoopBody, ModularIndexing
-from .utils import cache_on_self, dominated_nodes, sympy_subs
+from torch.utils._sympy.value_ranges import bound_sympy, ValueRangeAnalysis, ValueRanges
+from .ir import InterpreterShim, LoopBody
+from .utils import cache_on_self, dominated_nodes
 from .virtualized import V
 
 
@@ -157,6 +155,6 @@ class BoundVars:
         if bound is not None:
             return bound
 
-        bound = self.get_expr_range(expr, self.replacement_vals)
+        bound = bound_sympy(expr, self.replacement_vals)
         self.replacement_vals[name] = bound
         return bound
