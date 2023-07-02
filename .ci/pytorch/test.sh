@@ -361,9 +361,9 @@ test_perf_for_dashboard() {
             --output "$TEST_REPORTS_DIR/${backend}_with_cudagraphs_${suite}_${dtype}_${mode}_cuda_${target}.csv"
       fi
       if [[ "$DASHBOARD_TAG" == *dynamic-true* ]]; then
-        python "benchmarks/dynamo/$suite.py" \
+        TORCHINDUCTOR_MAX_AUTOTUNE=1 python "benchmarks/dynamo/$suite.py" \
             "${target_flag[@]}" --"$mode" --"$dtype" --backend "$backend" --dynamic-shapes \
-            --dynamic-batch-only --disable-cudagraphs "$@" \
+            --dynamic-batch-only --disable-cudagraphs --cpp-wrapper "$@" \
             --output "$TEST_REPORTS_DIR/${backend}_dynamic_${suite}_${dtype}_${mode}_cuda_${target}.csv"
       fi
       if [[ "$DASHBOARD_TAG" == *cppwrapper-true* ]] && [[ "$mode" == "inference" ]]; then
