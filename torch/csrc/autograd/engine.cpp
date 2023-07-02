@@ -2,6 +2,7 @@
 
 #include <torch/csrc/autograd/anomaly_mode.h>
 #include <torch/csrc/autograd/autograd.h>
+#include <torch/csrc/autograd/compiled_autograd.h>
 #include <torch/csrc/autograd/function.h>
 #include <torch/csrc/autograd/functions/basic_ops.h>
 #include <torch/csrc/autograd/grad_mode.h>
@@ -50,6 +51,8 @@ namespace torch {
 namespace autograd {
 
 namespace {
+static Engine::compiled_autograd_fn the_compiled_autograd = nullptr;
+
 static bool in_bad_autograd_fork =
     false; // True for children forked after engine's thread pool init
 
@@ -1160,7 +1163,9 @@ auto Engine::execute(
   // initialize a new thread local ready queue on CPU or reuse the existing one
   // (if there is one allocated already, i.e. consecutive backward calls,
   // re-entrant backward calls), then memoize the local_ready_queue in GraphTask
-  init_local_ready_queue();
+  if (the_compiled_autograd == nullptr) {
+    init_local_ready_queue();
+  }
   bool not_reentrant_backward_call = worker_device == NO_DEVICE;
 
   // Store root nodes so we can traverse through the graph later
@@ -1178,7 +1183,8 @@ auto Engine::execute(
       /* graph_roots */ std::move(temp_roots));
 
   // If we receive a single root, skip creating extra root node
-  bool skip_dummy_node = root_edges.size() == 1;
+  bool skip_dummy_node =
+      root_edges.size() == 1 && the_compiled_autograd == nullptr;
   auto graph_root = skip_dummy_node
       ? root_edges.at(0).function
       : std::make_shared<GraphRoot>(root_edges, inputs);
@@ -1186,6 +1192,15 @@ auto Engine::execute(
   auto min_topo_nr = compute_min_topological_nr(outputs);
   // Now compute the dependencies for all executable functions
   compute_dependencies(graph_root.get(), *graph_task, min_topo_nr);
+
+  if (the_compiled_autograd != nullptr) {
+    // see [Note: Compiled Autograd]
+    TORCH_CHECK(!keep_graph, "compiled_autograd does not support keep_graph");
+    TORCH_CHECK(
+        !create_graph, "compiled_autograd does not support create_graph");
+    return (*the_compiled_autograd)(
+        graph_root, *graph_task, accumulate_grad, outputs);
+  }
 
   if (!outputs.empty()) {
     graph_task->init_to_execute(
@@ -1322,6 +1337,10 @@ void set_default_engine_stub(EngineStub stub) {
 
 Engine& Engine::get_default_engine() {
   return engine_stub.load()();
+}
+
+void Engine::set_compiled_autograd(Engine::compiled_autograd_fn fn) {
+  the_compiled_autograd = fn;
 }
 
 void Engine::queue_callback(std::function<void()> callback) {

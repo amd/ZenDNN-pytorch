@@ -13,6 +13,7 @@
 #include <torch/csrc/DynamicTypes.h>
 #include <torch/csrc/Exceptions.h>
 #include <torch/csrc/THP.h>
+#include <torch/csrc/autograd/compiled_autograd.h>
 #include <torch/csrc/autograd/functions/accumulate_grad.h>
 #include <torch/csrc/autograd/functions/basic_ops.h>
 #include <torch/csrc/autograd/functions/utils.h>
@@ -201,6 +202,64 @@ auto PyNode::name() const -> std::string {
   return name;
 }
 
+#ifdef COMPILED_AUTOGRAD
+void PyNode::compiled_args(CompiledNodeArgs& args) {
+  static PyObject* method_name =
+      PyUnicode_InternFromString("_compiled_autograd_key");
+  THPObjectPtr pykey(PyObject_CallMethodNoArgs(obj, method_name));
+  if (!pykey)
+    throw_python_error();
+  TORCH_CHECK(
+      PyTuple_CheckExact(pykey.get()),
+      "_compiled_autograd_key shoud return tuple of ints");
+  auto size = PyTuple_GET_SIZE(pykey.get());
+  TORCH_CHECK(size > 0);
+  // first value is unique ID of the AotAutograd graph
+  ssize_t key = PyLong_AsSsize_t(PyTuple_GET_ITEM(pykey.get(), 0));
+  if (C10_UNLIKELY(key < 0)) {
+    TORCH_CHECK(PyErr_Occurred(), "key must be positive");
+    throw_python_error();
+  }
+  args.collect_size(static_cast<size_t>(key));
+  args.collect_size(size);
+
+  auto f = (THPFunction*)obj;
+  f->compiled_autograd_symints.clear();
+  f->compiled_autograd_symints.reserve(size - 1);
+  for (const auto i : c10::irange(1, size)) {
+    auto val = PyLong_AsSsize_t(PyTuple_GET_ITEM(pykey.get(), i));
+    if (C10_UNLIKELY(val == -1 && PyErr_Occurred()))
+      throw_python_error();
+    f->compiled_autograd_symints.emplace_back(val);
+  }
+
+  // AotAutograd symints are all dynamic
+  auto prior = args.set_default_dyn_type(SizeInput::DYNAMIC);
+  args.collect(f->compiled_autograd_symints);
+  args.set_default_dyn_type(prior);
+
+  args.collect(f->saved_variables);
+  args.collect(f->materialize_grads);
+  args.collect(f->is_variable_input);
+  // TODO(jansel): are there other things we need to collect?
+}
+
+variable_list PyNode::apply_with_saved(
+    const variable_list& inputs,
+    SwapSavedVariables& saved) {
+  auto f = (THPFunction*)obj;
+  TORCH_CHECK(!f->compiled_autograd_tracing);
+  saved.before(f->compiled_autograd_symints);
+  saved.before(f->saved_variables);
+  f->compiled_autograd_tracing = true;
+  auto result = apply(variable_list(inputs));
+  f->compiled_autograd_tracing = false;
+  saved.after(f->compiled_autograd_symints);
+  saved.after(f->saved_variables);
+  return result;
+}
+#endif
+
 } // namespace autograd
 } // namespace torch
 
@@ -277,6 +336,7 @@ PyObject* THPFunction_new(
   new (&self->saved_variables) std::vector<SavedVariable>();
   new (&self->is_variable_input) std::vector<bool>();
   self->materialize_grads = true;
+  self->compiled_autograd_tracing = false;
   return obj;
 }
 
@@ -1181,6 +1241,34 @@ PyObject* THPFunction_saved_variables(THPFunction* self, void* _unused) {
   END_HANDLE_TH_ERRORS
 }
 
+PyObject* THPFunction_compiled_autograd_tracing(
+    THPFunction* self,
+    void* _unused) {
+  // HANDLE_TH_ERRORS  // not needed since can't throw?
+  if (self->compiled_autograd_tracing) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+  // END_HANDLE_TH_ERRORS
+}
+
+PyObject* THPFunction_compiled_autograd_symints(
+    THPFunction* self,
+    void* _unused) {
+  HANDLE_TH_ERRORS
+  auto size = self->compiled_autograd_symints.size();
+  PyObject* result = PyTuple_New(size);
+  for (const auto i : c10::irange(size)) {
+    PyTuple_SET_ITEM(
+        result,
+        i,
+        py::cast(self->compiled_autograd_symints[i]).release().ptr());
+  }
+  return result;
+  END_HANDLE_TH_ERRORS
+}
+
 PyObject* THPFunction_raw_saved_tensors(THPFunction* self, void* _unused) {
   HANDLE_TH_ERRORS
   // User tries to access saved variables after they have been freed
@@ -1354,6 +1442,16 @@ static struct PyGetSetDef THPFunction_properties[] = {
     {"materialize_grads",
      nullptr,
      (setter)THPFunction_set_materialize_grads,
+     nullptr,
+     nullptr},
+    {"_compiled_autograd_tracing",
+     (getter)THPFunction_compiled_autograd_tracing,
+     nullptr,
+     nullptr,
+     nullptr},
+    {"_compiled_autograd_symints",
+     (getter)THPFunction_compiled_autograd_symints,
+     nullptr,
      nullptr,
      nullptr},
     {nullptr}};

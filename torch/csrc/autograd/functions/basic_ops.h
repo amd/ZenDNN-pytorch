@@ -83,11 +83,31 @@ struct TORCH_API GraphRoot : public Node {
     return outputs;
   }
 
+#ifdef COMPILED_AUTOGRAD
+  void compiled_args(CompiledNodeArgs& args) override;
+  variable_list apply_with_saved(
+      const variable_list& inputs,
+      SwapSavedVariables& saved) override;
+#endif
+
   variable_list outputs;
 };
 
 struct TORCH_API Identity : public Node {
   variable_list apply(variable_list&& inputs) override;
+};
+
+// A node that adds its inputs to produce a single output.
+// Used by Compiled Autograd to encodes multiple edges being implicitly added
+struct TORCH_API ImplicitAdd : public Node {
+  variable_list apply(variable_list&& inputs) override;
+
+#ifdef COMPILED_AUTOGRAD
+  void compiled_args(CompiledNodeArgs& args) override {}
+  variable_list apply_with_saved(
+      const variable_list& inputs,
+      SwapSavedVariables& saved) override;
+#endif
 };
 
 } // namespace autograd

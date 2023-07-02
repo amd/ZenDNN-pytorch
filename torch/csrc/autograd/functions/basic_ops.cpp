@@ -1,5 +1,6 @@
 #include <torch/csrc/autograd/functions/basic_ops.h>
 
+#include <torch/csrc/autograd/compiled_autograd.h>
 #include <torch/csrc/autograd/function.h>
 #include <torch/csrc/autograd/functions/utils.h>
 #include <torch/csrc/autograd/variable.h>
@@ -54,6 +55,35 @@ auto UndefinedGradBackward::apply(variable_list&& output_grads)
 auto Identity::apply(variable_list&& grads) -> variable_list {
   return std::move(grads);
 }
+
+auto ImplicitAdd::apply(variable_list&& grads) -> variable_list {
+  auto result = grads[0];
+  for (const auto i : c10::irange(1, grads.size())) {
+    result = result + grads[i];
+  }
+  return tensor_list{result};
+}
+
+#ifdef COMPILED_AUTOGRAD
+variable_list ImplicitAdd::apply_with_saved(
+    const variable_list& inputs,
+    SwapSavedVariables& saved) {
+  return apply(variable_list(inputs));
+}
+
+variable_list GraphRoot::apply_with_saved(
+    const variable_list& inputs,
+    SwapSavedVariables& saved) {
+  saved.before(outputs);
+  variable_list result(outputs);
+  saved.after(outputs);
+  return result;
+}
+
+void GraphRoot::compiled_args(CompiledNodeArgs& args) {
+  args.collect(outputs);
+}
+#endif
 
 } // namespace autograd
 } // namespace torch

@@ -1,5 +1,6 @@
 #include <torch/csrc/autograd/functions/accumulate_grad.h>
 
+#include <torch/csrc/autograd/compiled_autograd.h>
 #include <torch/csrc/autograd/functions/basic_ops.h>
 #include <torch/csrc/autograd/functions/tensor.h>
 #include <torch/csrc/autograd/functions/utils.h>
@@ -58,6 +59,35 @@ auto AccumulateGrad::apply(variable_list&& grads) -> variable_list {
 
   return variable_list();
 }
+
+#ifdef COMPILED_AUTOGRAD
+void AccumulateGrad::compiled_args(CompiledNodeArgs& args) {
+  at::Tensor& grad = variable.mutable_grad();
+  args.collect(grad.defined());
+  if (grad.defined()) {
+    args.collect(grad);
+  }
+  args.set_grad_target(variable);
+}
+
+variable_list AccumulateGrad::apply_with_saved(
+    const variable_list& inputs,
+    SwapSavedVariables& saved) {
+  at::Tensor& grad = variable.mutable_grad();
+
+  // TODO(jansel): This is the wrong place for this, as I don't see this in the
+  // above apply. Where does this implicit sum happen in eager mode?
+  at::Tensor result = inputs[0].sum_to_size_symint(variable.sym_sizes());
+
+  if (grad.defined()) {
+    saved.before(grad);
+    result = result + grad;
+    saved.after(grad);
+  }
+  saved.set_grad_value(result);
+  return variable_list();
+}
+#endif
 
 } // namespace autograd
 } // namespace torch
