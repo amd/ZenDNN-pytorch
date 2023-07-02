@@ -6,6 +6,7 @@ import collections
 import contextlib
 import copy
 import csv
+import dataclasses
 import functools
 import importlib
 import itertools
@@ -32,9 +33,11 @@ import torch._dynamo
 import torch._dynamo.utils
 import torch.distributed
 from scipy.stats import gmean, ttest_ind
+from torch._decomp import core_aten_decompositions
 from torch._dynamo.profiler import fx_insert_profiling, Profiler
 from torch._dynamo.testing import dummy_fx_compile, format_speedup, same
 from torch._dynamo.utils import clone_inputs, graph_break_reasons
+from torch._export import ExportDynamoConfig
 from torch._functorch.aot_autograd import set_model_name
 from torch._inductor import config as inductor_config
 from torch._inductor.utils import fresh_inductor_cache
@@ -405,7 +408,7 @@ def summarize_graph_break(filename):
         df.to_csv(f"{log_file.rstrip('.csv')}_deduped.csv", index=False)
 
 
-def print_summary(filename):
+def print_summary(filename, print_dataframe=False):
     if not (filename and os.path.exists(filename)):
         return
     data = pd.read_csv(filename)
@@ -414,13 +417,18 @@ def print_summary(filename):
             if tag == "0.0000":
                 continue  # This happens for failed runs
             print(f"\nSummary for tag={tag}:")
-            print_summary_table(data[data.tag == tag])
+            print_summary_table(data[data.tag == tag], print_dataframe=print_dataframe)
     else:
-        print_summary_table(data)
+        print_summary_table(data, print_dataframe=print_dataframe)
     summarize_graph_break(filename)
 
 
-def print_summary_table(data):
+def print_summary_table(data, print_dataframe=False):
+    if print_dataframe:
+        pd.options.display.max_rows = 1000
+        pd.options.display.max_columns = 1000
+        pd.options.display.width = 2000
+        print(data)
     width = max(map(len, data.columns))
     for col in data.columns:
         try:
@@ -1953,7 +1961,17 @@ class BenchmarkRunner:
             try:
                 model_copy = deepcopy_and_maybe_ddp(model)
                 self.init_optimizer(name, current_device, model_copy.parameters())
-                optimized_model_iter_fn = optimize_ctx(self.run_n_iterations)
+                if self.args.export:
+                    with torch._dynamo.config.patch(
+                        dataclasses.asdict(ExportDynamoConfig())
+                    ):
+                        # torch._dynamo.export only need 1 forward
+                        # no need for n iterations
+                        optimized_model_iter_fn, _ = optimize_ctx(
+                            self.model_iter_fn, model_copy, example_inputs
+                        )
+                else:
+                    optimized_model_iter_fn = optimize_ctx(self.run_n_iterations)
                 new_result = optimized_model_iter_fn(model_copy, example_inputs)
             except Exception as e:
                 log.exception(e)
@@ -2518,6 +2536,11 @@ def parse_args(args=None):
         help="print extra memory statistics",
     )
     parser.add_argument(
+        "--print-dataframe-summary",
+        action="store_true",
+        help="print dataframe result used for calculating accuracy",
+    )
+    parser.add_argument(
         "--cold-start-latency",
         "--cold_start_latency",
         action="store_true",
@@ -2659,6 +2682,11 @@ def parse_args(args=None):
         "--inductor",
         action="store_true",
         help="Measure speedup with TorchInductor",
+    )
+    group.add_argument(
+        "--export",
+        action="store_true",
+        help="Measure pass rate with export",
     )
     group.add_argument(
         "--xla", action="store_true", help="Compare TorchXLA to eager PyTorch"
@@ -2970,6 +2998,17 @@ def run(runner, args, original_dir=None):
         )
         experiment = speedup_experiment
         output_filename = "inductor.csv"
+    elif args.export:
+        optimize_ctx = functools.partial(
+            torch._dynamo.export,
+            aten_graph=True,
+            tracing_mode="symbolic",
+            decomposition_table=core_aten_decompositions(),
+            constraints=None,
+            assume_static_by_default=True,
+        )
+        experiment = speedup_experiment
+        output_filename = "export.csv"
     elif args.xla:
         (dev,) = args.devices
         os.environ["PJRT_DEVICE"] = {"cuda": "GPU", "cpu": "CPU"}[dev]
@@ -3259,7 +3298,7 @@ def run(runner, args, original_dir=None):
             except subprocess.SubprocessError:
                 print("ERROR", file=sys.stderr)
                 write_csv("infra_error")
-        print_summary(output_filename)
+        print_summary(output_filename, print_dataframe=args.print_dataframe_summary)
 
 
 def log_operator_inputs(model, example_inputs, model_iter_fn, name, args):
