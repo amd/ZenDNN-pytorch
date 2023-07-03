@@ -1593,7 +1593,7 @@ class TestSparse(TestSparseBase):
 
             def fn(S, D1, D2, beta=beta, alpha=alpha):
                 return torch.sparse.addmm(D1, S, D2, beta=beta, alpha=alpha)
-            gradcheck(fn, (S, D1, D2), masked=True)
+            gradcheck(fn, (S, D1, D2))
 
         test_shape(7, 8, 9, 20, False, None)
         test_shape(7, 8, 9, 20, True, None)
@@ -1619,7 +1619,7 @@ class TestSparse(TestSparseBase):
 
             def fn(S, D):
                 return torch.sparse.mm(S, D)
-            gradcheck(fn, (S, D), masked=True)
+            gradcheck(fn, (S, D))
 
         test_shape(7, 8, 9, 20, False)
         test_shape(7, 8, 9, 20, True)
@@ -1632,16 +1632,16 @@ class TestSparse(TestSparseBase):
         # https://github.com/pytorch/pytorch/issues/79914
         a = torch.tensor([[0., 1]], dtype=dtype, device=device).to_sparse().requires_grad_(True)
         b = torch.tensor([[0., 1]], dtype=dtype, device=device).to_sparse().requires_grad_(True)
-        gradcheck(lambda x, y: torch.sparse.sum(x * y).to_dense(masked_grad=gradcheck.masked), [a, b])
+        gradcheck(lambda x, y: torch.sparse.sum(x * y).to_dense(masked_grad=False), [a, b])
 
         def test_shape(sparse_dims, nnz, with_shape):
             a = self._gen_sparse(sparse_dims, nnz, with_shape, dtype, device, coalesced)[0].requires_grad_(True)
             b = self._gen_sparse(sparse_dims, nnz, with_shape, dtype, device, coalesced)[0].requires_grad_(True)
 
-            self.assertEqual((a * b).to_dense(), a.to_dense() * b.to_dense(), masked=True)
-            gradcheck(lambda x, y: (x * y).to_dense(), [a, b])
+            self.assertEqual((a * b).to_dense(), a.to_dense() * b.to_dense())
+            gradcheck(lambda x, y: (x * y).to_dense(masked_grad=False), [a, b])
             # Issues with 0-dim indices/values
-            gradcheck(lambda x, y: torch.sparse.sum(x * y).to_dense(), [a, b], masked=True)
+            gradcheck(lambda x, y: torch.sparse.sum(x * y).to_dense(masked_grad=False), [a, b])
 
         # TODO: Re-enable these
         # test_shape(2, 3, [2, 3, 4, 5])
@@ -1806,7 +1806,7 @@ class TestSparse(TestSparseBase):
     def test_sparse_sum(self, device, dtype, coalesced):
 
         def run_tests(S, td=None):
-            D = S.coalesce().to_dense().detach().requires_grad_(True)
+            D = S.to_dense().requires_grad_(True)
             if td is None:
                 S_sum = torch.sparse.sum(S)
                 D_sum = D.sum()
@@ -1814,7 +1814,7 @@ class TestSparse(TestSparseBase):
 
                 def fn(S):
                     return torch.sparse.sum(S)
-                gradcheck(fn, (S,), masked=True)
+                gradcheck(fn, (S.clone().requires_grad_(True),))
             else:
                 S_sum = torch.sparse.sum(S, td)
                 D_sum = D.sum(td)
@@ -1822,8 +1822,17 @@ class TestSparse(TestSparseBase):
 
                 def fn(S):
                     res = torch.sparse.sum(S, td)
-                    return res.to_dense(masked_grad=True)
-                gradcheck(fn, (S,), masked=True)
+                    # TODO: move inside torch.sparse.sum
+                    if res.layout != torch.strided:
+                        # Makes sure that all incoming grads get projected onto SEs of res.
+                        # Equivalently, makes sure that res is parametrized by it's SEs.
+                        # sparse.sum backward does not do it by default, so it needs an
+                        # extra help. Also, and this is important, because of that it
+                        # might not handle arbitrary grads, i.e. the grads with the sparsity
+                        # pattern differn from that of the result.
+                        res = res.sparse_mask(res)
+                    return res.to_dense(masked_grad=False)
+                gradcheck(fn, (S.clone().requires_grad_(True),))
 
         nnz = 10
         sparse_dims = 2
@@ -1859,11 +1868,11 @@ class TestSparse(TestSparseBase):
 
         # test values().sum()
         S = self._gen_sparse(sparse_dims, nnz, with_size, dtype, device, coalesced)[0]
-        run_tests(S.requires_grad_(True))
+        run_tests(S)
 
         for test_dim in test_dims:
             S = self._gen_sparse(sparse_dims, nnz, with_size, dtype, device, coalesced)[0]
-            run_tests(S.requires_grad_(True), test_dim)
+            run_tests(S, test_dim)
 
     def _test_basic_ops_shape(self, nnz_x1, nnz_x2, shape_i, shape_v, dtype, device, coalesced):
         shape = shape_i + (shape_v)
@@ -3582,9 +3591,16 @@ class TestSparse(TestSparseBase):
         out = func(t, 0)
         self.assertEqual(out, torch.zeros_like(t))
 
+        def f(t):
+            res = func(t, 0)
+            # NOTE: res = res.sparse_mask(res) is not needed!
+            # This can only imply that sparse.softmax backward
+            # already does the projection.
+            return res.to_dense(masked_grad=False)
+
         # gradient
         t = t.requires_grad_()
-        gradcheck(lambda x: func(x, 0).to_dense(), (t,), masked=True)
+        gradcheck(f, (t,))
 
 
     @dtypes(torch.double, torch.float)
@@ -3668,16 +3684,16 @@ class TestSparse(TestSparseBase):
 
                 # check autograd support on sparse matmul
                 def fn(D1, D2):
-                    return torch.sparse.mm(D1, D2).to_dense()
+                    return torch.sparse.mm(D1, D2).to_dense(masked_grad=False)
 
                 if a.is_cuda:
                     # For cuda, `nondet_tol` is set with `1e-5`
                     # This is because cuSparse sometimes returns approximate zero values like `~e-323`
                     # TODO: Check this cuSparse issue.
                     # This happens when you do chain multiplication `torch.sparse.mm` operations
-                    gradcheck(fn, (a, b), nondet_tol=1e-5, masked=True)
+                    gradcheck(fn, (a, b), nondet_tol=1e-5)
                 else:
-                    gradcheck(fn, (a, b), masked=True)
+                    gradcheck(fn, (a, b))
                 grad_with_custom_sparsity_pattern_test_helper(sparse_dims, nnz, shape_a, shape_b)
 
         def test_error_cases():
@@ -3806,8 +3822,8 @@ class TestSparse(TestSparseBase):
         #     if dtype in {torch.double, torch.cdouble}:
         #         xa = x.detach().clone().requires_grad_(True)
         #         ya = y.detach().clone().requires_grad_(True)
-        #         gradcheck(lambda a, b: (a * b).to_dense(), (xa, ya), masked=True)
-        #         gradcheck(lambda a, b: (a * b).to_dense(), (ya, xa), masked=True)
+        #         gradcheck(lambda a, b: (a * b).to_dense(masked_grad=False), (xa, ya))
+        #         gradcheck(lambda a, b: (a * b).to_dense(masked_grad=False), (ya, xa))
 
         for dim in range(len(shape) + 1):
             sub_shape = shape[dim:]
@@ -4080,9 +4096,9 @@ class TestSparseOneOff(TestCase):
             x + sparse_y
 
 
-def _sparse_to_dense(tensor):
+def _sparse_to_dense(tensor, masked_grad=False):
     if tensor.dtype != torch.bool:
-        return tensor.to_dense(masked_grad=True)
+        return tensor.to_dense(masked_grad=masked_grad)
 
     # to_dense uses coalesce which isn't implemented for bool
     return tensor.to(torch.int8).to_dense().to(torch.bool)
@@ -4177,8 +4193,7 @@ class TestSparseUnaryUfuncs(TestCase):
                 check_batched_grad=False,
                 check_grad_dtypes=True,
                 nondet_tol=op.gradcheck_nondet_tol,
-                fast_mode=op.gradcheck_fast_mode,
-                masked=True))
+                fast_mode=op.gradcheck_fast_mode))
 
 
 class TestSparseMaskedReductions(TestCase):
