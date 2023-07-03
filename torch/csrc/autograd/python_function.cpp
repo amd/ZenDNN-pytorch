@@ -92,7 +92,9 @@ auto PyNode::apply(variable_list&& inputs) -> variable_list {
   for (const auto i : c10::irange(num_inputs)) {
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     PyObject* input;
-    if (inputs[i].defined() || !py_fn->materialize_grads) {
+    if (inputs[i].defined() || !py_fn->materialize_grads ||
+        (input_metadata(i).was_default_constructed() &&
+         !py_fn->materialize_non_diff_grads)) {
       input = THPVariable_Wrap(inputs[i]);
     } else {
       input = THPVariable_Wrap(output_info[i].zeros(_device_guard));
@@ -305,6 +307,7 @@ PyObject* THPFunction_new(
   new (&self->saved_variables) std::vector<SavedVariable>();
   new (&self->is_variable_input) std::vector<bool>();
   self->materialize_grads = true;
+  self->materialize_non_diff_grads = true;
   return obj;
 }
 
@@ -1149,6 +1152,28 @@ int THPFunction_set_materialize_grads(
   END_HANDLE_TH_ERRORS_RET(-1)
 }
 
+PyObject* THPFunction_get_materialize_non_diff_grads(
+    THPFunction* self, void* _unused) {
+  HANDLE_TH_ERRORS
+  return self->materialize_non_diff_grads ? Py_True : Py_False;
+  END_HANDLE_TH_ERRORS
+}
+
+int THPFunction_set_materialize_non_diff_grads(
+    THPFunction* self,
+    PyObject* value,
+    void* unused) {
+  HANDLE_TH_ERRORS
+  if (!PyBool_Check(value)) {
+    THPUtils_invalidArguments(
+        value, nullptr, "set_materialize_non_diff_grads", 1, "(bool)");
+    return -1;
+  }
+  self->materialize_non_diff_grads = (value == Py_True);
+  return 0;
+  END_HANDLE_TH_ERRORS_RET(-1)
+}
+
 static PyObject* unpack_saved_variables(
     THPFunction* self,
     const std::function<PyObject*(const Variable&)>& unpack_fn) {
@@ -1384,6 +1409,12 @@ static struct PyGetSetDef THPFunction_properties[] = {
      (setter)THPFunction_set_materialize_grads,
      nullptr,
      nullptr},
+    {"_materialize_non_diff_grads",
+     (getter)THPFunction_get_materialize_non_diff_grads,
+     (setter)THPFunction_set_materialize_non_diff_grads,
+     nullptr,
+     nullptr},
+    {nullptr},
     {nullptr}};
 
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,cppcoreguidelines-avoid-non-const-global-variables)
