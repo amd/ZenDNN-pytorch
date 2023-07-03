@@ -495,6 +495,7 @@ cdll.LoadLibrary("__lib_path__")
             try:
                 # Check build result
                 compile_file(input_path, output_path, build_cmd)
+                # Note [CPU vectorization in fbcode]
                 # TODO: get vectorization working in fbcode.
                 # For now, this always fails, so we fall back to generating non-vectorized cpu code.
                 subprocess.check_call(
@@ -574,7 +575,9 @@ def valid_vec_isa_list():
 
 
 def pick_vec_isa():
-    _valid_vec_isa_list: List[VecISA] = valid_vec_isa_list()
+    # See Note [CPU vectorization in fbcode]
+    # (this call hangs in fbcode)
+    _valid_vec_isa_list: List[VecISA] = [] if config.is_fbcode() else valid_vec_isa_list()
     if not _valid_vec_isa_list:
         return invalid_vec_isa
 
