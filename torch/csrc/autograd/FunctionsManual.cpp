@@ -1475,6 +1475,32 @@ static Tensor sparse_mask_like_grad(const Tensor& x, const Tensor& gx) {
   }
 }
 
+std::tuple<Tensor, Tensor, Tensor> sparse_sampled_addmm_backward(
+    const Tensor& grad,
+    const Tensor& self,
+    const c10::optional<Tensor>& mat1,
+    const c10::optional<Tensor>& mat2,
+    const Scalar& alpha,
+    const Scalar& beta,
+    const std::array<bool, 3>& grad_input_mask) {
+  if (!grad.defined()) {
+    return std::make_tuple(Tensor{}, Tensor{}, Tensor{});
+  }
+
+  const auto grad_projected = grad.sparse_mask(self);
+  const auto self_requires_grad = grad_input_mask[0];
+  const auto mat1_requires_grad = grad_input_mask[1];
+  const auto mat2_requires_grad = grad_input_mask[2];
+  return std::make_tuple(
+      self_requires_grad ? maybe_multiply(grad, beta.conj()) : Tensor{},
+      mat1_requires_grad
+          ? maybe_multiply(grad_projected.mm(mat2->mH()), alpha.conj())
+          : Tensor{},
+      mat2_requires_grad
+          ? maybe_multiply(mat1->mH().mm(grad_projected), alpha.conj())
+          : Tensor{});
+}
+
 Tensor sparse_sparse_matmul_backward(
     const Tensor& grad,
     const Tensor& a,
@@ -2067,14 +2093,14 @@ Tensor max_pool_double_backward(
   AT_ASSERT(indices.dim() >= dim);
   // handle non-empty inputs
   if (indices.sym_numel() != 0) {
-    auto size = indices.sizes().slice(0, indices.dim() - dim).vec();
+    auto size = indices.sym_sizes().slice(0, indices.dim() - dim).vec();
     size.push_back(-1);
-    auto indices_view = indices.view(size);
+    auto indices_view = indices.view_symint(size);
     const auto memory_format = indices.suggest_memory_format();
     return grad.contiguous(memory_format)
-        .view(size)
+        .view_symint(size)
         .gather(-1, indices_view)
-        .view(indices.sizes());
+        .view_symint(indices.sym_sizes());
   }
   // handle empty inputs
   else {
