@@ -8,7 +8,18 @@
 #include <cpuinfo.h>
 
 #include <c10/util/CallOnce.h>
+#endif // #if AT_MKLDNN_ENABLED()
 
+enum PostOps {
+  NoPostOp,
+  Relu,
+  LeakyRelu,
+  Tanh,
+  Add,
+  AddRelu,
+};
+
+#if AT_MKLDNN_ENABLED()
 using PrimitiveCacheKey = std::tuple<
     double, // input_scale
     int64_t, // input_zero_point
@@ -105,13 +116,6 @@ struct DeconvPrimitiveCache : PrimitiveCache {
   DeconvParams& get_params() {
     return params;
   }
-};
-
-enum PostOps {
-  NoPostOp,
-  Relu,
-  LeakyRelu,
-  Tanh,
 };
 
 struct PackedLinearWeightsOnednn : public LinearPackedParamsBase {
@@ -378,5 +382,38 @@ static bool should_use_onednn_quant(
 }
 
 } // onednn_utils
+
+at::Tensor _qconv_prepack_pt2e(
+    at::Tensor weight, // from CPU backend instead of QuantizedCPU
+    at::Tensor weight_scales, // Weight zero points must be 0 for onednn
+    torch::List<int64_t> input_shape,
+    double input_scale,
+    int64_t input_zero_point,
+    torch::List<int64_t> stride,
+    torch::List<int64_t> padding,
+    torch::List<int64_t> dilation,
+    int64_t groups);
+
+template <PostOps postOpFused>
+static at::Tensor _quantized_convolution_pt2e(
+    at::Tensor act, // contains quantized values but not QTensor
+    double act_scale,
+    int64_t act_zero_point,
+    at::Tensor weight, // MKLDNN tensor with quantized values
+    at::Tensor weight_scales,
+    at::Tensor weight_zero_points,
+    c10::optional<at::Tensor> bias, // Bias is packed if not None
+    torch::List<int64_t> stride,
+    torch::List<int64_t> padding,
+    torch::List<int64_t> dilation,
+    bool transposed,
+    int64_t groups,
+    double output_scale,
+    int64_t output_zero_point,
+    c10::optional<at::Tensor> accum=c10::nullopt, // accum to fused with conv add
+    double accum_scale=1.0,
+    int64_t accum_zero_point=0,
+    bool fp32_output=false,
+    const c10::optional<c10::ArrayRef<c10::IValue>>& post_op_args=c10::nullopt);
 
 #endif // #if AT_MKLDNN_ENABLED()
