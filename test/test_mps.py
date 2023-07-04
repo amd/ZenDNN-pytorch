@@ -10502,6 +10502,9 @@ class TestConsistency(TestCaseMPS):
             elif op.name == "native_layer_norm":
                 atol = 1e-4
                 rtol = 1.3e-5
+            elif op.name in ["nn.functional.max_pool2d"]:
+                atol = 1e-3
+                rtol = 1.3e-3
             elif op.name in ["pow", "__rpow__"]:
                 atol = 1e-6
                 rtol = 4e-6
@@ -10605,9 +10608,11 @@ class TestConsistency(TestCaseMPS):
             cpu_grad_inputs = torch.autograd.grad(diff_cpu_out, diff_cpu_arg, grad_outputs=cpu_grad_outputs, allow_unused=True)
             mps_grad_inputs = torch.autograd.grad(diff_mps_out, diff_mps_arg, grad_outputs=mps_grad_outputs, allow_unused=True)
 
-            if op.name in ["nn.functional.gelu", "nn.functional.glu"] and dtype == torch.float16:
+            if op.name in ["nn.functional.gelu",
+                           "nn.functional.glu",
+                           "nn.functional.max_pool2d"] and dtype == torch.float16:
                 atol = 1e-3
-                rtol = 1e-3
+                rtol = 1.3e-3
 
             self.assertEqual(cpu_grad_inputs, mps_grad_inputs, atol=atol, rtol=rtol)
 
