@@ -32,6 +32,8 @@ namespace native {
 DEFINE_DISPATCH(_fused_sdp_choice_stub);
 REGISTER_NO_CPU_DISPATCH(_fused_sdp_choice_stub);
 
+DEFINE_DISPATCH(flash_attention_kernel);
+
 namespace {
 
 Tensor gemm_nt(const Tensor& self, const Tensor& other) {
@@ -694,6 +696,50 @@ std::tuple<Tensor, Tensor> _scaled_dot_product_attention_math(
     }
 
     return std::make_tuple(at::matmul(attn, value), attn);
+}
+
+std::tuple<
+    at::Tensor,
+    at::Tensor,
+    at::Tensor,
+    at::Tensor,
+    int64_t,
+    int64_t,
+    at::Tensor,
+    at::Tensor,
+    at::Tensor>
+_scaled_dot_product_flash_attention_cpu(
+    const Tensor& query,
+    const Tensor& key,
+    const Tensor& value,
+    double dropout_p,
+    bool is_causal,
+    bool return_debug_mask,
+    c10::optional<double> scale) {
+
+  int64_t batchSize = query.size(0);
+  int64_t qSize = query.size(2);
+  int64_t num_head = query.size(1);
+  int64_t headSize = query.size(3);
+
+  at::Tensor output = at::empty({batchSize, qSize, num_head, headSize}, query.options());
+  at::Tensor logsumexp = Tensor();
+  at::Tensor cum_seq_q = Tensor();
+  at::Tensor cum_seq_k = Tensor();
+  int64_t max_q = 0;
+  int64_t max_k = 0;
+  at::Tensor philox_seed = Tensor();
+  at::Tensor philox_offset = Tensor();
+  at::Tensor debug_attn_mask = Tensor();
+
+  flash_attention_kernel(kCPU, output, logsumexp, cum_seq_q, cum_seq_k,
+      max_q, max_k, philox_seed, philox_offset, debug_attn_mask,
+      query, key, value, dropout_p, is_causal, return_debug_mask, scale);
+
+  output = output.transpose(1, 2);
+
+  return std::make_tuple(std::move(output), logsumexp, cum_seq_q, cum_seq_k,
+      max_q, max_k, philox_seed, philox_offset, debug_attn_mask);
 }
 
 Tensor triton_multi_head_attention(
