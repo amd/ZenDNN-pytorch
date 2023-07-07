@@ -63,7 +63,19 @@ skipIfNoTorchVision = unittest.skipIf(not HAS_TORCHVISION, "no torchvision")
 gradcheck = functools.partial(gradcheck, check_batched_grad=False)
 gradgradcheck = functools.partial(gradgradcheck, check_batched_grad=False)
 
-types = [torch.float]
+# For ZenDNN bf16 path, ZenDNN requires the cpu which has amd avx512 with
+# avx512bf16 at least. So we will skip the test case if one processor
+# is not meet the requirement.
+@functools.lru_cache(maxsize=None)
+def has_bf16_support():
+    import sys
+    if sys.platform != 'linux':
+        return False
+    with open("/proc/cpuinfo", encoding="ascii") as f:
+        lines = f.read()
+    return all(word in lines for word in ["avx512_bf16"])
+
+types = [torch.float, torch.bfloat16]
 
 # Comment the line below to find out the CI machines having ZENDNN build disabled
 
@@ -302,6 +314,55 @@ class TestZENDNN(TestCase):
             self._test_tracing(conv3d, (x,))
             self._test_scripting(conv3d, (x,))
 
+    def _test_conv_bf16_base(self, dim):
+        conv_module = {1: torch.nn.Conv1d, 2: torch.nn.Conv2d, 3: torch.nn.Conv3d}
+        input_shapes = {1: (224,), 2: (224, 224), 3: (55, 55, 55)}
+        options = itertools.product([True, False], [1, 2], [1, 4])
+        for bias, dilation, groups in options:
+            N = torch.randint(3, 10, (1,)).item()
+            M = torch.randint(1, 3, (1,)).item() * groups
+            C = torch.randint(1, 3, (1,)).item() * groups
+            x_shape = (N, C) + input_shapes[dim]
+            x = torch.randn(x_shape, dtype=torch.float32)
+
+            conv = conv_module[dim](in_channels=C,
+                                    out_channels=M,
+                                    kernel_size=3,
+                                    stride=2,
+                                    padding=1,
+                                    dilation=dilation,
+                                    bias=bias,
+                                    groups=groups)
+
+            x_bf16 = x.bfloat16()
+            if has_bf16_support():
+                y_zen = conv(x)
+
+                bf16_conv = conv.bfloat16()
+                with torch.backends.zendnn.flags(enabled=False):
+                    y_native_bf16 = bf16_conv(x_bf16)
+                y_zen_bf16 = bf16_conv(x_bf16)
+
+                self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+                self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=1e-1, rtol=1e-3)
+            else:
+                bf16_conv = conv.bfloat16()
+                msg = "zendnn_convolution: bf16 path needs the cpu support avx512bf16"
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    y_bf16 = bf16_conv(x_bf16)
+
+    @torch.no_grad()
+    def test_conv1d_bf16(self):
+        self._test_conv_bf16_base(dim=1)
+
+    @torch.no_grad()
+    def test_conv2d_bf16(self):
+        self._test_conv_bf16_base(dim=2)
+
+    @torch.no_grad()
+    def test_conv3d_bf16(self):
+        self._test_conv_bf16_base(dim=3)
+
     @torch.no_grad()
     def test_linear(self):
         options = [True, False]
@@ -317,6 +378,29 @@ class TestZENDNN(TestCase):
             self.assertEqual(linear(x), linear(x.to_zendnn()).to_dense())
             self._test_tracing(linear, (x,))
             self._test_scripting(linear, (x,))
+
+    def test_linear_bf16(self):
+        in_features = torch.randint(3, 10, (1,)).item()
+        out_features = torch.randint(3, 100, (1,)).item()
+        x = torch.randn(3, in_features, dtype=torch.float32) * 10
+        x_bf16 = x.bfloat16()
+
+        for bias in [True, False]:
+            linear = torch.nn.Linear(in_features, out_features, bias=bias)
+            if has_bf16_support():
+                y_zen = linear(x.to_zendnn()).to_dense()
+
+                bf16_linear = linear.bfloat16()
+                y_native_bf16 = bf16_linear(x_bf16)
+                y_zen_bf16 = bf16_linear(x_bf16.to_zendnn()).to_dense(torch.bfloat16)
+
+                self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+                self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=1e-1, rtol=1e-3)
+            else:
+                msg = "zendnn_linear: bf16 path needs the cpu support avx512bf16"
+                self.assertRaisesRegex(RuntimeError,
+                                       msg,
+                                       lambda: linear(x_bf16.to_zendnn()))
 
     # This test is to check whether 1D conv is supported for zendnn tensor,
     @torch.no_grad()
@@ -419,6 +503,39 @@ class TestZENDNN(TestCase):
                         max_pool3d(x),
                         max_pool3d(x.to_zendnn()).to_dense())
 
+    def _test_max_pool_bf16_base(self, dim, input):
+        pool_module = {2: torch.nn.MaxPool2d, 3: torch.nn.MaxPool3d}
+        x_bf16 = input.bfloat16()
+        for stride in [1, 2, 3]:
+            for ceil_mode in [False, True]:
+                max_pool = pool_module[dim](
+                    kernel_size=3 if not ceil_mode else 7,
+                    stride=stride,
+                    padding=1,
+                    ceil_mode=ceil_mode)
+
+                if has_bf16_support():
+                    y_zen = max_pool(input.to_zendnn()).to_dense()
+
+                    bf16_max_pool = max_pool.bfloat16()
+                    y_native_bf16 = bf16_max_pool(x_bf16)
+                    y_zen_bf16 = bf16_max_pool(x_bf16.to_zendnn()).to_dense(torch.bfloat16)
+
+                    self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+                    self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=0.1, rtol=1e-3)
+                else:
+                    msg = f"zendnn_max_pool{dim}d: bf16 path needs the cpu support avx512bf16"
+                    self.assertRaisesRegex(RuntimeError,
+                                           msg,
+                                           lambda: max_pool(x_bf16.to_zendnn()))
+
+    def test_max_pool2d_bf16(self):
+        N = torch.randint(3, 10, (1,)).item()
+        C = torch.randint(3, 10, (1,)).item()
+        for H, W in [(64, 64), (35, 39), (16, 19), [7, 8]]:
+            x = torch.randn(N, C, H, W, dtype=torch.float32) * 10
+            self._test_max_pool_bf16_base(dim=2, input=x)
+
     def test_max_pool_unsupported(self):
         N = torch.randint(3, 10, (1,)).item()
         C = torch.randint(3, 10, (1,)).item()
@@ -498,6 +615,36 @@ class TestZENDNN(TestCase):
                 avg_pool3d(x),
                 avg_pool3d(x.to_zendnn()).to_dense())
 
+    def _test_avg_pool_bf16_base(self, dim, input):
+        avg_module = {2: torch.nn.AvgPool2d, 3: torch.nn.AvgPool3d}
+        x_bf16 = input.bfloat16()
+        for count_include_pad in [True, False]:
+            avg_pool = avg_module[dim](
+                kernel_size=3,
+                stride=2,
+                padding=1,
+                count_include_pad=count_include_pad)
+            if has_bf16_support():
+                y_zen = avg_pool(input.to_zendnn()).to_dense()
+
+                bf16_avg_pool = avg_pool.bfloat16()
+                y_native_bf16 = bf16_avg_pool(x_bf16)
+                y_zen_bf16 = bf16_avg_pool(x_bf16.to_zendnn()).to_dense(torch.bfloat16)
+
+                self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+                self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=1e-1, rtol=1e-3)
+            else:
+                msg = f"zendnn_avg_pool{dim}d: bf16 path needs the cpu support avx512bf16"
+                self.assertRaisesRegex(RuntimeError,
+                                       msg,
+                                       lambda: avg_pool(x_bf16.to_zendnn()))
+
+    def test_avg_pool2d_bf16(self):
+        N = torch.randint(3, 10, (1,)).item()
+        C = torch.randint(3, 10, (1,)).item()
+        x = torch.randn(N, C, 64, 64, dtype=torch.float32) * 10
+        self._test_avg_pool_bf16_base(dim=2, input=x)
+
     def test_adaptive_avg_pool2d(self):
         N = torch.randint(3, 10, (1,)).item()
         C = torch.randint(3, 10, (1,)).item()
@@ -509,6 +656,29 @@ class TestZENDNN(TestCase):
             adaptive_avg_pool2d(x),
             adaptive_avg_pool2d(x.to_zendnn()).to_dense())
 
+    def test_adaptive_avg_pool2d_bf16(self):
+        N = torch.randint(3, 10, (1,)).item()
+        C = torch.randint(3, 10, (1,)).item()
+        x = torch.randn(N, C, 224, 224, dtype=torch.float32) * 100
+
+        x_bf16 = x.bfloat16()
+        adaptive_avg_pool2d = torch.nn.AdaptiveAvgPool2d(7)
+
+        if has_bf16_support():
+            y_zen = adaptive_avg_pool2d(x.to_zendnn()).to_dense()
+
+            bf16_adaptive_avg_pool2d = adaptive_avg_pool2d.bfloat16()
+            y_native_bf16 = bf16_adaptive_avg_pool2d(x_bf16)
+            y_zen_bf16 = bf16_adaptive_avg_pool2d(x_bf16.to_zendnn()).to_dense(torch.bfloat16)
+
+            self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+            self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=1e-1, rtol=1e-3)
+        else:
+            msg = "zendnn_adaptive_avg_pool2d: bf16 path needs the cpu support avx512bf16"
+            self.assertRaisesRegex(RuntimeError,
+                                   msg,
+                                   lambda: adaptive_avg_pool2d(x_bf16.to_zendnn()))
+
     def test_relu(self):
         x = torch.randn((4, 5), dtype=torch.float32) * 10
         self.assertEqual(torch.relu(x), torch.relu(x.to_zendnn()).to_dense())
@@ -517,6 +687,30 @@ class TestZENDNN(TestCase):
         x1 = torch.randn((4, 5), dtype=torch.float32) * 10
         x2 = x1.clone().to_zendnn()
         self.assertEqual(torch.relu_(x1), torch.relu_(x2).to_dense())
+
+    def _test_relu_bf16_base(self, name):
+        x = torch.randn((4, 6), dtype=torch.float32) * 10
+        x_bf16 = x.bfloat16()
+        fn = getattr(torch, name)
+        if has_bf16_support():
+            y_zen = fn(x.to_zendnn()).to_dense()
+
+            y_native_bf16 = fn(x_bf16)
+            y_zen_bf16 = fn(x_bf16.to_zendnn()).to_dense(torch.bfloat16)
+
+            self.assertEqual(y_native_bf16, y_zen_bf16, atol=1e-1, rtol=1e-3)
+            self.assertEqual(y_zen, y_zen_bf16.to_dense(torch.float32), atol=1e-1, rtol=1e-3)
+        else:
+            msg = "zendnn_" + name + ": bf16 path needs the cpu support avx512bf16"
+            self.assertRaisesRegex(RuntimeError,
+                                   msg,
+                                   lambda: fn(x_bf16.to_zendnn()))
+
+    def test_relu_bf16(self):
+        self._test_relu_bf16_base("relu")
+
+    def test_relu_inplace_bf16(self):
+        self._test_relu_bf16_base("relu_")
 
     def test_concat(self):
         for dim in range(0, 4):
