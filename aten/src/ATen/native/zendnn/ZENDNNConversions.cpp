@@ -46,19 +46,30 @@ Tensor zendnn_to_dense(const Tensor& zendnn_tensor, c10::optional<ScalarType> dt
   adeep::tensor& stensor = itensor_from_zendnn(zendnn_tensor);
   auto dims = stensor.get_dims();
   auto data_type = dtype.has_value() ? dtype.value() : zendnn_tensor.scalar_type();
-  TORCH_CHECK(data_type == ScalarType::Float || data_type == ScalarType::BFloat16,
-            "zendnn tensor only can be converted to be  float or bfloat16 cpu tensor")
+  TORCH_CHECK(data_type == ScalarType::Float || data_type == ScalarType::BFloat16 || data_type == ScalarType::Char,
+            "zendnn tensor only can be converted to be  float or bfloat16 or char cpu tensor")
   // NOTE: int32_t dims from adeep::tensor but sizes needs int64_t
   Tensor cpu_tensor = at::empty(
     std::vector<int64_t>(dims.begin(), dims.end()),
     zendnn_tensor.options().layout(c10::kStrided).dtype(data_type));
   if (stensor.is_empty()) return cpu_tensor;
-  auto pub_tensor =
+
+  adeep::tensor pub_tensor;
+  if(data_type == ScalarType::Float || data_type == ScalarType::BFloat16)
+  {
+      pub_tensor =
       data_type == ScalarType::Float
       ? stensor.to_public(cpu_tensor.template data_ptr<float>(),
                           adeep::tensor::data_type::f32)
       : stensor.to_public(cpu_tensor.template data_ptr<BFloat16>(),
-                         adeep::tensor::data_type::bf16);
+                        adeep::tensor::data_type::bf16);
+  }
+  else if(data_type == ScalarType::Char)
+  {
+      pub_tensor = stensor.to_public(cpu_tensor.template data_ptr<int8_t>(),
+                        adeep::tensor::data_type::s8);
+  }
+
   cpu_tensor.as_strided_(dims, pub_tensor.get_strides());
   return cpu_tensor;
 }
@@ -75,8 +86,8 @@ Tensor dense_to_zendnn(const Tensor& cpu_tensor, c10::optional<ScalarType> dtype
   // TODO: consider to convert non-contiguous tensor to `adeep::tensor` directly.
   auto cpu_tensor_cont = cpu_tensor.contiguous();
   auto data_type = dtype.has_value() ? dtype.value() : cpu_tensor.scalar_type();
-  TORCH_CHECK(data_type == ScalarType::Float || data_type == ScalarType::BFloat16,
-              "cpu tensor only can be converted to be a float or bfloat16 zendnn tensor")
+  TORCH_CHECK(data_type == ScalarType::Float || data_type == ScalarType::BFloat16  || data_type == ScalarType::Char,
+              "cpu tensor only can be converted to be a float or bfloat16 or char zendnn tensor")
   Tensor zendnn_tensor = empty_zendnn(cpu_tensor_cont.sizes(), data_type,
                                       cpu_tensor_cont.options().layout_opt(), cpu_tensor_cont.options().device_opt(),
                                       cpu_tensor_cont.options().pinned_memory_opt());
@@ -85,7 +96,14 @@ Tensor dense_to_zendnn(const Tensor& cpu_tensor, c10::optional<ScalarType> dtype
     dtensor.feed_from(dtensor.get_dims(),
                       adeep::tensor::data_type::f32,
                       (cpu_tensor_cont.template data_ptr<float>()));
-  } else {
+  }
+  else if(cpu_tensor.scalar_type() == ScalarType::Char)
+  {
+    dtensor.feed_from(dtensor.get_dims(),
+                    adeep::tensor::data_type::s8,
+                    (cpu_tensor_cont.template data_ptr<int8_t>()));
+  }
+  else {
     dtensor.feed_from(dtensor.get_dims(),
                       adeep::tensor::data_type::bf16,
                       cpu_tensor_cont.template data_ptr<BFloat16>());

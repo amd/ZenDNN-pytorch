@@ -400,6 +400,9 @@ void zendnn_vitis_ai_fusions(std::shared_ptr<Graph>& graph)
 void OptimizeFrozenZendnnGraph(std::shared_ptr<Graph>& graph) {
     ConvertFrozenOpsToZENDNN(graph);
 #if AT_ZENDNN_QUANT_ENABLED()
+    //It converts weights(vitis linear) from aten to zendnn tensor which is
+    //needed to cache weights
+    vitisaiMoveWeightsToZENDNN(graph);
     zendnn_vitis_ai_fusions(graph);
 #endif
     // List of nodes to be removed explicitly

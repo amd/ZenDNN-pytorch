@@ -139,8 +139,8 @@ adeep::tensor itensor_view_from_dense(const Tensor& tensor) {
   TORCH_CHECK(
       tensor.layout() == Layout::Strided,
       "itensor_view_from_dense expects dense tensor input");
-  TORCH_CHECK(tensor.scalar_type() == ScalarType::Float || tensor.scalar_type() == ScalarType::BFloat16,
-             "itensor_view_from_dense expects float or bfloat16 tensor input");
+  TORCH_CHECK(tensor.scalar_type() == ScalarType::Float || tensor.scalar_type() == ScalarType::BFloat16 || tensor.scalar_type() == ScalarType::Char,
+             "itensor_view_from_dense expects float or bfloat16 or char tensor input");
   TORCH_INTERNAL_ASSERT(at::impl::variable_excluded_from_dispatch());
 
   adeep::tensor atensor;
@@ -152,6 +152,13 @@ adeep::tensor itensor_view_from_dense(const Tensor& tensor) {
             adeep::tensor::data_type::bf16,
             tensor.strides().vec()},
             tensor.template data_ptr<BFloat16>()};
+  }
+  else if(tensor.scalar_type() == ScalarType::Char)
+  {
+    atensor =  {{tensor.sizes().vec(),
+            adeep::tensor::data_type::s8,
+            tensor.strides().vec()},
+            tensor.template data_ptr<int8_t>()};
   }
   else
   {

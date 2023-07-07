@@ -40,6 +40,6 @@ namespace jit {
 // Op must be in float32 and zendnn must be built
 // This pass only works on frozen graph
 TORCH_API void ConvertFrozenOpsToZENDNN(std::shared_ptr<Graph>& graph);
-
+TORCH_API void vitisaiMoveWeightsToZENDNN(std::shared_ptr<Graph>& graph);
 } // namespace jit
 } // namespace torch

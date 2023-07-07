@@ -32,7 +32,7 @@
 #include <ATen/Config.h>
 #include <ATen/NativeFunctions.h>
 #include <tuple>
-
+#include <ATen/native/zendnn/ZENDNNTensors.h>
 #if !AT_ZENDNN_ENABLED()
 
 namespace at {
@@ -238,3 +238,54 @@ Tensor zendnn_layer_norm(
 } // namespace at
 
 #endif // AT_ZENDNN_ENABLED
+namespace at { namespace native {
+#if !AT_ZENDNN_QUANT_ENABLED()
+
+Tensor zendnn_vitisai_layer_norm(
+    at::Tensor const& input,
+    at::Tensor const& weight,
+    at::Tensor const& bias,
+    double eps,
+    int64_t input_scale) {
+    TORCH_CHECK(false, "zendnn_vitisai_layer_norm: ATen not compiled with ZENDNN QUANTIZATION support");
+    }
+
+#else // AT_ZENDNN_QUANT_ENABLED
+
+using Convt = at::native::ZendnnTensorConvert;
+// zendnn_vitisai_layer_norm returns aten tensor
+// as an output tensor.
+Tensor zendnn_vitisai_layer_norm(
+    at::Tensor const& input,
+    at::Tensor const& weight,
+    at::Tensor const& bias,
+    double eps,
+    int64_t input_scale) {
+
+  // See [Note: hacky wrapper removal for optional tensor]
+  if (input.scalar_type() != ScalarType::Float) {
+    TORCH_CHECK(false, "zendnn_vitisai_layer_norm: currently ZenDNN only supports Float dtype");
+  }
+
+  Tensor cpu_tensor;
+  cpu_tensor = at::empty(
+    input.sizes(),
+    input.options().layout(c10::kStrided).dtype(ScalarType::Float).memory_format(at::MemoryFormat::Contiguous));
+
+  TORCH_CHECK(weight.defined() && bias.defined(),
+             "zendnn_layer_norm: currently ZenDNN only supports affine model");
+
+  adeep::tensor x = itensor_from_tensor(input);
+  adeep::tensor w = itensor_from_tensor(weight);
+  adeep::tensor b = itensor_from_tensor(bias);
+  float input_scale_pow_2;
+
+  adeep::tensor y = Convt::zentensor_view_dense(cpu_tensor);
+  adeep::tensor mean;
+  adeep::tensor variance;
+
+  adeep::layer_normalization_forward::compute(x, w, b, y, mean, variance, eps);
+  return cpu_tensor;
+}
+#endif
+}}

@@ -235,6 +235,21 @@ Tensor zendnn_vitisai_linear(
     TORCH_CHECK(false, "zendnn_vitisai_linear: ATen not compiled with ZENDNN QUANTIZATION support");
 }
 
+Tensor zendnn_vitisai_matmul(
+    const Tensor& input,
+    const Tensor& weight,
+    const c10::optional<Tensor>& bias_opt,
+    const c10::optional<Tensor>& add_input,
+    bool dequant,
+    bool fuse_div,
+    int64_t gelu_scale,
+    int64_t input_scale,
+    int64_t filter_scale,
+    int64_t output_scale,
+    int64_t add_scale) {
+    TORCH_CHECK(false, "zendnn_vitisai_matmul: ATen not compiled with ZENDNN QUANTIZATION support");
+
+    }
 }}
 
 #else // AT_ZENDNN_QUANT_ENABLED
@@ -242,8 +257,178 @@ Tensor zendnn_vitisai_linear(
 #include <ATen/native/zendnn/ZENDNNCommon.h>
 #include <ATen/native/zendnn/Utils.h>
 #include <ATen/native/ConvUtils.h>
-
+#include <ATen/native/zendnn/ZENDNNTensors.h>
 namespace at { namespace native {
+using Convt = at::native::ZendnnTensorConvert;
+
+
+//zendnn_vitisai_matmul Handles 3D and 4D matrix multiplications
+//It returns aten tensor as an output as no blocked format
+//conversion is involved and can avoid few output reorders
+//in few cases.
+Tensor zendnn_vitisai_matmul(
+    const Tensor& input,
+    const Tensor& weight,
+    const c10::optional<Tensor>& bias_opt,
+    const c10::optional<Tensor>& add_input,
+    bool dequant,
+    bool fuse_div,
+    int64_t gelu_scale,
+    int64_t input_scale,
+    int64_t filter_scale,
+    int64_t output_scale,
+    int64_t add_scale) {
+
+  // See [Note: hacky wrapper removal for optional tensor]
+  if (input.scalar_type() == ScalarType::BFloat16) {
+    TORCH_CHECK(false, "zendnn_vitisai_matmul: bf16 path is not supported for zendnn_vitisai_matmul");
+  }
+
+  if(input.dim() !=3 && input.dim() !=4)
+  {
+    TORCH_CHECK(false, "zendnn_vitisai_matmul: Currently support only for 3D and 4D tensors");
+  }
+  c10::MaybeOwned<Tensor> bias_maybe_owned = at::borrow_from_optional_tensor(bias_opt);
+  const Tensor& bias = *bias_maybe_owned;
+  c10::MaybeOwned<Tensor> add_input_maybe_owned = at::borrow_from_optional_tensor(add_input);
+
+  const Tensor& add_input_tensor = *add_input_maybe_owned;
+  const bool bias_enable = bias.defined();
+
+  bool fuse_add = add_input_tensor.defined();
+  Tensor add_input_to_zendnn = add_input_tensor;
+
+  float input_scale_pow_2 = std::pow(2, input_scale);
+  float filter_scale_pow_2 = std::pow(2, filter_scale);
+  float bias_scale_derived_pow_2 = std::pow(2, input_scale + filter_scale);
+  float requantize_scale_pow_2 = std::pow(2, -input_scale - filter_scale + output_scale);
+  float add_scale_pow_2 = 1.0f;
+  float gelu_scale_pow_2 = -1.0f;
+
+  Tensor input1 = input.contiguous();
+  const adeep::tensor zendnn_input = itensor_from_tensor(input1);
+
+  //FIXME: Since the divisor is 8 always in the model, merging it with
+  //requant scale computation.
+
+  //Modified the pattern in the JIT such that matmul ad fusion will happen
+  //Original Pattern: Linear->reshape->permute->matmul->div->add
+  //Modified Pattern: Linear->div->reshape->permute->matmul->add
+  int div_scale = fuse_div ? 3:0;
+
+  adeep::tensor zendnn_bias;
+  if (bias.defined()) {
+    zendnn_bias = itensor_from_tensor(bias);
+  }
+
+  ScalarType dtype = dequant == true? ScalarType::Float : ScalarType::Char;
+
+  //Output tensor(aten) initialization with int8, and based on dequant flag
+  //tensor dtype can be typecasted
+  Tensor  cpu_tensor;
+  if(input.dim() == 3)
+  {
+    cpu_tensor = at::empty(
+          {input.sizes()[0], input.sizes()[1], weight.sizes()[2]}, dtype
+          );
+  }
+  else if(input.dim() == 4)
+  {
+    cpu_tensor = at::empty(
+          {input.sizes()[0], input.sizes()[1] ,input.sizes()[2] , weight.sizes()[3]},
+          dtype);
+  }
+
+  adeep::tensor zendnn_output;
+
+  //Handling scales based on dequant flag
+  if(dequant){
+    requantize_scale_pow_2 = std::pow(2, -input_scale - filter_scale - div_scale);
+  }
+  else
+  {
+    requantize_scale_pow_2 = std::pow(2, -input_scale - filter_scale + output_scale - div_scale);
+  }
+
+  //Handling gelu scales, if gelu node is not present, by default it
+  //is set to -1.
+  if(gelu_scale != -1){
+    requantize_scale_pow_2 = std::pow(2, -input_scale - filter_scale);
+    gelu_scale_pow_2= 1.0f;
+  }
+
+  if(gelu_scale != -1 && !dequant){
+      gelu_scale_pow_2 = std::pow(2, gelu_scale);
+  }
+
+  if(fuse_add){
+      requantize_scale_pow_2 = std::pow(2, -input_scale - filter_scale);
+      add_scale_pow_2 = std::pow(2, -add_scale);
+      //Broadcasting the tensor to the relevant dimentions
+      if(add_input_tensor.sizes() != cpu_tensor.sizes())
+      {
+       add_input_to_zendnn = add_input_tensor.expand(cpu_tensor.sizes()).contiguous();
+      }
+      zendnn_output =  Convt::zentensor_view_dense(add_input_to_zendnn);
+  }
+  else
+  {
+    zendnn_output =   Convt::zentensor_view_dense(cpu_tensor);
+  }
+
+  //Weight caching will only be on done on ZenDNN weight tesnors
+  //aten weight is converted to zendnn weight tensor in JIT pass.
+  if(weight.is_zendnn())
+  {
+    adeep::tensor& zendnn_weight = itensor_from_zendnn(weight);
+    adeep::matmul_forward::zen_vitis_matmul(
+        zendnn_input,
+        zendnn_weight,
+        zendnn_bias,
+        bias_enable,
+        zendnn_output,
+        dequant,
+        fuse_add,
+        gelu_scale_pow_2,
+        input_scale_pow_2,
+        filter_scale_pow_2,
+        bias_scale_derived_pow_2,
+        requantize_scale_pow_2,
+        add_scale_pow_2
+      );
+  }
+  else
+  {
+    Tensor input2 = weight.contiguous();
+    adeep::tensor zendnn_weight = itensor_from_tensor(input2);
+    adeep::matmul_forward::zen_vitis_matmul(
+        zendnn_input,
+        zendnn_weight,
+        zendnn_bias,
+        bias_enable,
+        zendnn_output,
+        dequant,
+        fuse_add,
+        gelu_scale_pow_2,
+        input_scale_pow_2,
+        filter_scale_pow_2,
+        bias_scale_derived_pow_2,
+        requantize_scale_pow_2,
+        add_scale_pow_2
+      );
+  }
+
+  if(!fuse_add)
+  {
+    return cpu_tensor;
+  }
+  else
+  {
+    return add_input_to_zendnn;
+  }
+
+}
+
 
 Tensor zendnn_vitisai_linear(
     const Tensor& input,

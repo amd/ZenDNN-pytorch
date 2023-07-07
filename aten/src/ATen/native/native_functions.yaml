@@ -3589,6 +3589,11 @@
     CompositeExplicitAutograd: mkldnn_convolution
   autogen: mkldnn_convolution.out
 
+- func: zendnn_vitisai_layer_norm(Tensor input, Tensor weight, Tensor bias, float eps, int input_scale) -> Tensor
+  python_module: nn
+  dispatch:
+    CompositeExplicitAutograd: zendnn_vitisai_layer_norm
+
 - func: zendnn_convolution_relu(Tensor self, Tensor weight, Tensor? bias, int[] padding, int[] stride, int[] dilation, int groups) -> Tensor
   dispatch:
     CompositeExplicitAutograd: zendnn_convolution_relu
@@ -3602,6 +3607,11 @@
   python_module: nn
   dispatch:
     CompositeExplicitAutograd: zendnn_vitisai_linear
+
+- func: zendnn_vitisai_matmul(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, bool dequant, bool fuse_div, int gelu_scale, int input_scale, int filter_scale, int output_scale, int add_scale) -> Tensor
+  python_module: nn
+  dispatch:
+    CompositeExplicitAutograd: zendnn_vitisai_matmul
 
 - func: zendnn_convolution(Tensor self, Tensor weight, Tensor? bias, int[] padding, int[] stride, int[] dilation, int groups) -> Tensor
   dispatch:

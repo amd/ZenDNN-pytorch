@@ -98,6 +98,149 @@ struct matmul_forward : public zendnn::matmul {
     return pd.weights_desc();
   }
 
+  static void zen_weights_reorder_cache( tensor& wts, tensor::desc wts_desc,
+                                         attr_t wts_attr = attr_t())
+  {
+    auto weight_desc = wts.get_descriptor();
+    if(weight_desc != wts_desc)
+    {
+       wts = wts.reorder_if_differ_in(wts_desc, wts_attr);
+    }
+  }
+
+ static void zen_vitis_matmul(const tensor& src,
+                          tensor& weights,
+                          const tensor& bias,
+                          bool bias_enable,
+                          tensor& dst,
+                          bool dequant = false,
+                          bool fuse_add = false,
+                          float gelu_scale = -1.0,
+                          float input_scale = -1.0,
+                          float filter_scale = -1.0,
+                          float bias_scale =-1.0,
+                          float requantize_scale =-1.0,
+                          float add_scale = -1.0,
+                          const engine& aengine = engine::cpu_engine()
+      ) {
+    ADEEP_ENFORCE(src.ndims() == weights.ndims(), "Invalid dims in src or weights");
+    const scale_t& src_scales = {input_scale};
+    const scale_t& weights_scales = {filter_scale};
+    const scale_t& b_scale = {bias_scale};
+    const scale_t& r_scale = {requantize_scale};
+
+    // Descriptors for source, weights, and bias tensors
+    // Attrs for source, weights, bias, and output
+    tensor::desc src_desc, weights_desc, bias_desc, dst_desc, dumm_dec;
+    attr_t src_attr, weights_attr, bias_attr, op_attr, dummy_attr;
+
+    auto dtype_f32  = data_type::f32;
+    // Set number of scales
+    int scale_size = 1;
+    if (src.get_data_type() == data_type::f32) {
+      //Creating descriptor to convert the fp32 input tensor to int8 format
+      src_desc = {src.get_dims(), data_type::s8, tag::any};
+      src_attr = {0, src_scales};
+    } else {
+      src_desc = {src.get_dims(), src.get_data_type(), tag::any};
+    }
+
+    weights_desc = {weights.get_dims(), data_type::s8, tag::any};
+    if (weights.get_data_type() == data_type::f32) {
+      //Creating descriptor to convert the fp32 weight tensor to int8 format
+      weights_attr = {utils::tensor_scale_mask(scale_size, false),
+                      weights_scales};
+    }
+
+    if(bias_enable)
+    {
+      //Creating descriptor to convert the fp32 bias tensor to s32 format
+      bias_desc = {bias.get_dims(), data_type::s32, format_tag::any};
+      if (bias.get_data_type() == data_type::f32) {
+        bias_attr = {utils::tensor_scale_mask(scale_size, false),
+                      b_scale};
+      }
+    }
+
+    tensor::dims dst_dims = {src.get_dim(0), weights.get_dim(1)};
+    auto ndims = weights.ndims();
+    if (ndims == 3)
+    {
+       dst_dims = {src.get_dim(0), src.get_dim(1), weights.get_dim(2)};
+    }
+    else if(ndims == 4)
+    {
+       dst_dims = {src.get_dim(0), src.get_dim(1), src.get_dim(2), weights.get_dim(3)};
+    }
+
+    auto dst_data_type = dequant ? data_type::f32 : data_type::s8;
+
+    post_ops post_ops;
+    if (fuse_add){
+      post_ops.append_sum(1.0);
+    }
+
+    //gelu scale is reinitialized with scale in aten level call if
+    //gelu node is present, else it will be -1.0.
+    if (gelu_scale != -1.0f){
+        post_ops.append_eltwise(gelu_scale, algorithm::eltwise_gelu_erf, 0.0f, 0.0f);
+    }
+
+    op_attr.set_post_ops(post_ops);
+    op_attr.set_scratchpad_mode(zendnn::scratchpad_mode::user);
+    op_attr.set_output_scales(utils::op_scale_mask(scale_size), r_scale);
+
+
+    if(fuse_add){
+      dst_desc = dst.get_desc();
+    }
+    else
+    {
+      dst_desc = {dst_dims, dst_data_type, format_tag::any};
+    }
+
+    primitive_desc pd;
+    if(bias_enable)
+    {
+         pd = primitive_desc({src_desc, weights_desc, bias_desc,
+                              dst_desc}, op_attr, aengine);
+    }
+    else
+    {
+       pd = primitive_desc({src_desc, weights_desc,
+                      dst_desc}, op_attr, aengine);
+    }
+
+    tensor scratchpad(pd.scratchpad_desc());
+
+    auto expected_src = src.reorder_if_differ_in(pd.src_desc(), src_attr);
+    adeep::matmul_forward::zen_weights_reorder_cache(weights,
+                                tensor::desc(pd.weights_desc()),
+                                weights_attr);
+    dst.reinit_if_possible(pd.dst_desc());
+
+    if(bias_enable)
+    {
+    auto expected_bias = bias.reorder_if_differ_in(pd.bias_desc(), bias_attr);
+    super(pd).execute(stream::default_stream(),
+                      {{ZENDNN_ARG_SRC, expected_src},
+                      {ZENDNN_ARG_WEIGHTS, weights},
+                      {ZENDNN_ARG_BIAS, expected_bias},
+                      {ZENDNN_ARG_DST, dst},
+                      {ZENDNN_ARG_SCRATCHPAD, scratchpad}});
+    }
+    else
+    {
+         super(pd).execute(stream::default_stream(),
+                      {{ZENDNN_ARG_SRC, expected_src},
+                      {ZENDNN_ARG_WEIGHTS, weights},
+                      {ZENDNN_ARG_DST, dst},
+                      {ZENDNN_ARG_SCRATCHPAD, scratchpad}});
+    }
+    return;
+  }
+
+
 private:
   template <bool with_bias>
  static void compute_impl(const tensor& src,

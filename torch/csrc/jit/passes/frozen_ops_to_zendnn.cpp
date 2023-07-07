@@ -67,6 +67,7 @@
 #include <zendnn_types.h>
 #include <ATen/native/zendnn/Utils.h>
 #include <ATen/native/zendnn/ZENDNNCommon.h>
+#include <ATen/native/zendnn/ZENDNNTensors.h>
 #include <adeep.hpp>
 #endif
 
@@ -657,6 +658,31 @@ jit::RegisterOperators reg_zendnn_linear({
 });
 
 #if AT_ZENDNN_QUANT_ENABLED()
+
+using Convt = at::native::ZendnnTensorConvert;
+//Takes the fp32 input tensor and scale and returns int8 tensor
+Tensor zendnn_vitisai_quant(const Tensor& input,
+                           bool dense_tensor,
+                           int64_t input_scale)
+{
+  float input_scale_pow_2 = std::pow(2, input_scale);
+  at::ScalarType scalar_type;
+  adeep::attr_t src_attr;
+  adeep::tensor::desc src_desc;
+  const adeep::scale_t& src_scales = {input_scale_pow_2};
+  src_attr = {adeep::utils::tensor_scale_mask(1, false),
+                  src_scales};
+
+  adeep::tensor zendnn_input =  Convt::zentensor_view_dense(input);
+  src_desc = {zendnn_input.get_dims(), adeep::data_type::s8, adeep::tag::abc};
+  auto zendnn_output = zendnn_input.reorder_if_differ_in(src_desc, src_attr);
+
+  auto out_tensor=  at::native::new_with_itensor_zendnn(std::move(zendnn_output), at::ScalarType::Char,
+                                   input.options().device_opt());
+
+  return dense_tensor == true ? out_tensor.to_dense():out_tensor;
+}
+
 Operation ZenDNN_Vitis_Ai_Conv_Op(const Node* node) {
   return [](jit::Stack& stack) {
           int64_t add_out_scale = pop(stack).toInt();
@@ -717,6 +743,61 @@ Operation ZenDNN_Vitis_Ai_Conv_Op(const Node* node) {
         };
 }
 
+Operation ZenDNN_Vitis_Ai_linear_Op(const Node* node) {
+  return [](jit::Stack& stack) {
+          Tensor bias;
+          Tensor add_input;
+          int64_t add_in_scale = pop(stack).toInt();
+          int64_t output_scale = pop(stack).toInt();
+          int64_t filter_scale = pop(stack).toInt();
+          int64_t input_scale = pop(stack).toInt();
+          int64_t gelu_scale = pop(stack).toInt();
+          bool fuse_div = pop(stack).toBool();
+          bool dequant = pop(stack).toBool();
+
+
+          IValue add_in_val = pop(stack);
+          if (!add_in_val.isNone()) {
+            add_input = add_in_val.toTensor();
+          }
+
+          IValue bias_ival = pop(stack);
+          if (!bias_ival.isNone()) {
+            bias = bias_ival.toTensor();
+          }
+          Tensor weight = pop(stack).toTensor();
+          Tensor input = pop(stack).toTensor();
+
+          at::AutoDispatchBelowAutograd mode;
+
+          push(
+              stack,
+              at::native::zendnn_vitisai_matmul(
+                  input, weight, bias, add_input, dequant, fuse_div, gelu_scale ,input_scale, filter_scale, output_scale, add_in_scale));
+        };
+}
+
+jit::RegisterOperators reg_fut_ops_vitis_quant({
+    jit::Operator(
+        // XXX: this follows the schema convention of conv2d/conv3d, not
+        // aten::zendnn_convolution, which is different for some reason!
+        "prim::zendnn_vitisai_quant(Tensor self, bool dequant, int input_scale) -> Tensor",
+        [](jit::Stack& stack) {
+          Tensor bias;
+          Tensor add_input;
+          int64_t input_scale = pop(stack).toInt();
+          bool dequant = pop(stack).toBool();
+          Tensor input = pop(stack).toTensor();
+          at::AutoDispatchBelowAutograd mode;
+
+          push(
+              stack,
+              zendnn_vitisai_quant(
+                  input, dequant, input_scale));
+        },
+         AliasAnalysisKind::FROM_SCHEMA),
+});
+
 const RegisterOperators ZENDNNVitisAiFuseOpReg({
     torch::jit::Operator(
         "prim::zendnn_vitisai_convolution(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, int[] padding, int[] stride, int[] dilation, int groups, bool dequant, bool fuse_relu, int input_scale, int filter_scale, int output_scale,int add_scale, int add_out_scale) -> Tensor",
@@ -736,6 +817,21 @@ const RegisterOperators ZENDNNVitisAiFuseOpReg({
     torch::jit::Operator(
         "prim::zendnn_vitisai_convolution_add_relu(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, int[] padding, int[] stride, int[] dilation, int groups, bool dequant, bool fuse_relu, int input_scale, int filter_scale, int output_scale, int add_scale, int add_out_scale) -> Tensor",
         ZenDNN_Vitis_Ai_Conv_Op,
+        AliasAnalysisKind::FROM_SCHEMA),
+
+    torch::jit::Operator(
+        "prim::zendnn_vitisai_linear_gelu(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, bool dequant, bool fuse_div, int gelu_scale, int input_scale, int filter_scale, int output_scale, int add_scale) -> Tensor",
+        ZenDNN_Vitis_Ai_linear_Op,
+        AliasAnalysisKind::FROM_SCHEMA),
+
+    torch::jit::Operator(
+        "prim::zendnn_vitisai_linear(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, bool dequant, bool fuse_div, int gelu_scale, int input_scale, int filter_scale, int output_scale, int add_scale) -> Tensor",
+        ZenDNN_Vitis_Ai_linear_Op,
+        AliasAnalysisKind::FROM_SCHEMA),
+
+    torch::jit::Operator(
+        "prim::zendnn_vitisai_matmul(Tensor self, Tensor weight, Tensor? bias, Tensor? add_input, bool dequant, bool fuse_div, int gelu_scale, int input_scale, int filter_scale, int output_scale, int add_scale) -> Tensor",
+        ZenDNN_Vitis_Ai_linear_Op,
         AliasAnalysisKind::FROM_SCHEMA),
 });
 #endif
@@ -1296,6 +1392,17 @@ bool containsZENDNNGroup(Block* b) {
 }
 
 } // namespace
+
+void vitisaiMoveWeightsToZENDNN(std::shared_ptr<Graph>& graph)
+{
+    auto vitis_lin_nodes = findAllNodes(graph->block(),prim::zendnn_vitisai_linear, true);
+    auto vitis_lin_gelu_nodes = findAllNodes(graph->block(),prim::zendnn_vitisai_linear_gelu, true);
+    vitis_lin_nodes.insert(vitis_lin_nodes.end(), vitis_lin_gelu_nodes.begin(), vitis_lin_gelu_nodes.end());
+    for(Node* node : vitis_lin_nodes)
+    {
+      moveConvWeightsToZENDNN(node);
+    }
+}
 
 void ConvertFrozenOpsToZENDNN(std::shared_ptr<Graph>& graph) {
   GRAPH_DUMP("Before convert frozen ops to zendnn", graph);

@@ -78,6 +78,9 @@ namespace c10 {
   _(prim, zendnn_convolution)        \
   _(prim, zendnn_vitisai_convolution)\
   _(prim, zendnn_convolution_relu)   \
+  _(prim, zendnn_vitisai_linear_gelu)  \
+  _(prim, zendnn_vitisai_linear)     \
+  _(prim, zendnn_vitisai_matmul)     \
   _(prim, StaticRuntimeCopyOuts)     \
   _(prim, Drop)                      \
   _(prim, Eval)                      \
