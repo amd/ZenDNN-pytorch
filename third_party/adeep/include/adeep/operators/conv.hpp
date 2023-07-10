@@ -216,6 +216,7 @@ struct convolution_forward
 
     data_type dtype_s8 = data_type::s8;
     data_type dtype_u8 = data_type::u8;
+    data_type dtype_s16 = data_type::s16;
     data_type dtype_s32 = data_type::s32;
     data_type dtype_f32 = data_type::f32;
     tensor::desc src_desc, weights_desc, bias_desc, dst_desc;    // Descriptors for source, weights, and bias tensors
@@ -224,6 +225,89 @@ struct convolution_forward
     // Make weights and dilates compatible with ZENDNN
     auto weights_ = weights.make_grouped_weights(groups);
     auto dilates_ = utils::get_compatible_dilates(dilates);
+
+    auto check_size = [](const dims& dimensions,
+                         int start, int end, int value) -> bool {
+      bool check = true;
+      for(int i=start; i<=end; i++) { check &= (dimensions[i] == value); }
+      return check;
+    };
+
+    // Conditions to be checked
+    // Weights dimension should be 1x1
+    // Strides = 1
+    // Pad values = 0
+    // Src datatype = u8 or s8
+    // Dst datatype = s8
+    // Weight datatype = s8
+    // Not fused with Add op
+
+    data_type src_datatype_tmp = src.get_data_type();
+    // src datatype = f32, pd is created with s8 datatype
+    if (src.get_data_type() == dtype_f32)
+       src_datatype_tmp = dtype_s8;
+    data_type dst_datatype_tmp = dst.get_data_type();
+    if(fuse_add == 0 && fuse_relu == 1)
+       dst_datatype_tmp = dtype_u8;
+    else if (fuse_add == 0 && fuse_relu == 0)
+       dst_datatype_tmp = dtype_s8;
+    else
+       dst_datatype_tmp = dst.get_data_type();
+
+    bool conditions_check = check_size(weights_.get_dims(), 2, 3, 1) &&
+                       check_size(strides, 0, 1, 1) &&
+                       check_size(padding_l, 0, 1, 0) &&
+                       check_size(padding_r, 0, 1, 0) &&
+                       (src_datatype_tmp == dtype_s8 || src_datatype_tmp == dtype_u8) &&
+                       (dst_datatype_tmp == dtype_s8) &&
+                       // ReLU is supported by LPGEMM path
+                       // but in PyTorch, dst datatype = u8 if ReLU is fused
+                       // Hence, disabled.
+                       (fuse_relu == 0) &&
+                       (fuse_add == 0);
+
+    // Depending on the dimensions of Conv,
+    // LPGEMM path will be taken
+    bool use_lpgemm = 0;
+    // Set environment variable LPGEMM_PATH_ENABLED to 1
+    // to use LPGEMM path for selective Conv ops
+    const char* lpgemm_env_tmp = std::getenv("LPGEMM_PATH_ENABLED");
+    if(lpgemm_env_tmp) use_lpgemm = atoi(lpgemm_env_tmp);
+    if(use_lpgemm != 0) {
+        use_lpgemm = 1;
+    }
+    // If disabled, s32 API of LPGEMM will be used.
+    // s32 API is for Genoa systems.
+    // s16 API works on all systems.
+    bool use_s16_lpgemm = 0;
+    // Set environment variable S16_LPGEMM_ENABLED to 1
+    // to use S16 API of LPGEMM (must for Milan / Systems
+    // without AVX512 support)
+    const char* s16_lpgemm_env_tmp = std::getenv("S16_LPGEMM_ENABLED");
+    if(s16_lpgemm_env_tmp) use_s16_lpgemm = atoi(s16_lpgemm_env_tmp);
+    if(use_s16_lpgemm != 0) {
+        use_s16_lpgemm = 1;
+    }
+    use_lpgemm = use_lpgemm &&
+                      conditions_check;
+
+    // Select the correct LPGEMM algorithm type
+    // 4 LPGEMM APIs supported
+    // u8s8s32os8
+    // s8s8s32os8
+    // u8s8s16os8
+    // s8s8s16os8
+    if (use_lpgemm) {
+       aalgorithm = zendnn::algorithm::convolution_gemm_u8s8s16os8;
+       if (src_datatype_tmp == dtype_u8 && use_s16_lpgemm == 0)
+          aalgorithm = zendnn::algorithm::convolution_gemm_u8s8s32os8;
+       else if (src_datatype_tmp == dtype_u8 && use_s16_lpgemm == 1)
+          aalgorithm = zendnn::algorithm::convolution_gemm_u8s8s16os8;
+       else if (src_datatype_tmp == dtype_s8 && use_s16_lpgemm == 0)
+          aalgorithm = zendnn::algorithm::convolution_gemm_s8s8s32os8;
+       else if (src_datatype_tmp == dtype_s8 && use_s16_lpgemm == 1)
+          aalgorithm = zendnn::algorithm::convolution_gemm_s8s8s16os8;
+    }
 
     // Set number of scales
     int scale_size = 1;
@@ -245,21 +329,33 @@ struct convolution_forward
     op_attr.set_post_ops(post_ops);
 
     // Set the input scale on the input tensor attr
+    tag src_tag = tag::any;
+    if (use_lpgemm) {
+      src_tag = tag::nhwc;
+    }
     if (src.get_data_type() == dtype_f32) {
-      src_desc = {src.get_dims(), dtype_s8, tag::any};
+      src_desc = {src.get_dims(), dtype_s8, src_tag};
       src_attr = {utils::tensor_scale_mask(scale_size, groups > 1), i_scale};
     } else {
-      src_desc = {src.get_dims(), src.get_data_type(), tag::any};
+      src_desc = {src.get_dims(), src.get_data_type(), src_tag};
     }
 
     // Set the weight scale on the weight tensor attr
     weights_desc = weights_.get_desc().to_type(dtype_s8);
+    if (use_lpgemm) {
+      weights_desc = weights_desc.to_format(tag::hwcn);
+    }
     if (weights_.get_data_type() == dtype_f32){
       weights_attr = {utils::tensor_scale_mask(scale_size, groups > 1), f_scale};
     }
-
     // Set the bias scale on the bias tensor attr
     bias_desc = {bias.get_dims(), dtype_s32, tag::any};
+    if (use_lpgemm && use_s16_lpgemm == 0) {
+      bias_desc = {bias.get_dims(), dtype_s32, tag::x};
+    }
+    else if (use_lpgemm && use_s16_lpgemm) {
+      bias_desc = {bias.get_dims(), dtype_s16, tag::x};
+    }
     if (bias.get_data_type() == dtype_f32){
       bias_attr = {utils::tensor_scale_mask(scale_size, false), b_scale};
     }
@@ -272,10 +368,16 @@ struct convolution_forward
       dst_desc = dst.get_desc();
     }
     else if (fuse_relu){
-        dst_desc = tensor::desc(dst_dims, dtype_u8);
+      dst_desc = tensor::desc(dst_dims, dtype_u8);
+      if (use_lpgemm) {
+         dst_desc = tensor::desc(dst_dims, dtype_u8, tag::nhwc);
+      }
     }
     else {
-        dst_desc = tensor::desc(dst_dims, dtype_s8);
+      dst_desc = tensor::desc(dst_dims, dtype_s8);
+      if (use_lpgemm) {
+         dst_desc = tensor::desc(dst_dims, dtype_s8, tag::nhwc);
+      }
     }
 
     // Get the primitive descriptor for the convolution
@@ -283,6 +385,13 @@ struct convolution_forward
         src_desc, weights_desc, bias_desc, dst_desc, strides, dilates_,
         padding_l, padding_r, op_attr, aalgorithm, aprop_kind, aengine
     );
+
+    if (use_lpgemm) {
+      pd = primitive_desc({aprop_kind, aalgorithm, src_desc,
+                           weights_desc, bias_desc, dst_desc,
+                           strides, dilates_, padding_l, padding_r},
+                           op_attr, aengine);
+    }
 
     // Allocate scratchpad
     tensor scratchpad(pd.scratchpad_desc());
@@ -294,16 +403,41 @@ struct convolution_forward
                                    weights_attr, groups);
     auto expected_bias = bias.reorder_if_differ_in(pd.bias_desc(), bias_attr);
 
+    zendnn::memory conv_bias_reordered_memory_s16;
+    // Convert s32 BIAS to s16 if s16 LPGEMM path is used
+    // TODO: Support s16 datatype in reorder primitive
+    // Used for 2 LPGEMM APIs:
+    // u8s8s16os8
+    // s8s8s16os8
+    if (use_lpgemm == 1 && use_s16_lpgemm == 1) {
+      int32_t * bias_array_original = (int32_t *)(expected_bias.get_data_handle());
+      int16_t * bias_array2 = new int16_t[bias.get_dims()[0]];
+      for(int j=0; j<bias.get_dims()[0]; ++j) {
+        bias_array2[j] = static_cast<int16_t>(bias_array_original[j]);
+      }
+      //{bias.get_dims(), dtype_s16, tag::x};
+      conv_bias_reordered_memory_s16 = zendnn::memory({bias.get_dims(), dtype_s16, tag::x}, aengine, bias_array2);
+    }
+
     // Prepare the output tensor
     dst.reinit_if_possible(pd.dst_desc());
 
     // Perform the operation
+    if (!(use_lpgemm && use_s16_lpgemm)) {
     super(pd).execute(stream::default_stream(),
                       {{ZENDNN_ARG_SRC, expected_src},
                       {ZENDNN_ARG_WEIGHTS, weights},
                       {ZENDNN_ARG_BIAS, expected_bias},
                       {ZENDNN_ARG_DST, dst},
                       {ZENDNN_ARG_SCRATCHPAD, scratchpad}});
+    } else {
+    super(pd).execute(stream::default_stream(),
+                      {{ZENDNN_ARG_SRC, expected_src},
+                      {ZENDNN_ARG_WEIGHTS, weights},
+                      {ZENDNN_ARG_BIAS, conv_bias_reordered_memory_s16},
+                      {ZENDNN_ARG_DST, dst},
+                      {ZENDNN_ARG_SCRATCHPAD, scratchpad}});
+   }
 
     if(dst.get_data_type() == data_type::s8 && fuse_relu){
       dst = dst.reorder_if_differ_in(tensor::desc(dst_dims, data_type::u8, tag::acdb));
