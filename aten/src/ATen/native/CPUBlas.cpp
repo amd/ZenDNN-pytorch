@@ -31,6 +31,7 @@
 #include <ATen/native/CPUBlas.h>
 #include <ATen/native/mkl/LinearAlgebra.h>
 #include <ATen/native/mkldnn/Matmul.h>
+#include <ATen/native/zendnn/Matmul.h>
 #include <ATen/Config.h>
 
 #include <c10/util/SmallBuffer.h>
@@ -388,6 +389,10 @@ void gemm(
 #endif
 #if AT_MKLDNN_ENABLED()
    if (mkldnn_bf16_gemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)) {
+     return;
+   }
+#elif AT_ZENDNN_ENABLED()
+  if (zendnn_bf16_gemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)) {
      return;
    }
 #endif

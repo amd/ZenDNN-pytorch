@@ -1,3 +1,33 @@
+/******************************************************************************
+* Modifications Copyright (c) 2023 Advanced Micro Devices, Inc.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+* may be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/CPUFunctions.h>
 #include <ATen/Dispatch.h>
@@ -6,6 +36,7 @@
 #include <ATen/Config.h>
 
 #include <ATen/native/mkldnn/Matmul.h>
+#include <ATen/native/zendnn/Matmul.h>
 
 namespace at {
 namespace meta {
@@ -67,7 +98,10 @@ TORCH_IMPL_FUNC(addmv_out_cpu)(const Tensor &self, const Tensor &mat, const Tens
         mkldnn_matmul(mat, vec, result, beta_.to<float>(), alpha_.to<float>());
         return;
       }
-
+      if (use_zendnn_bf16_matmul(mat, vec, /*result=*/Tensor())){
+        zendnn_matmul(mat, vec, result, beta_.to<float>(), alpha_.to<float>());
+        return;
+      }
       auto r_stride = result.stride(0);
       AT_DISPATCH_ALL_TYPES_AND_COMPLEX_AND(kBFloat16, mat.scalar_type(), "addmv_impl_cpu", [&] {
         auto beta = beta_.to<scalar_t>();
@@ -162,6 +196,12 @@ Tensor dot(const Tensor &self, const Tensor &other){
     // mkldnn matmul expect result have sizes info to create ideep tensor
     auto r =  at::empty({1, 1}, self.options());
     mkldnn_matmul(self, other, r, /*beta=*/0);
+    return r;
+  }
+
+  if (use_zendnn_bf16_matmul(self, other, /*result=*/Tensor())){
+    auto r =  at::empty({1, 1}, self.options());
+    zendnn_matmul(self, other, r, /*beta=*/0);
     return r;
   }
 

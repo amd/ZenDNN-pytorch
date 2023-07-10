@@ -35,6 +35,7 @@
 #include <ATen/NamedTensorUtils.h>
 #include <ATen/OpMathType.h>
 #include <ATen/native/mkldnn/Matmul.h>
+#include <ATen/native/zendnn/Matmul.h>
 #include <ATen/native/CPUBlas.h>
 #include <ATen/native/IndexingUtils.h>
 #include <ATen/native/LinearAlgebra.h>
@@ -1572,6 +1573,12 @@ static inline void bmm_out_or_baddbmm_(const Tensor& self_or_result_, const Tens
 
   if (use_mkldnn_bf16_matmul(batch1, batch2, self_or_result)){
     mkldnn_matmul(batch1, batch2, self_or_result, beta.to<float>(), alpha.to<float>());
+    return;
+  }
+
+
+  if (use_zendnn_bf16_matmul(batch1, batch2, self_or_result)){
+    zendnn_matmul(batch1, batch2, self_or_result, beta.to<float>(), alpha.to<float>());
     return;
   }
 
