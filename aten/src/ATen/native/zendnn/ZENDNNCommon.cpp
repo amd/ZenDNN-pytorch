@@ -144,15 +144,20 @@ adeep::tensor itensor_view_from_dense(const Tensor& tensor) {
   TORCH_INTERNAL_ASSERT(at::impl::variable_excluded_from_dispatch());
 
   adeep::tensor atensor;
+  //Providing stride information while initializing the tensor.
+  //Otherwise, tensor data will be read in coloumn major format.
   if(tensor.scalar_type() == ScalarType::BFloat16)
   {
-    atensor = {{{tensor.sizes().cbegin(), tensor.sizes().cend()},
-           adeep::tensor::data_type::bf16},
-          tensor.template data_ptr<BFloat16>()};
+    atensor =  {{tensor.sizes().vec(),
+            adeep::tensor::data_type::bf16,
+            tensor.strides().vec()},
+            tensor.template data_ptr<BFloat16>()};
   }
-  else{
-    atensor =  {{{tensor.sizes().cbegin(), tensor.sizes().cend()},
-            adeep::tensor::data_type::f32},
+  else
+  {
+    atensor = {{tensor.sizes().vec(),
+            adeep::tensor::data_type::f32,
+            tensor.strides().vec()},
             tensor.template data_ptr<float>()};
   }
   return atensor;
