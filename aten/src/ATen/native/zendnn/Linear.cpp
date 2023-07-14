@@ -284,9 +284,9 @@ Tensor zendnn_vitisai_matmul(
     TORCH_CHECK(false, "zendnn_vitisai_matmul: bf16 path is not supported for zendnn_vitisai_matmul");
   }
 
-  if(input.dim() !=3 && input.dim() !=4)
+  if(input.dim() !=2 && input.dim() !=3 && input.dim() !=4)
   {
-    TORCH_CHECK(false, "zendnn_vitisai_matmul: Currently support only for 3D and 4D tensors");
+    TORCH_CHECK(false, "zendnn_vitisai_matmul: Currently support only for 2D 3D and 4D tensors");
   }
   c10::MaybeOwned<Tensor> bias_maybe_owned = at::borrow_from_optional_tensor(bias_opt);
   const Tensor& bias = *bias_maybe_owned;
@@ -326,7 +326,13 @@ Tensor zendnn_vitisai_matmul(
   //Output tensor(aten) initialization with int8, and based on dequant flag
   //tensor dtype can be typecasted
   Tensor  cpu_tensor;
-  if(input.dim() == 3)
+  if (input.dim() == 2)
+  {
+    cpu_tensor = at::empty(
+          {input.sizes()[0], weight.sizes()[1]}, dtype
+          );
+  }
+  else if(input.dim() == 3)
   {
     cpu_tensor = at::empty(
           {input.sizes()[0], input.sizes()[1], weight.sizes()[2]}, dtype
@@ -337,6 +343,10 @@ Tensor zendnn_vitisai_matmul(
     cpu_tensor = at::empty(
           {input.sizes()[0], input.sizes()[1] ,input.sizes()[2] , weight.sizes()[3]},
           dtype);
+  }
+  else
+  {
+    TORCH_CHECK(false, "zendnn_vitisai_matmul: Currently support only for 2D 3D and 4D tensors");
   }
 
   adeep::tensor zendnn_output;
