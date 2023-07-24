@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #include <c10/core/Backend.h>
@@ -653,6 +657,7 @@ inline DispatchKey computeDispatchKey(
           return DispatchKey::XPU;
         }
         case DeviceType::MKLDNN:
+        case DeviceType::ZENDNN:
         case DeviceType::OPENGL:
         case DeviceType::OPENCL:
         case DeviceType::IDEEP:
@@ -719,6 +724,16 @@ inline DispatchKey computeDispatchKey(
           TORCH_CHECK_NOT_IMPLEMENTED(
               false,
               "Unsupported device type for mkldnn layout: ",
+              device_.type());
+      }
+    case Layout::Zendnn:
+      switch (device_.type()) {
+        case DeviceType::CPU:
+          return DispatchKey::ZendnnCPU;
+        default:
+          TORCH_CHECK_NOT_IMPLEMENTED(
+              false,
+              "Unsupported device type for zendnn layout: ",
               device_.type());
       }
     case Layout::SparseCsr:

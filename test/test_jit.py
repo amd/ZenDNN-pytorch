@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#******************************************************************************/
+
 # -*- coding: utf-8 -*-
 # Owner(s): ["oncall: jit"]
 
@@ -721,6 +725,7 @@ class TestJit(JitTestCase):
                 x.shape,
                 x.is_cuda,
                 x.is_mkldnn,
+                x.is_zendnn,
                 x.is_quantized,
                 x.requires_grad,
                 x.T,

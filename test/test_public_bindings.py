@@ -215,6 +215,7 @@ class TestPublicBindings(TestCase):
             "has_mkl",
             "has_mkldnn",
             "has_mps",
+            "has_zendnn",
             "has_openmp",
             "iinfo",
             "import_ir_module",

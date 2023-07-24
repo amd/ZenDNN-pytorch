@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/Config.h>
 #include <ATen/core/jit_type.h>
 #if AT_PARALLEL_OPENMP
@@ -17,6 +21,12 @@ namespace at {
 namespace native { namespace mkldnn {
 void clear_computation_cache();
 }} // namespace native::mkldnn
+#endif
+
+#if AT_ZENDNN_ENABLED()
+namespace native { namespace zendnn {
+void clear_computation_cache();
+}} // namespace native::zendnn
 #endif
 
 namespace {
@@ -67,6 +77,9 @@ void set_num_threads(int nthreads) {
 #endif
 #if AT_MKLDNN_ENABLED()
   at::native::mkldnn::clear_computation_cache();
+#endif
+#if AT_ZENDNN_ENABLED()
+  at::native::zendnn::clear_computation_cache();
 #endif
 }
 

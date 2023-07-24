@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/jit/frontend/sugared_value.h>
 
 #include <c10/util/irange.h>
@@ -119,6 +123,7 @@ std::shared_ptr<SugaredValue> SimpleValue::attr(
            {"is_sparse_csr", "prim"},
            {"is_mkldnn", "prim"},
            {"is_mps", "prim"},
+           {"is_zendnn", "prim"},
            {"is_quantized", "prim"},
            {"is_vulkan", "prim"},
            {"is_ipu", "prim"},

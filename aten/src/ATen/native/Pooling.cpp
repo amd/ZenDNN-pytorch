@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/ATen.h>
 
 #include <ATen/NativeFunctions.h>
@@ -122,12 +126,18 @@ Tensor max_pool2d(
     return at::mkldnn_max_pool2d(
         self, kernel_size, stride, padding, dilation, ceil_mode);
   }
+  if (self.is_zendnn()) {
+    return at::zendnn_max_pool2d(
+        self, kernel_size, stride, padding, dilation, ceil_mode);
+  }
 #ifdef USE_MPS
   if (self.is_mps()) {
     return at::_mps_max_pool2d(
         self, kernel_size, stride, padding, dilation, ceil_mode);
   }
 #endif
+  
+
 #if defined(C10_MOBILE)
   if(xnnpack::use_max_pool2d(self, kernel_size, padding, stride,
                              dilation, ceil_mode)) {
@@ -149,6 +159,10 @@ Tensor max_pool3d(
     bool ceil_mode) {
   if (self.is_mkldnn()) {
     return at::mkldnn_max_pool3d(
+        self, kernel_size, stride, padding, dilation, ceil_mode);
+  }
+  if (self.is_zendnn()) {
+    return at::zendnn_max_pool3d(
         self, kernel_size, stride, padding, dilation, ceil_mode);
   }
   auto output_and_indices = at::max_pool3d_with_indices(

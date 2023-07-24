@@ -5,6 +5,7 @@
 #include <c10/util/DeadlockDetection.h>
 #include <c10/util/irange.h>
 #include <torch/csrc/Device.h>
+#include <torch/csrc/autograd/python_variable.h>
 #include <torch/csrc/DynamicTypes.h>
 #include <torch/csrc/Exceptions.h>
 #include <torch/csrc/Size.h>
@@ -1126,6 +1127,18 @@ PyObject *THPVariable_is_mkldnn(THPVariable *self, void *unused)
   END_HANDLE_TH_ERRORS
 }
 
+
+PyObject *THPVariable_is_zendnn(THPVariable *self, void *unused)
+{
+  HANDLE_TH_ERRORS
+  if (check_has_torch_function((PyObject *)self)) {
+    return handle_torch_function_getter(self, "is_zendnn");
+  }
+  auto& self_ = THPVariable_Unpack(self);
+  return torch::autograd::utils::wrap(self_.is_zendnn());
+  END_HANDLE_TH_ERRORS
+}
+
 PyObject *THPVariable_is_mps(THPVariable *self, void *unused)
 {
   HANDLE_TH_ERRORS
@@ -1317,6 +1330,7 @@ static struct PyGetSetDef THPVariable_properties[] = {
   {"is_sparse_csr", (getter)THPVariable_is_sparse_csr, nullptr, nullptr, nullptr},
   {"is_mkldnn", (getter)THPVariable_is_mkldnn, nullptr, nullptr, nullptr},
   {"is_mps", (getter)THPVariable_is_mps, nullptr, nullptr, nullptr},
+  {"is_zendnn", (getter)THPVariable_is_zendnn, nullptr, nullptr, nullptr},
   {"is_ort", (getter)THPVariable_is_ort, nullptr, nullptr, nullptr},
   {"is_vulkan", (getter)THPVariable_is_vulkan, nullptr, nullptr, nullptr},
   {"is_complex", (getter)THPVariable_is_complex, nullptr, nullptr, nullptr},

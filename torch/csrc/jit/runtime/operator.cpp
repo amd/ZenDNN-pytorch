@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/jit/runtime/operator.h>
 
 #include <ATen/ATen.h>
@@ -249,6 +253,8 @@ bool printerHasSpecialCaseFor(Symbol sym) {
       prim::oneDNNFusionGroup, // optimization pass adds it
       prim::oneDNNFusionGuard, // optimization pass adds it
       prim::StaticRuntimeCopyOuts, // used in SR only
+      prim::ConstantZENDNNTensor, // optimization pass adds it
+      prim::BroadcastZENDNNTensors, // optimization pass adds it
       prim::Load, // used in interpreter only
       prim::MMTreeReduce, // used as an optimization
       prim::MMBatchSide, // used as an optimization
@@ -313,6 +319,9 @@ bool aliasAnalysisHasSpecialCaseFor(Symbol symbol) {
       prim::MKLDNNGroup,
       prim::ConstantMKLDNNTensor,
       prim::BroadcastMKLDNNTensors,
+      prim::ZENDNNGroup,
+      prim::ConstantZENDNNTensor,
+      prim::BroadcastZENDNNTensors,
       prim::fork,
       prim::CreateObject,
       prim::AutogradAdd,

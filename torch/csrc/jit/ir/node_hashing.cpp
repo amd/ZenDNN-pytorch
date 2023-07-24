@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/jit/ir/ir.h>
 
 #include <algorithm>
@@ -20,7 +24,8 @@ bool tensorEqual(const at::Tensor& lhs, const at::Tensor& rhs) {
   // type_equal doesnt distinguish between mkldnn/pytorch cpu tensors,
   // and we dont want to coalesce mkldnn tensors bc they do layout
   // transformations based on usage
-  if (lhs.is_mkldnn() || rhs.is_mkldnn()) {
+  if (lhs.is_mkldnn() || rhs.is_mkldnn() || lhs.is_zendnn() ||
+      rhs.is_zendnn()) {
     return false;
   }
   if (lhs.is_nested() || rhs.is_nested()) {

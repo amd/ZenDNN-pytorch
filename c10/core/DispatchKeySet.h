@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 #include <c10/core/DispatchKey.h>
 #include <c10/util/Exception.h>
@@ -659,6 +663,8 @@ constexpr DispatchKeySet sparse_csr_ks =
     DispatchKeySet({DispatchKey::SparseCsrCPU, DispatchKey::SparseCsrCUDA});
 
 constexpr DispatchKeySet mkldnn_ks = DispatchKeySet(DispatchKey::MkldnnCPU);
+constexpr DispatchKeySet zendnn_ks = DispatchKeySet(DispatchKey::ZendnnCPU);
+
 
 // backend dispatch keys that map to DispatchKey::AutogradOther
 // NB: keys in this set also get associated with CompositeImplicitAutograd
@@ -676,6 +682,7 @@ constexpr DispatchKeySet autogradother_backends =
          DispatchKey::SparseCsrCUDA,
          DispatchKey::CustomRNGKeyId,
          DispatchKey::MkldnnCPU,
+         DispatchKey::ZendnnCPU,
          DispatchKey::Meta,
          // Sparse and Quantized backends also live here.
          DispatchKey::Sparse,

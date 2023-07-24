@@ -1,3 +1,6 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
 import argparse
 import collections
 from pprint import pformat

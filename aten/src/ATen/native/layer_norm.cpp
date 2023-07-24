@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/native/layer_norm.h>
 
 #include <ATen/AccumulateType.h>
@@ -184,8 +188,11 @@ Tensor layer_norm(
   const Tensor& weight = *weight_maybe_owned;
   c10::MaybeOwned<Tensor> bias_maybe_owned = at::borrow_from_optional_tensor(bias_opt);
   const Tensor& bias = *bias_maybe_owned;
-
-
+  #if AT_ZENDNN_ENABLED()
+  if (input.is_zendnn()) {
+    return at::zendnn_layer_norm(input, weight, bias, eps);
+  }
+  #endif
   return std::get<0>(at::native_layer_norm(input, normalized_shape, weight, bias, eps));
 }
 

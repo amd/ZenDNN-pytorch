@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 import re
 
 from torchgen.utils import assert_never
@@ -63,6 +67,7 @@ class DispatchKey(Enum):
     Quantized = auto()
     CustomRNGKeyId = auto()
     MkldnnCPU = auto()
+    ZendnnCPU = auto()
     Sparse = auto()
     SparseCsrCPU = auto()
     SparseCsrCUDA = auto()
@@ -151,6 +156,7 @@ dispatch_keys = [
     DispatchKey.SparseCPU,
     DispatchKey.SparseCsrCPU,
     DispatchKey.MkldnnCPU,
+    DispatchKey.ZendnnCPU,
     DispatchKey.CUDA,
     DispatchKey.MPS,
     DispatchKey.SparseCUDA,

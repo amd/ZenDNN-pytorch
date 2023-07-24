@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/core/Formatting.h>
 #include <c10/util/irange.h>
 
@@ -277,7 +281,10 @@ std::ostream& print(std::ostream& stream, const Tensor & tensor_, int64_t linesi
     } else if (tensor_.is_mkldnn()) {
       stream << "MKLDNN Tensor: ";
       tensor = tensor_.to_dense().to(kCPU, kDouble).contiguous();
-    } else {
+    } else if (tensor_.is_zendnn()) {
+      stream << "ZENDNN Tensor: ";
+      tensor = tensor_.to_dense().to(kCPU, kDouble).contiguous();
+    }else {
       tensor = tensor_.to(kCPU, kDouble).contiguous();
     }
     if(tensor.ndimension() == 0) {

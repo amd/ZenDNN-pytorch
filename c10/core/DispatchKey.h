@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #include <c10/macros/Macros.h>
@@ -183,7 +187,7 @@ enum class DispatchKey : uint16_t {
   // the corresponding dense tensors, and must be handled before them.
   MkldnnCPU, // registered at build/aten/src/ATen/RegisterMkldnnCPU.cpp
   // NB: not to be confused with MKLDNN, which is Caffe2 only
-
+  ZendnnCPU,
   // See [Note: Per-Backend Functionality Dispatch Keys]
   Sparse,
 

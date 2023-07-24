@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <gtest/gtest.h>
 #include <test/cpp/api/support.h>
 
@@ -98,6 +102,9 @@ TEST(DeviceTest, ParsesCorrectlyFromString) {
 
   device = Device("mkldnn");
   ASSERT_EQ(device, Device(DeviceType::MKLDNN));
+
+  device = Device("zendnn");
+  ASSERT_EQ(device, Device(DeviceType::ZENDNN));
 
   device = Device("opengl");
   ASSERT_EQ(device, Device(DeviceType::OPENGL));

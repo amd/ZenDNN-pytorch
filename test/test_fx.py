@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 # Owner(s): ["oncall: fx"]
 
 import builtins

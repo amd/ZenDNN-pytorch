@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #include <c10/core/Backend.h>
@@ -791,7 +795,7 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
     // NB: This method is not virtual and avoid dispatches for performance
     // reasons.
     constexpr auto cpu_bits_ks = DispatchKeySet(BackendComponent::CPUBit) |
-        DispatchKeySet({DispatchKey::SparseCsrCPU, DispatchKey::MkldnnCPU});
+        DispatchKeySet({DispatchKey::SparseCsrCPU, DispatchKey::MkldnnCPU, DispatchKey::ZendnnCPU});
     return key_set_.has_any(cpu_bits_ks);
   }
 
@@ -846,6 +850,10 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
 
   bool is_mkldnn() const {
     return key_set_.has_all(c10::mkldnn_ks);
+  }
+
+  bool is_zendnn() const {
+    return key_set_.has_all(c10::zendnn_ks);
   }
 
   bool is_vulkan() const {
@@ -911,11 +919,11 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
     // This keyset must also be kept in sync with the logic in
     // is_sparse() / is_sparse_csr() / is_mkldnn()
     constexpr auto sparse_and_sparsecsr_and_mkldnn_ks =
-        c10::sparse_ks | c10::sparse_csr_ks | c10::mkldnn_ks;
+        c10::sparse_ks | c10::sparse_csr_ks | c10::mkldnn_ks | c10::zendnn_ks;
     if (!key_set_.has_any(sparse_and_sparsecsr_and_mkldnn_ks)) {
       return kStrided;
-    } else if (is_sparse()) {
-      return kSparse;
+    } else if (is_zendnn()) {
+       return kZendnn; 
     } else if (key_set_.has_any(c10::sparse_csr_ks)) {
       // Typically, the tensor dispatch keys define the tensor layout
       // uniquely. This allows using non-virtual layout method for

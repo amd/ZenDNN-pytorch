@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/Layout.h>
 #include <c10/core/ScalarType.h>
 #include <torch/csrc/DynamicTypes.h>
@@ -47,6 +51,14 @@ void initializeLayouts() {
     throw python_error();
   }
   registerLayoutObject((THPLayout*)mkldnn_layout, at::Layout::Mkldnn);
+
+  PyObject *zendnn_layout = THPLayout_New(at::Layout::Zendnn, "torch._zendnn");
+  Py_INCREF(zendnn_layout);
+  if (PyModule_AddObject(torch_module, "_zendnn", zendnn_layout) != 0) {
+    throw python_error();
+  }
+  registerLayoutObject((THPLayout*)zendnn_layout, at::Layout::Zendnn);
+
 }
 
 }} // namespace torch::utils

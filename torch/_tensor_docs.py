@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 """Adds docstrings to Tensor functions"""
 
 import torch._C
@@ -4330,6 +4334,13 @@ add_docstr_all('to_mkldnn',
                r"""
 to_mkldnn() -> Tensor
 Returns a copy of the tensor in ``torch.mkldnn`` layout.
+
+""")
+
+add_docstr_all('to_zendnn',
+               r"""
+to_zendnn() -> Tensor
+Returns a copy of the tensor in ``torch.zendnn`` layout.
 
 """)
 

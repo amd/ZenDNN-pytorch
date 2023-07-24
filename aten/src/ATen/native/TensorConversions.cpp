@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/NativeFunctions.h>
 #include <c10/util/Optional.h>
@@ -310,6 +314,10 @@ Tensor to_dense_backward(const Tensor& grad, const Tensor& input_) {
   }
   if (input_.layout() == c10::kMkldnn) {
     return grad.to_mkldnn(input_.scalar_type());
+  } else if (input_.layout() == c10::kZendnn) {
+    return grad.to_zendnn(input_.scalar_type());
+  } else {
+    AT_ERROR("Unsupported input layout: ", input_.layout());
   }
   if (input_.layout() == c10::kStrided) {
     return grad.to_dense();
@@ -330,6 +338,9 @@ Tensor to_dense(const Tensor& tensor, c10::optional<c10::ScalarType> dtype) {
     return tensor._to_dense(dtype);
   }
   if (tensor.layout() == c10::kMkldnn) {
+    return tensor._to_dense(dtype);
+  }
+  if (tensor.layout() == c10::kZendnn) {
     return tensor._to_dense(dtype);
   }
   TORCH_CHECK(tensor.layout() == c10::kStrided, "to_dense does not support layout ", tensor.layout());
@@ -360,6 +371,10 @@ Tensor sparse_compressed_to_dense(
   return self.to_sparse().to_dense();
 }
 
+Tensor to_zendnn_backward(const Tensor& grad, const Tensor& input_) {
+  AT_ASSERT(input_.layout() == c10::kStrided);
+  return grad.to_dense();
+}
 // Computes the strides for view_dtype output when the view dtype is
 // smaller than the original dtype
 inline DimVector compute_strides_for_view_dtype_downsize(IntArrayRef old_strides, int64_t size_ratio, ScalarType old_dtype, ScalarType new_dtype) {

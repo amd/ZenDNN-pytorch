@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/native/Resize.h>
 #include <ATen/NativeFunctions.h>
@@ -28,6 +32,9 @@ Tensor linear(const Tensor& input, const Tensor& weight, const c10::optional<Ten
   }
   if (input.is_mps()) {
    return at::_mps_linear(input, weight, *bias);
+  }
+  if (input.is_zendnn()) {
+    return at::zendnn_linear(input, weight, *bias);
   }
 #if defined(C10_MOBILE)
   if (xnnpack::use_linear(input, weight, *bias)) {

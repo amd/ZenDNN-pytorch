@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 # Welcome to the PyTorch setup.py.
 #
 # Environment variables you are probably interested in:
@@ -46,6 +50,9 @@
 #   USE_MKLDNN_ACL
 #     enables use of Compute Library backend for MKLDNN on Arm;
 #     USE_MKLDNN must be explicitly enabled.
+#
+#   USE_ZENDNN=0
+#     disables use of ZENDNN
 #
 #   MKLDNN_CPU_RUNTIME
 #     MKL-DNN threading mode: TBB or OMP (default)
@@ -128,9 +135,9 @@
 #     one in this file; needed to build with other frameworks that share ONNX.
 #
 #   BLAS
-#     BLAS to be used by Caffe2. Can be MKL, Eigen, ATLAS, FlexiBLAS, or OpenBLAS. If set
-#     then the build will fail if the requested BLAS is not found, otherwise
-#     the BLAS will be chosen based on what is found on your system.
+#     BLAS to be used by Caffe2. Can be MKL, Eigen, ATLAS, FlexiBLAS, or OpenBLAS.
+#     If set then the build will fail if the requested BLAS is not found,
+#     otherwisethe BLAS will be chosen based on what is found on your system.
 #
 #   MKL_THREADING
 #     MKL threading mode: SEQ, TBB or OMP (default)
@@ -519,6 +526,10 @@ class build_ext(setuptools.command.build_ext.build_ext):
                 report('-- Not using CBLAS in MKLDNN')
         else:
             report('-- Not using MKLDNN')
+        if cmake_cache_vars['USE_ZENDNN']:
+            report('-- Using ZENDNN')
+        else:
+            report('-- Not using ZENDNN')
         if cmake_cache_vars['USE_NCCL'] and cmake_cache_vars['USE_SYSTEM_NCCL']:
             report('-- Using system provided NCCL library at {}, {}'.format(cmake_cache_vars['NCCL_LIBRARIES'],
                                                                             cmake_cache_vars['NCCL_INCLUDE_DIRS']))

@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/NativeFunctions.h>
 #include <ATen/native/AdaptivePooling.h>
@@ -104,6 +108,10 @@ namespace {
 
     if (input.is_mkldnn()) {
       return at::mkldnn_adaptive_avg_pool2d(input, output_size);
+    }
+
+    if (input.is_zendnn()) {
+      return at::zendnn_adaptive_avg_pool2d(input, output_size);
     }
 
     if (!input.is_quantized() && output_size[0] == 1 && output_size[1] == 1) {

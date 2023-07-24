@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 .. role:: hidden
     :class: hidden-section
 
@@ -13,6 +17,7 @@ These backends include:
 - ``torch.backends.cudnn``
 - ``torch.backends.mkl``
 - ``torch.backends.mkldnn``
+- ``torch.backends.zendnn``
 - ``torch.backends.openmp``
 
 
@@ -99,6 +104,12 @@ torch.backends.mkldnn
 .. automodule:: torch.backends.mkldnn
 
 .. autofunction::  torch.backends.mkldnn.is_available
+
+torch.backends.zendnn
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: torch.backends.zendnn
+
+.. autofunction::  torch.backends.zendnn.is_available
 
 
 torch.backends.openmp

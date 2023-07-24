@@ -141,6 +141,7 @@ DONT_REQUIRE_DERIVATIVE = {
     "logical_xor",
     "logical_not",
     "logical_or",
+    'zendnn_vitisai_convolution'
 }
 
 # The C -> R functions at the time of adding this are still being audited and tested

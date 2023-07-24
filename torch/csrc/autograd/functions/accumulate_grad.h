@@ -1,3 +1,14 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+* 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+*******************************************************************************/
+
 #pragma once
 
 #include <torch/csrc/autograd/function.h>
@@ -108,15 +119,16 @@ struct TORCH_API AccumulateGrad : public Node {
           !new_grad.is_sparse() && !new_grad.is_sparse_csr() &&
           !(variable.is_sparse_csr() && new_grad.layout() == at::kStrided) &&
           new_grad.use_count() <= num_expected_refs &&
-          (new_grad.is_mkldnn() || utils::obeys_layout_contract(new_grad, variable))) {
+          (new_grad.is_mkldnn() || new_grad.is_zendnn() || utils::obeys_layout_contract(new_grad, variable))) {
         // we aren't setting up for double-backward
         // not sparse
         // no other user-visible tensor references new_grad
         // new_grad obeys the "Gradient Layout Contract", there has a special case,
-        // For MKLDNN tensor, which is a opaque tensor, assuming it obeys layout_contract.
+        // For MKLDNN/ZENDNN tensor, which is a opaque tensor, assuming it obeys layout_contract.
         // Under these conditions, we can steal new_grad without a deep copy.
         update_grad(new_grad.detach());
-      } else if (
+      }
+      else if (
           !GradMode::is_enabled() && new_grad.is_sparse() &&
           new_grad._indices().is_contiguous() &&
           new_grad._values().is_contiguous() &&
@@ -143,7 +155,7 @@ struct TORCH_API AccumulateGrad : public Node {
         if (new_grad.is_sparse() || new_grad.is_sparse_csr()) {
           update_grad(new_grad.clone());
         } else {
-          if (new_grad.is_mkldnn()) {
+          if (new_grad.is_mkldnn() || new_grad.is_zendnn()) {
             update_grad(new_grad.clone());
           } else {
             // Deep copies new_grad according to the "Gradient Layout Contract."

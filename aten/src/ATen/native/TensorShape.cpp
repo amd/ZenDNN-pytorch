@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/AccumulateType.h>
 #include <ATen/ATen.h>
 #include <ATen/ExpandUtils.h>
@@ -1193,6 +1197,9 @@ Tensor reshape(const Tensor& self, IntArrayRef proposed_shape) {
     return at::_mkldnn_reshape(self, shape);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_reshape(self, shape);
+  }
   // `computeStride` returns the proper strides to use if this
   // `reshape` can be just a view.
   auto stride = at::detail::computeStride(self.sizes(), self.strides(), shape);
@@ -2427,6 +2434,9 @@ Tensor & transpose_(Tensor & self, int64_t dim0, int64_t dim1) {
     return at::_mkldnn_transpose_(self, dim0, dim1);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_transpose_(self, dim0, dim1);
+  }
   DimVector sizes(self.sizes().begin(), self.sizes().end());
   DimVector strides(self.strides().begin(), self.strides().end());
   std::swap(strides[dim0], strides[dim1]);
@@ -2459,6 +2469,9 @@ Tensor transpose(const Tensor & self, int64_t dim0, int64_t dim1) {
     return at::_mkldnn_transpose(self, dim0, dim1);
   }
 
+  if (self.is_zendnn()) {
+    return at::_zendnn_transpose(self, dim0, dim1);
+  }
   DimVector sizes(self.sizes().begin(), self.sizes().end());
   std::swap(sizes[dim0], sizes[dim1]);
 

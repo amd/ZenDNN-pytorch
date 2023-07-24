@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/jit/runtime/register_ops_utils.h>
 
 #include <ATen/core/ivalue.h>
@@ -307,6 +311,15 @@ RegisterOperators reg(
                " binary, meaning that it cannot be executed now."
                " Make sure that ignored operations are never executed after"
                " import");
+         },
+         aliasAnalysisFromSchema()),
+
+     Operator(
+         "prim::is_zendnn(Tensor a) -> bool",
+         [](Stack* stack) {
+           at::Tensor a;
+           pop(stack, a);
+           push(stack, a.is_zendnn());
          },
          aliasAnalysisFromSchema()),
      Operator(

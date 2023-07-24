@@ -1,8 +1,17 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/Version.h>
 #include <ATen/Config.h>
 
 #if AT_MKL_ENABLED()
 #include <mkl.h>
+#endif
+
+#if AT_ZENDNN_ENABLED()
+#include <blis/blis.h>
+#include <zendnn_version.h>
 #endif
 
 #if AT_MKLDNN_ENABLED()
@@ -51,6 +60,16 @@ std::string get_mkldnn_version() {
   #endif
   return ss.str();
 }
+
+#if AT_ZENDNN_ENABLED()
+
+    std::string get_zendnn_version() {
+    std::ostringstream ss;
+    ss << ZENDNN_VERSION_MAJOR << "." << ZENDNN_VERSION_MINOR << "." << ZENDNN_VERSION_PATCH;
+    return ss.str();
+    }
+
+#endif
 
 std::string get_openmp_version() {
   std::ostringstream ss;
@@ -165,6 +184,11 @@ std::string show_config() {
 
 #if AT_MKLDNN_ENABLED()
   ss << "  - " << get_mkldnn_version() << "\n";
+#endif
+
+#if AT_ZENDNN_ENABLED()
+  ss << "  - " <<  "AMD " << bli_info_get_version_str() << " ( Git Hash " << BLIS_VERSION_HASH << " )" << "\n";
+  ss << "  - " <<  "AMD ZENDNN v" << get_zendnn_version() << " ( Git Hash " << ZENDNN_PT_VERSION_HASH << " )" << "\n";
 #endif
 
 #ifdef _OPENMP

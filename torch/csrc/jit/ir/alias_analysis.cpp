@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/jit/ir/alias_analysis.h>
 
 #include <ATen/core/interned_strings.h>
@@ -647,11 +651,18 @@ void AliasDb::analyzeImpl(Node* node) {
       makePointerTo(node->outputs().at(1), node->inputs().at(1));
       return;
     }
+    case prim::BroadcastZENDNNTensors: {
+      makePointerTo(node->outputs().at(0), node->inputs().at(0));
+      makePointerTo(node->outputs().at(1), node->inputs().at(1));
+      return;
+    }
     // TODO: think more about TensorExpr alias correctness
     case prim::TensorExprGroup:
     case prim::TensorExprDynamicGroup:
     case prim::MKLDNNGroup:
     case prim::ConstantMKLDNNTensor:
+    case prim::ZENDNNGroup:
+    case prim::ConstantZENDNNTensor:
     case prim::StaticSubgraph:
     case prim::Constant:
     case prim::AutogradZero:

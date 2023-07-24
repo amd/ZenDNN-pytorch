@@ -132,9 +132,11 @@ endif()
 
 set(CPU_AARCH64 OFF)
 set(CPU_INTEL OFF)
+set(CPU_AMD OFF)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(AMD64|x86_64)")
   set(CPU_INTEL ON)
+  set(CPU_AMD ON)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)")
   set(CPU_AARCH64 ON)
 endif()
@@ -297,9 +299,16 @@ option(USE_ZMQ "Use ZMQ" OFF)
 option(USE_ZSTD "Use ZSTD" OFF)
 # Ensure that an MKLDNN build is the default for x86 CPUs
 # but optional for AArch64 (dependent on -DUSE_MKLDNN).
+
+IF(USE_ZENDNN AND USE_MKLDNN)
+   MESSAGE(FATAL_ERROR "Enable only either ZenDNN or MKLDNN as a Backend")
+   RETURN()
+ENDIF(USE_ZENDNN AND USE_MKLDNN)
+
 cmake_dependent_option(
-  USE_MKLDNN "Use MKLDNN. Only available on x86, x86_64, and AArch64." "${CPU_INTEL}"
-  "CPU_INTEL OR CPU_AARCH64" OFF)
+     USE_MKLDNN "Use MKLDNN. Only available on x86, x86_64, and AArch64." "${CPU_INTEL}"
+     "CPU_INTEL OR CPU_AARCH64;NOT USE_ZENDNN" OFF)
+
 cmake_dependent_option(
   USE_MKLDNN_ACL "Use Compute Library for the Arm architecture." OFF
   "USE_MKLDNN AND CPU_AARCH64" OFF)
@@ -308,6 +317,13 @@ cmake_dependent_option(
     USE_MKLDNN_CBLAS "Use CBLAS in MKLDNN" OFF
     "USE_MKLDNN" OFF)
 option(USE_STATIC_MKL "Prefer to link with MKL statically (Unix only)" OFF)
+cmake_dependent_option(
+  USE_ZENDNN "Use ZENDNN. Only available on x86 and x86_64." "${CPU_AMD}"
+  "CPU_AMD;USE_ZENDNN" OFF)
+set(ZENDNN_ENABLE_CONCURRENT_EXEC ${USE_ZENDNN})
+cmake_dependent_option(
+    USE_ZENDNN_CBLAS "Use CBLAS in ZENDNN" OFF
+    "USE_ZENDNN" OFF)
 option(USE_DISTRIBUTED "Use distributed" ON)
 cmake_dependent_option(
     USE_MPI "Use MPI for Caffe2. Only available if USE_DISTRIBUTED is on." ON
@@ -1091,6 +1107,7 @@ if(BUILD_SHARED_LIBS)
       ${PROJECT_SOURCE_DIR}/cmake/public/gflags.cmake
       ${PROJECT_SOURCE_DIR}/cmake/public/mkl.cmake
       ${PROJECT_SOURCE_DIR}/cmake/public/mkldnn.cmake
+      ${PROJECT_SOURCE_DIR}/cmake/public/zendnn.cmake
       ${PROJECT_SOURCE_DIR}/cmake/public/protobuf.cmake
       ${PROJECT_SOURCE_DIR}/cmake/public/threads.cmake
       ${PROJECT_SOURCE_DIR}/cmake/public/utils.cmake

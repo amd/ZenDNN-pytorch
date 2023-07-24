@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/python_headers.h>
 #include <sys/types.h>
 
@@ -436,9 +440,24 @@ PyObject *THPModule_setUserEnabledMkldnn(PyObject *_unused, PyObject *arg)
   Py_RETURN_NONE;
 }
 
+PyObject *THPModule_setUserEnabledZendnn(PyObject *_unused, PyObject *arg)
+{
+  THPUtils_assert(PyBool_Check(arg), "set_enabled_zendnn expects a bool, "
+          "but got %s", THPUtils_typename(arg));
+  at::globalContext().setUserEnabledZendnn(arg == Py_True);
+  Py_RETURN_NONE;
+}
+
+
 PyObject *THPModule_userEnabledMkldnn(PyObject *_unused, PyObject *noargs)
 {
   if (at::globalContext().userEnabledMkldnn()) Py_RETURN_TRUE;
+  else Py_RETURN_FALSE;
+}
+
+PyObject *THPModule_userEnabledZendnn(PyObject *_unused, PyObject *noargs)
+{
+  if (at::globalContext().userEnabledZendnn()) Py_RETURN_TRUE;
   else Py_RETURN_FALSE;
 }
 
@@ -694,6 +713,8 @@ static PyMethodDef TorchMethods[] = {
   {"_set_cudnn_enabled", THPModule_setUserEnabledCuDNN, METH_O,  nullptr},
   {"_get_mkldnn_enabled", THPModule_userEnabledMkldnn, METH_NOARGS,     nullptr},
   {"_set_mkldnn_enabled", THPModule_setUserEnabledMkldnn, METH_O,  nullptr},
+  {"_get_zendnn_enabled", (PyCFunction)THPModule_userEnabledZendnn, METH_NOARGS,  nullptr},
+  {"_set_zendnn_enabled", (PyCFunction)THPModule_setUserEnabledZendnn, METH_O,  nullptr},
   {"_get_cudnn_allow_tf32", THPModule_allowTF32CuDNN, METH_NOARGS,     nullptr},
   {"_set_cudnn_allow_tf32", THPModule_setAllowTF32CuDNN, METH_O,  nullptr},
   {"_get_cudnn_benchmark", THPModule_benchmarkCuDNN, METH_NOARGS,     nullptr},
@@ -1028,6 +1049,8 @@ Call this whenever a new thread is created in order to propagate values from
 
 
   ASSERT_TRUE(set_module_attr("has_mkldnn", at::hasMKLDNN() ? Py_True : Py_False));
+
+  ASSERT_TRUE(set_module_attr("has_zendnn", at::hasZENDNN() ? Py_True : Py_False));
 
 #ifdef _GLIBCXX_USE_CXX11_ABI
   ASSERT_TRUE(set_module_attr("_GLIBCXX_USE_CXX11_ABI", _GLIBCXX_USE_CXX11_ABI ? Py_True : Py_False));

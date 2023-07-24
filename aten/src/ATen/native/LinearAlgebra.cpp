@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/ATen.h>
 #include <ATen/core/grad_mode.h>
 #include <ATen/Dispatch.h>
@@ -1529,7 +1533,13 @@ static inline void bmm_out_or_baddbmm_(const Tensor& self_or_result_, const Tens
             && batch_items_contiguous_or_transposed(batch2)
             && self_or_result.is_contiguous()) {
     baddbmm_with_gemm_(self_or_result, batch1, batch2, beta, alpha);
-  } else { // split along batch dimension
+  } else if (at::hasZENDNN() && (at::native::is_floating_point(self_or_result) ||
+             at::native::is_complex(self_or_result))
+             && batch_items_contiguous_or_transposed(batch1)
+             && batch_items_contiguous_or_transposed(batch2)
+             && self_or_result.is_contiguous()) {
+     at::native::_baddbmm_zendnn_(self_or_result, batch1, batch2, beta, alpha);
+  }else { // split along batch dimension
 #ifdef C10_MOBILE
     /*
      * We only do multithreading when Inference mode is enabled because various

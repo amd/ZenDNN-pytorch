@@ -112,9 +112,21 @@ new_local_repository(
 )
 
 new_local_repository(
+    name = "adeep",
+    build_file = "//third_party:adeep.BUILD",
+    path = "third_party/adeep",
+)
+
+new_local_repository(
     name = "mkl_dnn",
     build_file = "//third_party:mkl-dnn.BUILD",
     path = "third_party/ideep/mkl-dnn",
+)
+
+new_local_repository(
+    name = "zendnn",
+    build_file = "//third_party:zendnn.BUILD",
+    path = "third_party/adeep/zendnn",
 )
 
 new_local_repository(

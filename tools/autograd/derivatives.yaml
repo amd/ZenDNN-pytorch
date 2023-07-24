@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 # Defines derivative formulas and Python signatures of methods on Variable
 #
 # Note about possibly confusing nomenclature: An 'output gradient' is the
@@ -1618,6 +1622,9 @@
 - name: to_mkldnn(Tensor self, ScalarType? dtype=None) -> Tensor
   self: to_mkldnn_backward(grad, self)
 
+- name: to_zendnn(Tensor self, ScalarType? dtype=None) -> Tensor
+  self: to_zendnn_backward(grad, self)
+
 - name: unfold(Tensor(a) self, int dimension, int size, int step) -> Tensor(a)
   self: unfold_backward(grad, self.sizes(), dimension, size, step)
   result: auto_linear
@@ -2628,6 +2635,13 @@
 
 - name: _mkldnn_reshape(Tensor self, int[] shape) -> Tensor
   self: grad.reshape(self.sizes())
+
+# zendnn
+- name: zendnn_convolution(Tensor self, Tensor weight, Tensor? bias, int[] padding, int[] stride, int[] dilation, int groups) -> Tensor
+  self, weight, bias: "grad.defined() ? convolution_backward(grad, self, weight, bias->sizes(), stride, padding, dilation, /*transposed=*/ false, /*output_padding=*/ std::vector<int64_t>(padding.size(), 0), groups, grad_input_mask) : std::tuple<Tensor, Tensor, Tensor>()"
+
+- name: zendnn_linear(Tensor self, Tensor weight, Tensor? bias=None, bool? fuse_gelu=False) -> Tensor
+  self, weight, bias: zendnn_linear_backward(self, grad, weight, grad_input_mask)
 
 # fft
 - name: _fft_r2c(Tensor self, int[] dim, int normalization, bool onesided) -> Tensor

@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/native/CPUBlas.h>
 #include <ATen/native/mkl/LinearAlgebra.h>
 #include <ATen/Config.h>
@@ -38,6 +42,38 @@ extern "C" void zaxpy_(int *n, void *a, const void *x, int *incx, void *y, int *
 #ifdef USE_FBGEMM
 #include <fbgemm/FbgemmI64.h>
 #endif  // USE_FBGEMM
+
+#if AT_BUILD_WITH_BLAS()
+#if AT_ZENDNN_ENABLED()
+#include <zendnn.h>
+
+extern "C"
+{
+//Matmul kernel
+void zenMatMul_gemm_wrapper(
+        const bool Layout,
+        const bool transpose_input,
+        const bool transpose_filter,
+        const int m,
+        const int k,
+        const int n,
+        const float alpha,
+        const float *input,
+        const int lda,
+        const float *filter,
+        const int ldb,
+        const float *bias,
+        const bool relu,
+        const int gelu,
+        const float beta,
+        float *output,
+        const int ldc
+);
+
+}
+
+#endif
+#endif
 
 namespace at {
 namespace native {
@@ -145,6 +181,13 @@ void gemm(
     int m_ = m, n_ = n, k_ = k, lda_ = lda, ldb_ = ldb, ldc_ = ldc;
     char transa_ = to_blas(transa), transb_ = to_blas(transb);
     float alpha_ = alpha, beta_ = beta;
+#if AT_ZENDNN_ENABLED()
+    //Matmul using zendnn_gemm
+    const bool Layout=false;
+    zenMatMul_gemm_wrapper(Layout, (transa_=='T' || transa_=='t')?1:0, (transb_=='T'|| transb_=='t')?1:0, m_, k_,
+                           n_, alpha_, (const float*)a, lda_, (const float*)b,
+                           ldb_, NULL, 0, 0, beta_, (float *)c, ldc_);
+#else
     sgemm_(
         &transa_, &transb_,
         &m_, &n_, &k_,
@@ -153,6 +196,7 @@ void gemm(
         b, &ldb_,
         &beta_,
         c, &ldc_);
+#endif
     return;
   }
 #endif

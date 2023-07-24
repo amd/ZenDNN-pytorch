@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #include <c10/core/Backend.h>
@@ -11,6 +15,7 @@ enum class Layout : int8_t {
   Sparse,
   SparseCsr,
   Mkldnn,
+  Zendnn,
   SparseCsc,
   SparseBsr,
   SparseBsc,
@@ -21,6 +26,7 @@ constexpr auto kStrided = Layout::Strided;
 constexpr auto kSparse = Layout::Sparse;
 constexpr auto kSparseCsr = Layout::SparseCsr;
 constexpr auto kMkldnn = Layout::Mkldnn;
+constexpr auto kZendnn = Layout::Zendnn;
 constexpr auto kSparseCsc = Layout::SparseCsc;
 constexpr auto kSparseBsr = Layout::SparseBsr;
 constexpr auto kSparseBsc = Layout::SparseBsc;
@@ -35,6 +41,8 @@ inline Layout layout_from_backend(Backend backend) {
       return Layout::Sparse;
     case Backend::MkldnnCPU:
       return Layout::Mkldnn;
+    case Backend::ZendnnCPU:
+      return Layout::Zendnn;
     case Backend::SparseCsrCPU:
     case Backend::SparseCsrCUDA:
       TORCH_CHECK(
@@ -61,6 +69,8 @@ inline std::ostream& operator<<(std::ostream& stream, at::Layout layout) {
       return stream << "SparseBsc";
     case at::kMkldnn:
       return stream << "Mkldnn";
+    case at::kZendnn:
+      return stream << "Zendnn";
     default:
       TORCH_CHECK(false, "Unknown layout");
   }

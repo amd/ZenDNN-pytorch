@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 """
 Python implementation of ``__torch_function__``
 
@@ -114,6 +118,7 @@ def get_ignored_functions() -> Set[Callable]:
         torch.has_mkl,
         torch.has_mps,
         torch.has_mkldnn,
+        torch.has_zendnn,
         torch.has_openmp,
         torch.iinfo,
         torch.memory_format,
@@ -159,6 +164,11 @@ def get_ignored_functions() -> Set[Callable]:
         torch.mkldnn_max_pool3d,
         torch.mkldnn_linear_backward_weights,
         torch.nested_tensor,
+        torch.zendnn_adaptive_avg_pool2d,
+        torch.zendnn_convolution,
+        torch.zendnn_max_pool2d,
+        torch.zendnn_max_pool3d,
+        torch.zendnn_linear_backward_weights,
         torch.normal,
         torch.ones,
         torch.promote_types,
@@ -1159,6 +1169,7 @@ def get_testing_overrides() -> Dict[Callable, Callable]:
         Tensor.is_nested.__get__: lambda self: -1,
         Tensor.is_ort.__get__: lambda self: -1,
         Tensor.is_mkldnn.__get__: lambda self: -1,
+        Tensor.is_zendnn.__get__: lambda self: -1,
         Tensor.is_quantized.__get__: lambda self: -1,
         Tensor.is_sparse.__get__: lambda self: -1,
         Tensor.is_sparse_csr.__get__: lambda self: -1,
@@ -1286,6 +1297,7 @@ def get_testing_overrides() -> Dict[Callable, Callable]:
         Tensor.to_sparse: lambda self: -1,
         Tensor.tolist: lambda self: -1,
         Tensor.to_mkldnn: lambda self: -1,
+        Tensor.to_zendnn: lambda self: -1,
         Tensor.type_as: lambda self, other: -1,
         Tensor.unfold: lambda self, dimension, size, step: -1,
         Tensor.uniform_: lambda self, from_=0, to=1: -1,

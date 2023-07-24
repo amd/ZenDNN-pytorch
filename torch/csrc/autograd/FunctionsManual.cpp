@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/autograd/FunctionsManual.h>
 #include <torch/csrc/autograd/variable.h>
 #include <torch/csrc/autograd/functions/utils.h>
@@ -890,6 +894,7 @@ at::IntArrayRef strides_or_error(const Tensor & input, c10::string_view const & 
       input_name, "'");
     if (input.is_mkldnn()) return IntArrayRef({});
     if (input.is_sparse_csr()) return IntArrayRef({});
+    if (input.is_zendnn()) return IntArrayRef({});
     return input.strides();
   } else {
     return IntArrayRef({});

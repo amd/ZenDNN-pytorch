@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #ifdef TORCH_ASSERT_NO_OPERATORS
@@ -725,6 +729,7 @@ struct ExclusivelyOwnedTraits<at::Tensor> {
 namespace at {
 
 inline c10::MaybeOwned<Tensor> borrow_from_optional_tensor(
+
     const c10::optional<Tensor>& opt) {
   return opt.has_value()
     ? c10::MaybeOwned<Tensor>::borrowed(*opt)

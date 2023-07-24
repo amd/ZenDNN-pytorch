@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <torch/csrc/python_headers.h>
 
 #include <torch/csrc/utils/disable_torch_function.h>
@@ -162,6 +166,7 @@ PyObject* THPAutograd_initExtension(PyObject* _unused, PyObject *unused) {
       .value("CPU", c10::DeviceType::CPU)
       .value("CUDA", c10::DeviceType::CUDA)
       .value("MKLDNN", c10::DeviceType::MKLDNN)
+      .value("ZENDNN", c10::DeviceType::ZENDNN)
       .value("OPENGL", c10::DeviceType::OPENGL)
       .value("OPENCL", c10::DeviceType::OPENCL)
       .value("IDEEP", c10::DeviceType::IDEEP)

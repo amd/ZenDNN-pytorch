@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 .. currentmodule:: torch
 
 .. _tensor-doc:
@@ -657,6 +661,7 @@ Tensor class reference
     Tensor.tile
     Tensor.to
     Tensor.to_mkldnn
+    Tensor.to_zendnn
     Tensor.take
     Tensor.take_along_dim
     Tensor.tan

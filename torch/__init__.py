@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 
 r"""
 The torch package contains data structures for multi-dimensional
@@ -869,6 +873,7 @@ import torch.backends.mps
 import torch.backends.cudnn
 import torch.backends.mkl
 import torch.backends.mkldnn
+import torch.backends.zendnn
 import torch.backends.openmp
 import torch.backends.quantized
 import torch.utils.data

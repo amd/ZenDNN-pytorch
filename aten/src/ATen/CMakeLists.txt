@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
@@ -78,10 +82,12 @@ file(GLOB miopen_cpp "miopen/*.cpp")
 
 file(GLOB mkl_cpp "mkl/*.cpp")
 file(GLOB mkldnn_cpp "mkldnn/*.cpp")
+file(GLOB zendnn_cpp "zendnn/*.cpp")
 
 file(GLOB native_cpp "native/*.cpp")
 file(GLOB native_mkl_cpp "native/mkl/*.cpp")
 file(GLOB native_mkldnn_cpp "native/mkldnn/*.cpp")
+file(GLOB native_zendnn_cpp "native/zendnn/*.cpp")
 file(GLOB vulkan_cpp "vulkan/*.cpp")
 file(GLOB native_vulkan_cpp "native/vulkan/*.cpp" "native/vulkan/api/*.cpp" "native/vulkan/ops/*.cpp")
 
@@ -177,6 +183,7 @@ else()
     ${native_ao_sparse_cpp} ${native_sparse_cpp} ${native_nested_cpp}
     ${native_quantized_cpp} ${native_mkl_cpp} ${native_mkldnn_cpp}
     ${native_transformers_cpp}
+    ${native_zendnn_cpp}
     ${native_utils_cpp} ${native_xnnpack} ${generated_sources} ${core_generated_sources}
     ${ATen_CPU_SRCS} ${ATen_QUANTIZED_SRCS} ${ATen_NNAPI_SRCS} ${cpu_kernel_cpp}
   )
@@ -190,6 +197,9 @@ if(AT_MKL_ENABLED)
 endif()
 if(AT_MKLDNN_ENABLED)
   set(all_cpu_cpp ${all_cpu_cpp} ${mkldnn_cpp})
+endif()
+if(AT_ZENDNN_ENABLED)
+  set(all_cpu_cpp ${all_cpu_cpp} ${zendnn_cpp})
 endif()
 if(USE_VULKAN)
   set(all_cpu_cpp ${all_cpu_cpp} ${vulkan_cpp} ${native_vulkan_cpp} ${vulkan_generated_cpp})
@@ -345,6 +355,10 @@ endif()
 if(MKLDNN_FOUND)
   list(APPEND ATen_CPU_DEPENDENCY_LIBS ${MKLDNN_LIBRARIES})
 endif(MKLDNN_FOUND)
+
+if(ZENDNN_FOUND)
+  list(APPEND ATen_CPU_DEPENDENCY_LIBS ${ZENDNN_LIBRARIES})
+endif(ZENDNN_FOUND)
 
 list(APPEND ATen_CPU_DEPENDENCY_LIBS cpuinfo)
 

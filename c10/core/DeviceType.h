@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 // This is directly synchronized with caffe2/proto/caffe2.proto, but
@@ -29,15 +33,17 @@ enum class DeviceType : int8_t {
   MPS = 13, // MPS
   Meta = 14, // Meta (tensors with no data)
   HPU = 15, // HPU / HABANA
-  VE = 16, // SX-Aurora / NEC
-  Lazy = 17, // Lazy Tensors
-  IPU = 18, // Graphcore IPU
-  PrivateUse1 = 19, // PrivateUse1 device
+  ZENDNN = 16,
+  VE = 17, // SX-Aurora / NEC
+  Lazy = 18, // Lazy Tensors
+  IPU = 19, // Graphcore IPU
+  PrivateUse1 = 20, // PrivateUse1 device
+
   // NB: If you add more devices:
   //  - Change the implementations of DeviceTypeName and isValidDeviceType
   //    in DeviceType.cpp
   //  - Change the number below
-  COMPILE_TIME_MAX_DEVICE_TYPES = 20,
+  COMPILE_TIME_MAX_DEVICE_TYPES = 21,
 };
 
 constexpr DeviceType kCPU = DeviceType::CPU;
@@ -62,7 +68,7 @@ constexpr int COMPILE_TIME_MAX_DEVICE_TYPES =
     static_cast<int>(DeviceType::COMPILE_TIME_MAX_DEVICE_TYPES);
 
 static_assert(
-    COMPILE_TIME_MAX_DEVICE_TYPES <= 20,
+    COMPILE_TIME_MAX_DEVICE_TYPES <= 21,
     "Hey!  You seem to be adding a lot of new DeviceTypes.  The intent was "
     "for this constant to reflect the actual number of DeviceTypes we support "
     "in PyTorch; it's important that this number is not too large as we "

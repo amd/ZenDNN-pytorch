@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 # RPATH stuff
 # see https://cmake.org/Wiki/CMake_RPATH_handling
 if(APPLE)
@@ -165,6 +169,16 @@ if(CAFFE2_CMAKE_BUILDING_WITH_MAIN_REPO)
 endif()
 
 # ---[ BLAS
+# mandate BLAS=BLIS for ZenDNN builds
+IF(USE_ZENDNN)
+  IF(NOT BLAS_SET_BY_USER)
+     SET(BLAS "BLIS" CACHE STRING "Selected BLAS library")
+  ENDIF(NOT BLAS_SET_BY_USER)
+  IF(NOT BLAS STREQUAL "BLIS")
+      MESSAGE(FATAL_ERROR "ZenDNN requires blis library,set BLAS=BLIS")
+      RETURN()
+  ENDIF(NOT BLAS STREQUAL "BLIS")
+ENDIF(USE_ZENDNN)
 
 # setting default preferred BLAS options if not already present.
 if(NOT INTERN_BUILD_MOBILE)
@@ -172,9 +186,11 @@ if(NOT INTERN_BUILD_MOBILE)
 else()
   set(BLAS "Eigen" CACHE STRING "Selected BLAS library")
   set(AT_MKLDNN_ENABLED 0)
+  set(AT_ZENDNN_ENABLED 0)
+  set(AT_ZENDNN_QUANT_ENABLED 0)
   set(AT_MKL_ENABLED 0)
 endif()
-set_property(CACHE BLAS PROPERTY STRINGS "ATLAS;BLIS;Eigen;FLAME;Generic;MKL;OpenBLAS;vecLib")
+set_property(CACHE BLAS PROPERTY STRINGS "ATLAS;BLIS;Eigen;FLAME;Generic;MKL;OpenBLAS;vecLib;ZENDNN")
 message(STATUS "Trying to find preferred BLAS backend of choice: " ${BLAS})
 
 if(BLAS STREQUAL "Eigen")
@@ -198,7 +214,10 @@ elseif(BLAS STREQUAL "OpenBLAS")
 elseif(BLAS STREQUAL "BLIS")
   find_package(BLIS REQUIRED)
   include_directories(SYSTEM ${BLIS_INCLUDE_DIR})
-  list(APPEND Caffe2_PUBLIC_DEPENDENCY_LIBS ${BLIS_LIB})
+  list(APPEND Caffe2_PUBLIC_DEPENDENCY_LIBS ${BLIS_LIBRARIES})
+  set(BLAS_INFO "BLIS")
+  set(BLAS_FOUND 1)
+  set(BLAS_LIBRARIES ${BLIS_LIBRARIES})
 elseif(BLAS STREQUAL "MKL")
   if(BLAS_SET_BY_USER)
     find_package(MKL REQUIRED)
@@ -1766,6 +1785,37 @@ if(NOT INTERN_BUILD_MOBILE)
     endif()
   else()
     message("disabling MKLDNN because USE_MKLDNN is not set")
+  endif()
+
+  set(AT_ZENDNN_ENABLED 0)
+  set(AT_ZENDNN_QUANT_ENABLED 0)
+  set(CAFFE2_USE_ZENDNN OFF)
+  if(USE_ZENDNN)
+    if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+      message(WARNING
+        "x64 operating system is required for ZENDNN. "
+        "Not compiling with ZENDNN. "
+        "Turn this warning off by USE_ZENDNN=OFF.")
+      set(USE_ZENDNN OFF)
+    endif()
+  endif()
+  if(USE_ZENDNN)
+    include(${CMAKE_CURRENT_LIST_DIR}/public/zendnn.cmake)
+    if(ZENDNN_FOUND)
+      set(AT_ZENDNN_ENABLED 1)
+      if(USE_ZENDNN_QUANT)
+        set(AT_ZENDNN_QUANT_ENABLED 1)
+      endif()
+      include_directories(AFTER SYSTEM ${ZENDNN_INCLUDE_DIR})
+      if(BUILD_CAFFE2_OPS)
+        set(CAFFE2_USE_ZENDNN ON)
+        list(APPEND Caffe2_PUBLIC_DEPENDENCY_LIBS caffe2::zendnn)
+      endif(BUILD_CAFFE2_OPS)
+    else()
+      message(WARNING "ZENDNN could not be found.")
+    endif()
+  else()
+    message("disabling ZENDNN because USE_ZENDNN is not set")
   endif()
 
   if(UNIX AND NOT APPLE)

@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <ATen/Config.h>
 
 #include <ATen/Context.h>
@@ -51,9 +55,18 @@ bool Context::userEnabledMkldnn() const {
   return enabled_mkldnn;
 }
 
+bool Context::userEnabledZendnn() const {
+  return enabled_zendnn;
+}
+
 void Context::setUserEnabledMkldnn(bool e) {
   enabled_mkldnn = e;
 }
+
+void Context::setUserEnabledZendnn(bool e) {
+   enabled_zendnn = e;
+}
+
 
 bool Context::deterministicCuDNN() const {
   return deterministic_cudnn;
@@ -231,6 +244,14 @@ bool Context::hasMKLDNN() {
 bool Context::hasMPS() {
 #if USE_MPS
   return at::mps::is_available();
+#else
+  return false;
+#endif
+}
+
+bool Context::hasZENDNN() {
+#if AT_ZENDNN_ENABLED()
+  return true;
 #else
   return false;
 #endif

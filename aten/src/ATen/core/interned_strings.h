@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 #include <vector>
 #include <cstdint>
@@ -36,6 +40,16 @@ namespace c10 {
   _(prim, MKLDNNHardSigmoid)         \
   _(prim, MKLDNNHardTanh)            \
   _(prim, MKLDNNClamp)               \
+  _(prim, ConstantZENDNNTensor)      \
+  _(prim, BroadcastZENDNNTensors)    \
+  _(prim, ZENDNNGroup)               \
+  _(prim, ZENDNNHardSwish)           \
+  _(prim, ZENDNNHardSigmoid)         \
+  _(prim, ZENDNNHardTanh)            \
+  _(prim, ZENDNNClamp)               \
+  _(prim, zendnn_convolution)        \
+  _(prim, zendnn_vitisai_convolution)\
+  _(prim, zendnn_convolution_relu)   \
   _(prim, StaticRuntimeCopyOuts)     \
   _(prim, Drop)                      \
   _(prim, Eval)                      \

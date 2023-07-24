@@ -14,8 +14,10 @@
 #include <torch/csrc/jit/passes/freeze_module.h>
 #include <torch/csrc/jit/passes/frozen_conv_add_relu_fusion.h>
 #include <torch/csrc/jit/passes/frozen_graph_optimizations.h>
+#include <torch/csrc/jit/passes/frozen_zendnn_graph_optimizations.h>
 #include <torch/csrc/jit/passes/frozen_linear_transpose.h>
 #include <torch/csrc/jit/passes/frozen_ops_to_mkldnn.h>
+#include <torch/csrc/jit/passes/frozen_ops_to_zendnn.h>
 #include <torch/csrc/jit/passes/inliner.h>
 #include <torch/csrc/jit/runtime/operator.h>
 
@@ -489,6 +491,7 @@ namespace {
 void optimize_for_inference(std::shared_ptr<Graph> graph) {
   FuseFrozenConvAddRelu(graph);
   ConvertFrozenOpsToMKLDNN(graph);
+  OptimizeFrozenZendnnGraph(graph);
   FrozenLinearTranspose(graph);
 }
 } // namespace

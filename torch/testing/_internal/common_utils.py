@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 r"""Importing this file must **not** initialize CUDA context. test_distributed
 relies on this assumption to properly run. This means that when this is imported
 no CUDA calls shall be made, including torch.cuda.device_count(), etc.
@@ -64,6 +68,7 @@ from torch import Tensor
 import torch.backends.cudnn
 import torch.backends.mkl
 import torch.backends.xnnpack
+import torch.backends.zendnn
 from enum import Enum
 from statistics import mean
 import functools
@@ -760,6 +765,7 @@ def _check_module_exists(name: str) -> bool:
 TEST_NUMPY = _check_module_exists('numpy')
 TEST_SCIPY = _check_module_exists('scipy')
 TEST_MKL = torch.backends.mkl.is_available()
+TEST_ZENDNN = torch.backends.zendnn.is_available()
 TEST_CUDA = torch.cuda.is_available()
 TEST_NUMBA = _check_module_exists('numba')
 

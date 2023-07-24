@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 # FindTorch
 # -------
 #
@@ -118,6 +122,10 @@ else()
 
   if(@USE_MKLDNN@)
     append_torchlib_if_found(dnnl mkldnn)
+  endif()
+
+  if(@USE_ZENDNN@)
+    append_torchlib_if_found(zendnn)
   endif()
 
   append_torchlib_if_found(sleef asmjit)

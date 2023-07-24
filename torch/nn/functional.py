@@ -1,3 +1,7 @@
+#*******************************************************************************
+# Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+#*******************************************************************************
+
 r"""Functional interface"""
 from typing import Callable, List, Optional, Tuple, Union
 import math

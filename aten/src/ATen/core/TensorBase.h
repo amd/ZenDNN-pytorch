@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #pragma once
 
 #include <c10/core/Device.h>
@@ -437,6 +441,11 @@ class TORCH_API TensorBase {
   bool is_mps() const {
     // NB: this is not a native function to avoid dispatching overhead.
     return impl_->is_mps();
+  }
+
+  bool is_zendnn() const {
+    // NB: this is not a native function to avoid dispatching overhead.
+    return impl_->is_zendnn();
   }
 
   /// Returns if a `Tensor` is ort tensor.

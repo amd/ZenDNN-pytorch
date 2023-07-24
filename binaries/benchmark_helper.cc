@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 /**
  * Copyright (c) 2016-present, Facebook, Inc.
  *
@@ -92,6 +96,7 @@ void setOperatorEngine(caffe2::NetDef* net_def, const string& backend) {
                              : backend == "mkl" ? "MKLDNN"
                                                 : backend == "cuda"
                     ? "CUDA"
+            : backend == "zendnn" ? "ZENDNN"
                     : backend == "dnnlowp" ? "DNNLOWP"
                                            : backend == "dnnlowp_acc16"
                             ? "DNNLOWP_ACC16"

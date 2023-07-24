@@ -1,3 +1,7 @@
+/*******************************************************************************
+* Modifications Copyright (c) 2022 Advanced Micro Devices, Inc. All rights reserved.
+*******************************************************************************/
+
 #include <c10/core/DispatchKey.h>
 #include <c10/core/DispatchKeySet.h>
 
@@ -84,6 +88,10 @@ const char* toString(DispatchKey t) {
 
     case DispatchKey::MkldnnCPU:
       return "MkldnnCPU";
+
+    case DispatchKey::ZendnnCPU:
+      return "ZendnnCPU";
+
     case DispatchKey::SparseCPU:
       return "SparseCPU";
     case DispatchKey::SparseCUDA:
@@ -268,6 +276,7 @@ c10::DispatchKey parseDispatchKey(const std::string& k) {
       {"Quantized", c10::DispatchKey::Quantized},
       {"CustomRNGKeyId", c10::DispatchKey::CustomRNGKeyId},
       {"MkldnnCPU", c10::DispatchKey::MkldnnCPU},
+      {"ZendnnCPU", c10::DispatchKey::ZendnnCPU},
       {"Sparse", c10::DispatchKey::Sparse},
       {"SparseCsrCPU", c10::DispatchKey::SparseCsrCPU},
       {"SparseCsrCUDA", c10::DispatchKey::SparseCsrCUDA},
