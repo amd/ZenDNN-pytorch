@@ -349,20 +349,15 @@ bool fuse_vitis_ai_ops(Block* b, std::function<void(Node *)> add_to_nodes_to_rem
 void zendnn_vitis_ai_fusions(std::shared_ptr<Graph>& graph)
 {
   bool conv_add_fusion = zendnn::zendnn_getenv_int("ZENDNN_PT_CONV_ADD_FUSION_SAFE", 0);
-  //Tracking input tensor Node of graph
+  //Tracking input tensor Node of graph. Assuming graph has atleast single input
   Node *node = nullptr;
-  for(Value *v :  graph->inputs())
-  {
-     if(v->type()->cast<TensorType>())
-     {
-        node = graph->inputs().at(1)->uses().at(0).user;
-        break;
-     }
-  }
+  node = graph->inputs().at(0)->uses().at(0).user;
 
-  if(node == NULL)
+  //Checking if the input tensor value is not None
+  value *v = graph->inputs().at(0);
+  if(v->type()->cast<TensorType> == None)
   {
-    printf("Graph does not contain input tensor");
+    printf("Graph contains NoneType Tensor as input");
     exit(1);
   }
 
