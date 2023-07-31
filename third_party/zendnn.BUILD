@@ -37,7 +37,7 @@ template_rule(
     out = "include/zendnn_version.h",
     substitutions = {
         "@ZENDNN_VERSION_MAJOR@": "4",
-        "@ZENDNN_VERSION_MINOR@": "0",
+        "@ZENDNN_VERSION_MINOR@": "1",
         "@ZENDNN_VERSION_PATCH@": "0",
     },
 )
@@ -74,7 +74,7 @@ cc_library(
     copts = [
         "-DUSE_AVX",
         "-DUSE_AVX2",
-        "-DZENDNN_DLL",                                                                                                      
+        "-DZENDNN_DLL",
         "-DZENDNN_DLL_EXPORTS",
         "-DZENDNN_ENABLE_CONCURRENT_EXEC",
         "-D__STDC_CONSTANT_MACROS",
