@@ -7,7 +7,7 @@ To build PyTorch with ZenDNN follow below steps.
 ### Setup for Linux
 Create and activate a conda environment and install the following dependencies
 ```
-$ conda install ninja pyyaml cmake cffi typing_extensions future six requests dataclasses astunparse setuptools
+$ conda install ninja pyyaml cmake cffi typing_extensions future six requests dataclasses astunparse setuptools numpy
 $ conda install cpuonly -c pytorch
 ```
 
@@ -21,7 +21,7 @@ $ git clone https://github.com/amd/ZenDNN-pytorch.git
 $ cd ZenDNN-pytorch
 ```
 
-The repo defaults to the main development branch which doesnt has ZenDNN support. You need to check out a release branch to build, e.g. `release/1.12_zendnn_rel` or `release/1.13_zendnn_rel` etc.
+The repo defaults to the main development branch which doesn't have ZenDNN support. You need to check out a release branch to build, e.g. `release/1.12_zendnn_rel` or `release/1.13_zendnn_rel` etc.
 ```
 $ git checkout branch_name  # release/1.12_zendnn_rel, release/1.13_zendnn_rel, etc.
 ```
