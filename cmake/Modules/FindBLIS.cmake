@@ -52,7 +52,7 @@ add_custom_command(
    WORKING_DIRECTORY
        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/blis
    COMMAND
-       make clean && make distclean && CC=gcc  ./configure --prefix=${CMAKE_CURRENT_SOURCE_DIR}/build/blis_gcc_build  --enable-threading=openmp --enable-cblas amdzen && make -j install
+       make clean && make distclean && CC=gcc  ./configure -a aocl_gemm --prefix=${CMAKE_CURRENT_SOURCE_DIR}/build/blis_gcc_build  --enable-threading=openmp --enable-cblas amdzen && make -j install
    COMMAND
        cd ${CMAKE_CURRENT_SOURCE_DIR}/build
    COMMAND

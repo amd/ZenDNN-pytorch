@@ -62,7 +62,7 @@ add_custom_command(
    WORKING_DIRECTORY
        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ZenDNN
    COMMAND
-      make -j ZENDNN_BLIS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/build/blis_gcc_build AOCC=0 ARCHIVE=1 RELEASE=${BUILD_FLAG}
+      make -j ZENDNN_BLIS_PATH=${CMAKE_CURRENT_SOURCE_DIR}/build/blis_gcc_build AOCC=0 LPGEMM=1 ARCHIVE=1 RELEASE=${BUILD_FLAG}
    COMMAND
        cp _out/lib/libamdZenDNN.a ${CMAKE_CURRENT_SOURCE_DIR}/build/lib
    DEPENDS
