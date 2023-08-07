@@ -351,15 +351,14 @@ void zendnn_vitis_ai_fusions(std::shared_ptr<Graph>& graph)
   bool conv_add_fusion = zendnn::zendnn_getenv_int("ZENDNN_PT_CONV_ADD_FUSION_SAFE", 0);
   //Tracking input tensor Node of graph. Assuming graph has atleast single input
   Node *node = nullptr;
-  node = graph->inputs().at(0)->uses().at(0).user;
 
-  //Checking if the input tensor value is not None
-  value *v = graph->inputs().at(0);
-  if(v->type()->cast<TensorType> == None)
-  {
-    printf("Graph contains NoneType Tensor as input");
-    exit(1);
-  }
+  //Checking if the input value is not None
+  TORCH_INTERNAL_ASSERT(graph->inputs().size()>0, "Graph does not contain an input");
+
+  // graph(%self :<model_name>, 
+  // %1: <input>): 
+  // graph->inputs().at(1) denotes the graphs' input 
+  node = graph->inputs().at(1)->uses().at(0).user; 
 
   //Inserting Graph variable(Value) and set it true. Value can be used to modify schema
   //at appropriate fusion calls
