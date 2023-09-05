@@ -102,8 +102,6 @@ std::string get_openmp_version() {
   #ifdef _OPENMP
     {
       ss << "OpenMP " << _OPENMP;
-      // Reference:
-      // https://stackoverflow.com/questions/1304363/how-to-check-the-version-of-openmp-on-linux
       const char* ver_str = nullptr;
       switch (_OPENMP) {
         case 200505:

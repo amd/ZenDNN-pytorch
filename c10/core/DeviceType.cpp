@@ -93,8 +93,7 @@ std::string DeviceTypeName(DeviceType d, bool lower_case) {
   }
 }
 
-// NB: Per the C++ standard (e.g.,
-// https://stackoverflow.com/questions/18195312/what-happens-if-you-static-cast-invalid-value-to-enum-class)
+// NB: Per the C++ standard
 // as long as you cast from the same underlying type, it is always valid to cast
 // into an enum class (even if the value would be invalid by the enum.)  Thus,
 // the caller is allowed to cast a possibly invalid int16_t to DeviceType and

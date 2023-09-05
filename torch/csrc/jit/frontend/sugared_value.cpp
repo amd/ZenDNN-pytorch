@@ -89,7 +89,6 @@ std::shared_ptr<SugaredValue> BuiltinFunction::call(
 
 // older versions of gcc/clang have a bug where enums can't be used as keys
 // in a map by default
-// https://stackoverflow.com/questions/18837857/cant-use-enum-class-as-unordered-map-key
 struct EnumClassHash {
   template <typename T>
   std::size_t operator()(T t) const {
