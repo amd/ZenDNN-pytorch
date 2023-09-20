@@ -6,7 +6,8 @@ To build PyTorch with ZenDNN follow below steps.
 ### Setup for Linux
 Create and activate a conda environment and install the following dependencies
 ```
-$ conda install ninja pyyaml cmake cffi typing_extensions future six requests dataclasses astunparse setuptools numpy
+$ conda install ninja pyyaml cmake cffi typing_extensions future six requests dataclasses astunparse setuptools
+$ pip install numpy
 $ conda install cpuonly -c pytorch
 ```
 
